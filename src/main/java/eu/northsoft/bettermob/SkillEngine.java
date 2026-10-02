@@ -52,7 +52,7 @@ final class SkillEngine {
 
     private static final Set<String> BUILTIN_MECHANICS = Set.of("cancelskill", "cancelevent", "skill", "look", "sound",
             "state", "potion", "breakblock", "gcd", "model", "modelengine", "randomskill", "remove", "command",
-            "summon", "mountmodel", "delay", "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "sudoskill", "damage", "throw", "lunge");
+            "summon", "mountmodel", "delay", "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "sudoskill", "damage", "throw", "lunge", "setblock");
 
     private record CustomMechanicEntry(Plugin owner, CustomMechanic mechanic) {}
 
@@ -181,6 +181,7 @@ final class SkillEngine {
             case "damage" -> damage(context, target, p);
             case "throw" -> throwTarget(context, target, p);
             case "lunge" -> lunge(context, target, p);
+            case "setblock" -> setBlock(target, p);
             default -> {
                 CustomMechanicEntry custom = customMechanics.get(mechanic.name());
                 if (custom == null) {
@@ -215,6 +216,7 @@ final class SkillEngine {
         boolean actual = switch (name) {
             case "offgcd" -> !hasActiveGcd(context.caster().getUniqueId());
             case "onground" -> context.caster().isOnGround();
+            case "onblock" -> containsBlockType(paramsRaw, context.caster().getLocation().subtract(0, 0.1, 0).getBlock());
             case "blocktype" -> targetOverride != null && targetOverride.block() != null
                     && containsBlockType(paramsRaw, targetOverride.block());
             default -> {
@@ -446,6 +448,16 @@ final class SkillEngine {
                 .setY(parseFloat(firstParam(p, "velocityy", "vy"), 0f)));
     }
 
+    /** Setzt den Block am Ziel auf "m" (z.B. Gras -> Erde beim Grasen). */
+    private void setBlock(Target target, Map<String, String> p) {
+        Material material = Material.matchMaterial(firstParam(p, "m", "material", "type", "block") == null ? "" : firstParam(p, "m", "material", "type", "block").trim());
+        if (material == null || !material.isBlock()) {
+            plugin.getLogger().warning("setblock: unbekanntes Material '" + firstParam(p, "m", "material", "type", "block") + "'.");
+            return;
+        }
+        target.location().getBlock().setType(material);
+    }
+
     private void remove(Target target) {
         if (target.entity() != null) target.entity().remove();
     }
@@ -507,7 +519,8 @@ final class SkillEngine {
             case "trigger", "target" -> context.trigger() != null ? Target.ofEntity(context.trigger()) : Target.ofEntity(context.caster());
             case "obstructingblock" -> Target.ofBlock(obstructingBlock(context.caster()));
             case "forward" -> Target.ofLocation(forwardLocation(context.caster(), targeterParams));
-            case "selflocation" -> Target.ofLocation(context.caster().getLocation());
+            case "selflocation" -> Target.ofLocation(context.caster().getLocation().add(
+                    parseFloat(targeterParams.get("x"), 0f), parseFloat(targeterParams.get("y"), 0f), parseFloat(targeterParams.get("z"), 0f)));
             case "pir", "playersinradius" -> nearestPlayer(context.caster(), targeterParams);
             default -> Target.ofEntity(context.caster());
         };
