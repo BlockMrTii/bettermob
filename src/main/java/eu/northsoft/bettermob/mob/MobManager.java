@@ -188,6 +188,7 @@ public final class MobManager {
     public void fireTrigger(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
                       LivingEntity trigger, Cancellable event) {
         if (skillEngine == null) return;
+        if (plugin.debug().info()) plugin.debug().info("trigger " + type + " on " + definition.id + (trigger != null ? " (by " + trigger.getName() + ")" : ""), definition.id);
         String auraKind = switch (type) {
             case DAMAGED -> "ondamaged";
             case ATTACK -> "onattack";
@@ -200,6 +201,7 @@ public final class MobManager {
         for (MobDefinition.SkillTrigger skillTrigger : definition.skillTriggers) {
             if (skillTrigger.trigger() == type) skillEngine.runStep(skillTrigger.step(), context);
         }
+        if (event != null && event.isCancelled()) plugin.debug().info("trigger " + type + " on " + definition.id + ": event cancelled", definition.id);
     }
 
     private void scheduleTimers(LivingEntity entity, MobDefinition definition) {
