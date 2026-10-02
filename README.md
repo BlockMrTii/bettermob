@@ -282,6 +282,8 @@ and `cd=<seconds>` (cooldown per caster). `skill`/`randomskill` read their skill
 plugin and uses its own model IDs — these are separate registries from BetterModel's,
 so a model has to exist in whichever engine you point at it.
 
+**Factions:** players can belong to a faction too: give them the permission `bettermob.faction.<name>` (lower case) or list them under `factions:` in `config.yml` (player name or UUID). Mobs of that faction then ignore them, and they can't hurt those mobs. Without either, players are in no faction (ops included).
+
 **Conditions:** `offgcd`, `onground`, `chance{chance=0.75}`, `hastag{t=...}`, `hasaura{n=...}`, `faction{faction=Elite,Other}` (the caster's, or each candidate's inside a multi-target targeter), `onblock{b=...}` (block under the caster), `blocktype{type=...}`, `skillOnCooldown{skill=...}`, `distance{d=0-6}` (also `>3`, `<=5`) to the trigger/target. A skill's `Conditions`/`TargetConditions` entry may end in `castinstead <skill>` to cast that skill instead when it holds. Any mechanic line can
 end with `?condition{...}` (or `?!condition{...}` to negate) to run only when that
 check passes; unsupported conditions (this plugin has no variable/faction system)

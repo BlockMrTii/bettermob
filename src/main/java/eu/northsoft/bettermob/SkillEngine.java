@@ -457,10 +457,9 @@ final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private boolean hasFaction(Entity entity, String names) {
-        String faction = mobManager.factionOf(entity);
-        if (faction == null || names == null) return false;
+        if (names == null) return false;
         for (String name : names.split(",")) {
-            if (faction.equals(name.trim().toLowerCase(Locale.ROOT))) return true;
+            if (mobManager.inFaction(entity, name.trim().toLowerCase(Locale.ROOT))) return true;
         }
         return false;
     }
