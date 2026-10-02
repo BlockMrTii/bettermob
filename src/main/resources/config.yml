@@ -9,3 +9,7 @@ DisabledPacks: []
 #     - PlayerName
 #     - 123e4567-e89b-12d3-a456-426614174000
 factions: {}
+
+# Debug-Ausgabe: off, info (Trigger, Skills, KI) oder verbose (zusaetzlich jede Mechanik, Bones, Projektile).
+# Zur Laufzeit mit /bettermob debug <off|info|verbose>.
+Debug: off
