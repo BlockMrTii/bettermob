@@ -244,7 +244,7 @@ control), `potion`, `look`, `breakblock`, `state` (plays a BetterModel animation
 `effect:particlering` (`particle`, `radius`, `points`, ...), `spin` (`duration` ticks,
 `velocity` degrees/tick), `takeitem` (`i=<item>;a=<amount>`, removes a registered item
 from the target player), `ignite` (`t` ticks), `stun` (`d` ticks, disables the mob's AI),
-`setNoDamageTicks` (`ticks`), `shoot` (`type=arrow;velocity;damage;oh=[ ...]` fires an arrow at
+`setNoDamageTicks` (`ticks`), `bodyrotation` (`headUneven`, `bodyUneven`, `minHead`, `maxHead`, `minBody`, `maxBody`, `delay`; BetterModel only), `shoot` (`type=arrow;velocity;damage;oh=[ ...]` fires an arrow at
 the target, the `oh` lines run on a hit with the hit entity as target), `totem` (`os=[ ... ]`
 runs once at the targeter's location, `yo` shifts it up; `md`/`ot`/`oe` are ignored).
 
