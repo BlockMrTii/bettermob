@@ -1,10 +1,16 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.service;
 
+import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.api.BetterMobAPI;
+import eu.northsoft.bettermob.api.CustomMechanic;
 import eu.northsoft.bettermob.api.MobInfo;
+import eu.northsoft.bettermob.mob.MobDefinition;
+import eu.northsoft.bettermob.mob.MobManager;
+import eu.northsoft.bettermob.skill.SkillContext;
+import eu.northsoft.bettermob.skill.SkillEngine;
+import eu.northsoft.bettermob.skill.SkillRegistry;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
-import eu.northsoft.bettermob.api.CustomMechanic;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -14,13 +20,13 @@ import org.bukkit.plugin.Plugin;
 import java.util.Collection;
 import java.util.Optional;
 
-final class BetterMobApiImpl implements BetterMobAPI, Listener {
+public final class BetterMobApiImpl implements BetterMobAPI, Listener {
     private final BetterMobPlugin plugin;
     private final MobManager manager;
     private final SkillRegistry skillRegistry;
     private final SkillEngine skillEngine;
 
-    BetterMobApiImpl(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, SkillEngine skillEngine) {
+    public BetterMobApiImpl(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, SkillEngine skillEngine) {
         this.plugin = plugin;
         this.manager = manager;
         this.skillRegistry = skillRegistry;
@@ -82,7 +88,6 @@ final class BetterMobApiImpl implements BetterMobAPI, Listener {
         skillEngine.unregisterMechanic(name);
     }
 
-    /** Mechanics eines deaktivierten Plugins entfernen, sonst bleibt dessen Classloader haengen. */
     @EventHandler
     public void onPluginDisable(PluginDisableEvent event) {
         skillEngine.unregisterMechanics(event.getPlugin());

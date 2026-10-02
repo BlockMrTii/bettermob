@@ -1,20 +1,13 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.model;
 
+import eu.northsoft.bettermob.BetterMobPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
 
-/**
- * Reflection-Hook fuer ModelEngine (com.ticxo.modelengine), als zweite Model-Engine neben
- * BetterModel. Manche Packs nutzen ModelEngine statt BetterModel - ueber den Skill-Mechanic
- * "modelengine{mid=<id>}" (Pendant zu "model{mid=<id>}") waehlt man diese Engine fuer einen
- * einzelnen Mob. Methoden werden wie bei BetterModelHook defensiv per Reflection aufgeloest
- * und einmal gecacht statt bei jedem Aufruf neu gesucht zu werden; schlaegt ein Schritt
- * fehl, gibt es eine konkrete Logzeile statt eines stillen Nichts-Tun.
- */
-final class ModelEngineHook {
+public final class ModelEngineHook {
     private static final String API = "com.ticxo.modelengine.api.ModelEngineAPI";
     private static final String ACTIVE_MODEL = "com.ticxo.modelengine.api.model.ActiveModel";
 
@@ -25,15 +18,15 @@ final class ModelEngineHook {
     private Method addModelMethod;
     private Method destroyMethod;
 
-    ModelEngineHook(BetterMobPlugin plugin) {
+    public ModelEngineHook(BetterMobPlugin plugin) {
         this.plugin = plugin;
     }
 
-    boolean available() {
+    public boolean available() {
         return Bukkit.getPluginManager().isPluginEnabled("ModelEngine") && classExists(API);
     }
 
-    Object attach(Entity entity, String modelId) {
+    public Object attach(Entity entity, String modelId) {
         if (!Bukkit.getPluginManager().isPluginEnabled("ModelEngine")) {
             plugin.getLogger().warning("ModelEngine ist beim Spawn von '" + modelId + "' nicht aktiv - kein Modell angehaengt.");
             return null;
@@ -50,8 +43,7 @@ final class ModelEngineHook {
                 plugin.getLogger().warning("ModelEngine-Modell '" + modelId + "' konnte nicht hinzugefuegt werden (existiert die Model-ID?).");
                 return null;
             }
-            // Optional - ModelEngine versteckt die Vanilla-Entity nicht zwingend selbst;
-            // unser eigenes entity.setInvisible(true) in MobManager reicht notfalls auch allein.
+
             trySetBaseEntityInvisible(modeledEntity);
             return activeModel;
         } catch (ReflectiveOperationException | LinkageError exception) {
@@ -60,7 +52,7 @@ final class ModelEngineHook {
         }
     }
 
-    void close(Object tracker) {
+    public void close(Object tracker) {
         if (tracker == null) return;
         try {
             if (destroyMethod == null) destroyMethod = tracker.getClass().getMethod("destroy");
