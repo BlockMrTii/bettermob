@@ -36,7 +36,8 @@ sealed interface SkillStep {
         Map<String, String> params = cursor.peek() == '{' ? parseParams(cursor.readBraced()) : Map.of();
 
         cursor.skipWhitespace();
-        String targeter = "self";
+        // Leer = kein @Targeter geschrieben: dann gilt das Ziel des aufrufenden Skills (siehe SkillContext).
+        String targeter = "";
         Map<String, String> targeterParams = Map.<String, String>of();
         if (cursor.peek() == '@') {
             cursor.advance();
