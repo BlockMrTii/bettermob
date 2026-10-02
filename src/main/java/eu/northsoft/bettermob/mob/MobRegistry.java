@@ -1,5 +1,10 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.mob;
 
+import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.drop.DropEntry;
+import eu.northsoft.bettermob.drop.DropTable;
+import eu.northsoft.bettermob.pack.PackScanner;
+import eu.northsoft.bettermob.pack.YamlFiles;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
@@ -14,21 +19,21 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-final class MobRegistry {
+public final class MobRegistry {
     private final BetterMobPlugin plugin;
     private final File legacyFile;
     private final File folder;
     private final PackScanner packScanner;
     private final Map<String, MobDefinition> mobs = new LinkedHashMap<>();
 
-    MobRegistry(BetterMobPlugin plugin, PackScanner packScanner) {
+    public MobRegistry(BetterMobPlugin plugin, PackScanner packScanner) {
         this.plugin = plugin;
         this.packScanner = packScanner;
         this.legacyFile = new File(plugin.getDataFolder(), "mobs.yml");
         this.folder = new File(plugin.getDataFolder(), "mobs");
     }
 
-    void load() {
+    public void load() {
         migrateLegacyFile();
         if (!folder.exists()) {
             folder.mkdirs();
@@ -95,11 +100,11 @@ final class MobRegistry {
         return result;
     }
 
-    MobDefinition get(String id) {
+    public MobDefinition get(String id) {
         return mobs.get(id.toLowerCase(Locale.ROOT));
     }
 
-    Map<String, MobDefinition> all() {
+    public Map<String, MobDefinition> all() {
         return mobs;
     }
 

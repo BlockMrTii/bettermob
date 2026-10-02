@@ -1,5 +1,10 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.drop;
 
+import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.item.ItemDefinition;
+import eu.northsoft.bettermob.item.ItemRegistry;
+import eu.northsoft.bettermob.pack.PackScanner;
+import eu.northsoft.bettermob.pack.YamlFiles;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -16,10 +21,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
-final class DropRegistry {
+public final class DropRegistry {
     private static final int MAX_DEPTH = 5;
 
-    record Result(List<ItemStack> items, int exp) {}
+    public record Result(List<ItemStack> items, int exp) {}
 
     private final BetterMobPlugin plugin;
     private final PackScanner packScanner;
@@ -28,14 +33,14 @@ final class DropRegistry {
     private final Map<String, DropTable> tables = new LinkedHashMap<>();
     private final Set<String> warned = Collections.synchronizedSet(new HashSet<>());
 
-    DropRegistry(BetterMobPlugin plugin, PackScanner packScanner, ItemRegistry items) {
+    public DropRegistry(BetterMobPlugin plugin, PackScanner packScanner, ItemRegistry items) {
         this.plugin = plugin;
         this.packScanner = packScanner;
         this.items = items;
         this.folder = new File(plugin.getDataFolder(), "droptables");
     }
 
-    void load() {
+    public void load() {
         folder.mkdirs();
         tables.clear();
         warned.clear();
@@ -69,15 +74,15 @@ final class DropRegistry {
         return entries;
     }
 
-    DropTable get(String id) {
+    public DropTable get(String id) {
         return id == null ? null : tables.get(id.toLowerCase(Locale.ROOT));
     }
 
-    Set<String> ids() {
+    public Set<String> ids() {
         return tables.keySet();
     }
 
-    Result roll(DropTable table) {
+    public Result roll(DropTable table) {
         List<ItemStack> stacks = new ArrayList<>();
         int exp = roll(table, stacks, 0);
         return new Result(stacks, exp);

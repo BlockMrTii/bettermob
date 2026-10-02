@@ -1,20 +1,22 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.pack;
+
+import eu.northsoft.bettermob.BetterMobPlugin;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-final class PackScanner {
+public final class PackScanner {
     private final BetterMobPlugin plugin;
     private final File packsFolder;
 
-    PackScanner(BetterMobPlugin plugin) {
+    public PackScanner(BetterMobPlugin plugin) {
         this.plugin = plugin;
         this.packsFolder = new File(plugin.getDataFolder(), "packs");
     }
 
-    List<File> foldersFor(String name) {
+    public List<File> foldersFor(String name) {
         List<File> folders = new ArrayList<>();
         File flat = new File(plugin.getDataFolder(), name);
         if (flat.isDirectory()) folders.add(flat);
@@ -43,7 +45,7 @@ final class PackScanner {
         return null;
     }
 
-    List<String> listPacks() {
+    public List<String> listPacks() {
         List<String> result = new ArrayList<>();
         File[] packDirs = packsFolder.listFiles(File::isDirectory);
         if (packDirs == null) return result;

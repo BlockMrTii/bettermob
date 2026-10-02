@@ -1,6 +1,16 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.mob;
 
+import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.ai.AiGoalApplier;
 import eu.northsoft.bettermob.api.event.BetterMobSpawnEvent;
+import eu.northsoft.bettermob.item.ItemDefinition;
+import eu.northsoft.bettermob.item.ItemRegistry;
+import eu.northsoft.bettermob.model.BetterModelHook;
+import eu.northsoft.bettermob.model.ModelEngineHook;
+import eu.northsoft.bettermob.skill.SkillContext;
+import eu.northsoft.bettermob.skill.SkillEngine;
+import eu.northsoft.bettermob.skill.SkillStep;
+import eu.northsoft.bettermob.util.Tasks;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -17,14 +27,14 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.lang.ref.WeakReference;
 
-final class MobManager {
+public final class MobManager {
     private final BetterMobPlugin plugin;
     private final MobRegistry registry;
     private final BetterModelHook betterModel;
@@ -39,9 +49,9 @@ final class MobManager {
     private final Map<UUID, List<Runnable>> timers = new ConcurrentHashMap<>();
     private SkillEngine skillEngine;
 
-    final NamespacedKey mobIdKey;
+    public final NamespacedKey mobIdKey;
 
-    MobManager(BetterMobPlugin plugin, MobRegistry registry, BetterModelHook betterModel, ModelEngineHook modelEngine, ItemRegistry items) {
+    public MobManager(BetterMobPlugin plugin, MobRegistry registry, BetterModelHook betterModel, ModelEngineHook modelEngine, ItemRegistry items) {
         this.plugin = plugin;
         this.registry = registry;
         this.betterModel = betterModel;
@@ -50,7 +60,7 @@ final class MobManager {
         this.mobIdKey = new NamespacedKey(plugin, "mob_id");
     }
 
-    LivingEntity spawn(MobDefinition definition, Location location) {
+    public LivingEntity spawn(MobDefinition definition, Location location) {
         LivingEntity entity = (LivingEntity) location.getWorld().spawnEntity(location, definition.type);
         entity.customName(LegacyComponentSerializer.legacyAmpersand().deserialize(definition.displayName));
         entity.setCustomNameVisible(definition.options.alwaysShowName());
@@ -136,7 +146,7 @@ final class MobManager {
         return definition != null && definition.options.invisible();
     }
 
-    void release(Entity entity) {
+    public void release(Entity entity) {
         if (skillEngine != null) skillEngine.forget(entity.getUniqueId());
         Object tracker = trackers.remove(entity.getUniqueId());
         if (tracker != null) betterModel.close(tracker);
@@ -149,33 +159,33 @@ final class MobManager {
         if (cancellers != null) cancellers.forEach(Runnable::run);
     }
 
-    boolean inSkillDamage() {
+    public boolean inSkillDamage() {
         return skillEngine != null && skillEngine.isApplyingDamage();
     }
 
-    void setSkillEngine(SkillEngine skillEngine) {
+    public void setSkillEngine(SkillEngine skillEngine) {
         this.skillEngine = skillEngine;
     }
 
-    Object trackerFor(UUID entityId) {
+    public Object trackerFor(UUID entityId) {
         return trackers.get(entityId);
     }
 
-    void replaceTracker(Entity entity, Object newTracker) {
+    public void replaceTracker(Entity entity, Object newTracker) {
         Object old = trackers.remove(entity.getUniqueId());
         if (old != null) betterModel.close(old);
         if (newTracker != null) trackers.put(entity.getUniqueId(), newTracker);
         entity.setInvisible(newTracker != null || staysInvisible(entity));
     }
 
-    void replaceModelEngineTracker(Entity entity, Object newTracker) {
+    public void replaceModelEngineTracker(Entity entity, Object newTracker) {
         Object old = modelEngineTrackers.remove(entity.getUniqueId());
         if (old != null) modelEngine.close(old);
         if (newTracker != null) modelEngineTrackers.put(entity.getUniqueId(), newTracker);
         entity.setInvisible(newTracker != null || staysInvisible(entity));
     }
 
-    void fireTrigger(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
+    public void fireTrigger(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
                       LivingEntity trigger, Cancellable event) {
         if (skillEngine == null) return;
         String auraKind = switch (type) {
@@ -207,12 +217,12 @@ final class MobManager {
         }
     }
 
-    String factionOf(Entity entity) {
+    public String factionOf(Entity entity) {
         MobDefinition definition = definitions.get(entity.getUniqueId());
         return definition == null || definition.faction == null ? null : definition.faction.toLowerCase(java.util.Locale.ROOT);
     }
 
-    boolean inFaction(Entity entity, String faction) {
+    public boolean inFaction(Entity entity, String faction) {
         if (faction == null) return false;
         String own = factionOf(entity);
         if (own != null) return own.equals(faction);
@@ -234,18 +244,18 @@ final class MobManager {
         return node;
     }
 
-    boolean sameFaction(Entity first, Entity second) {
+    public boolean sameFaction(Entity first, Entity second) {
         String faction = factionOf(first);
         if (faction != null) return inFaction(second, faction);
         faction = factionOf(second);
         return faction != null && inFaction(first, faction);
     }
 
-    MobDefinition definitionOf(UUID entityId) {
+    public MobDefinition definitionOf(UUID entityId) {
         return definitions.get(entityId);
     }
 
-    void handleLoad(LivingEntity entity) {
+    public void handleLoad(LivingEntity entity) {
         if (definitions.containsKey(entity.getUniqueId())) return;
         String id = entity.getPersistentDataContainer().get(mobIdKey, PersistentDataType.STRING);
         if (id == null) return;
@@ -278,21 +288,21 @@ final class MobManager {
         return false;
     }
 
-    double modifierFor(UUID entityId, DamageCause cause) {
+    public double modifierFor(UUID entityId, DamageCause cause) {
         Map<DamageCause, Double> modifiers = damageModifiers.get(entityId);
         return modifiers == null ? 1.0 : modifiers.getOrDefault(cause, 1.0);
     }
 
     private static final class Threat {
-        final WeakReference<LivingEntity> attacker;
-        double amount;
+        public final WeakReference<LivingEntity> attacker;
+        public double amount;
 
-        Threat(LivingEntity attacker) {
+        public Threat(LivingEntity attacker) {
             this.attacker = new WeakReference<>(attacker);
         }
     }
 
-    void registerThreat(UUID mobId, LivingEntity attacker, double amount) {
+    public void registerThreat(UUID mobId, LivingEntity attacker, double amount) {
         Map<UUID, Threat> table = threatTables.get(mobId);
         if (table != null) table.computeIfAbsent(attacker.getUniqueId(), id -> new Threat(attacker)).amount += amount;
     }
@@ -319,7 +329,7 @@ final class MobManager {
         if (top != null) mob.setTarget(top);
     }
 
-    MobRegistry registry() {
+    public MobRegistry registry() {
         return registry;
     }
 }

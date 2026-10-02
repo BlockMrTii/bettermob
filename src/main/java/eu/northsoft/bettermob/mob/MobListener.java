@@ -1,6 +1,7 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.mob;
 
 import eu.northsoft.bettermob.api.event.BetterMobDeathEvent;
+import eu.northsoft.bettermob.drop.DropRegistry;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
@@ -23,11 +24,11 @@ import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.projectiles.ProjectileSource;
 
-final class MobListener implements Listener {
+public final class MobListener implements Listener {
     private final MobManager manager;
     private final DropRegistry drops;
 
-    MobListener(MobManager manager, DropRegistry drops) {
+    public MobListener(MobManager manager, DropRegistry drops) {
         this.manager = manager;
         this.drops = drops;
     }

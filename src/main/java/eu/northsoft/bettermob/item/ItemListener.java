@@ -1,16 +1,19 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.item;
 
+import eu.northsoft.bettermob.mob.MobDefinition;
+import eu.northsoft.bettermob.skill.SkillContext;
+import eu.northsoft.bettermob.skill.SkillEngine;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
-final class ItemListener implements Listener {
+public final class ItemListener implements Listener {
     private final ItemRegistry items;
     private final SkillEngine skillEngine;
 
-    ItemListener(ItemRegistry items, SkillEngine skillEngine) {
+    public ItemListener(ItemRegistry items, SkillEngine skillEngine) {
         this.items = items;
         this.skillEngine = skillEngine;
     }

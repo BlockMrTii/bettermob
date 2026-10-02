@@ -1,5 +1,9 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.item;
 
+import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.mob.MobDefinition;
+import eu.northsoft.bettermob.pack.PackScanner;
+import eu.northsoft.bettermob.pack.YamlFiles;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -20,21 +24,21 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-final class ItemRegistry {
+public final class ItemRegistry {
     private final BetterMobPlugin plugin;
     private final PackScanner packScanner;
     private final File folder;
     private final NamespacedKey itemIdKey;
     private final Map<String, ItemDefinition> items = new LinkedHashMap<>();
 
-    ItemRegistry(BetterMobPlugin plugin, PackScanner packScanner) {
+    public ItemRegistry(BetterMobPlugin plugin, PackScanner packScanner) {
         this.plugin = plugin;
         this.packScanner = packScanner;
         this.folder = new File(plugin.getDataFolder(), "items");
         this.itemIdKey = new NamespacedKey(plugin, "item_id");
     }
 
-    void load() {
+    public void load() {
         folder.mkdirs();
         items.clear();
         for (File sourceFolder : packScanner.foldersFor("items")) {
@@ -55,25 +59,25 @@ final class ItemRegistry {
         plugin.getLogger().info(items.size() + " Items geladen.");
     }
 
-    ItemDefinition get(String id) {
+    public ItemDefinition get(String id) {
         return id == null ? null : items.get(id.toLowerCase(Locale.ROOT));
     }
 
-    Set<String> ids() {
+    public Set<String> ids() {
         return items.keySet();
     }
 
-    ItemDefinition definitionOf(ItemStack stack) {
+    public ItemDefinition definitionOf(ItemStack stack) {
         String id = idOf(stack);
         return id == null ? null : get(id);
     }
 
-    String idOf(ItemStack stack) {
+    public String idOf(ItemStack stack) {
         if (stack == null || !stack.hasItemMeta()) return null;
         return stack.getItemMeta().getPersistentDataContainer().get(itemIdKey, PersistentDataType.STRING);
     }
 
-    ItemStack create(ItemDefinition definition, int amount) {
+    public ItemStack create(ItemDefinition definition, int amount) {
         ItemStack stack = new ItemStack(definition.material, Math.max(1, amount));
         ItemMeta meta = stack.getItemMeta();
         meta.displayName(text(definition.displayName));

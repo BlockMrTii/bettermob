@@ -1,15 +1,24 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.skill;
 
+import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.ai.AiGoalApplier;
 import eu.northsoft.bettermob.api.CustomMechanic;
 import eu.northsoft.bettermob.api.MechanicContext;
+import eu.northsoft.bettermob.item.ItemDefinition;
+import eu.northsoft.bettermob.item.ItemRegistry;
+import eu.northsoft.bettermob.mob.MobDefinition;
+import eu.northsoft.bettermob.mob.MobManager;
+import eu.northsoft.bettermob.model.BetterModelHook;
+import eu.northsoft.bettermob.model.ModelEngineHook;
+import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.SoundCategory;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.entity.ArmorStand;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
@@ -32,7 +41,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-final class SkillEngine implements org.bukkit.event.Listener {
+public final class SkillEngine implements org.bukkit.event.Listener {
     private final BetterMobPlugin plugin;
     private final SkillRegistry registry;
     private final MobManager mobManager;
@@ -55,7 +64,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
 
     private record CustomMechanicEntry(Plugin owner, CustomMechanic mechanic) {}
 
-    SkillEngine(BetterMobPlugin plugin, SkillRegistry registry, MobManager mobManager, BetterModelHook betterModel, ModelEngineHook modelEngine, ItemRegistry items) {
+    public SkillEngine(BetterMobPlugin plugin, SkillRegistry registry, MobManager mobManager, BetterModelHook betterModel, ModelEngineHook modelEngine, ItemRegistry items) {
         this.plugin = plugin;
         this.registry = registry;
         this.mobManager = mobManager;
@@ -160,21 +169,21 @@ final class SkillEngine implements org.bukkit.event.Listener {
         });
     }
 
-    boolean registerMechanic(Plugin owner, String name, CustomMechanic mechanic) {
+    public boolean registerMechanic(Plugin owner, String name, CustomMechanic mechanic) {
         String key = name.toLowerCase(Locale.ROOT);
         if (BUILTIN_MECHANICS.contains(key)) return false;
         return customMechanics.putIfAbsent(key, new CustomMechanicEntry(owner, mechanic)) == null;
     }
 
-    void unregisterMechanic(String name) {
+    public void unregisterMechanic(String name) {
         customMechanics.remove(name.toLowerCase(Locale.ROOT));
     }
 
-    void unregisterMechanics(Plugin owner) {
+    public void unregisterMechanics(Plugin owner) {
         customMechanics.values().removeIf(entry -> entry.owner().equals(owner));
     }
 
-    void runById(String skillId, SkillContext context) {
+    public void runById(String skillId, SkillContext context) {
         SkillDefinition skill = registry.get(skillId);
         if (skill == null) {
             plugin.getLogger().warning("Skill '" + skillId + "' ist nicht registriert.");
@@ -183,7 +192,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
         run(skill, context);
     }
 
-    void run(SkillDefinition skill, SkillContext context) {
+    public void run(SkillDefinition skill, SkillContext context) {
         if (check(skill.conditions, context, null) != Check.PASS) return;
         if (!skill.targetConditions.isEmpty()) {
             Target obstructing = resolve("obstructingblock", Map.of(), context);
@@ -229,7 +238,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return caster.getUniqueId() + "@" + skillId.toLowerCase(Locale.ROOT);
     }
 
-    void runStep(SkillStep step, SkillContext context) {
+    public void runStep(SkillStep step, SkillContext context) {
         executeSteps(List.of(step), 0, context);
     }
 
@@ -624,7 +633,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
         if (id != null) runById(id.trim(), new SkillContext(executor, context.caster(), null));
     }
 
-    boolean isApplyingDamage() {
+    public boolean isApplyingDamage() {
         return applyingDamage.get();
     }
 
@@ -710,15 +719,15 @@ final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private static final class Aura {
-        final String kind;
-        final long until;
-        final boolean cancelEvent;
-        final String onEnd;
-        final String onHit;
-        Runnable cancelTicker = () -> { };
-        Runnable cancelEnd = () -> { };
+        public final String kind;
+        public final long until;
+        public final boolean cancelEvent;
+        public final String onEnd;
+        public final String onHit;
+        public Runnable cancelTicker = () -> { };
+        public Runnable cancelEnd = () -> { };
 
-        Aura(String kind, long until, boolean cancelEvent, String onEnd, String onHit) {
+        public Aura(String kind, long until, boolean cancelEvent, String onEnd, String onHit) {
             this.kind = kind;
             this.until = until;
             this.cancelEvent = cancelEvent;
@@ -726,7 +735,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
             this.onHit = onHit;
         }
 
-        void stop() {
+        public void stop() {
             cancelTicker.run();
             cancelEnd.run();
         }
@@ -770,7 +779,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
         if (lines != null) executeSteps(inlineSkills.computeIfAbsent(lines, this::parseInline), 0, context);
     }
 
-    void fireAuras(LivingEntity entity, String kind, LivingEntity trigger, org.bukkit.event.Cancellable event) {
+    public void fireAuras(LivingEntity entity, String kind, LivingEntity trigger, org.bukkit.event.Cancellable event) {
         Map<String, Aura> active = auras.get(entity.getUniqueId());
         if (active == null) return;
         for (Aura aura : active.values()) {
@@ -799,7 +808,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
         else target.entity().removeScoreboardTag(TAG_PREFIX + tag.trim());
     }
 
-    void forget(UUID entityId) {
+    public void forget(UUID entityId) {
         Map<String, Aura> removed = auras.remove(entityId);
         if (removed != null) removed.values().forEach(Aura::stop);
         gcdUntilMillis.remove(entityId);
@@ -1112,19 +1121,19 @@ final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private record Target(Entity entity, Block block, Location rawLocation) {
-        static Target ofEntity(Entity entity) {
+        public static Target ofEntity(Entity entity) {
             return new Target(entity, null, null);
         }
 
-        static Target ofBlock(Block block) {
+        public static Target ofBlock(Block block) {
             return new Target(null, block, null);
         }
 
-        static Target ofLocation(Location location) {
+        public static Target ofLocation(Location location) {
             return new Target(null, null, location);
         }
 
-        Location location() {
+        public Location location() {
             if (entity != null) return entity.getLocation();
             if (block != null) return block.getLocation().add(0.5, 0.5, 0.5);
             return rawLocation;
