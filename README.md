@@ -262,7 +262,7 @@ control), `potion`, `look`, `breakblock`, `state` (plays a BetterModel animation
 `summon` (spawns another registered mob), `remove`, `command`, `gcd`, `randomskill`
 (`s=a,b,c`), `skill`, `sudoskill` (run a skill with the target as caster), `cancelevent`,
 `cancelskill`, `equip` (`item=BOW:HAND`), `addtag`/`removetag`, `damage` (`amount`), `throw` (`velocity`, `velocityY`, both scaled by 1/10), `lunge` (`velocity`),
-`setblock` (`m`), `effect:particles` (`p`, `amount`, `hS`, `vS`, `speed`; alias `e:p`),
+`setblock` (`m`), `effect:particles` (`p`, `amount`, `hS`, `vS`, `speed`, `y` offset, `repeat`, `repeatInterval`; alias `e:p`),
 `effect:particlering` (`particle`, `radius`, `points`, ...), `spin` (`duration` ticks,
 `velocity` degrees/tick), `takeitem` (`i=<item>;a=<amount>`, removes a registered item
 from the target player), `ignite` (`t` ticks), `stun` (`d` ticks; `ai` default true disables the AI, `g=true` also turns gravity off, `f=true` holds the mob still, `state=<animation>` plays that BetterModel animation), `velocity` (`m=SET|ADD|MULTIPLY|DIVIDE`, `x`, `y`, `z`, `repeat`, `repeatInterval`), `freeze` (`ticks`, powder-snow effect),
