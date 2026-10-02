@@ -235,9 +235,36 @@ final class MobManager {
         return definition == null || definition.faction == null ? null : definition.faction.toLowerCase(java.util.Locale.ROOT);
     }
 
+    /** Mob mit dieser Faction:, oder Spieler mit Permission bettermob.faction.<name> bzw. Eintrag unter factions: in der config.yml. */
+    boolean inFaction(Entity entity, String faction) {
+        if (faction == null) return false;
+        String own = factionOf(entity);
+        if (own != null) return own.equals(faction);
+        if (!(entity instanceof org.bukkit.entity.Player player)) return false;
+        if (player.hasPermission(factionPermission(faction))) return true;
+        for (String entry : plugin.getConfig().getStringList("factions." + faction)) {
+            if (entry.equalsIgnoreCase(player.getName()) || entry.equalsIgnoreCase(player.getUniqueId().toString())) return true;
+        }
+        return false;
+    }
+
+    private final java.util.Set<String> registeredFactionPermissions = ConcurrentHashMap.newKeySet();
+
+    /** Ohne eigene Registrierung gilt eine unbekannte Permission fuer Ops als erteilt - hier explizit "default: false". */
+    private String factionPermission(String faction) {
+        String node = "bettermob.faction." + faction;
+        if (registeredFactionPermissions.add(node) && Bukkit.getPluginManager().getPermission(node) == null) {
+            Bukkit.getPluginManager().addPermission(new org.bukkit.permissions.Permission(node, org.bukkit.permissions.PermissionDefault.FALSE));
+        }
+        return node;
+    }
+
+    /** Gleiche Fraktion, wenn mindestens einer ein Mob mit Faction: ist; zwei Spieler sind nie "gleich". */
     boolean sameFaction(Entity first, Entity second) {
         String faction = factionOf(first);
-        return faction != null && faction.equals(factionOf(second));
+        if (faction != null) return inFaction(second, faction);
+        faction = factionOf(second);
+        return faction != null && inFaction(first, faction);
     }
 
     MobDefinition definitionOf(UUID entityId) {
