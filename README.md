@@ -16,6 +16,27 @@ small skill engine for AI behavior, triggers, and MythicMobs-compatible skill sy
   can use either engine (or both, for different mobs), chosen per `Skills:` line via
   `model{}` (BetterModel) or `modelengine{}` (ModelEngine).
 
+## Model engine support
+
+A mob's model comes from [BetterModel](https://modrinth.com/plugin/bettermodel) or
+[ModelEngine](https://www.spigotmc.org/resources/model-engine-4.108821/). Both are optional and
+independent: each uses its own model IDs, and a model must exist in the engine you point at it.
+
+| Feature | BetterModel | ModelEngine |
+|---|---|---|
+| Attach a model with `model{mid=...}` | Yes | - |
+| Attach a model with `modelengine{mid=...}` | - | Yes |
+| `Model:` field in the mob file (automatic attach on spawn/load) | Yes | No, use a `modelengine{}` line |
+| Hide the vanilla body while a model is attached | Yes | Yes |
+| Model reattached after restart/chunk load (`~onLoad`) | Yes | Yes, with a `modelengine{}` line on `~onLoad` |
+| `state{s=...}` plays a model animation | Yes | No |
+| `mountmodel{seat=...}` (rideable seats with WASD control) | Yes | No |
+| `@ModelPart{p=<bone>}` targeter (bone position) | Yes | No, falls back to chest height |
+| `bodyrotation{...}` head/body turn limits | Yes | No, ignored |
+
+Mechanics that need BetterModel simply do nothing on a ModelEngine mob (`mountmodel` logs a
+warning) instead of failing. Using both engines for different mobs on one server works.
+
 ## Building
 
 ```bash
