@@ -62,11 +62,14 @@ plugins/BetterMob/
 │   └── my_skill.yml
 ├── items/                # default item files
 │   └── my_item.yml
+├── droptables/           # default drop tables
+│   └── my_drops.yml
 └── packs/
     └── some_pack/
         ├── mobs/
         ├── skills/
-        └── items/
+        ├── items/
+        └── droptables/
 ```
 
 The flat `mobs/`/`skills/` folders are always loaded. Each subfolder under `packs/`
@@ -163,6 +166,34 @@ nm_pack_starter_pack:
 `/bettermob give <item> [player] [amount]` hands them out. Right-clicking one runs its
 `~onUse` skills with the player as caster. The same item ids can be used as a mob's
 `Options.ItemHead`. Furniture settings on an item (`Type: FURNITURE`) are ignored.
+
+## Drop tables
+
+`droptables/*.yml` (and each pack's `DropTables/`) define what a mob drops on death:
+
+```yaml
+nm_bison_drops:
+  MinItems: 2           # at least / at most this many item entries drop
+  MaxItems: 3
+  Drops:
+  - EXP 5-11 100%       # experience, not counted towards MinItems/MaxItems
+  - LEATHER 4-5 80%     # <item> <amount or range> <chance>
+  - nm_bison_fur 2-3 40%
+```
+
+A line is `<what> <amount> <chance>`. The amount is a number or a range (`2-4`) and the chance is
+`80%` or `0.8`; both are optional (1 piece, 100%). `<what>` is `EXP`, another drop table, a
+registered [item](#items) or a Vanilla material. Point a mob at a table (or write drops directly)
+with `Drops:`:
+
+```yaml
+Drops:
+- nm_bison_drops
+- DIAMOND 1 5%
+```
+
+`PreventOtherDrops: true` removes the vanilla drops **and** the vanilla experience, so only the
+mob's own `Drops:` remain.
 
 ## Skills
 
