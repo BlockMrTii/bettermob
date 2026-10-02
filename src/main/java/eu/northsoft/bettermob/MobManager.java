@@ -201,6 +201,14 @@ final class MobManager {
     void fireTrigger(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
                       LivingEntity trigger, Cancellable event) {
         if (skillEngine == null) return;
+        String auraKind = switch (type) {
+            case DAMAGED -> "ondamaged";
+            case ATTACK -> "onattack";
+            case DEATH -> "ondeath";
+            case SHOOT -> "onshoot";
+            default -> null;
+        };
+        if (auraKind != null) skillEngine.fireAuras(entity, auraKind, trigger, event);
         SkillContext context = new SkillContext(entity, trigger, event);
         for (MobDefinition.SkillTrigger skillTrigger : definition.skillTriggers) {
             if (skillTrigger.trigger() == type) skillEngine.runStep(skillTrigger.step(), context);
