@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 
 /**
  * Reflection-Hook, damit BetterMob auch ohne installierte BetterModel-API laden kann.
@@ -169,6 +170,45 @@ final class BetterModelHook {
         } catch (ReflectiveOperationException | RuntimeException exception) {
             plugin.getLogger().warning("@ModelPart '" + boneName + "' fehlgeschlagen: " + exception);
             return null;
+        }
+    }
+
+    private static final Map<String, String> ROTATION_SETTERS = Map.of(
+            "headuneven", "setHeadUneven", "bodyuneven", "setBodyUneven", "playermode", "setPlayerMode",
+            "minbody", "setMinBody", "maxbody", "setMaxBody", "minhead", "setMinHead", "maxhead", "setMaxHead",
+            "stable", "setStable", "duration", "setRotationDuration", "delay", "setRotationDelay");
+
+    boolean bodyRotation(Object tracker, Map<String, String> params) {
+        if (tracker == null) return false;
+        try {
+            Object rotator = tracker.getClass().getMethod("bodyRotator").invoke(tracker);
+            Method setValue = rotator.getClass().getMethod("setValue", java.util.function.Consumer.class);
+            setValue.invoke(rotator, (java.util.function.Consumer<Object>) data -> {
+                for (Map.Entry<String, String> entry : params.entrySet()) {
+                    String setter = ROTATION_SETTERS.get(entry.getKey());
+                    if (setter != null) applySetter(data, setter, entry.getValue());
+                }
+            });
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException exception) {
+            plugin.getLogger().warning("BodyRotation fehlgeschlagen: " + exception);
+            return false;
+        }
+    }
+
+    private void applySetter(Object data, String name, String value) {
+        for (Method method : data.getClass().getMethods()) {
+            if (!method.getName().equals(name) || method.getParameterCount() != 1) continue;
+            Class<?> type = method.getParameterTypes()[0];
+            try {
+                Object parsed = type == boolean.class ? Boolean.parseBoolean(value)
+                        : type == int.class ? (Object) Integer.parseInt(value.trim())
+                        : (Object) Float.parseFloat(value.trim());
+                method.invoke(data, parsed);
+            } catch (ReflectiveOperationException | NumberFormatException exception) {
+                plugin.getLogger().warning("BodyRotation: '" + value + "' ist kein gueltiger Wert fuer " + name + ".");
+            }
+            return;
         }
     }
 
