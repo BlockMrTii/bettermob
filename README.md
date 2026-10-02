@@ -197,7 +197,8 @@ registered in), `mountmodel` (BetterModel seats — the rider gets actual WASD
 control), `potion`, `look`, `breakblock`, `state` (plays a BetterModel animation),
 `summon` (spawns another registered mob), `remove`, `command`, `gcd`, `randomskill`
 (`s=a,b,c`), `skill`, `sudoskill` (run a skill with the target as caster), `cancelevent`,
-`cancelskill`, `effect:particles` (`p`, `amount`, `hS`, `vS`, `speed`; alias `e:p`),
+`cancelskill`, `damage` (`amount`), `throw` (`velocity`, `velocityY`), `lunge` (`velocity`),
+`setblock` (`m`), `effect:particles` (`p`, `amount`, `hS`, `vS`, `speed`; alias `e:p`),
 `effect:particlering` (`particle`, `radius`, `points`, ...), `spin` (`duration` ticks,
 `velocity` degrees/tick), `takeitem` (`i=<item>;a=<amount>`, removes a registered item
 from the target player).
@@ -210,14 +211,14 @@ and `cd=<seconds>` (cooldown per caster). `skill`/`randomskill` read their skill
 plugin and uses its own model IDs — these are separate registries from BetterModel's,
 so a model has to exist in whichever engine you point at it.
 
-**Conditions:** `offgcd`, `onground`, `blocktype{type=...}`. Any mechanic line can
+**Conditions:** `offgcd`, `onground`, `onblock{b=...}` (block under the caster), `blocktype{type=...}`. Any mechanic line can
 end with `?condition{...}` (or `?!condition{...}` to negate) to run only when that
 check passes; unsupported conditions (this plugin has no variable/faction system)
 are logged and treated as passing, so the line still runs.
 
 **Targeters:** `@self`, `@trigger`/`@target`, `@ObstructingBlock`, `@Forward{f=1.5;
 uel=true;yoffset=-1;rotate=-22}` (point in front of the caster, `rotate` swings it sideways,
-positive = right), `@SelfLocation`, `@PIR{r=2}` (nearest player within `r`).
+positive = right), `@SelfLocation{x;y;z}` (caster position, optionally shifted), `@PIR{r=2}` (nearest player within `r`).
 
 Unknown mechanics/conditions/targeters are logged with a clear warning and skipped
 rather than crashing the skill or the server.
