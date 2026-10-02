@@ -18,6 +18,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.SoundCategory;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.entity.AbstractArrow;
@@ -382,7 +383,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             case "randomskill" -> randomSkill(context, p);
             case "remove" -> remove(target);
             case "command" -> command(context, p);
-            case "summon" -> summon(target, p);
+            case "summon" -> summon(context, target, p);
             case "mountmodel" -> mountModel(context, target, p);
             case "effect:particles", "e:p", "particles" -> particles(mechanic, context, target, p);
             case "effect:particlering" -> particleRing(target, p);
@@ -729,6 +730,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private static final String TAG_PREFIX = "bettermob_tag_";
+    private static final String OWNER_PREFIX = "bettermob_owner_";
 
     private void registerAura(Target target, Map<String, String> p, String kind) {
         String name = firstParam(p, "auraname", "name", "aura");
@@ -957,7 +959,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         Tasks.runGlobal(plugin, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command));
     }
 
-    private void summon(Target target, Map<String, String> p) {
+    private void summon(SkillContext context, Target target, Map<String, String> p) {
         String mobId = firstParam(p, "type", "t", "mob", "m");
         if (mobId == null) return;
         MobDefinition definition = mobManager.registry().get(mobId.trim());
@@ -965,7 +967,8 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             plugin.getLogger().warning("summon: Mob '" + mobId + "' ist nicht registriert.");
             return;
         }
-        mobManager.spawn(definition, target.location());
+        LivingEntity spawned = mobManager.spawn(definition, target.location());
+        if (spawned != null) spawned.addScoreboardTag(OWNER_PREFIX + context.caster().getUniqueId());
     }
 
     private void mountModel(SkillContext context, Target target, Map<String, String> p) {
@@ -1002,37 +1005,91 @@ public final class SkillEngine implements org.bukkit.event.Listener {
                 yield Target.ofLocation(bone != null ? bone
                         : context.caster().getLocation().add(0, context.caster().getHeight() * 0.6, 0));
             }
-            case "pir", "playersinradius" -> nearestPlayer(context.caster(), targeterParams);
-            case "self" -> Target.ofEntity(context.caster());
+            case "self", "caster", "mob" -> Target.ofEntity(context.caster());
+            case "origin" -> Target.ofLocation(context.origin() != null ? context.origin() : context.caster().getLocation());
+            case "targetlocation", "tl" -> Target.ofLocation((context.trigger() != null ? context.trigger() : context.caster()).getLocation());
+            case "location" -> fixedLocation(context.caster(), targeterParams);
+            case "owner", "parent" -> owner(context.caster());
 
-            default -> context.targetIsTrigger() && context.trigger() != null
-                    ? Target.ofEntity(context.trigger()) : Target.ofEntity(context.caster());
+            default -> {
+                if (!targeter.isEmpty()) warnUnknownTargeter(targeter);
+                yield context.targetIsTrigger() && context.trigger() != null
+                        ? Target.ofEntity(context.trigger()) : Target.ofEntity(context.caster());
+            }
         };
+    }
+
+    private final Set<String> warnedTargeters = ConcurrentHashMap.newKeySet();
+
+    private void warnUnknownTargeter(String name) {
+        if (warnedTargeters.add(name)) plugin.getLogger().warning("Unknown targeter '@" + name + "', the line targets the default target instead.");
+    }
+
+    private Target fixedLocation(LivingEntity caster, Map<String, String> p) {
+        World world = caster.getWorld();
+        String name = firstParam(p, "w", "world");
+        if (name != null && Bukkit.getWorld(name.trim()) != null) world = Bukkit.getWorld(name.trim());
+        return Target.ofLocation(new Location(world, parseFloat(p.get("x"), 0f), parseFloat(p.get("y"), 0f), parseFloat(p.get("z"), 0f)));
+    }
+
+    private Target owner(LivingEntity caster) {
+        for (String tag : caster.getScoreboardTags()) {
+            if (!tag.startsWith(OWNER_PREFIX)) continue;
+            try {
+                Entity owner = Bukkit.getEntity(UUID.fromString(tag.substring(OWNER_PREFIX.length())));
+                if (owner != null) return Target.ofEntity(owner);
+            } catch (IllegalArgumentException exception) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private List<Target> resolveAll(String targeter, Map<String, String> params, SkillContext context) {
         String key = targeter.toLowerCase(Locale.ROOT);
-        boolean nearOrigin = key.equals("entitiesnearorigin") || key.equals("eno");
-        if (nearOrigin || key.equals("entitiesinradius") || key.equals("eir")) {
-            Location center = nearOrigin && context.origin() != null ? context.origin() : context.caster().getLocation();
-            return entitiesInRadius(center, params, context);
+        switch (key) {
+            case "entitiesnearorigin", "eno" -> {
+                Location center = context.origin() != null ? context.origin() : context.caster().getLocation();
+                return entitiesInRadius(center, params, context, false, Integer.MAX_VALUE);
+            }
+            case "entitiesinradius", "eir", "livingentitiesinradius", "leir" -> {
+                return entitiesInRadius(context.caster().getLocation(), params, context, false, Integer.MAX_VALUE);
+            }
+            case "playersinradius" -> {
+                return entitiesInRadius(context.caster().getLocation(), params, context, true, Integer.MAX_VALUE);
+            }
+            case "pir" -> {
+                return entitiesInRadius(context.caster().getLocation(), params, context, true, 1);
+            }
+            default -> {
+                Target single = resolve(targeter, params, context);
+                return single == null ? List.of() : List.of(single);
+            }
         }
-        Target single = resolve(targeter, params, context);
-        return single == null ? List.of() : List.of(single);
     }
 
-    private List<Target> entitiesInRadius(Location center, Map<String, String> params, SkillContext context) {
-        double radius = parseFloat(params.get("r"), 5f);
+    private List<Target> entitiesInRadius(Location center, Map<String, String> params, SkillContext context, boolean playersOnly, int defaultLimit) {
+        double radius = parseFloat(firstParam(params, "r", "radius"), playersOnly ? 10f : 5f);
         List<String> conditions = params.containsKey("conditions") ? splitInline(params.get("conditions")) : List.of();
         List<LivingEntity> hits = new ArrayList<>();
         for (Entity entity : center.getWorld().getNearbyEntities(center, radius, radius, radius)) {
             if (!(entity instanceof LivingEntity living) || entity instanceof ArmorStand || living.isDead()) continue;
+            if (playersOnly && !(entity instanceof Player)) continue;
             if (living.getLocation().distanceSquared(center) > radius * radius) continue;
             if (candidateMatches(living, conditions, context)) hits.add(living);
         }
-        hits.sort(java.util.Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(center)));
+        String sort = params.getOrDefault("sort", "nearest").toLowerCase(Locale.ROOT);
+        switch (sort) {
+            case "random" -> java.util.Collections.shuffle(hits);
+            case "farthest" -> hits.sort(java.util.Comparator.comparingDouble((LivingEntity entity) -> entity.getLocation().distanceSquared(center)).reversed());
+            default -> hits.sort(java.util.Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(center)));
+        }
+        int limit = parseInt(params.get("limit"), defaultLimit);
         List<Target> targets = new ArrayList<>();
-        for (LivingEntity hit : hits) targets.add(Target.ofEntity(hit));
+        for (LivingEntity hit : hits) {
+            if (targets.size() >= limit) break;
+            targets.add(Target.ofEntity(hit));
+        }
         return targets;
     }
 
@@ -1043,6 +1100,8 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             boolean actual = switch (condition.name()) {
                 case "isplayer" -> candidate instanceof Player;
                 case "iscaster" -> candidate.equals(context.caster());
+                case "ismob" -> !(candidate instanceof Player);
+                case "hastag" -> candidate.getScoreboardTags().contains(TAG_PREFIX + conditionParam(condition.params(), "t", "tag", "n"));
                 case "faction" -> hasFaction(candidate, conditionParam(condition.params(), "faction", "f", "name"));
                 default -> {
                     plugin.getLogger().warning("Targeter-Condition '" + condition.name() + "' wird nicht unterstuetzt - wird ignoriert.");
@@ -1052,21 +1111,6 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             if (actual != (condition.expected() == null || condition.expected())) return false;
         }
         return true;
-    }
-
-    private Target nearestPlayer(LivingEntity caster, Map<String, String> p) {
-        double radius = parseFloat(p.get("r"), 10f);
-        Player nearest = null;
-        double best = Double.MAX_VALUE;
-        for (Entity entity : caster.getNearbyEntities(radius, radius, radius)) {
-            if (!(entity instanceof Player player)) continue;
-            double distance = player.getLocation().distanceSquared(caster.getLocation());
-            if (distance < best) {
-                best = distance;
-                nearest = player;
-            }
-        }
-        return nearest == null ? null : Target.ofEntity(nearest);
     }
 
     private Location forwardLocation(LivingEntity caster, Map<String, String> p) {
