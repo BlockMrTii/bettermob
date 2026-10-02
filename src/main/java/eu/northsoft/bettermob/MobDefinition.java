@@ -26,12 +26,13 @@ final class MobDefinition {
     final List<SkillTrigger> skillTriggers;
     /** Die "Drops:"-Liste des Mobs als namenlose Tabelle, oder null wenn er keine hat. */
     final DropTable drops;
+    final String faction;
 
     MobDefinition(String id, EntityType type, String displayName, String modelId,
                   double health, double damage, boolean removeAi,
                   List<String> aiGoalSelectors, List<String> aiTargetSelectors,
                   Options options, boolean threatTable, Map<DamageCause, Double> damageModifiers,
-                  List<SkillTrigger> skillTriggers, DropTable drops) {
+                  List<SkillTrigger> skillTriggers, DropTable drops, String faction) {
         this.id = id;
         this.type = type;
         this.displayName = displayName;
@@ -46,6 +47,7 @@ final class MobDefinition {
         this.damageModifiers = damageModifiers;
         this.skillTriggers = skillTriggers;
         this.drops = drops;
+        this.faction = faction;
     }
 
     MobInfo toInfo() {
