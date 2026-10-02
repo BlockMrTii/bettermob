@@ -156,15 +156,21 @@ final class BetterModelHook {
         if (tracker == null) return null;
         try {
             Object bone = tracker.getClass().getMethod("bone", String.class).invoke(tracker, boneName);
-            if (bone == null) return null;
+            if (bone == null) {
+                plugin.getLogger().warning("@ModelPart: Bone '" + boneName + "' existiert nicht am Modell.");
+                return null;
+            }
             Object offset = bone.getClass().getMethod("worldPosition").invoke(bone);
             org.bukkit.Location origin = (org.bukkit.Location) tracker.getClass().getMethod("location").invoke(tracker);
             Class<?> vector = offset.getClass();
             double x = ((Number) vector.getField("x").get(offset)).doubleValue();
             double y = ((Number) vector.getField("y").get(offset)).doubleValue();
             double z = ((Number) vector.getField("z").get(offset)).doubleValue();
+            plugin.getLogger().info("@ModelPart " + boneName + ": Offset " + String.format("%.2f %.2f %.2f", x, y, z)
+                    + " ab " + origin.getBlockX() + " " + origin.getBlockY() + " " + origin.getBlockZ());
             return origin.clone().add(x, y, z);
         } catch (ReflectiveOperationException | RuntimeException exception) {
+            plugin.getLogger().warning("@ModelPart '" + boneName + "' fehlgeschlagen: " + exception);
             return null;
         }
     }
