@@ -38,7 +38,8 @@ final class MobListener implements Listener {
         // passiert in onRemove, wenn der Body wirklich aus der Welt verschwindet.
         MobDefinition definition = manager.definitionOf(event.getEntity().getUniqueId());
         if (definition == null) return;
-        if (definition.options.preventOtherDrops()) {
+        // Eigene Drops ersetzen die Vanilla-Drops (und -XP) - dafuer braucht es kein PreventOtherDrops.
+        if (definition.options.preventOtherDrops() || definition.drops != null) {
             event.getDrops().clear();
             event.setDroppedExp(0);
         }
