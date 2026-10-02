@@ -38,7 +38,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * ein, die im Pack vorkommen; unbekannte Mechanics/Conditions werden geloggt statt den
  * Server zum Absturz zu bringen.
  */
-final class SkillEngine {
+final class SkillEngine implements org.bukkit.event.Listener {
     private final BetterMobPlugin plugin;
     private final SkillRegistry registry;
     private final MobManager mobManager;
@@ -58,7 +58,7 @@ final class SkillEngine {
     private static final Set<String> BUILTIN_MECHANICS = Set.of("cancelskill", "cancelevent", "skill", "look", "sound",
             "state", "potion", "breakblock", "gcd", "model", "modelengine", "randomskill", "remove", "command",
             "summon", "mountmodel", "delay", "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "sudoskill", "damage", "throw", "lunge", "setblock", "equip", "aura", "ondamaged", "onattack", "ontick", "ondeath",
-            "onshoot", "bodyrotation", "addtag", "removetag", "ignite", "totem");
+            "onshoot", "bodyrotation", "addtag", "removetag", "ignite", "totem", "shoot", "stun", "setnodamageticks");
 
     private record CustomMechanicEntry(Plugin owner, CustomMechanic mechanic) {}
 
@@ -69,6 +69,51 @@ final class SkillEngine {
         this.betterModel = betterModel;
         this.modelEngine = modelEngine;
         this.items = items;
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+    }
+
+    /** Pfeil eines shoot{oh=[...]}: die Treffer-Zeilen laufen mit dem Schuetzen als Caster und dem Getroffenen als Ziel. */
+    private record PendingShot(LivingEntity shooter, List<SkillStep> onHit) {}
+
+    private final Map<UUID, PendingShot> shots = new ConcurrentHashMap<>();
+
+    @org.bukkit.event.EventHandler
+    public void onProjectileHit(org.bukkit.event.entity.ProjectileHitEvent event) {
+        PendingShot shot = shots.remove(event.getEntity().getUniqueId());
+        if (shot == null) return;
+        if (event.getHitEntity() instanceof LivingEntity hit && !hit.equals(shot.shooter())) {
+            executeSteps(shot.onHit(), 0, new SkillContext(shot.shooter(), hit, null).withTrigger(hit));
+        }
+    }
+
+    /**
+     * shoot{type=arrow;velocity;damage;oh=[...]}: schiesst einen Pfeil auf den Ausloeser bzw. das Ziel des Mobs.
+     * ponytail: nur Pfeile; Geschwindigkeit = velocity*2 (grob wie Vanilla-Bogen), Schaden = damage-Param.
+     */
+    private void shoot(SkillContext context, Map<String, String> p) {
+        LivingEntity caster = context.caster();
+        LivingEntity aim = context.trigger();
+        if (aim == null && caster instanceof Mob mob) aim = mob.getTarget();
+        if (aim == null) return;
+        double speed = Math.max(0.1, parseFloat(p.get("velocity"), 1f) * 2);
+        Vector direction = aim.getEyeLocation().toVector().subtract(caster.getEyeLocation().toVector()).normalize();
+        double damage = parseFloat(p.get("damage"), 2f);
+        caster.launchProjectile(org.bukkit.entity.Arrow.class, direction.multiply(speed), arrow -> {
+            arrow.setDamage(damage / speed);
+            arrow.setPickupStatus(org.bukkit.entity.AbstractArrow.PickupStatus.DISALLOWED);
+            String hit = p.get("oh");
+            if (hit != null) {
+                shots.put(arrow.getUniqueId(), new PendingShot(caster, inlineSkills.computeIfAbsent(hit, this::parseInline)));
+                Tasks.runLater(plugin, arrow, 400L, () -> shots.remove(arrow.getUniqueId()));
+            }
+        });
+    }
+
+    /** stun{d}: der Mob steht d Ticks still (KI aus). */
+    private void stun(Target target, Map<String, String> p) {
+        if (!(target.entity() instanceof Mob mob)) return;
+        mob.setAware(false);
+        Tasks.runLater(plugin, mob, parseInt(firstParam(p, "d", "duration", "t"), 20), () -> mob.setAware(true));
     }
 
     boolean registerMechanic(Plugin owner, String name, CustomMechanic mechanic) {
@@ -249,6 +294,11 @@ final class SkillEngine {
             case "removetag" -> tag(target, p, false);
             case "bodyrotation" -> { }
             case "ignite" -> ignite(target, p);
+            case "shoot" -> shoot(context, p);
+            case "stun" -> stun(target, p);
+            case "setnodamageticks" -> {
+                if (target.entity() instanceof LivingEntity living) living.setNoDamageTicks(parseInt(firstParam(p, "ticks", "t"), 0));
+            }
             case "totem" -> totem(context, target, p);
             default -> {
                 CustomMechanicEntry custom = customMechanics.get(mechanic.name());
@@ -466,7 +516,16 @@ final class SkillEngine {
 
     private void particles(Target target, Map<String, String> p) {
         Particle particle = particle(firstParam(p, "p", "particle"));
-        if (particle != null) spawnParticles(target.location(), particle, p);
+        if (particle == null) return;
+        Location at = target.location().clone().add(0, parseFloat(firstParam(p, "y", "yoffset"), 0f), 0);
+        spawnParticles(at, particle, p);
+        // repeat=N;repeatInterval=T: der Schub wird N weitere Male alle T Ticks wiederholt.
+        int repeat = parseInt(p.get("repeat"), 0);
+        long interval = Math.max(1, parseInt(p.get("repeatinterval"), 1));
+        Entity anchor = target.entity() != null ? target.entity() : null;
+        for (int i = 1; i <= repeat && anchor != null; i++) {
+            Tasks.runLater(plugin, anchor, i * interval, () -> spawnParticles(target.location().clone().add(0, at.getY() - target.location().getY(), 0), particle, p));
+        }
     }
 
     /** Ring aus "points" Punkten mit "radius" um das Ziel, an jedem Punkt ein Partikelschub. */
