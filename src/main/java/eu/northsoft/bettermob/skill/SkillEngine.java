@@ -20,11 +20,21 @@ import org.bukkit.Particle;
 import org.bukkit.SoundCategory;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
+import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Egg;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Fireball;
+import org.bukkit.entity.LargeFireball;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.entity.SmallFireball;
+import org.bukkit.entity.Snowball;
+import org.bukkit.entity.SpectralArrow;
+import org.bukkit.entity.Trident;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -83,17 +93,36 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         Tasks.runLater(plugin, player, 1L, () -> player.setVelocity(new Vector()));
     }
 
-    private record PendingShot(LivingEntity shooter, List<SkillStep> onHit) {}
+    private record PendingShot(LivingEntity shooter, List<SkillStep> onHit, List<SkillStep> onEnd, double damage, Runnable stopTicker) {}
 
     private final Map<UUID, PendingShot> shots = new ConcurrentHashMap<>();
+
+    private static final Map<String, Class<? extends Projectile>> PROJECTILES = Map.of(
+            "arrow", Arrow.class,
+            "spectralarrow", SpectralArrow.class,
+            "trident", Trident.class,
+            "snowball", Snowball.class,
+            "egg", Egg.class,
+            "fireball", LargeFireball.class,
+            "smallfireball", SmallFireball.class);
 
     @org.bukkit.event.EventHandler
     public void onProjectileHit(org.bukkit.event.entity.ProjectileHitEvent event) {
         PendingShot shot = shots.remove(event.getEntity().getUniqueId());
         if (shot == null) return;
+        shot.stopTicker().run();
         if (event.getHitEntity() instanceof LivingEntity hit && !hit.equals(shot.shooter())) {
-            executeSteps(shot.onHit(), 0, new SkillContext(shot.shooter(), hit, null).withTrigger(hit));
+            if (shot.damage() > 0) {
+                applyingDamage.set(true);
+                try {
+                    hit.damage(shot.damage(), shot.shooter());
+                } finally {
+                    applyingDamage.set(false);
+                }
+            }
+            if (shot.onHit() != null) executeSteps(shot.onHit(), 0, new SkillContext(shot.shooter(), hit, null).withTrigger(hit));
         }
+        if (shot.onEnd() != null) executeSteps(shot.onEnd(), 0, SkillContext.of(shot.shooter()).withOrigin(event.getEntity().getLocation()));
     }
 
     private void shoot(SkillContext context, Map<String, String> p) {
@@ -101,16 +130,58 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         LivingEntity aim = context.trigger();
         if (aim == null && caster instanceof Mob mob) aim = mob.getTarget();
         if (aim == null) return;
+
+        String typeName = p.getOrDefault("type", "arrow").toLowerCase(Locale.ROOT).replace("_", "");
+        Class<? extends Projectile> type = PROJECTILES.get(typeName);
+        if (type == null) {
+            plugin.getLogger().warning("shoot: unknown projectile type '" + p.get("type") + "', using arrow.");
+            type = Arrow.class;
+        }
+
         double speed = Math.max(0.1, parseFloat(p.get("velocity"), 1f) * 2);
-        Vector direction = aim.getEyeLocation().toVector().subtract(caster.getEyeLocation().toVector()).normalize();
         double damage = parseFloat(p.get("damage"), 2f);
-        caster.launchProjectile(org.bukkit.entity.Arrow.class, direction.multiply(speed), arrow -> {
-            arrow.setDamage(damage / speed);
-            arrow.setPickupStatus(org.bukkit.entity.AbstractArrow.PickupStatus.DISALLOWED);
-            String hit = p.get("oh");
-            if (hit != null) {
-                shots.put(arrow.getUniqueId(), new PendingShot(caster, inlineSkills.computeIfAbsent(hit, this::parseInline)));
-                Tasks.runLater(plugin, arrow, 400L, () -> shots.remove(arrow.getUniqueId()));
+        double spread = Math.toRadians(parseFloat(p.get("spread"), 0f));
+        boolean gravity = !"false".equalsIgnoreCase(p.get("gravity"));
+        Vector direction = aim.getEyeLocation().toVector().subtract(caster.getEyeLocation().toVector()).normalize();
+        if (spread > 0) {
+            ThreadLocalRandom random = ThreadLocalRandom.current();
+            direction.add(new Vector(random.nextDouble(-spread, spread), random.nextDouble(-spread, spread), random.nextDouble(-spread, spread))).normalize();
+        }
+        Vector heading = direction.clone();
+        String onHit = p.get("oh");
+        String onEnd = p.get("oe");
+        String onTick = p.get("ot");
+        long interval = Math.max(1, parseInt(firstParam(p, "i", "interval"), 5));
+
+        caster.launchProjectile(type, direction.multiply(speed), projectile -> {
+            double extraDamage = damage;
+            if (projectile instanceof AbstractArrow arrow) {
+                arrow.setDamage(damage / speed);
+                arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+                extraDamage = 0;
+            }
+            if (projectile instanceof Fireball fireball) {
+                fireball.setDirection(heading);
+                fireball.setYield(0);
+                fireball.setIsIncendiary(false);
+            }
+            if (!gravity) projectile.setGravity(false);
+
+            Runnable[] stop = {() -> { }};
+            if (onTick != null) {
+                List<SkillStep> tickSteps = inlineSkills.computeIfAbsent(onTick, this::parseInline);
+                stop[0] = Tasks.runTimer(plugin, projectile, interval, interval,
+                        () -> executeSteps(tickSteps, 0, SkillContext.of(caster).withOrigin(projectile.getLocation())));
+            }
+            if (onHit != null || onEnd != null || extraDamage > 0 || onTick != null) {
+                shots.put(projectile.getUniqueId(), new PendingShot(caster,
+                        onHit == null ? null : inlineSkills.computeIfAbsent(onHit, this::parseInline),
+                        onEnd == null ? null : inlineSkills.computeIfAbsent(onEnd, this::parseInline),
+                        extraDamage, () -> stop[0].run()));
+                Tasks.runLater(plugin, projectile, 400L, () -> {
+                    shots.remove(projectile.getUniqueId());
+                    stop[0].run();
+                });
             }
         });
     }
