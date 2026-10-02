@@ -68,14 +68,15 @@ final class MobDefinition {
      * "skill{s=<id>}" eine Skill-Datei aus skills/ aufrufen.
      */
     record SkillTrigger(SkillStep step, Trigger trigger, int timerTicks) {
-        private static final Pattern PATTERN = Pattern.compile("^(.*\\S)\\s+~on(\\w+?)(?::(\\d+))?\\s*$", Pattern.CASE_INSENSITIVE);
+        // Hinter dem Trigger darf noch eine Bedingung stehen: "... ~onDamaged ?hasaura{n=spawn}".
+        private static final Pattern PATTERN = Pattern.compile("^(.*\\S)\\s+~on(\\w+?)(?::(\\d+))?(?:\\s+(\\?!?\\w+(?:\\{.*})?))?\\s*$", Pattern.CASE_INSENSITIVE);
 
         static SkillTrigger parse(String line) {
             Matcher matcher = PATTERN.matcher(line.trim());
             if (!matcher.matches()) return null;
             Trigger trigger = Trigger.parse(matcher.group(2));
             if (trigger == null) return null;
-            SkillStep step = SkillStep.parse(matcher.group(1));
+            SkillStep step = SkillStep.parse(matcher.group(4) == null ? matcher.group(1) : matcher.group(1) + " " + matcher.group(4));
             if (step == null) return null;
             int ticks = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 20;
             return new SkillTrigger(step, trigger, ticks);

@@ -156,6 +156,7 @@ final class MobManager {
     }
 
     void release(Entity entity) {
+        if (skillEngine != null) skillEngine.forget(entity.getUniqueId());
         Object tracker = trackers.remove(entity.getUniqueId());
         if (tracker != null) betterModel.close(tracker);
         Object modelEngineTracker = modelEngineTrackers.remove(entity.getUniqueId());
