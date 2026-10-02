@@ -165,8 +165,6 @@ final class BetterModelHook {
             double x = ((Number) vector.getField("x").get(offset)).doubleValue();
             double y = ((Number) vector.getField("y").get(offset)).doubleValue();
             double z = ((Number) vector.getField("z").get(offset)).doubleValue();
-            plugin.getLogger().info("@ModelPart " + boneName + ": Offset " + String.format("%.2f %.2f %.2f", x, y, z)
-                    + " ab " + origin.getBlockX() + " " + origin.getBlockY() + " " + origin.getBlockZ());
             return origin.clone().add(x, y, z);
         } catch (ReflectiveOperationException | RuntimeException exception) {
             plugin.getLogger().warning("@ModelPart '" + boneName + "' fehlgeschlagen: " + exception);
