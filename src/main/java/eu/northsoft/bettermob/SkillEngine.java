@@ -632,7 +632,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
         Vector away = thrown.getLocation().toVector().subtract(context.caster().getLocation().toVector()).setY(0);
         if (away.lengthSquared() < 1e-6) away = context.caster().getLocation().getDirection().setY(0);
         thrown.setVelocity(away.normalize().multiply(parseFloat(firstParam(p, "velocity", "v"), 4f) / 10.0)
-                .setY(parseFloat(firstParam(p, "velocityy", "vy"), 0f)));
+                .setY(parseFloat(firstParam(p, "velocityy", "vy"), 0f) / 10.0));
     }
 
     /** Der Caster springt mit "velocity" Bloecken pro Tick auf das Ziel zu. */
