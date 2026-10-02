@@ -1,0 +1,36 @@
+name: Pack compatibility
+description: A MythicMobs or MysticMobs pack does not load or behave correctly
+labels: [packs]
+body:
+  - type: input
+    id: pack
+    attributes:
+      label: Pack name and link
+      description: Name of the pack and where it can be downloaded.
+    validations:
+      required: true
+  - type: textarea
+    id: broken
+    attributes:
+      label: What is broken?
+      description: Which mobs, skills or items are missing or behave differently?
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Console log
+      description: Warnings about unknown mechanics, conditions, targeters or AI goals after `/bettermob reload`.
+      render: text
+  - type: textarea
+    id: lines
+    attributes:
+      label: Failing YAML lines
+      description: The mechanic or skill lines that are not supported.
+      render: yaml
+  - type: input
+    id: version
+    attributes:
+      label: BetterMob version
+    validations:
+      required: true

@@ -1,0 +1,44 @@
+name: Bug report
+description: Something in BetterMob does not work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Command used (e.g. `/bettermob spawn <id>`), what you did, what you saw.
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Mob / skill / pack YAML
+      description: The relevant part of the mob, skill or pack file.
+      render: yaml
+  - type: textarea
+    id: log
+    attributes:
+      label: Console log
+      description: Warnings and errors from the console, from startup or reload until the problem happens.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: BetterMob version
+      description: Output of `/version BetterMob`, or the jar name.
+    validations:
+      required: true
+  - type: input
+    id: server
+    attributes:
+      label: Server software and version
+      description: e.g. Paper 1.21.11, plus BetterModel / ModelEngine versions if a model is involved.
+    validations:
+      required: true
