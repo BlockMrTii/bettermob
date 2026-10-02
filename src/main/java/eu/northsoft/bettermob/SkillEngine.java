@@ -72,6 +72,14 @@ final class SkillEngine implements org.bukkit.event.Listener {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
+    /** Der Wurf eines Skills darf nicht ueber den Tod hinaus wirken: Respawnende starten ohne Restgeschwindigkeit. */
+    @org.bukkit.event.EventHandler
+    public void onRespawn(org.bukkit.event.player.PlayerRespawnEvent event) {
+        Player player = event.getPlayer();
+        player.setVelocity(new Vector());
+        Tasks.runLater(plugin, player, 1L, () -> player.setVelocity(new Vector()));
+    }
+
     /** Pfeil eines shoot{oh=[...]}: die Treffer-Zeilen laufen mit dem Schuetzen als Caster und dem Getroffenen als Ziel. */
     private record PendingShot(LivingEntity shooter, List<SkillStep> onHit) {}
 
@@ -628,7 +636,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
      */
     private void throwTarget(SkillContext context, Target target, Map<String, String> p) {
         Entity thrown = target.entity();
-        if (thrown == null) return;
+        if (thrown == null || thrown instanceof LivingEntity living && living.isDead()) return;
         Vector away = thrown.getLocation().toVector().subtract(context.caster().getLocation().toVector()).setY(0);
         if (away.lengthSquared() < 1e-6) away = context.caster().getLocation().getDirection().setY(0);
         thrown.setVelocity(away.normalize().multiply(parseFloat(firstParam(p, "velocity", "v"), 4f) / 10.0)
