@@ -69,8 +69,16 @@ tagged releases above are the stable ones.
 | `/bettermob reload` | Reload config, mobs, skills, and packs |
 | `/bettermob skill <id> [player]` | Manually run a registered skill, bypassing its normal triggers |
 | `/bettermob give <item> [player] [amount]` | Give a registered item (see [Items](#items)) |
+| `/bettermob debug [off\|info\|verbose\|filter <id>\|filter clear\|chat]` | Show or change the debug output (permission `bettermob.debug`, part of `bettermob.admin`) |
 
 Alias: `/bmob`. Permission: `bettermob.admin` (default: op).
+
+**Debug:** set `Debug: off|info|verbose` in `config.yml`, or change it at runtime with `/bettermob debug`.
+`info` logs every trigger that fires (and whether the event was cancelled), every skill run with the reason it
+stopped (conditions, target conditions, cooldown, `castinstead`) and AI goals that are missing (with the goals
+the mob type has). `verbose` adds every mechanic with its targeter, target count and parameters, `cancelskill`,
+bone offsets, `shoot` and `totem`. `filter <id>` limits the output to one mob id, skill id or player name,
+`chat` also sends it to you in chat. Nothing is built or logged while debug is off.
 
 ## Folder layout
 
