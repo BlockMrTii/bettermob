@@ -300,7 +300,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
             case "aura", "ondamaged", "onattack", "ontick", "ondeath", "onshoot" -> registerAura(target, p);
             case "addtag" -> tag(target, p, true);
             case "removetag" -> tag(target, p, false);
-            case "bodyrotation" -> { }
+            case "bodyrotation" -> bodyRotation(context, p);
             case "ignite" -> ignite(target, p);
             case "shoot" -> shoot(context, p);
             case "stun" -> stun(target, p);
@@ -810,6 +810,18 @@ final class SkillEngine implements org.bukkit.event.Listener {
                     .replace("<caster.damage>", damage).replace("<caster.name>", context.caster().getName()));
         }
         return result;
+    }
+
+    private void bodyRotation(SkillContext context, Map<String, String> p) {
+        UUID id = context.caster().getUniqueId();
+        if (betterModel.bodyRotation(mobManager.trackerFor(id), p)) return;
+        java.util.concurrent.atomic.AtomicBoolean applied = new java.util.concurrent.atomic.AtomicBoolean();
+        for (int attempt = 1; attempt <= 5; attempt++) {
+            Tasks.runLater(plugin, context.caster(), attempt * 2L, () -> {
+                Object tracker = mobManager.trackerFor(id);
+                if (tracker != null && !applied.get() && betterModel.bodyRotation(tracker, p)) applied.set(true);
+            });
+        }
     }
 
     private void ignite(Target target, Map<String, String> p) {
