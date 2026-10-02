@@ -1,20 +1,14 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.pack;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Sammelt alle .yml-Dateien unter einem Ordner, beliebig tief verschachtelt. Grosse Packs
- * (z.B. nogs_menagerie) legen die meisten Mobs/Skills in Unterordnern ab wie
- * Mobs/npcs/, Mobs/companions/, Skills/cards/ - eine flache Ordnerliste wuerde davon
- * fast alles uebersehen.
- */
-final class YamlFiles {
+public final class YamlFiles {
     private YamlFiles() {}
 
-    static List<File> collect(File folder) {
+    public static List<File> collect(File folder) {
         List<File> result = new ArrayList<>();
         walk(folder, result);
         return result;

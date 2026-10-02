@@ -1,5 +1,10 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.mob;
 
+import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.drop.DropEntry;
+import eu.northsoft.bettermob.drop.DropTable;
+import eu.northsoft.bettermob.pack.PackScanner;
+import eu.northsoft.bettermob.pack.YamlFiles;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
@@ -14,26 +19,21 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Laedt mobs/*.yml - eine Datei pro Mob, Dateiname = Mob-ID, wie bei MysticMobs' Mobs-Ordner.
- * Zusaetzlich wird jeder Unterordner in packs/ mit einem eigenen mobs/-Ordner mitgeladen -
- * wie MysticMobs' Mob-Packs (siehe PackScanner).
- */
-final class MobRegistry {
+public final class MobRegistry {
     private final BetterMobPlugin plugin;
     private final File legacyFile;
     private final File folder;
     private final PackScanner packScanner;
     private final Map<String, MobDefinition> mobs = new LinkedHashMap<>();
 
-    MobRegistry(BetterMobPlugin plugin, PackScanner packScanner) {
+    public MobRegistry(BetterMobPlugin plugin, PackScanner packScanner) {
         this.plugin = plugin;
         this.packScanner = packScanner;
         this.legacyFile = new File(plugin.getDataFolder(), "mobs.yml");
         this.folder = new File(plugin.getDataFolder(), "mobs");
     }
 
-    void load() {
+    public void load() {
         migrateLegacyFile();
         if (!folder.exists()) {
             folder.mkdirs();
@@ -59,7 +59,6 @@ final class MobRegistry {
         plugin.getLogger().info(mobs.size() + " Mobs geladen.");
     }
 
-    /** Alte einzelne mobs.yml automatisch in je eine Datei pro Mob aufteilen - kein Neuschreiben noetig. */
     private void migrateLegacyFile() {
         if (!legacyFile.exists()) return;
         folder.mkdirs();
@@ -82,14 +81,6 @@ final class MobRegistry {
         plugin.getLogger().info("mobs.yml automatisch nach mobs/ migriert (Sicherung: mobs.yml.migrated).");
     }
 
-    /**
-     * Eine Datei kann entweder ein einzelner Mob sein (Type/Display/etc. direkt auf
-     * Dateiebene, ID = Dateiname) oder mehrere Mobs enthalten (jeder Top-Level-Key ist
-     * eine eigene Mob-ID mit eigenem Type/Display/etc. darunter - wie bei MysticMobs'
-     * klassischer mobs.yml). Eine Datei mit genau einem Top-Level-Key ohne "Type" auf
-     * Dateiebene wird als versehentlich falsch eingerueckter Einzel-Mob behandelt und
-     * automatisch ausgewickelt, statt stumm auf ZOMBIE/Default-Werte zurueckzufallen.
-     */
     private Map<String, ConfigurationSection> extractMobSections(File file) {
         YamlConfiguration root = YamlConfiguration.loadConfiguration(file);
         String fileId = file.getName().substring(0, file.getName().length() - 4);
@@ -109,11 +100,11 @@ final class MobRegistry {
         return result;
     }
 
-    MobDefinition get(String id) {
+    public MobDefinition get(String id) {
         return mobs.get(id.toLowerCase(Locale.ROOT));
     }
 
-    Map<String, MobDefinition> all() {
+    public Map<String, MobDefinition> all() {
         return mobs;
     }
 
@@ -168,7 +159,6 @@ final class MobRegistry {
         );
     }
 
-    /** "Drops:" eines Mobs: Zeilen wie in einer Drop-Table (auch Verweise auf Tabellen). Null, wenn leer. */
     private DropTable parseDrops(String id, List<String> lines) {
         List<DropEntry> entries = new ArrayList<>();
         for (String line : lines) {
@@ -179,7 +169,6 @@ final class MobRegistry {
         return entries.isEmpty() ? null : DropTable.anonymous(entries);
     }
 
-    /** "skill{s=xyz} ~onInteract" - ungueltige Zeilen werden uebersprungen und geloggt. */
     private List<MobDefinition.SkillTrigger> parseSkillTriggers(String id, List<String> entries) {
         List<MobDefinition.SkillTrigger> triggers = new ArrayList<>();
         for (String entry : entries) {
@@ -190,7 +179,6 @@ final class MobRegistry {
         return triggers;
     }
 
-    /** "FIRE 1.2" -> Schaden dieser Ursache wird beim Mob mit 1.2 multipliziert. */
     private Map<DamageCause, Double> parseDamageModifiers(String id, List<String> entries) {
         Map<DamageCause, Double> modifiers = new EnumMap<>(DamageCause.class);
         for (String entry : entries) {
