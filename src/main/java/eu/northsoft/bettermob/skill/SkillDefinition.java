@@ -2,7 +2,7 @@ package eu.northsoft.bettermob.skill;
 
 import java.util.List;
 
-public final class SkillDefinition {
+final class SkillDefinition {
     public final String id;
     public final List<String> conditions;
     public final List<String> targetConditions;
