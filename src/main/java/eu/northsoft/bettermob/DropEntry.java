@@ -29,7 +29,9 @@ record DropEntry(String name, int min, int max, double chance) {
         return new DropEntry(tokens[0], Math.min(amount[0], amount[1]), Math.max(amount[0], amount[1]), chance);
     }
 
-    private static int[] parseAmount(String token) {
+    private static int[] parseAmount(String rawToken) {
+        // MythicMobs schreibt Bereiche auch als "1to2".
+        String token = rawToken.replaceFirst("(?<=\\d)to(?=\\d)", "-");
         int dash = token.indexOf('-', 1);
         if (dash < 0) {
             int value = (int) Math.round(Double.parseDouble(token));

@@ -93,7 +93,9 @@ final class MobListener implements Listener {
             }
         }
         // ~onAttack: der Mob hat selbst zugeschlagen.
-        if (source instanceof LivingEntity attackerMob && !manager.inSkillDamage()) {
+        // ~onAttack ist der Nahkampf. Ein Pfeil des Mobs zaehlt nicht: sonst bricht das uebliche
+        // "CancelEvent ~onAttack" (Nahkampf unterbinden) auch den Schaden seiner eigenen Pfeile ab.
+        if (source instanceof LivingEntity attackerMob && !manager.inSkillDamage() && !(event.getDamager() instanceof Projectile)) {
             MobDefinition definition = manager.definitionOf(attackerMob.getUniqueId());
             if (definition != null) manager.fireTrigger(attackerMob, definition, MobDefinition.SkillTrigger.Trigger.ATTACK,
                     event.getEntity() instanceof LivingEntity living ? living : null, event);
