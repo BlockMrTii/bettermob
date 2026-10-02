@@ -1,2 +1,11 @@
 # Namen von Unterordnern in packs/, die beim Laden uebersprungen werden sollen.
 DisabledPacks: []
+
+# Spieler in eine Faction aufnehmen: Mobs dieser Faction greifen sie nicht an (und umgekehrt).
+# Alternativ die Permission bettermob.faction.<name> vergeben (Name klein geschrieben).
+# Beispiel:
+# factions:
+#   elite:
+#     - PlayerName
+#     - 123e4567-e89b-12d3-a456-426614174000
+factions: {}
