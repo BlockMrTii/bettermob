@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest a new mechanic, option, trigger or other improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What should BetterMob do?
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Example
+      description: A YAML snippet showing how you would like to use it.
+      render: yaml
+  - type: textarea
+    id: why
+    attributes:
+      label: Why is it needed?
+      description: The use case, or the pack that needs it.
