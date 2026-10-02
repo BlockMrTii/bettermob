@@ -90,8 +90,6 @@ final class BetterMobCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§a" + amount + "x '" + definition.id + "' gespawnt.");
     }
 
-    /** Fuehrt einen Skill unabhaengig von AI-Triggern aus - zum Testen oder um ihn an
-     *  einen Spieler statt einen gespawnten Mob zu binden. */
     private void handleSkill(CommandSender sender, String[] args) {
         if (args.length < 2) {
             sender.sendMessage("§cNutzung: /bettermob skill <id> [Spieler]");

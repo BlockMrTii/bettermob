@@ -6,7 +6,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
-/** Rechtsklick mit einem BetterMob-Item loest dessen ~onUse-Skills aus, der Spieler ist Caster und Trigger. */
 final class ItemListener implements Listener {
     private final ItemRegistry items;
     private final SkillEngine skillEngine;
@@ -18,7 +17,6 @@ final class ItemListener implements Listener {
 
     @EventHandler
     public void onUse(PlayerInteractEvent event) {
-        // Der Event feuert fuer beide Haende - nur die Haupthand zaehlt, sonst laeuft alles doppelt.
         if (event.getHand() != EquipmentSlot.HAND) return;
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 

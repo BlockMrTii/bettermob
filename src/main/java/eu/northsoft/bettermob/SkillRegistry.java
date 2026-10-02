@@ -11,11 +11,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Laedt skills/*.yml - wie bei MythicMobs duerfen mehrere zusammengehoerige Skills
- * (z.B. ein "_parse"- und ein "_activate"-Skill) in derselben Datei stehen. Zusaetzlich
- * wird jeder Unterordner in packs/ mit einem eigenen skills/-Ordner mitgeladen.
- */
 final class SkillRegistry {
     private final BetterMobPlugin plugin;
     private final File folder;
@@ -73,7 +68,6 @@ final class SkillRegistry {
         return new SkillDefinition(id, conditions, targetConditions, steps, section.getDouble("Cooldown", 0));
     }
 
-    /** MythicMobs akzeptiert sowohl den Plural- als auch den Singular-Schluessel. */
     private static List<String> stringList(ConfigurationSection section, String pluralKey, String singularKey) {
         if (section.isList(pluralKey)) return section.getStringList(pluralKey);
         if (section.isList(singularKey)) return section.getStringList(singularKey);

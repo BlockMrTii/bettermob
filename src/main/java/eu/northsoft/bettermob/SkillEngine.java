@@ -32,12 +32,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * Fuehrt SkillDefinitions aus - ein kleiner, auf die tatsaechlich gebrauchten Mechaniken
- * beschraenkter Nachbau von MythicMobs' Skill-System. Baut nur die Mechaniken/Conditions
- * ein, die im Pack vorkommen; unbekannte Mechanics/Conditions werden geloggt statt den
- * Server zum Absturz zu bringen.
- */
 final class SkillEngine implements org.bukkit.event.Listener {
     private final BetterMobPlugin plugin;
     private final SkillRegistry registry;
@@ -47,11 +41,10 @@ final class SkillEngine implements org.bukkit.event.Listener {
     private final ItemRegistry items;
     private final Map<UUID, Long> gcdUntilMillis = new ConcurrentHashMap<>();
     private final Map<String, Long> cooldowns = new ConcurrentHashMap<>();
-    // Aktive Auren pro Entity: Name -> Ablaufzeit in ms (Long.MAX_VALUE = ohne Ende).
+
     private final Map<UUID, Map<String, Aura>> auras = new ConcurrentHashMap<>();
     private final Map<String, List<SkillStep>> inlineSkills = new ConcurrentHashMap<>();
-    // Gesetzt, solange die damage-Mechanic Schaden austeilt: dieser Schaden soll kein ~onAttack
-    // ausloesen, sonst bricht dessen CancelEvent den Schaden des Skills selbst wieder ab.
+
     private final ThreadLocal<Boolean> applyingDamage = ThreadLocal.withInitial(() -> false);
     private final Map<String, CustomMechanicEntry> customMechanics = new ConcurrentHashMap<>();
 
@@ -72,7 +65,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
-    /** Der Wurf eines Skills darf nicht ueber den Tod hinaus wirken: Respawnende starten ohne Restgeschwindigkeit. */
     @org.bukkit.event.EventHandler
     public void onRespawn(org.bukkit.event.player.PlayerRespawnEvent event) {
         Player player = event.getPlayer();
@@ -80,7 +72,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         Tasks.runLater(plugin, player, 1L, () -> player.setVelocity(new Vector()));
     }
 
-    /** Pfeil eines shoot{oh=[...]}: die Treffer-Zeilen laufen mit dem Schuetzen als Caster und dem Getroffenen als Ziel. */
     private record PendingShot(LivingEntity shooter, List<SkillStep> onHit) {}
 
     private final Map<UUID, PendingShot> shots = new ConcurrentHashMap<>();
@@ -94,10 +85,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         }
     }
 
-    /**
-     * shoot{type=arrow;velocity;damage;oh=[...]}: schiesst einen Pfeil auf den Ausloeser bzw. das Ziel des Mobs.
-     * ponytail: nur Pfeile; Geschwindigkeit = velocity*2 (grob wie Vanilla-Bogen), Schaden = damage-Param.
-     */
     private void shoot(SkillContext context, Map<String, String> p) {
         LivingEntity caster = context.caster();
         LivingEntity aim = context.trigger();
@@ -150,7 +137,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return divisor == 0 ? value : value / divisor;
     }
 
-    /** stun{d;ai;g;f}: d Ticks lang KI aus (ai, Standard true), ohne Schwerkraft (g) und/oder jeden Tick auf Geschwindigkeit 0 (f). */
     private void stun(Target target, Map<String, String> p) {
         if (!(target.entity() instanceof Mob mob)) return;
         int ticks = parseInt(firstParam(p, "d", "duration", "t"), 20);
@@ -209,11 +195,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
 
     private enum Check { PASS, FAIL, REDIRECTED }
 
-    /**
-     * Prueft eine Bedingungsliste. Eine Bedingung mit "castinstead <skill>" startet bei Erfuellung
-     * stattdessen jenen Skill (der aktuelle bricht ab), sonst wird sie uebergangen; jede andere
-     * nicht erfuellte Bedingung bricht den Skill ab.
-     */
     private Check check(List<String> conditions, SkillContext context, Target target) {
         for (String raw : conditions) {
             Condition condition = parseCondition(raw);
@@ -248,17 +229,11 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return caster.getUniqueId() + "@" + skillId.toLowerCase(Locale.ROOT);
     }
 
-    /** Fuehrt einen einzelnen Schritt aus - fuer Mob-level "Skills:"-Zeilen, die direkt
-     *  eine Mechanic statt einen Skill-Verweis sind (z.B. "sound{...} @self ~onDamaged"). */
     void runStep(SkillStep step, SkillContext context) {
         executeSteps(List.of(step), 0, context);
     }
 
     private void executeSteps(List<SkillStep> steps, int index, SkillContext context) {
-        // Kein Existenz-Check hier am Einstieg: run()/runStep() kommen immer direkt aus
-        // einem frischen Event/Trigger, der Caster lebt zu dem Zeitpunkt garantiert noch.
-        // Der teure serverweite Bukkit.getEntity()-Lookup lohnt sich nur dort, wo wirklich
-        // Zeit vergangen sein kann - also erst beim Wiederaufnehmen nach "delay" unten.
         for (int i = index; i < steps.size(); i++) {
             SkillStep step = steps.get(i);
             if (step instanceof SkillStep.Delay delay) {
@@ -270,28 +245,19 @@ final class SkillEngine implements org.bukkit.event.Listener {
         }
     }
 
-    /** Liefert true, wenn "cancelskill" gefeuert hat - dann bricht der Skill komplett ab. */
     private boolean runMechanic(SkillStep.Mechanic mechanic, SkillContext context) {
         Map<String, String> p = mechanic.params();
 
-        // Inline-Bedingung am Zeilenende ("?cond{...}" / "?!cond{...}"): unbekannte
-        // Bedingungen (Variablen/Factions gibt es bei uns nicht) gelten als erfuellt,
-        // damit die Mechanic trotzdem laeuft statt komplett zu verschwinden.
         if (mechanic.inlineCondition() != null) {
             boolean passes = conditionPasses(mechanic.inlineCondition(), context, null);
             if (mechanic.negated() == passes) return false;
         }
 
-        // "cd=N" (Sekunden) sperrt diese Zeile fuer den Caster, egal welche Mechanic sie ist.
         if (p.containsKey("cd") && !acquireCooldown(context, mechanic)) return false;
 
-        // MythicMobs erlaubt "delay" sowohl als eigene Zeile zwischen Mechaniken als auch
-        // als Parameter einer einzelnen Mechanic ("command{c=...;delay=70}"): diese eine
-        // Mechanic feuert dann isoliert verzoegert, ohne die restlichen Schritte aufzuhalten.
         if (p.containsKey("delay")) {
             int ticks = parseInt(p.get("delay"), 0);
-            // cd ebenfalls entfernen: die Kopie hat eine neue Identitaet und wuerde sonst
-            // einen zweiten, wirkungslosen Cooldown-Eintrag anlegen.
+
             SkillStep.Mechanic withoutDelay = new SkillStep.Mechanic(mechanic.name(),
                     without(without(p, "delay"), "cd"), mechanic.targeter(), mechanic.targeterParams(), null, false);
             Tasks.runLater(plugin, context.caster(), ticks, () -> runMechanic(withoutDelay, context));
@@ -301,14 +267,13 @@ final class SkillEngine implements org.bukkit.event.Listener {
         if (mechanic.name().equals("cancelskill")) return true;
 
         List<Target> targets = resolveAll(mechanic.targeter(), mechanic.targeterParams(), context);
-        // Ein Targeter wie @PIR findet unter Umstaenden niemanden - dann gibt es nichts auszufuehren.
+
         if (targets.isEmpty()) return false;
         Map<String, String> params = substitute(p, context);
         for (Target target : targets) dispatch(mechanic, context, target, params);
         return false;
     }
 
-    /** Fuehrt eine Mechanic fuer genau ein aufgeloestes Ziel aus (bei Mehrfach-Targetern einmal pro Ziel). */
     private void dispatch(SkillStep.Mechanic mechanic, SkillContext context, Target target, Map<String, String> p) {
         switch (mechanic.name()) {
             case "cancelevent" -> {
@@ -317,7 +282,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
             case "skill" -> {
                 String id = firstParam(p, "s", "skill", "skills");
                 if (id == null) break;
-                // Mit eigenem Targeter laeuft der Skill fuer dieses Ziel; seine Zeilen ohne Targeter erben es.
+
                 boolean forTarget = !mechanic.targeter().isEmpty() && !mechanic.targeter().equals("self")
                         && target.entity() instanceof LivingEntity;
                 SkillContext child = forTarget ? context.withTrigger((LivingEntity) target.entity()) : context;
@@ -383,7 +348,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return copy;
     }
 
-    /** Eine Bedingungszeile: "name{params} [true|false] [aktion [wert]]", z.B. "distance{d=0-6} castinstead mein_skill". */
     private record Condition(String name, String params, Boolean expected, String action, String actionValue) {}
 
     private static Condition parseCondition(String raw) {
@@ -428,7 +392,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return new Condition(name, params, expected, action, value);
     }
 
-    /** Einzelne Bedingung ohne Aktion, z.B. fuer "?cond{...}" am Zeilenende: erfuellt = true. */
     private boolean conditionPasses(String raw, SkillContext context, Target targetOverride) {
         Condition condition = parseCondition(raw);
         if (condition == null) return true;
@@ -464,7 +427,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return false;
     }
 
-    /** Abstand zum Ausloeser (oder zum Ziel des Mobs): "0-6" Bereich, ">3", "<5", ">=2", "<=4" oder ein Wert (+-0,5). */
     private boolean withinDistance(SkillContext context, String spec) {
         LivingEntity other = context.trigger();
         if (other == null && context.caster() instanceof Mob mob) other = mob.getTarget();
@@ -509,8 +471,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         location.getWorld().playSound(location, name, SoundCategory.HOSTILE, volume, pitch);
     }
 
-    /** ponytail: nur PLAY_ONCE, li/lo/speed/n aus der Vorlage werden von BetterModels
-     *  AnimationModifier hier nicht ausgewertet - fuer eine Loop-Steuerung Modifier erweitern. */
     private void state(LivingEntity caster, String stateName) {
         if (stateName == null) return;
         betterModel.play(mobManager.trackerFor(caster.getUniqueId()), stateName);
@@ -535,8 +495,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         else target.block().setType(Material.AIR);
     }
 
-    /** ponytail: "n" (Modell-Name/-Slot aus der Vorlage) wird nicht ausgewertet - wir
-     *  haben pro Entity nur einen BetterModel-Tracker, kein benanntes Multi-Model-Setup. */
     private void model(Target target, Map<String, String> p) {
         String modelId = p.get("mid");
         if (modelId == null || target.entity() == null) return;
@@ -544,8 +502,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         mobManager.replaceTracker(target.entity(), tracker);
     }
 
-    /** Pendant zu "model", haengt das Modell aber ueber ModelEngine statt BetterModel an -
-     *  fuer Packs, deren Modelle in ModelEngine statt BetterModel registriert sind. */
     private void modelEngineAttach(Target target, Map<String, String> p) {
         String modelId = p.get("mid");
         if (modelId == null || target.entity() == null) return;
@@ -553,8 +509,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         mobManager.replaceModelEngineTracker(target.entity(), tracker);
     }
 
-    /** "s=a,b,c" (auch "skills=...", ueber mehrere YAML-Zeilen) waehlt zufaellig einen der
-     *  Skills. "sync" wird ignoriert - wir sind ohnehin immer auf dem Main-Thread unterwegs. */
     private void randomSkill(SkillContext context, Map<String, String> p) {
         String list = firstParam(p, "s", "skills", "skill");
         if (list == null) return;
@@ -588,7 +542,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
         if (particle == null) return;
         Location at = target.location().clone().add(0, parseFloat(firstParam(p, "y", "yoffset"), 0f), 0);
         spawnParticles(at, particle, p);
-        // repeat=N;repeatInterval=T: der Schub wird N weitere Male alle T Ticks wiederholt.
+
         int repeat = parseInt(p.get("repeat"), 0);
         long interval = Math.max(1, parseInt(p.get("repeatinterval"), 1));
         Entity anchor = target.entity() != null ? target.entity() : null;
@@ -597,7 +551,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         }
     }
 
-    /** Ring aus "points" Punkten mit "radius" um das Ziel, an jedem Punkt ein Partikelschub. */
     private void particleRing(Target target, Map<String, String> p) {
         Particle particle = particle(firstParam(p, "particle", "p"));
         if (particle == null) return;
@@ -632,7 +585,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         }
     }
 
-    /** Dreht das Ziel "duration" Ticks lang um "velocity" Grad pro Tick (z.B. die Karte beim Aufdecken). */
     private void spin(Target target, Map<String, String> p) {
         Entity entity = target.entity();
         if (entity == null) return;
@@ -649,7 +601,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         });
     }
 
-    /** Nimmt "a" Stueck des BetterMob-Items "i" aus dem Inventar des Ziel-Spielers (z.B. das Pack beim Oeffnen). */
     private void takeItem(Target target, Map<String, String> p) {
         if (!(target.entity() instanceof Player player)) return;
         String itemId = firstParam(p, "i", "item", "type");
@@ -667,7 +618,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         }
     }
 
-    /** Fuehrt den Skill "s" mit dem Ziel als Caster aus (der Spieler "wirkt" ihn selbst); der urspruengliche Caster wird Trigger. */
     private void sudoSkill(SkillContext context, Target target, Map<String, String> p) {
         if (!(target.entity() instanceof LivingEntity executor)) return;
         String id = firstParam(p, "s", "skill", "skills");
@@ -678,7 +628,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return applyingDamage.get();
     }
 
-    /** "amount" Schaden am Ziel, mit dem Caster als Verursacher (also mit Rüstung, Cooldowns und Events wie ein normaler Treffer). */
     private void damage(SkillContext context, Target target, Map<String, String> p) {
         if (!(target.entity() instanceof LivingEntity victim)) return;
         double amount = parseFloat(firstParam(p, "amount", "a"), 1f);
@@ -690,11 +639,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         }
     }
 
-    /**
-     * Schleudert das Ziel vom Caster weg. ponytail: "velocity" wird durch 10 geteilt (so staerken
-     * sich velocity=8 beim Wurf und velocity=0.8 beim Lunge im Pack), "velocityY" ist direkt
-     * Bloecke pro Tick nach oben - die genaue MythicMobs-Skalierung ist hier geschaetzt.
-     */
     private void throwTarget(SkillContext context, Target target, Map<String, String> p) {
         Entity thrown = target.entity();
         if (thrown == null || thrown instanceof LivingEntity living && living.isDead()) return;
@@ -704,7 +648,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
                 .setY(parseFloat(firstParam(p, "velocityy", "vy"), 0f) / 10.0));
     }
 
-    /** Der Caster springt mit "velocity" Bloecken pro Tick auf das Ziel zu. */
     private void lunge(SkillContext context, Target target, Map<String, String> p) {
         Vector toward = target.location().toVector().subtract(context.caster().getLocation().toVector()).setY(0);
         if (toward.lengthSquared() < 1e-6) return;
@@ -712,7 +655,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
                 .setY(parseFloat(firstParam(p, "velocityy", "vy"), 0f)));
     }
 
-    /** Setzt den Block am Ziel auf "m" (z.B. Gras -> Erde beim Grasen). */
     private void setBlock(Target target, Map<String, String> p) {
         Material material = Material.matchMaterial(firstParam(p, "m", "material", "type", "block") == null ? "" : firstParam(p, "m", "material", "type", "block").trim());
         if (material == null || !material.isBlock()) {
@@ -722,10 +664,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         target.location().getBlock().setType(material);
     }
 
-    /**
-     * "item=<item>:<slot>" legt dem Ziel einen Gegenstand an. Item ist ein registriertes BetterMob-Item
-     * oder ein Vanilla-Material, Slot HAND (Standard), OFFHAND, HEAD, CHEST, LEGS oder FEET.
-     */
     private void equip(Target target, Map<String, String> p) {
         if (!(target.entity() instanceof LivingEntity living) || living.getEquipment() == null) return;
         String spec = firstParam(p, "item", "i", "type");
@@ -755,7 +693,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
         };
         EntityEquipment equipment = living.getEquipment();
         equipment.setItem(slot, stack);
-        // Gegenstaende, die ein Skill anlegt, sollen beim Tod nicht zusaetzlich herumliegen.
+
         if (living instanceof Mob mob) {
             equipment.setDropChance(slot, 0f);
             MobDefinition definition = mobManager.definitionOf(mob.getUniqueId());
@@ -765,7 +703,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
 
     private static final String TAG_PREFIX = "bettermob_tag_";
 
-    /** Liest einen Parameter aus dem rohen "{a=b;c=d}"-Inhalt einer Bedingung. */
     private static String conditionParam(String paramsRaw, String... keys) {
         if (paramsRaw == null) return "";
         String value = firstParam(SkillStep.parseParams(paramsRaw), keys);
@@ -855,7 +792,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return true;
     }
 
-    /** addtag{t=...}/removetag{t=...}: Markierungen am Ziel, abfragbar mit ?hastag{t=...}. */
     private void tag(Target target, Map<String, String> p, boolean add) {
         String tag = firstParam(p, "t", "tag");
         if (tag == null || target.entity() == null) return;
@@ -863,14 +799,12 @@ final class SkillEngine implements org.bukkit.event.Listener {
         else target.entity().removeScoreboardTag(TAG_PREFIX + tag.trim());
     }
 
-    /** Vergisst den Zustand eines entfernten Entities (Auren, globaler Cooldown). */
     void forget(UUID entityId) {
         Map<String, Aura> removed = auras.remove(entityId);
         if (removed != null) removed.values().forEach(Aura::stop);
         gcdUntilMillis.remove(entityId);
     }
 
-    /** Skill-Zeilen direkt im Parameter: "skill{s=[ - sound{...} - delay 5 ]}" - einmal geparst und gemerkt. */
     private void runInline(String raw, SkillContext context) {
         executeSteps(inlineSkills.computeIfAbsent(raw, this::parseInline), 0, context);
     }
@@ -885,7 +819,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return List.copyOf(steps);
     }
 
-    /** "[ - a{..} - b{..} ]" in die einzelnen Zeilen zerlegen: an jedem "-" auf oberster Ebene, das von Leerraum umgeben ist. */
     private static List<String> splitInline(String raw) {
         String body = raw.trim();
         if (body.startsWith("[")) body = body.substring(1);
@@ -912,7 +845,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return lines;
     }
 
-    /** <caster.damage> u.a. in Parameterwerten durch den echten Wert ersetzen (der Angriffsschaden des Casters, sein Name). */
     private Map<String, String> substitute(Map<String, String> p, SkillContext context) {
         boolean placeholders = false;
         for (String value : p.values()) {
@@ -1018,8 +950,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         if (target.entity() != null) target.entity().remove();
     }
 
-    /** "c" ist der Command-String, <caster.name>/<target.name> werden ersetzt. Laeuft
-     *  immer als Konsolenbefehl - MythicMobs' "AsOp/AsCaster"-Unterscheidung gibt es hier nicht. */
     private void command(SkillContext context, Map<String, String> p) {
         String raw = p.get("c");
         if (raw == null) return;
@@ -1035,8 +965,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return trimmed;
     }
 
-    /** "type" muss die ID eines in mobs/ registrierten Mobs sein - Vanilla-EntityTypes
-     *  direkt summonen unterstuetzen wir nicht, dafuer gibt es keinen Anwendungsfall im Pack. */
     private void summon(Target target, Map<String, String> p) {
         String mobId = firstParam(p, "type", "t", "mob", "m");
         if (mobId == null) return;
@@ -1048,8 +976,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         mobManager.spawn(definition, target.location());
     }
 
-    /** Setzt den Zieltrigger (z.B. den klickenden Spieler) auf einen benannten Sitz des
-     *  Caster-Modells - BetterModel uebernimmt danach Lenkung/Fahrverhalten selbst. */
     private void mountModel(SkillContext context, Target target, Map<String, String> p) {
         if (!(target.entity() instanceof LivingEntity rider)) return;
         Object tracker = mobManager.trackerFor(context.caster().getUniqueId());
@@ -1077,7 +1003,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
             case "forward" -> Target.ofLocation(forwardLocation(context.caster(), targeterParams));
             case "selflocation" -> Target.ofLocation(context.caster().getLocation().add(
                     parseFloat(targeterParams.get("x"), 0f), parseFloat(targeterParams.get("y"), 0f), parseFloat(targeterParams.get("z"), 0f)));
-            // Bone-Position des Modells (p=tnt2); fehlt der Bone oder das Modell, die Brusthoehe des Casters.
+
             case "modelpart" -> {
                 Location bone = betterModel.bonePosition(mobManager.trackerFor(context.caster().getUniqueId()),
                         firstParam(targeterParams, "p", "part", "bone"), context.caster().getLocation());
@@ -1086,13 +1012,12 @@ final class SkillEngine implements org.bukkit.event.Listener {
             }
             case "pir", "playersinradius" -> nearestPlayer(context.caster(), targeterParams);
             case "self" -> Target.ofEntity(context.caster());
-            // Kein @Targeter geschrieben: das Ziel erben, das der aufrufende Skill gesetzt hat.
+
             default -> context.targetIsTrigger() && context.trigger() != null
                     ? Target.ofEntity(context.trigger()) : Target.ofEntity(context.caster());
         };
     }
 
-    /** Wie resolve(), aber Mehrfach-Targeter (@EntitiesNearOrigin, @EntitiesInRadius) liefern mehrere Ziele. */
     private List<Target> resolveAll(String targeter, Map<String, String> params, SkillContext context) {
         String key = targeter.toLowerCase(Locale.ROOT);
         boolean nearOrigin = key.equals("entitiesnearorigin") || key.equals("eno");
@@ -1104,7 +1029,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return single == null ? List.of() : List.of(single);
     }
 
-    /** Lebewesen im Radius "r" um center, nach Abstand sortiert; "conditions=[ - isPlayer{} true ... ]" filtert. */
     private List<Target> entitiesInRadius(Location center, Map<String, String> params, SkillContext context) {
         double radius = parseFloat(params.get("r"), 5f);
         List<String> conditions = params.containsKey("conditions") ? splitInline(params.get("conditions")) : List.of();
@@ -1120,7 +1044,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return targets;
     }
 
-    /** Bedingungen eines Targeters pruefen ein einzelnes Kandidaten-Lebewesen: isPlayer, isCaster. */
     private boolean candidateMatches(LivingEntity candidate, List<String> conditions, SkillContext context) {
         for (String raw : conditions) {
             Condition condition = parseCondition(raw);
@@ -1139,7 +1062,6 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return true;
     }
 
-    /** ponytail: nur der naechste Spieler im Radius "r" - sort/limit aus @PIR{...} werden nicht ausgewertet, im Pack ist es immer NEAREST/1. */
     private Target nearestPlayer(LivingEntity caster, Map<String, String> p) {
         double radius = parseFloat(p.get("r"), 10f);
         Player nearest = null;
@@ -1155,22 +1077,19 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return nearest == null ? null : Target.ofEntity(nearest);
     }
 
-    /** "f" = Abstand nach vorne, "uel" = ab Augenhoehe statt Fussposition starten, "yoffset" = vertikale
-     *  Verschiebung danach, "rotate" = Grad, um die die Blickrichtung seitlich gedreht wird (positiv = rechts). */
     private Location forwardLocation(LivingEntity caster, Map<String, String> p) {
         Location origin = Boolean.parseBoolean(p.getOrDefault("uel", "false")) ? caster.getEyeLocation() : caster.getLocation();
         double distance = parseFloat(p.get("f"), 1f);
         double yOffset = parseFloat(p.get("yoffset"), 0f);
         double rotate = parseFloat(p.get("rotate"), 0f);
         Vector direction = origin.getDirection().normalize();
-        // Bukkits rotateAroundY dreht bei positivem Winkel nach links, MythicMobs' rotate nach rechts.
+
         if (rotate != 0) direction.rotateAroundY(Math.toRadians(-rotate));
         Location target = origin.clone().add(direction.multiply(distance));
         target.add(0, yOffset, 0);
         return target;
     }
 
-    /** Erster nicht-durchsichtbare Block in Blickrichtung des Mobs. */
     private Block obstructingBlock(LivingEntity caster) {
         var result = caster.getWorld().rayTraceBlocks(caster.getEyeLocation(), caster.getEyeLocation().getDirection(), 2.5);
         return result != null ? result.getHitBlock() : caster.getEyeLocation().add(caster.getEyeLocation().getDirection()).getBlock();

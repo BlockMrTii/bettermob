@@ -7,7 +7,7 @@ final class SkillDefinition {
     final List<String> conditions;
     final List<String> targetConditions;
     final List<SkillStep> steps;
-    /** "Cooldown:" in Sekunden: so lange laesst sich der Skill pro Caster nicht erneut starten (0 = keiner). */
+
     final double cooldown;
 
     SkillDefinition(String id, List<String> conditions, List<String> targetConditions, List<SkillStep> steps,

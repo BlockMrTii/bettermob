@@ -2,12 +2,7 @@ package eu.northsoft.bettermob;
 
 import java.util.Locale;
 
-/**
- * Eine Drop-Zeile: "name menge chance", z.B. "BONE 2-4 40%", "EXP 8-20 100%" oder "nm_bison_drops".
- * Menge ist eine Zahl oder ein Bereich, Chance "80%" oder 0.8 - beides ist optional (1 Stueck, 100%).
- */
 record DropEntry(String name, int min, int max, double chance) {
-
     static DropEntry parse(String line) {
         String[] tokens = line.trim().split("\\s+");
         if (tokens.length == 0 || tokens[0].isEmpty()) return null;
@@ -19,7 +14,7 @@ record DropEntry(String name, int min, int max, double chance) {
                 chance = parseChance(tokens[2]);
             } else if (tokens.length == 2) {
                 String token = tokens[1];
-                // Eine einzelne Zahl ist die Menge - ausser sie sieht nach Chance aus (80% oder 0.25).
+
                 if (token.endsWith("%") || (token.contains(".") && Double.parseDouble(token) < 1)) chance = parseChance(token);
                 else amount = parseAmount(token);
             }
@@ -30,7 +25,6 @@ record DropEntry(String name, int min, int max, double chance) {
     }
 
     private static int[] parseAmount(String rawToken) {
-        // MythicMobs schreibt Bereiche auch als "1to2".
         String token = rawToken.replaceFirst("(?<=\\d)to(?=\\d)", "-");
         int dash = token.indexOf('-', 1);
         if (dash < 0) {

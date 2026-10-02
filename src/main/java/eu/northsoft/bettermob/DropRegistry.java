@@ -16,15 +16,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * Laedt droptables/**.yml (plus DropTables/ jedes Packs) und wuerfelt Drops aus. Jeder Top-Level-Key
- * mit einer "Drops:"-Liste ist eine Tabelle. Eine Zeile verweist auf EXP, eine andere Tabelle, ein
- * registriertes BetterMob-Item oder ein Vanilla-Material - in dieser Reihenfolge.
- */
 final class DropRegistry {
     private static final int MAX_DEPTH = 5;
 
-    /** Ergebnis eines Wurfs: die Items und die Erfahrungspunkte. */
     record Result(List<ItemStack> items, int exp) {}
 
     private final BetterMobPlugin plugin;
@@ -89,7 +83,6 @@ final class DropRegistry {
         return new Result(stacks, exp);
     }
 
-    /** Wuerfelt die Tabelle, haengt Items an "out" an und liefert die Erfahrungspunkte. */
     private int roll(DropTable table, List<ItemStack> out, int depth) {
         ThreadLocalRandom random = ThreadLocalRandom.current();
         int exp = 0;
@@ -98,13 +91,12 @@ final class DropRegistry {
         for (DropEntry entry : table.entries()) {
             boolean passed = random.nextDouble() < entry.chance();
             if (entry.isExp()) {
-                // EXP zaehlt nicht zu MinItems/MaxItems, nur die Item-Eintraege.
                 if (passed) exp += amount(entry);
             } else {
                 (passed ? hit : missed).add(entry);
             }
         }
-        // Zu viele Treffer: zufaellig welche streichen. Zu wenige: aus den Nieten auffuellen (ohne Chance).
+
         Collections.shuffle(hit, random);
         while (hit.size() > table.maxItems()) hit.remove(hit.size() - 1);
         Collections.shuffle(missed, random);
@@ -144,7 +136,6 @@ final class DropRegistry {
         return entry.min() >= entry.max() ? entry.min() : ThreadLocalRandom.current().nextInt(entry.min(), entry.max() + 1);
     }
 
-    /** Mengen ueber die Stapelgroesse hinaus werden auf mehrere Stapel verteilt. */
     private static void addStacks(List<ItemStack> out, ItemStack template, int amount) {
         int stackSize = Math.max(1, template.getMaxStackSize());
         while (amount > 0) {
