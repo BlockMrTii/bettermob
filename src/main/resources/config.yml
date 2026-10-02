@@ -1,0 +1,2 @@
+# Namen von Unterordnern in packs/, die beim Laden uebersprungen werden sollen.
+DisabledPacks: []

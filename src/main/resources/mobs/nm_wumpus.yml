@@ -1,0 +1,31 @@
+Type: PIG
+Display: "&9Wumpus"
+Health: 12
+AIGoalSelectors:
+  - clear
+  - randomstroll
+AITargetSelectors:
+  - clear
+Options:
+  Collidable: true
+  MovementSpeed: 0.25
+  PreventOtherDrops: true
+  Silent: true
+  PreventRenaming: false
+  PreventLeashing: false
+  AlwaysShowName: false
+  Invincible: true
+Skills:
+  ### Applies the model when spawned.
+  - model{mid=nm_wumpus;n=name} @self ~onSpawn
+  - model{mid=nm_wumpus;n=name} @self ~onLoad
+
+  ### Hurt Skills & Sounds
+  - sound{s=entity.pig.hurt;p=1.5;v=1} @self ~onDamaged
+
+  ### Death Skills & Sounds
+  - sound{s=entity.pig.death;p=1.5;v=1} @self ~onDeath
+
+  ### Interaction Skills
+  - randomskill{s=nm_wumpus_wave_parse;sync=true;cd=2} ~onInteract
+#No peaking!
