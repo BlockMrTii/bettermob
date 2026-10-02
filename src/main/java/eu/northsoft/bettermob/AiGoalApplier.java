@@ -14,7 +14,6 @@ import java.util.regex.Pattern;
 import java.util.List;
 import java.util.Map;
 import java.util.Locale;
-import java.util.logging.Logger;
 
 final class AiGoalApplier {
     private static final Map<String, List<String>> ALIASES = Map.of(
