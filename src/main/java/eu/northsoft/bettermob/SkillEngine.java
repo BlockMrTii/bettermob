@@ -58,7 +58,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
     private static final Set<String> BUILTIN_MECHANICS = Set.of("cancelskill", "cancelevent", "skill", "look", "sound",
             "state", "potion", "breakblock", "gcd", "model", "modelengine", "randomskill", "remove", "command",
             "summon", "mountmodel", "delay", "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "sudoskill", "damage", "throw", "lunge", "setblock", "equip", "aura", "ondamaged", "onattack", "ontick", "ondeath",
-            "onshoot", "bodyrotation", "addtag", "removetag", "ignite", "totem", "shoot", "stun", "setnodamageticks");
+            "onshoot", "bodyrotation", "addtag", "removetag", "ignite", "totem", "velocity", "freeze", "shoot", "stun", "setnodamageticks");
 
     private record CustomMechanicEntry(Plugin owner, CustomMechanic mechanic) {}
 
@@ -115,6 +115,33 @@ final class SkillEngine implements org.bukkit.event.Listener {
                 Tasks.runLater(plugin, arrow, 400L, () -> shots.remove(arrow.getUniqueId()));
             }
         });
+    }
+
+    private void velocity(Target target, Map<String, String> p) {
+        Entity entity = target.entity();
+        if (entity == null) return;
+        String mode = p.getOrDefault("m", p.getOrDefault("mode", "SET")).trim().toUpperCase(Locale.ROOT);
+        Vector change = new Vector(parseFloat(p.get("x"), 0f), parseFloat(p.get("y"), 0f), parseFloat(p.get("z"), 0f));
+        long interval = Math.max(1, parseInt(firstParam(p, "repeatinterval", "ri"), 1));
+        applyVelocity(entity, mode, change);
+        int repeat = parseInt(p.get("repeat"), 0);
+        for (int i = 1; i <= repeat; i++) {
+            Tasks.runLater(plugin, entity, i * interval, () -> applyVelocity(entity, mode, change));
+        }
+    }
+
+    private void applyVelocity(Entity entity, String mode, Vector change) {
+        Vector current = entity.getVelocity();
+        entity.setVelocity(switch (mode) {
+            case "ADD" -> current.add(change);
+            case "MULTIPLY" -> current.multiply(change);
+            case "DIVIDE" -> new Vector(div(current.getX(), change.getX()), div(current.getY(), change.getY()), div(current.getZ(), change.getZ()));
+            default -> change.clone();
+        });
+    }
+
+    private static double div(double value, double divisor) {
+        return divisor == 0 ? value : value / divisor;
     }
 
     /** stun{d}: der Mob steht d Ticks still (KI aus). */
@@ -304,6 +331,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
             case "ignite" -> ignite(target, p);
             case "shoot" -> shoot(context, p);
             case "stun" -> stun(target, p);
+            case "velocity" -> velocity(target, p);
             case "setnodamageticks" -> {
                 if (target.entity() instanceof LivingEntity living) living.setNoDamageTicks(parseInt(firstParam(p, "ticks", "t"), 0));
             }
