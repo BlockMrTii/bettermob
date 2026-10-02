@@ -117,6 +117,12 @@ final class SkillEngine implements org.bukkit.event.Listener {
         });
     }
 
+    private void freeze(Target target, Map<String, String> p) {
+        if (target.entity() == null) return;
+        int ticks = parseInt(firstParam(p, "ticks", "t", "d", "duration"), 140);
+        target.entity().setFreezeTicks(Math.max(ticks, target.entity().getFreezeTicks()));
+    }
+
     private void velocity(Target target, Map<String, String> p) {
         Entity entity = target.entity();
         if (entity == null) return;
@@ -332,6 +338,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
             case "shoot" -> shoot(context, p);
             case "stun" -> stun(target, p);
             case "velocity" -> velocity(target, p);
+            case "freeze" -> freeze(target, p);
             case "setnodamageticks" -> {
                 if (target.entity() instanceof LivingEntity living) living.setNoDamageTicks(parseInt(firstParam(p, "ticks", "t"), 0));
             }
