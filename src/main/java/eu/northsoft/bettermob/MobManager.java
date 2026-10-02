@@ -158,6 +158,11 @@ final class MobManager {
         if (cancellers != null) cancellers.forEach(Runnable::run);
     }
 
+    /** True, solange gerade die damage-Mechanic eines Skills Schaden austeilt. */
+    boolean inSkillDamage() {
+        return skillEngine != null && skillEngine.isApplyingDamage();
+    }
+
     void setSkillEngine(SkillEngine skillEngine) {
         this.skillEngine = skillEngine;
     }

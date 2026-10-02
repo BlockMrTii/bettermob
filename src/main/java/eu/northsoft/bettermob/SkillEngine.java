@@ -45,11 +45,14 @@ final class SkillEngine {
     private final ItemRegistry items;
     private final Map<UUID, Long> gcdUntilMillis = new ConcurrentHashMap<>();
     private final Map<String, Long> cooldowns = new ConcurrentHashMap<>();
+    // Gesetzt, solange die damage-Mechanic Schaden austeilt: dieser Schaden soll kein ~onAttack
+    // ausloesen, sonst bricht dessen CancelEvent den Schaden des Skills selbst wieder ab.
+    private final ThreadLocal<Boolean> applyingDamage = ThreadLocal.withInitial(() -> false);
     private final Map<String, CustomMechanicEntry> customMechanics = new ConcurrentHashMap<>();
 
     private static final Set<String> BUILTIN_MECHANICS = Set.of("cancelskill", "cancelevent", "skill", "look", "sound",
             "state", "potion", "breakblock", "gcd", "model", "modelengine", "randomskill", "remove", "command",
-            "summon", "mountmodel", "delay", "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "sudoskill");
+            "summon", "mountmodel", "delay", "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "sudoskill", "damage", "throw", "lunge");
 
     private record CustomMechanicEntry(Plugin owner, CustomMechanic mechanic) {}
 
@@ -175,6 +178,9 @@ final class SkillEngine {
             case "spin" -> spin(target, p);
             case "takeitem" -> takeItem(target, p);
             case "sudoskill" -> sudoSkill(context, target, p);
+            case "damage" -> damage(context, target, p);
+            case "throw" -> throwTarget(context, target, p);
+            case "lunge" -> lunge(context, target, p);
             default -> {
                 CustomMechanicEntry custom = customMechanics.get(mechanic.name());
                 if (custom == null) {
@@ -400,6 +406,44 @@ final class SkillEngine {
         if (!(target.entity() instanceof LivingEntity executor)) return;
         String id = firstParam(p, "s", "skill", "skills");
         if (id != null) runById(id.trim(), new SkillContext(executor, context.caster(), null));
+    }
+
+    boolean isApplyingDamage() {
+        return applyingDamage.get();
+    }
+
+    /** "amount" Schaden am Ziel, mit dem Caster als Verursacher (also mit Rüstung, Cooldowns und Events wie ein normaler Treffer). */
+    private void damage(SkillContext context, Target target, Map<String, String> p) {
+        if (!(target.entity() instanceof LivingEntity victim)) return;
+        double amount = parseFloat(firstParam(p, "amount", "a"), 1f);
+        applyingDamage.set(true);
+        try {
+            victim.damage(amount, context.caster());
+        } finally {
+            applyingDamage.set(false);
+        }
+    }
+
+    /**
+     * Schleudert das Ziel vom Caster weg. ponytail: "velocity" wird durch 10 geteilt (so staerken
+     * sich velocity=8 beim Wurf und velocity=0.8 beim Lunge im Pack), "velocityY" ist direkt
+     * Bloecke pro Tick nach oben - die genaue MythicMobs-Skalierung ist hier geschaetzt.
+     */
+    private void throwTarget(SkillContext context, Target target, Map<String, String> p) {
+        Entity thrown = target.entity();
+        if (thrown == null) return;
+        Vector away = thrown.getLocation().toVector().subtract(context.caster().getLocation().toVector()).setY(0);
+        if (away.lengthSquared() < 1e-6) away = context.caster().getLocation().getDirection().setY(0);
+        thrown.setVelocity(away.normalize().multiply(parseFloat(p.get("velocity"), 4f) / 10.0)
+                .setY(parseFloat(firstParam(p, "velocityy", "vy"), 0f)));
+    }
+
+    /** Der Caster springt mit "velocity" Bloecken pro Tick auf das Ziel zu. */
+    private void lunge(SkillContext context, Target target, Map<String, String> p) {
+        Vector toward = target.location().toVector().subtract(context.caster().getLocation().toVector()).setY(0);
+        if (toward.lengthSquared() < 1e-6) return;
+        context.caster().setVelocity(toward.normalize().multiply(parseFloat(p.get("velocity"), 1f))
+                .setY(parseFloat(firstParam(p, "velocityy", "vy"), 0f)));
     }
 
     private void remove(Target target) {

@@ -78,14 +78,14 @@ final class MobListener implements Listener {
                     manager.registerThreat(victimMob.getUniqueId(), attacker, event.getFinalDamage());
                 }
                 manager.fireTrigger(victimMob, definition, MobDefinition.SkillTrigger.Trigger.DAMAGED,
-                        source instanceof LivingEntity living ? living : null, null);
+                        source instanceof LivingEntity living ? living : null, event);
             }
         }
         // ~onAttack: der Mob hat selbst zugeschlagen.
-        if (source instanceof LivingEntity attackerMob) {
+        if (source instanceof LivingEntity attackerMob && !manager.inSkillDamage()) {
             MobDefinition definition = manager.definitionOf(attackerMob.getUniqueId());
             if (definition != null) manager.fireTrigger(attackerMob, definition, MobDefinition.SkillTrigger.Trigger.ATTACK,
-                    event.getEntity() instanceof LivingEntity living ? living : null, null);
+                    event.getEntity() instanceof LivingEntity living ? living : null, event);
         }
     }
 
