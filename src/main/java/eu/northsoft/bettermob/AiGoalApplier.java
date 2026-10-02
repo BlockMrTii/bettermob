@@ -4,9 +4,13 @@ import com.destroystokyo.paper.entity.ai.Goal;
 import com.destroystokyo.paper.entity.ai.GoalType;
 import com.destroystokyo.paper.entity.ai.MobGoals;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
 
 import java.util.ArrayList;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.List;
 import java.util.Map;
 import java.util.Locale;
@@ -19,57 +23,94 @@ import java.util.logging.Logger;
  * wieder anmelden. Nicht vorhandene Namen werden uebersprungen und geloggt.
  */
 final class AiGoalApplier {
-    /** MythicMobs-Namen, die bei Paper anders heissen (normalisiert, ohne _ und -). */
-    private static final Map<String, String> ALIASES = Map.of(
-            "attacker", "hurtby",
-            "players", "nearestattackable",
-            "nearestplayer", "nearestattackable",
-            "nearestplayers", "nearestattackable",
-            "lookatplayers", "lookatplayer",
-            "fleeplayers", "avoidentity");
+    /** MythicMobs-Namen, die bei Paper anders heissen (normalisiert, ohne _ und -); mehrere Kandidaten werden der Reihe nach probiert. */
+    private static final Map<String, List<String>> ALIASES = Map.of(
+            "attacker", List.of("hurtby"),
+            "players", List.of("nearestattackable"),
+            "player", List.of("nearestattackable"),
+            "nearestplayer", List.of("nearestattackable"),
+            "nearestplayers", List.of("nearestattackable"),
+            "lookatplayers", List.of("lookatplayer"),
+            "fleeplayers", List.of("avoidentity"),
+            "rangedattack", List.of("rangedbowattack", "rangedcrossbowattack"));
+
+    private static final Pattern PRIORITY = Pattern.compile("^(\\d+)\\s+(.*)$");
 
     private AiGoalApplier() {}
 
-    static void apply(Mob mob, List<String> selectors, List<String> targetSelectors, Logger logger) {
-        MobGoals mobGoals = Bukkit.getMobGoals();
-        applyCategory(mobGoals, mob, selectors, logger, GoalType.MOVE, GoalType.LOOK, GoalType.JUMP);
-        applyCategory(mobGoals, mob, targetSelectors, logger, GoalType.TARGET);
+    /** Ein Eintrag aus AIGoalSelectors: optional "<prioritaet> " vorweg, dann Name und optional {Parameter}. */
+    private record Token(Integer priority, String name, Map<String, String> params) {
+        static Token parse(String raw) {
+            String text = raw.trim();
+            Integer priority = null;
+            Matcher matcher = PRIORITY.matcher(text);
+            if (matcher.matches()) {
+                priority = Integer.parseInt(matcher.group(1));
+                text = matcher.group(2).trim();
+            }
+            int brace = text.indexOf('{');
+            if (brace < 0) return new Token(priority, text, Map.of());
+            int end = text.lastIndexOf('}');
+            String inner = end > brace ? text.substring(brace + 1, end) : text.substring(brace + 1);
+            return new Token(priority, text.substring(0, brace).trim(), SkillStep.parseParams(inner));
+        }
     }
 
-    private static void applyCategory(MobGoals mobGoals, Mob mob, List<String> tokens, Logger logger, GoalType... types) {
-        if (tokens.isEmpty()) return;
+    static void apply(Mob mob, List<String> selectors, List<String> targetSelectors, BetterMobPlugin plugin, Predicate<Entity> managed) {
+        MobGoals mobGoals = Bukkit.getMobGoals();
+        applyCategory(mobGoals, mob, selectors, plugin, managed, GoalType.MOVE, GoalType.LOOK, GoalType.JUMP);
+        applyCategory(mobGoals, mob, targetSelectors, plugin, managed, GoalType.TARGET);
+    }
+
+    private static void applyCategory(MobGoals mobGoals, Mob mob, List<String> raw, BetterMobPlugin plugin,
+                                      Predicate<Entity> managed, GoalType... types) {
+        if (raw.isEmpty()) return;
+        List<Token> tokens = raw.stream().map(Token::parse).toList();
 
         // Vorhandene Goals sichern, bevor "clear" sie entfernt - nur daraus kann
         // spaeter wieder angemeldet werden.
         List<Goal<Mob>> snapshot = new ArrayList<>();
         for (GoalType type : types) snapshot.addAll(mobGoals.getAllGoals(mob, type));
 
-        if (containsClear(tokens)) for (GoalType type : types) mobGoals.removeAllGoals(mob, type);
+        if (tokens.stream().anyMatch(token -> token.name().equalsIgnoreCase("clear"))) {
+            for (GoalType type : types) mobGoals.removeAllGoals(mob, type);
+        }
 
-        int priority = 0;
-        for (String token : tokens) {
-            if (token.equalsIgnoreCase("clear")) continue;
-            Goal<Mob> match = findByName(snapshot, token);
+        int next = 0;
+        for (Token token : tokens) {
+            if (token.name().equalsIgnoreCase("clear")) continue;
+            Goal<Mob> match = findByName(snapshot, token.name());
+            if (match == null) match = custom(token, mob, plugin, managed);
             if (match == null) {
-                logger.warning("AI-Goal '" + token + "' ist fuer Mob-Typ '" + mob.getType() + "' nicht verfuegbar.");
+                plugin.getLogger().warning("AI-Goal '" + token.name() + "' ist fuer Mob-Typ '" + mob.getType() + "' nicht verfuegbar.");
                 continue;
             }
-            mobGoals.addGoal(mob, priority++, match);
+            mobGoals.addGoal(mob, token.priority() != null ? token.priority() : next++, match);
         }
     }
 
-    private static boolean containsClear(List<String> tokens) {
-        for (String token : tokens) if (token.equalsIgnoreCase("clear")) return true;
-        return false;
+    /** Goals, die Vanilla nicht kennt, aber Packs per Namen anfordern. */
+    private static Goal<Mob> custom(Token token, Mob mob, BetterMobPlugin plugin, Predicate<Entity> managed) {
+        return switch (normalize(token.name())) {
+            case "lookattarget" -> {
+                String radius = token.params().get("r");
+                yield CustomGoals.lookAtTarget(plugin, mob, radius == null ? 15 : Double.parseDouble(radius));
+            }
+            case "monsters", "monster" -> CustomGoals.nearestMonster(plugin, mob, managed);
+            default -> null;
+        };
     }
 
-    private static Goal<Mob> findByName(List<Goal<Mob>> snapshot, String token) {
-        // MythicMobs-Zeilen tragen Parameter ("meleeattack{attackReach=2}") - die gehoeren
-        // nicht zum Namen. Paper kann sie ohnehin nicht setzen.
-        int brace = token.indexOf('{');
-        String normalized = normalize(brace < 0 ? token : token.substring(0, brace));
-        normalized = ALIASES.getOrDefault(normalized, normalized);
+    private static Goal<Mob> findByName(List<Goal<Mob>> snapshot, String name) {
+        String normalized = normalize(name);
+        for (String candidate : ALIASES.getOrDefault(normalized, List.of(normalized))) {
+            Goal<Mob> goal = findGoal(snapshot, candidate);
+            if (goal != null) return goal;
+        }
+        return null;
+    }
 
+    private static Goal<Mob> findGoal(List<Goal<Mob>> snapshot, String normalized) {
         for (Goal<Mob> goal : snapshot) {
             if (keyOf(goal).equals(normalized)) return goal;
         }

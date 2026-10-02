@@ -63,7 +63,7 @@ sealed interface SkillStep {
 
     /** Split bei ";" - aber nicht innerhalb verschachtelter {} oder [], sonst reisst es
      *  z.B. "conditions=[ - faction{faction=X} ]" mittendrin auseinander. */
-    private static Map<String, String> parseParams(String raw) {
+    static Map<String, String> parseParams(String raw) {
         Map<String, String> params = new LinkedHashMap<>();
         if (raw == null || raw.isBlank()) return params;
         List<String> pairs = new ArrayList<>();

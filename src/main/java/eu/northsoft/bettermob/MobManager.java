@@ -80,7 +80,7 @@ final class MobManager {
         applyAppearanceOptions(entity, definition);
 
         if (definition.removeAi) entity.setAI(false);
-        if (entity instanceof Mob mob) AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin.getLogger());
+        if (entity instanceof Mob mob) AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
         if (definition.threatTable) threatTables.put(entity.getUniqueId(), new ConcurrentHashMap<>());
         if (!definition.damageModifiers.isEmpty()) damageModifiers.put(entity.getUniqueId(), definition.damageModifiers);
 
