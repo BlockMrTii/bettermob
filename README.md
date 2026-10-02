@@ -16,6 +16,27 @@ small skill engine for AI behavior, triggers, and MythicMobs-compatible skill sy
   can use either engine (or both, for different mobs), chosen per `Skills:` line via
   `model{}` (BetterModel) or `modelengine{}` (ModelEngine).
 
+## Model engine support
+
+A mob's model comes from [BetterModel](https://modrinth.com/plugin/bettermodel) or
+[ModelEngine](https://www.spigotmc.org/resources/model-engine-4.108821/). Both are optional and
+independent: each uses its own model IDs, and a model must exist in the engine you point at it.
+
+| Feature | BetterModel | ModelEngine |
+|---|---|---|
+| Attach a model with `model{mid=...}` | Yes | - |
+| Attach a model with `modelengine{mid=...}` | - | Yes |
+| `Model:` field in the mob file (automatic attach on spawn/load) | Yes | No, use a `modelengine{}` line |
+| Hide the vanilla body while a model is attached | Yes | Yes |
+| Model reattached after restart/chunk load (`~onLoad`) | Yes | Yes, with a `modelengine{}` line on `~onLoad` |
+| `state{s=...}` plays a model animation | Yes | No |
+| `mountmodel{seat=...}` (rideable seats with WASD control) | Yes | No |
+| `@ModelPart{p=<bone>}` targeter (bone position) | Yes | No, falls back to chest height |
+| `bodyrotation{...}` head/body turn limits | Yes | No, ignored |
+
+Mechanics that need BetterModel simply do nothing on a ModelEngine mob (`mountmodel` logs a
+warning) instead of failing. Using both engines for different mobs on one server works.
+
 ## Building
 
 ```bash
@@ -48,8 +69,16 @@ tagged releases above are the stable ones.
 | `/bettermob reload` | Reload config, mobs, skills, and packs |
 | `/bettermob skill <id> [player]` | Manually run a registered skill, bypassing its normal triggers |
 | `/bettermob give <item> [player] [amount]` | Give a registered item (see [Items](#items)) |
+| `/bettermob debug [off\|info\|verbose\|filter <id>\|filter clear\|chat]` | Show or change the debug output (permission `bettermob.debug`, part of `bettermob.admin`) |
 
 Alias: `/bmob`. Permission: `bettermob.admin` (default: op).
+
+**Debug:** set `Debug: off|info|verbose` in `config.yml`, or change it at runtime with `/bettermob debug`.
+`info` logs every trigger that fires (and whether the event was cancelled), every skill run with the reason it
+stopped (conditions, target conditions, cooldown, `castinstead`) and AI goals that are missing (with the goals
+the mob type has). `verbose` adds every mechanic with its targeter, target count and parameters, `cancelskill`,
+bone offsets, `shoot` and `totem`. `filter <id>` limits the output to one mob id, skill id or player name,
+`chat` also sends it to you in chat. Nothing is built or logged while debug is off.
 
 ## Folder layout
 
@@ -94,6 +123,7 @@ Model: skeleton_knight      # BetterModel model ID; defaults to the mob ID
 Health: 60
 Damage: 8
 RemoveAi: false
+Faction: Elite              # mobs of one faction never target or hurt each other
 
 AIGoalSelectors:
   - clear
@@ -240,13 +270,13 @@ control), `potion`, `look`, `breakblock`, `state` (plays a BetterModel animation
 `summon` (spawns another registered mob), `remove`, `command`, `gcd`, `randomskill`
 (`s=a,b,c`), `skill`, `sudoskill` (run a skill with the target as caster), `cancelevent`,
 `cancelskill`, `equip` (`item=BOW:HAND`), `addtag`/`removetag`, `damage` (`amount`), `throw` (`velocity`, `velocityY`, both scaled by 1/10), `lunge` (`velocity`),
-`setblock` (`m`), `effect:particles` (`p`, `amount`, `hS`, `vS`, `speed`; alias `e:p`),
+`setblock` (`m`), `effect:particles` (`p`, `amount`, `hS`, `vS`, `speed`, `y` offset, `repeat`, `repeatInterval`; alias `e:p`),
 `effect:particlering` (`particle`, `radius`, `points`, ...), `spin` (`duration` ticks,
 `velocity` degrees/tick), `takeitem` (`i=<item>;a=<amount>`, removes a registered item
-from the target player), `ignite` (`t` ticks), `stun` (`d` ticks, disables the mob's AI),
-`setNoDamageTicks` (`ticks`), `shoot` (`type=arrow;velocity;damage;oh=[ ...]` fires an arrow at
-the target, the `oh` lines run on a hit with the hit entity as target), `totem` (`os=[ ... ]`
-runs once at the targeter's location, `yo` shifts it up; `md`/`ot`/`oe` are ignored).
+from the target player), `ignite` (`t` ticks), `stun` (`d` ticks; `ai` default true disables the AI, `g=true` also turns gravity off, `f=true` holds the mob still, `state=<animation>` plays that BetterModel animation), `velocity` (`m=SET|ADD|MULTIPLY|DIVIDE`, `x`, `y`, `z`, `repeat`, `repeatInterval`), `freeze` (`ticks`, powder-snow effect),
+`setNoDamageTicks` (`ticks`), `onDamaged`/`onAttack`/`onDeath`/`onShoot`/`aura` (`auraName`, `time`, `cE`, `oS`, `oE`, `oT`, `i`, `oH`: a timed aura that runs `oS` at start, `oE` at end, `oT` every `i` ticks and `oH` on its event, `cE=true` cancels that event meanwhile), `bodyrotation` (`headUneven`, `bodyUneven`, `minHead`, `maxHead`, `minBody`, `maxBody`, `delay`; BetterModel only), `shoot` (`type=arrow|spectral_arrow|trident|snowball|egg|fireball|smallfireball`, `velocity`, `damage`, `spread` degrees, `gravity=false`; `oh=[ ... ]` runs on a hit with the hit entity as target, `oe=[ ... ]` when it lands anywhere, `ot=[ ... ]` every `i` ticks (default 5) in flight), `totem` (`os=[ ... ]`
+runs once at the targeter's location, `yo` shifts it up; with `md` ticks, `ot=[ ... ]` repeats every `i` ticks
+(default 20) and `oe=[ ... ]` runs at the end; stops early if the caster dies; with `oh=[ ... ]` an invisible, unbreakable body is placed at the totem for `md` ticks (default 100) and the lines run whenever someone hits it, with the attacker as target).
 
 `<caster.damage>` and `<caster.name>` inside mechanic parameters are replaced with the caster's
 attack damage and name. A skill may set `Cooldown: <seconds>` (per caster).
@@ -259,14 +289,16 @@ and `cd=<seconds>` (cooldown per caster). `skill`/`randomskill` read their skill
 plugin and uses its own model IDs — these are separate registries from BetterModel's,
 so a model has to exist in whichever engine you point at it.
 
-**Conditions:** `offgcd`, `onground`, `chance{chance=0.75}`, `hastag{t=...}`, `hasaura{n=...}`, `onblock{b=...}` (block under the caster), `blocktype{type=...}`, `skillOnCooldown{skill=...}`, `distance{d=0-6}` (also `>3`, `<=5`) to the trigger/target. A skill's `Conditions`/`TargetConditions` entry may end in `castinstead <skill>` to cast that skill instead when it holds. Any mechanic line can
+**Factions:** players can belong to a faction too: give them the permission `bettermob.faction.<name>` (lower case) or list them under `factions:` in `config.yml` (player name or UUID). Mobs of that faction then ignore them, and they can't hurt those mobs. Without either, players are in no faction (ops included).
+
+**Conditions:** `offgcd`, `onground`, `chance{chance=0.75}`, `hastag{t=...}`, `hasaura{n=...}`, `faction{faction=Elite,Other}` (the caster's, or each candidate's inside a multi-target targeter), `onblock{b=...}` (block under the caster), `blocktype{type=...}`, `skillOnCooldown{skill=...}`, `distance{d=0-6}` (also `>3`, `<=5`) to the trigger/target. A skill's `Conditions`/`TargetConditions` entry may end in `castinstead <skill>` to cast that skill instead when it holds. Any mechanic line can
 end with `?condition{...}` (or `?!condition{...}` to negate) to run only when that
 check passes; unsupported conditions (this plugin has no variable/faction system)
 are logged and treated as passing, so the line still runs.
 
 **Targeters:** `@self`, `@trigger`/`@target`, `@ObstructingBlock`, `@Forward{f=1.5;
 uel=true;yoffset=-1;rotate=-22}` (point in front of the caster, `rotate` swings it sideways,
-positive = right), `@SelfLocation{x;y;z}` (caster position, optionally shifted), `@PIR{r=2}` (nearest player within `r`), `@EntitiesNearOrigin{r=4;Conditions=[ - isPlayer{} true - isCaster{} false]}` (alias `@ENO`, around a totem's location) and `@EntitiesInRadius` (`@EIR`, around the caster) hit every matching entity, `@ModelPart{p=<bone>}` (position of a BetterModel bone, falls back to chest height). A skill line without a targeter inherits the target of the line that called it.
+positive = right), `@SelfLocation{x;y;z}` (caster position, optionally shifted), `@Caster`/`@Mob` (the caster), `@Origin` (a totem's location), `@Location{x;y;z;w}`, `@TargetLocation`, `@Owner`/`@Parent` (the entity whose `summon` created the caster), `@PIR{r=2}` (nearest player within `r`), `@PlayersInRadius{r}`, `@EntitiesNearOrigin{r=4;Conditions=[ - isPlayer{} true - isCaster{} false]}` (alias `@ENO`, around a totem's location) and `@EntitiesInRadius` (`@EIR`/`@LEIR`, around the caster) hit every matching entity; all of them take `limit=<n>` and `sort=nearest|farthest|random` and conditions `isPlayer`, `isCaster`, `isMob`, `hasTag`, `faction`, `@ModelPart{p=<bone>}` (position of a BetterModel bone, falls back to chest height). A skill line without a targeter inherits the target of the line that called it.
 
 Unknown mechanics/conditions/targeters are logged with a clear warning and skipped
 rather than crashing the skill or the server.
@@ -295,7 +327,7 @@ in `pom.xml` and push.
 <dependency>
     <groupId>com.github.HyperGaming99</groupId>
     <artifactId>bettermob</artifactId>
-    <version>v1.1.4</version> <!-- a tag -->
+    <version>v1.1.5</version> <!-- a tag -->
     <scope>provided</scope>
 </dependency>
 ```
@@ -311,7 +343,7 @@ in `pom.xml` and push.
 <dependency>
     <groupId>eu.northsoft</groupId>
     <artifactId>bettermob</artifactId>
-    <version>1.1.4</version>
+    <version>1.1.5</version>
     <scope>provided</scope>
 </dependency>
 ```

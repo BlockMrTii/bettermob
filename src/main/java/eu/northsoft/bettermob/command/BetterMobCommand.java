@@ -1,5 +1,16 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.command;
 
+import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.debug.DebugManager;
+import eu.northsoft.bettermob.drop.DropRegistry;
+import eu.northsoft.bettermob.item.ItemDefinition;
+import eu.northsoft.bettermob.item.ItemRegistry;
+import eu.northsoft.bettermob.mob.MobDefinition;
+import eu.northsoft.bettermob.mob.MobManager;
+import eu.northsoft.bettermob.pack.PackScanner;
+import eu.northsoft.bettermob.skill.SkillContext;
+import eu.northsoft.bettermob.skill.SkillEngine;
+import eu.northsoft.bettermob.skill.SkillRegistry;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -11,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-final class BetterMobCommand implements CommandExecutor, TabCompleter {
+public final class BetterMobCommand implements CommandExecutor, TabCompleter {
     private final BetterMobPlugin plugin;
     private final MobManager manager;
     private final SkillRegistry skillRegistry;
@@ -20,7 +31,7 @@ final class BetterMobCommand implements CommandExecutor, TabCompleter {
     private final ItemRegistry itemRegistry;
     private final DropRegistry dropRegistry;
 
-    BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry, DropRegistry dropRegistry) {
+    public BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry, DropRegistry dropRegistry) {
         this.plugin = plugin;
         this.manager = manager;
         this.skillRegistry = skillRegistry;
@@ -39,12 +50,14 @@ final class BetterMobCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("§7/bettermob reload §8- §7Mobs, Skills und Packs neu laden");
             sender.sendMessage("§7/bettermob skill <id> [Spieler] §8- §7Skill manuell ausloesen");
             sender.sendMessage("§7/bettermob give <item> [Spieler] [amount] §8- §7Item geben");
+            sender.sendMessage("§7/bettermob debug [off|info|verbose|filter|chat] §8- §7Debug-Ausgabe steuern");
             return true;
         }
 
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "reload" -> {
                 plugin.reloadConfig();
+                plugin.debug().reload();
                 skillRegistry.load();
                 itemRegistry.load();
                 dropRegistry.load();
@@ -60,9 +73,46 @@ final class BetterMobCommand implements CommandExecutor, TabCompleter {
             case "spawn" -> handleSpawn(sender, args);
             case "skill" -> handleSkill(sender, args);
             case "give" -> handleGive(sender, args);
+            case "debug" -> handleDebug(sender, args);
             default -> sender.sendMessage("§cUnbekannter Befehl.");
         }
         return true;
+    }
+
+    private void handleDebug(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("bettermob.debug")) {
+            sender.sendMessage("§cKeine Berechtigung.");
+            return;
+        }
+        DebugManager debug = plugin.debug();
+        if (args.length < 2) {
+            String filters = debug.filters().isEmpty() ? "alle" : String.join(", ", debug.filters());
+            sender.sendMessage("§7Debug: §f" + debug.level().name().toLowerCase(Locale.ROOT) + " §7- Filter: §f" + filters);
+            return;
+        }
+        switch (args[1].toLowerCase(Locale.ROOT)) {
+            case "off" -> debug.level(DebugManager.Level.OFF);
+            case "on", "info" -> debug.level(DebugManager.Level.INFO);
+            case "verbose" -> debug.level(DebugManager.Level.VERBOSE);
+            case "filter" -> {
+                if (args.length < 3 || args[2].equalsIgnoreCase("clear")) debug.filters().clear();
+                else debug.filters().add(args[2].toLowerCase(Locale.ROOT));
+            }
+            case "chat" -> {
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage("§cNur von Spielern nutzbar.");
+                    return;
+                }
+                sender.sendMessage(debug.toggleWatcher(player) ? "§aDebug-Ausgabe im Chat an." : "§7Debug-Ausgabe im Chat aus.");
+                return;
+            }
+            default -> {
+                sender.sendMessage("§cNutzung: /bettermob debug [off|info|verbose|filter <id>|filter clear|chat]");
+                return;
+            }
+        }
+        sender.sendMessage("§7Debug: §f" + debug.level().name().toLowerCase(Locale.ROOT)
+                + " §7- Filter: §f" + (debug.filters().isEmpty() ? "alle" : String.join(", ", debug.filters())));
     }
 
     private void handleSpawn(CommandSender sender, String[] args) {
@@ -90,8 +140,6 @@ final class BetterMobCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§a" + amount + "x '" + definition.id + "' gespawnt.");
     }
 
-    /** Fuehrt einen Skill unabhaengig von AI-Triggern aus - zum Testen oder um ihn an
-     *  einen Spieler statt einen gespawnten Mob zu binden. */
     private void handleSkill(CommandSender sender, String[] args) {
         if (args.length < 2) {
             sender.sendMessage("§cNutzung: /bettermob skill <id> [Spieler]");
@@ -158,7 +206,8 @@ final class BetterMobCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (args.length == 1) return List.of("spawn", "list", "packs", "reload", "skill", "give");
+        if (args.length == 1) return List.of("spawn", "list", "packs", "reload", "skill", "give", "debug");
+        if (args.length == 2 && args[0].equalsIgnoreCase("debug")) return List.of("off", "info", "verbose", "filter", "chat");
         if (args.length == 2 && args[0].equalsIgnoreCase("spawn")) return new ArrayList<>(manager.registry().all().keySet());
         if (args.length == 2 && args[0].equalsIgnoreCase("skill")) return new ArrayList<>(skillRegistry.ids());
         if (args.length == 2 && args[0].equalsIgnoreCase("give")) return new ArrayList<>(itemRegistry.ids());

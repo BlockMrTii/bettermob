@@ -1,18 +1,13 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.model;
 
+import eu.northsoft.bettermob.BetterMobPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 
-/**
- * Reflection-Hook, damit BetterMob auch ohne installierte BetterModel-API laden kann.
- * Klassen/Methoden werden einmal pro Name lazy aufgeloest und dann wiederverwendet
- * (statt bei jedem attach()/play()-Aufruf per Class.forName()+getMethod() neu gesucht zu
- * werden) - "state"-Skills koennen ueber ~onTimer sehr oft pro Sekunde laufen, da faellt
- * eine wiederholte Reflection-Methodensuche spuerbar ins Gewicht.
- */
-final class BetterModelHook {
+public final class BetterModelHook {
     private static final String API = "kr.toxicity.model.api.BetterModel";
     private static final String ADAPTER = "kr.toxicity.model.api.bukkit.platform.BukkitAdapter";
     private static final String PLATFORM_ENTITY = "kr.toxicity.model.api.platform.PlatformEntity";
@@ -21,8 +16,6 @@ final class BetterModelHook {
 
     private final BetterMobPlugin plugin;
 
-    // Lazy, einmal pro Prozesslaufzeit aufgeloest - "available()" wird weiterhin frisch
-    // geprueft, aber die eigentlichen Method-Objekte muessen nicht jedes Mal neu gesucht werden.
     private Method modelOrNullMethod;
     private Method adaptMethod;
     private Class<?> platformEntityClass;
@@ -30,23 +23,15 @@ final class BetterModelHook {
     private Method animateMethod;
     private Class<?> modifierClass;
 
-    BetterModelHook(BetterMobPlugin plugin) {
+    public BetterModelHook(BetterMobPlugin plugin) {
         this.plugin = plugin;
     }
 
-    /**
-     * Frisch bei jedem Aufruf geprueft statt einmal im Konstruktor gecacht: softdepend
-     * sortiert die Ladereihenfolge nur, garantiert aber nicht, dass BetterModel beim
-     * BetterMob-onEnable schon fertig aktiviert ist - ein einmal auf false gecachtes
-     * Flag wuerde dann bis zum naechsten Neustart falsch bleiben.
-     */
-    boolean available() {
+    public boolean available() {
         return Bukkit.getPluginManager().isPluginEnabled("BetterModel") && classExists(API);
     }
 
-    /** Wie attach(), aber ohne Warnung wenn es das Modell nicht gibt - fuer das automatische
-     *  Anhaengen ueber den Mob-Namen, das bei Mobs ohne eigenes Modell (z.B. Armor-Stand-Karten) normal ins Leere laeuft. */
-    Object attachIfPresent(Entity entity, String modelId) {
+    public Object attachIfPresent(Entity entity, String modelId) {
         if (!available()) return null;
         try {
             if (modelOrNullMethod().invoke(null, modelId) == null) return null;
@@ -56,7 +41,7 @@ final class BetterModelHook {
         return attach(entity, modelId);
     }
 
-    Object attach(Entity entity, String modelId) {
+    public Object attach(Entity entity, String modelId) {
         if (!Bukkit.getPluginManager().isPluginEnabled("BetterModel")) {
             plugin.getLogger().warning("BetterModel ist beim Spawn von '" + modelId + "' nicht aktiv - kein Modell angehaengt.");
             return null;
@@ -79,8 +64,7 @@ final class BetterModelHook {
         }
     }
 
-    /** Fuer den "state"-Skill-Mechanic: spielt eine BetterModel-Animation einmal ab. */
-    boolean play(Object tracker, String animation) {
+    public boolean play(Object tracker, String animation) {
         if (tracker == null || !available()) return false;
         try {
             Object modifier = playOnceModifier();
@@ -89,9 +73,6 @@ final class BetterModelHook {
             try {
                 result = method.invoke(tracker, animation, modifier);
             } catch (IllegalArgumentException mismatch) {
-                // Der gecachte Method-Handle stammt von einer anderen Tracker-Implementierung
-                // (z.B. verschiedene Modell-Typen liefern unterschiedliche Klassen) - einmal
-                // frisch fuer DIESEN Tracker aufloesen statt dauerhaft kaputt zu bleiben.
                 method = tracker.getClass().getMethod("animate", String.class, modifierClass());
                 result = method.invoke(tracker, animation, modifier);
             }
@@ -122,7 +103,6 @@ final class BetterModelHook {
         return modifierClass;
     }
 
-    /** AnimationModifier.builder().type(PLAY_ONCE).build() ist immer dasselbe Ergebnis - einmal bauen, immer wiederverwenden. */
     private Object playOnceModifier() throws ReflectiveOperationException {
         if (playOnceModifier != null) return playOnceModifier;
         Class<?> modifier = modifierClass();
@@ -140,19 +120,7 @@ final class BetterModelHook {
         return animateMethod;
     }
 
-    /**
-     * Fuer den "mountmodel"-Skill-Mechanic: setzt den Rider auf eine benannte Bone-Hitbox
-     * (Sitz). Die genauen Klassennamen von HitBox/MountControllers sind aus der Doku nicht
-     * 1:1 bekannt, deshalb werden Methoden/Konstanten defensiv ueber den tatsaechlichen
-     * Parametertyp aufgeloest statt eine fest verdrahtete, moeglicherweise falsche
-     * vollqualifizierte Klasse zu erraten - schlaegt ein Schritt fehl, gibt's eine
-     * konkrete Logzeile statt eines stillen Nichts-Passiert.
-     */
-    /**
-     * Weltposition eines Bones (z.B. der Bombe am Modell): BetterModel liefert sie relativ zum Modell-Ursprung
-     * (Vector3f in Bloecken), also auf die Tracker-Position addiert. null, wenn der Bone fehlt.
-     */
-    org.bukkit.Location bonePosition(Object tracker, String boneName, org.bukkit.Location origin) {
+    public org.bukkit.Location bonePosition(Object tracker, String boneName, org.bukkit.Location origin) {
         if (tracker == null) return null;
         try {
             Object bone = tracker.getClass().getMethod("bone", String.class).invoke(tracker, boneName);
@@ -165,6 +133,7 @@ final class BetterModelHook {
             double x = ((Number) vector.getField("x").get(offset)).doubleValue();
             double y = ((Number) vector.getField("y").get(offset)).doubleValue();
             double z = ((Number) vector.getField("z").get(offset)).doubleValue();
+            if (plugin.debug().verbose()) plugin.debug().verbose("bone '" + boneName + "' offset " + String.format("%.2f %.2f %.2f", x, y, z));
             return origin.clone().add(x, y, z);
         } catch (ReflectiveOperationException | RuntimeException exception) {
             plugin.getLogger().warning("@ModelPart '" + boneName + "' fehlgeschlagen: " + exception);
@@ -172,7 +141,46 @@ final class BetterModelHook {
         }
     }
 
-    boolean mount(Object tracker, String seat, Entity rider) {
+    private static final Map<String, String> ROTATION_SETTERS = Map.of(
+            "headuneven", "setHeadUneven", "bodyuneven", "setBodyUneven", "playermode", "setPlayerMode",
+            "minbody", "setMinBody", "maxbody", "setMaxBody", "minhead", "setMinHead", "maxhead", "setMaxHead",
+            "stable", "setStable", "duration", "setRotationDuration", "delay", "setRotationDelay");
+
+    public boolean bodyRotation(Object tracker, Map<String, String> params) {
+        if (tracker == null) return false;
+        try {
+            Object rotator = tracker.getClass().getMethod("bodyRotator").invoke(tracker);
+            Method setValue = rotator.getClass().getMethod("setValue", java.util.function.Consumer.class);
+            setValue.invoke(rotator, (java.util.function.Consumer<Object>) data -> {
+                for (Map.Entry<String, String> entry : params.entrySet()) {
+                    String setter = ROTATION_SETTERS.get(entry.getKey());
+                    if (setter != null) applySetter(data, setter, entry.getValue());
+                }
+            });
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException exception) {
+            plugin.getLogger().warning("BodyRotation fehlgeschlagen: " + exception);
+            return false;
+        }
+    }
+
+    private void applySetter(Object data, String name, String value) {
+        for (Method method : data.getClass().getMethods()) {
+            if (!method.getName().equals(name) || method.getParameterCount() != 1) continue;
+            Class<?> type = method.getParameterTypes()[0];
+            try {
+                Object parsed = type == boolean.class ? Boolean.parseBoolean(value)
+                        : type == int.class ? (Object) Integer.parseInt(value.trim())
+                        : (Object) Float.parseFloat(value.trim());
+                method.invoke(data, parsed);
+            } catch (ReflectiveOperationException | NumberFormatException exception) {
+                plugin.getLogger().warning("BodyRotation: '" + value + "' ist kein gueltiger Wert fuer " + name + ".");
+            }
+            return;
+        }
+    }
+
+    public boolean mount(Object tracker, String seat, Entity rider) {
         if (tracker == null) return false;
         try {
             Object bone = tracker.getClass().getMethod("bone", String.class).invoke(tracker, seat);
@@ -201,7 +209,6 @@ final class BetterModelHook {
         }
     }
 
-    /** Ohne das bleibt der Sitz nur dekorativ - "CONTROL" erlaubt dem Rider, das Modell wirklich zu steuern. */
     private void allowControl(Object hitBox) {
         Method method = findMethod(hitBox.getClass(), "mountController", 1);
         if (method == null) return;
@@ -239,7 +246,7 @@ final class BetterModelHook {
         return null;
     }
 
-    void close(Object tracker) {
+    public void close(Object tracker) {
         if (tracker == null) return;
         try {
             tracker.getClass().getMethod("close").invoke(tracker);
