@@ -1,21 +1,23 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.ai;
 
 import com.destroystokyo.paper.entity.ai.Goal;
 import com.destroystokyo.paper.entity.ai.GoalType;
 import com.destroystokyo.paper.entity.ai.MobGoals;
+import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.skill.SkillStep;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.List;
-import java.util.Map;
-import java.util.Locale;
 
-final class AiGoalApplier {
+public final class AiGoalApplier {
     private static final Map<String, List<String>> ALIASES = Map.of(
             "attacker", List.of("hurtby"),
             "players", List.of("nearestattackable"),
@@ -31,7 +33,7 @@ final class AiGoalApplier {
     private AiGoalApplier() {}
 
     private record Token(Integer priority, String name, Map<String, String> params) {
-        static Token parse(String raw) {
+        public static Token parse(String raw) {
             String text = raw.trim();
             Integer priority = null;
             Matcher matcher = PRIORITY.matcher(text);
@@ -47,7 +49,7 @@ final class AiGoalApplier {
         }
     }
 
-    static void apply(Mob mob, List<String> selectors, List<String> targetSelectors, BetterMobPlugin plugin, Predicate<Entity> managed) {
+    public static void apply(Mob mob, List<String> selectors, List<String> targetSelectors, BetterMobPlugin plugin, Predicate<Entity> managed) {
         MobGoals mobGoals = Bukkit.getMobGoals();
         applyCategory(mobGoals, mob, selectors, plugin, managed, GoalType.MOVE, GoalType.LOOK, GoalType.JUMP);
         applyCategory(mobGoals, mob, targetSelectors, plugin, managed, GoalType.TARGET);
@@ -78,7 +80,7 @@ final class AiGoalApplier {
         }
     }
 
-    static void promoteRanged(Mob mob) {
+    public static void promoteRanged(Mob mob) {
         MobGoals mobGoals = Bukkit.getMobGoals();
         for (Goal<Mob> goal : new ArrayList<>(mobGoals.getAllGoals(mob))) {
             String key = keyOf(goal);

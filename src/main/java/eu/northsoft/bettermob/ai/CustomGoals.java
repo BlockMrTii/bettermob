@@ -1,4 +1,4 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.ai;
 
 import com.destroystokyo.paper.entity.ai.Goal;
 import com.destroystokyo.paper.entity.ai.GoalKey;
@@ -7,17 +7,17 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Monster;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.Monster;
 import org.bukkit.plugin.Plugin;
 
 import java.util.EnumSet;
 import java.util.function.Predicate;
 
-final class CustomGoals {
+public final class CustomGoals {
     private CustomGoals() {}
 
-    static Goal<Mob> lookAtTarget(Plugin plugin, Mob mob, double radius) {
+    public static Goal<Mob> lookAtTarget(Plugin plugin, Mob mob, double radius) {
         GoalKey<Mob> key = GoalKey.of(Mob.class, new NamespacedKey(plugin, "look_at_target"));
         return new Goal<>() {
             @Override
@@ -45,7 +45,7 @@ final class CustomGoals {
         };
     }
 
-    static Goal<Mob> nearestMonster(Plugin plugin, Mob mob, Predicate<Entity> managed) {
+    public static Goal<Mob> nearestMonster(Plugin plugin, Mob mob, Predicate<Entity> managed) {
         GoalKey<Mob> key = GoalKey.of(Mob.class, new NamespacedKey(plugin, "nearest_monster"));
         return new Goal<>() {
             private LivingEntity found;

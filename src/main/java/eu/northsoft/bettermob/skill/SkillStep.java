@@ -1,4 +1,4 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.skill;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-sealed interface SkillStep {
+public sealed interface SkillStep {
     record Delay(int ticks) implements SkillStep {}
 
     record Mechanic(String name, Map<String, String> params, String targeter, Map<String, String> targeterParams,
@@ -82,29 +82,29 @@ sealed interface SkillStep {
         private final String s;
         private int pos;
 
-        Cursor(String s) {
+        public Cursor(String s) {
             this.s = s;
         }
 
-        char peek() {
+        public char peek() {
             return pos < s.length() ? s.charAt(pos) : '\0';
         }
 
-        void advance() {
+        public void advance() {
             pos++;
         }
 
-        void skipWhitespace() {
+        public void skipWhitespace() {
             while (pos < s.length() && Character.isWhitespace(s.charAt(pos))) pos++;
         }
 
-        String readWord() {
+        public String readWord() {
             int start = pos;
             while (pos < s.length() && (Character.isLetterOrDigit(s.charAt(pos)) || s.charAt(pos) == '_' || s.charAt(pos) == ':')) pos++;
             return s.substring(start, pos);
         }
 
-        String readBraced() {
+        public String readBraced() {
             int start = pos + 1;
             int depth = 0;
             int i = pos;

@@ -1,14 +1,14 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.pack;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-final class YamlFiles {
+public final class YamlFiles {
     private YamlFiles() {}
 
-    static List<File> collect(File folder) {
+    public static List<File> collect(File folder) {
         List<File> result = new ArrayList<>();
         walk(folder, result);
         return result;

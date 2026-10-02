@@ -1,9 +1,9 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.drop;
 
 import java.util.Locale;
 
-record DropEntry(String name, int min, int max, double chance) {
-    static DropEntry parse(String line) {
+public record DropEntry(String name, int min, int max, double chance) {
+    public static DropEntry parse(String line) {
         String[] tokens = line.trim().split("\\s+");
         if (tokens.length == 0 || tokens[0].isEmpty()) return null;
         int[] amount = {1, 1};
@@ -39,7 +39,7 @@ record DropEntry(String name, int min, int max, double chance) {
         return Math.max(0, Math.min(1, value));
     }
 
-    boolean isExp() {
+    public boolean isExp() {
         String key = name.toLowerCase(Locale.ROOT);
         return key.equals("exp") || key.equals("experience") || key.equals("xp");
     }

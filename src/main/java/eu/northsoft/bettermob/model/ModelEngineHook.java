@@ -1,12 +1,13 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.model;
 
+import eu.northsoft.bettermob.BetterMobPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
 
-final class ModelEngineHook {
+public final class ModelEngineHook {
     private static final String API = "com.ticxo.modelengine.api.ModelEngineAPI";
     private static final String ACTIVE_MODEL = "com.ticxo.modelengine.api.model.ActiveModel";
 
@@ -17,15 +18,15 @@ final class ModelEngineHook {
     private Method addModelMethod;
     private Method destroyMethod;
 
-    ModelEngineHook(BetterMobPlugin plugin) {
+    public ModelEngineHook(BetterMobPlugin plugin) {
         this.plugin = plugin;
     }
 
-    boolean available() {
+    public boolean available() {
         return Bukkit.getPluginManager().isPluginEnabled("ModelEngine") && classExists(API);
     }
 
-    Object attach(Entity entity, String modelId) {
+    public Object attach(Entity entity, String modelId) {
         if (!Bukkit.getPluginManager().isPluginEnabled("ModelEngine")) {
             plugin.getLogger().warning("ModelEngine ist beim Spawn von '" + modelId + "' nicht aktiv - kein Modell angehaengt.");
             return null;
@@ -51,7 +52,7 @@ final class ModelEngineHook {
         }
     }
 
-    void close(Object tracker) {
+    public void close(Object tracker) {
         if (tracker == null) return;
         try {
             if (destroyMethod == null) destroyMethod = tracker.getClass().getMethod("destroy");

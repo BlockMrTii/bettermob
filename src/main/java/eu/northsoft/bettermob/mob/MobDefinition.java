@@ -1,6 +1,8 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.mob;
 
 import eu.northsoft.bettermob.api.MobInfo;
+import eu.northsoft.bettermob.drop.DropTable;
+import eu.northsoft.bettermob.skill.SkillStep;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
@@ -10,25 +12,25 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-final class MobDefinition {
-    final String id;
-    final EntityType type;
-    final String displayName;
-    final String modelId;
-    final double health;
-    final double damage;
-    final boolean removeAi;
-    final List<String> aiGoalSelectors;
-    final List<String> aiTargetSelectors;
-    final Options options;
-    final boolean threatTable;
-    final Map<DamageCause, Double> damageModifiers;
-    final List<SkillTrigger> skillTriggers;
+public final class MobDefinition {
+    public final String id;
+    public final EntityType type;
+    public final String displayName;
+    public final String modelId;
+    public final double health;
+    public final double damage;
+    public final boolean removeAi;
+    public final List<String> aiGoalSelectors;
+    public final List<String> aiTargetSelectors;
+    public final Options options;
+    public final boolean threatTable;
+    public final Map<DamageCause, Double> damageModifiers;
+    public final List<SkillTrigger> skillTriggers;
 
-    final DropTable drops;
-    final String faction;
+    public final DropTable drops;
+    public final String faction;
 
-    MobDefinition(String id, EntityType type, String displayName, String modelId,
+    public MobDefinition(String id, EntityType type, String displayName, String modelId,
                   double health, double damage, boolean removeAi,
                   List<String> aiGoalSelectors, List<String> aiTargetSelectors,
                   Options options, boolean threatTable, Map<DamageCause, Double> damageModifiers,
@@ -50,11 +52,11 @@ final class MobDefinition {
         this.faction = faction;
     }
 
-    MobInfo toInfo() {
+    public MobInfo toInfo() {
         return new MobInfo(id, type, displayName, modelId, health, damage);
     }
 
-    record Options(boolean collidable, double movementSpeed, boolean preventOtherDrops, boolean silent,
+    public record Options(boolean collidable, double movementSpeed, boolean preventOtherDrops, boolean silent,
                    boolean preventRenaming, boolean preventLeashing, boolean alwaysShowName, boolean preventSunburn,
                    boolean invincible, boolean invisible, boolean canMove, boolean interactable, boolean marker,
                    String itemHead, double knockbackResistance, double followRange, boolean preventItemPickup,
@@ -63,10 +65,10 @@ final class MobDefinition {
                 false, true, true, false, null, -1, -1, false, -1);
     }
 
-    record SkillTrigger(SkillStep step, Trigger trigger, int timerTicks) {
+    public record SkillTrigger(SkillStep step, Trigger trigger, int timerTicks) {
         private static final Pattern PATTERN = Pattern.compile("^(.*\\S)\\s+~on(\\w+?)(?::(\\d+))?(?:\\s+(\\?!?\\w+(?:\\{.*})?))?\\s*$", Pattern.CASE_INSENSITIVE);
 
-        static SkillTrigger parse(String line) {
+        public static SkillTrigger parse(String line) {
             Matcher matcher = PATTERN.matcher(line.trim());
             if (!matcher.matches()) return null;
             Trigger trigger = Trigger.parse(matcher.group(2));
@@ -77,7 +79,7 @@ final class MobDefinition {
             return new SkillTrigger(step, trigger, ticks);
         }
 
-        enum Trigger {
+        public enum Trigger {
             SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT;
 
             static Trigger parse(String value) {

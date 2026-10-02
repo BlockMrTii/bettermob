@@ -1,5 +1,15 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.command;
 
+import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.drop.DropRegistry;
+import eu.northsoft.bettermob.item.ItemDefinition;
+import eu.northsoft.bettermob.item.ItemRegistry;
+import eu.northsoft.bettermob.mob.MobDefinition;
+import eu.northsoft.bettermob.mob.MobManager;
+import eu.northsoft.bettermob.pack.PackScanner;
+import eu.northsoft.bettermob.skill.SkillContext;
+import eu.northsoft.bettermob.skill.SkillEngine;
+import eu.northsoft.bettermob.skill.SkillRegistry;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -11,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-final class BetterMobCommand implements CommandExecutor, TabCompleter {
+public final class BetterMobCommand implements CommandExecutor, TabCompleter {
     private final BetterMobPlugin plugin;
     private final MobManager manager;
     private final SkillRegistry skillRegistry;
@@ -20,7 +30,7 @@ final class BetterMobCommand implements CommandExecutor, TabCompleter {
     private final ItemRegistry itemRegistry;
     private final DropRegistry dropRegistry;
 
-    BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry, DropRegistry dropRegistry) {
+    public BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry, DropRegistry dropRegistry) {
         this.plugin = plugin;
         this.manager = manager;
         this.skillRegistry = skillRegistry;

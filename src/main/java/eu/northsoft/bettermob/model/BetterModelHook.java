@@ -1,12 +1,13 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.model;
 
+import eu.northsoft.bettermob.BetterMobPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 
 import java.lang.reflect.Method;
 import java.util.Map;
 
-final class BetterModelHook {
+public final class BetterModelHook {
     private static final String API = "kr.toxicity.model.api.BetterModel";
     private static final String ADAPTER = "kr.toxicity.model.api.bukkit.platform.BukkitAdapter";
     private static final String PLATFORM_ENTITY = "kr.toxicity.model.api.platform.PlatformEntity";
@@ -22,15 +23,15 @@ final class BetterModelHook {
     private Method animateMethod;
     private Class<?> modifierClass;
 
-    BetterModelHook(BetterMobPlugin plugin) {
+    public BetterModelHook(BetterMobPlugin plugin) {
         this.plugin = plugin;
     }
 
-    boolean available() {
+    public boolean available() {
         return Bukkit.getPluginManager().isPluginEnabled("BetterModel") && classExists(API);
     }
 
-    Object attachIfPresent(Entity entity, String modelId) {
+    public Object attachIfPresent(Entity entity, String modelId) {
         if (!available()) return null;
         try {
             if (modelOrNullMethod().invoke(null, modelId) == null) return null;
@@ -40,7 +41,7 @@ final class BetterModelHook {
         return attach(entity, modelId);
     }
 
-    Object attach(Entity entity, String modelId) {
+    public Object attach(Entity entity, String modelId) {
         if (!Bukkit.getPluginManager().isPluginEnabled("BetterModel")) {
             plugin.getLogger().warning("BetterModel ist beim Spawn von '" + modelId + "' nicht aktiv - kein Modell angehaengt.");
             return null;
@@ -63,7 +64,7 @@ final class BetterModelHook {
         }
     }
 
-    boolean play(Object tracker, String animation) {
+    public boolean play(Object tracker, String animation) {
         if (tracker == null || !available()) return false;
         try {
             Object modifier = playOnceModifier();
@@ -119,7 +120,7 @@ final class BetterModelHook {
         return animateMethod;
     }
 
-    org.bukkit.Location bonePosition(Object tracker, String boneName, org.bukkit.Location origin) {
+    public org.bukkit.Location bonePosition(Object tracker, String boneName, org.bukkit.Location origin) {
         if (tracker == null) return null;
         try {
             Object bone = tracker.getClass().getMethod("bone", String.class).invoke(tracker, boneName);
@@ -144,7 +145,7 @@ final class BetterModelHook {
             "minbody", "setMinBody", "maxbody", "setMaxBody", "minhead", "setMinHead", "maxhead", "setMaxHead",
             "stable", "setStable", "duration", "setRotationDuration", "delay", "setRotationDelay");
 
-    boolean bodyRotation(Object tracker, Map<String, String> params) {
+    public boolean bodyRotation(Object tracker, Map<String, String> params) {
         if (tracker == null) return false;
         try {
             Object rotator = tracker.getClass().getMethod("bodyRotator").invoke(tracker);
@@ -178,7 +179,7 @@ final class BetterModelHook {
         }
     }
 
-    boolean mount(Object tracker, String seat, Entity rider) {
+    public boolean mount(Object tracker, String seat, Entity rider) {
         if (tracker == null) return false;
         try {
             Object bone = tracker.getClass().getMethod("bone", String.class).invoke(tracker, seat);
@@ -244,7 +245,7 @@ final class BetterModelHook {
         return null;
     }
 
-    void close(Object tracker) {
+    public void close(Object tracker) {
         if (tracker == null) return;
         try {
             tracker.getClass().getMethod("close").invoke(tracker);

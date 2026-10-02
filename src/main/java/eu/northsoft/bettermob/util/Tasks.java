@@ -1,12 +1,12 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.util;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
-final class Tasks {
-    static final boolean FOLIA = detectFolia();
+public final class Tasks {
+    public static final boolean FOLIA = detectFolia();
 
     private Tasks() {
     }
@@ -20,7 +20,7 @@ final class Tasks {
         }
     }
 
-    static void runLater(Plugin plugin, Entity entity, long ticks, Runnable task) {
+    public static void runLater(Plugin plugin, Entity entity, long ticks, Runnable task) {
         if (FOLIA) {
             entity.getScheduler().runDelayed(plugin, scheduled -> task.run(), null, Math.max(1, ticks));
             return;
@@ -31,7 +31,7 @@ final class Tasks {
         }, ticks);
     }
 
-    static Runnable runTimer(Plugin plugin, Entity entity, long delay, long period, Runnable task) {
+    public static Runnable runTimer(Plugin plugin, Entity entity, long delay, long period, Runnable task) {
         if (FOLIA) {
             var scheduled = entity.getScheduler().runAtFixedRate(plugin, t -> task.run(), null, Math.max(1, delay), Math.max(1, period));
             return scheduled == null ? () -> { } : scheduled::cancel;
@@ -40,7 +40,7 @@ final class Tasks {
         return bukkitTask::cancel;
     }
 
-    static void runGlobal(Plugin plugin, Runnable task) {
+    public static void runGlobal(Plugin plugin, Runnable task) {
         if (FOLIA) Bukkit.getGlobalRegionScheduler().run(plugin, scheduled -> task.run());
         else Bukkit.getScheduler().runTask(plugin, task);
     }
