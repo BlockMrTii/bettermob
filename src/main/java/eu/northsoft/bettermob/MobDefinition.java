@@ -83,7 +83,7 @@ final class MobDefinition {
         }
 
         enum Trigger {
-            SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE;
+            SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT;
 
             static Trigger parse(String value) {
                 return switch (value.toLowerCase(Locale.ROOT)) {
@@ -95,6 +95,7 @@ final class MobDefinition {
                     case "death" -> DEATH;
                     case "timer" -> TIMER;
                     case "use" -> USE;
+                    case "shoot" -> SHOOT;
                     default -> null;
                 };
             }

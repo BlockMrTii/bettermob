@@ -14,6 +14,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
+import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.PlayerLeashEntityEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -100,6 +101,15 @@ final class MobListener implements Listener {
             if (definition != null) manager.fireTrigger(attackerMob, definition, MobDefinition.SkillTrigger.Trigger.ATTACK,
                     event.getEntity() instanceof LivingEntity living ? living : null, event);
         }
+    }
+
+    /** ~onShoot: der Mob schiesst mit Bogen/Armbrust. Ausloeser ist sein Ziel, das Event laesst sich per CancelEvent abbrechen. */
+    @EventHandler
+    public void onShoot(EntityShootBowEvent event) {
+        MobDefinition definition = manager.definitionOf(event.getEntity().getUniqueId());
+        if (definition == null) return;
+        LivingEntity target = event.getEntity() instanceof Mob mob ? mob.getTarget() : null;
+        manager.fireTrigger(event.getEntity(), definition, MobDefinition.SkillTrigger.Trigger.SHOOT, target, event);
     }
 
     @EventHandler
