@@ -1,5 +1,5 @@
 name: BetterMob
-version: '1.1.1'
+version: '1.1.2'
 main: eu.northsoft.bettermob.BetterMobPlugin
 api-version: '1.21'
 folia-supported: true
