@@ -29,8 +29,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Fuehrt SkillDefinitions aus - ein kleiner, auf die tatsaechlich gebrauchten Mechaniken
@@ -39,8 +37,6 @@ import java.util.regex.Pattern;
  * Server zum Absturz zu bringen.
  */
 final class SkillEngine {
-    private static final Pattern CONDITION_PATTERN = Pattern.compile("^(\\w+)(\\{([^}]*)})?(\\s+(\\S+))?(\\s+(\\S+))?$");
-
     private final BetterMobPlugin plugin;
     private final SkillRegistry registry;
     private final MobManager mobManager;
@@ -97,12 +93,54 @@ final class SkillEngine {
     }
 
     void run(SkillDefinition skill, SkillContext context) {
-        for (String condition : skill.conditions) if (!conditionPasses(condition, context, null)) return;
+        if (check(skill.conditions, context, null) != Check.PASS) return;
         if (!skill.targetConditions.isEmpty()) {
             Target obstructing = resolve("obstructingblock", Map.of(), context);
-            for (String condition : skill.targetConditions) if (!conditionPasses(condition, context, obstructing)) return;
+            if (check(skill.targetConditions, context, obstructing) != Check.PASS) return;
         }
+        if (skill.cooldown > 0 && !acquireSkillCooldown(context.caster(), skill)) return;
         executeSteps(skill.steps, 0, context);
+    }
+
+    private enum Check { PASS, FAIL, REDIRECTED }
+
+    /**
+     * Prueft eine Bedingungsliste. Eine Bedingung mit "castinstead <skill>" startet bei Erfuellung
+     * stattdessen jenen Skill (der aktuelle bricht ab), sonst wird sie uebergangen; jede andere
+     * nicht erfuellte Bedingung bricht den Skill ab.
+     */
+    private Check check(List<String> conditions, SkillContext context, Target target) {
+        for (String raw : conditions) {
+            Condition condition = parseCondition(raw);
+            if (condition == null) continue;
+            boolean met = evaluate(condition, context, target) == (condition.expected() == null || condition.expected());
+            if ("castinstead".equals(condition.action())) {
+                if (!met) continue;
+                if (condition.actionValue() != null) runById(condition.actionValue(), context);
+                return Check.REDIRECTED;
+            }
+            if (!met) return Check.FAIL;
+        }
+        return Check.PASS;
+    }
+
+    private boolean acquireSkillCooldown(LivingEntity caster, SkillDefinition skill) {
+        long now = System.currentTimeMillis();
+        String key = skillCooldownKey(caster, skill.id);
+        Long until = cooldowns.get(key);
+        if (until != null && until > now) return false;
+        if (cooldowns.size() > 2048) cooldowns.values().removeIf(time -> time <= now);
+        cooldowns.put(key, now + (long) (skill.cooldown * 1000));
+        return true;
+    }
+
+    private boolean skillOnCooldown(LivingEntity caster, String skillId) {
+        Long until = cooldowns.get(skillCooldownKey(caster, skillId));
+        return until != null && until > System.currentTimeMillis();
+    }
+
+    private static String skillCooldownKey(LivingEntity caster, String skillId) {
+        return caster.getUniqueId() + "@" + skillId.toLowerCase(Locale.ROOT);
     }
 
     /** Fuehrt einen einzelnen Schritt aus - fuer Mob-level "Skills:"-Zeilen, die direkt
@@ -221,29 +259,95 @@ final class SkillEngine {
         return copy;
     }
 
-    private boolean conditionPasses(String raw, SkillContext context, Target targetOverride) {
-        Matcher matcher = CONDITION_PATTERN.matcher(raw.trim());
-        if (!matcher.matches()) return true;
-        String name = matcher.group(1).toLowerCase(Locale.ROOT);
-        String paramsRaw = matcher.group(3);
-        String expected = matcher.group(5);
+    /** Eine Bedingungszeile: "name{params} [true|false] [aktion [wert]]", z.B. "distance{d=0-6} castinstead mein_skill". */
+    private record Condition(String name, String params, Boolean expected, String action, String actionValue) {}
 
-        boolean actual = switch (name) {
+    private static Condition parseCondition(String raw) {
+        String text = raw.trim();
+        int i = 0;
+        while (i < text.length() && (Character.isLetterOrDigit(text.charAt(i)) || text.charAt(i) == '_' || text.charAt(i) == ':')) i++;
+        if (i == 0) return null;
+        String name = text.substring(0, i).toLowerCase(Locale.ROOT);
+
+        String params = null;
+        if (i < text.length() && text.charAt(i) == '{') {
+            int depth = 0;
+            int j = i;
+            for (; j < text.length(); j++) {
+                char c = text.charAt(j);
+                if (c == '{' || c == '[') depth++;
+                else if (c == '}' || c == ']') {
+                    depth--;
+                    if (depth == 0) break;
+                }
+            }
+            params = text.substring(i + 1, Math.min(j, text.length()));
+            i = j + 1;
+        }
+
+        Boolean expected = null;
+        String action = null;
+        String value = null;
+        String rest = i < text.length() ? text.substring(i).trim() : "";
+        if (!rest.isEmpty()) {
+            String[] tokens = rest.split("\\s+");
+            int k = 0;
+            if (tokens[0].equalsIgnoreCase("true") || tokens[0].equalsIgnoreCase("false")) {
+                expected = Boolean.parseBoolean(tokens[0]);
+                k = 1;
+            }
+            if (k < tokens.length) {
+                action = tokens[k].toLowerCase(Locale.ROOT);
+                if (k + 1 < tokens.length) value = String.join(" ", java.util.Arrays.copyOfRange(tokens, k + 1, tokens.length));
+            }
+        }
+        return new Condition(name, params, expected, action, value);
+    }
+
+    /** Einzelne Bedingung ohne Aktion, z.B. fuer "?cond{...}" am Zeilenende: erfuellt = true. */
+    private boolean conditionPasses(String raw, SkillContext context, Target targetOverride) {
+        Condition condition = parseCondition(raw);
+        if (condition == null) return true;
+        return evaluate(condition, context, targetOverride) == (condition.expected() == null || condition.expected());
+    }
+
+    private boolean evaluate(Condition condition, SkillContext context, Target targetOverride) {
+        String paramsRaw = condition.params();
+        return switch (condition.name()) {
             case "offgcd" -> !hasActiveGcd(context.caster().getUniqueId());
             case "onground" -> context.caster().isOnGround();
             case "hasaura" -> hasAura(context.caster(), conditionParam(paramsRaw, "n", "name", "aura", "auraname"));
             case "hastag" -> context.caster().getScoreboardTags().contains(TAG_PREFIX + conditionParam(paramsRaw, "t", "tag", "n"));
             case "chance" -> ThreadLocalRandom.current().nextDouble() < parseFloat(conditionParam(paramsRaw, "chance", "c"), 1f);
+            case "skilloncooldown" -> skillOnCooldown(context.caster(), conditionParam(paramsRaw, "skill", "s", "name"));
+            case "distance" -> withinDistance(context, conditionParam(paramsRaw, "d", "distance"));
             case "onblock" -> containsBlockType(paramsRaw, context.caster().getLocation().subtract(0, 0.1, 0).getBlock());
             case "blocktype" -> targetOverride != null && targetOverride.block() != null
                     && containsBlockType(paramsRaw, targetOverride.block());
             default -> {
-                plugin.getLogger().warning("Skill-Condition '" + name + "' wird nicht unterstuetzt - wird ignoriert.");
+                plugin.getLogger().warning("Skill-Condition '" + condition.name() + "' wird nicht unterstuetzt - wird ignoriert.");
                 yield true;
             }
         };
-        if (expected == null || expected.equalsIgnoreCase("cancel")) return actual;
-        return actual == Boolean.parseBoolean(expected);
+    }
+
+    /** Abstand zum Ausloeser (oder zum Ziel des Mobs): "0-6" Bereich, ">3", "<5", ">=2", "<=4" oder ein Wert (+-0,5). */
+    private boolean withinDistance(SkillContext context, String spec) {
+        LivingEntity other = context.trigger();
+        if (other == null && context.caster() instanceof Mob mob) other = mob.getTarget();
+        if (other == null || !other.getWorld().equals(context.caster().getWorld())) return false;
+        double distance = other.getLocation().distance(context.caster().getLocation());
+        try {
+            if (spec.startsWith(">=")) return distance >= Double.parseDouble(spec.substring(2));
+            if (spec.startsWith("<=")) return distance <= Double.parseDouble(spec.substring(2));
+            if (spec.startsWith(">")) return distance > Double.parseDouble(spec.substring(1));
+            if (spec.startsWith("<")) return distance < Double.parseDouble(spec.substring(1));
+            int dash = spec.indexOf('-', 1);
+            if (dash > 0) return distance >= Double.parseDouble(spec.substring(0, dash)) && distance <= Double.parseDouble(spec.substring(dash + 1));
+            return Math.abs(distance - Double.parseDouble(spec)) < 0.5;
+        } catch (NumberFormatException exception) {
+            return false;
+        }
     }
 
     private boolean containsBlockType(String paramsRaw, Block block) {
