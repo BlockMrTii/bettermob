@@ -90,6 +90,21 @@ final class AiGoalApplier {
     }
 
     /** Goals, die Vanilla nicht kennt, aber Packs per Namen anfordern. */
+    /**
+     * Skelette melden ihr Bogen-Goal bei jedem Waffenwechsel selbst neu an (Prioritaet 4) - dann verliert es gegen
+     * die per AIGoalSelectors gesetzten Goals (lookAtTarget, randomstroll) und der Mob schiesst nie. Nach einem
+     * equip wird es deshalb wieder auf hoechste Prioritaet gesetzt.
+     */
+    static void promoteRanged(Mob mob) {
+        MobGoals mobGoals = Bukkit.getMobGoals();
+        for (Goal<Mob> goal : new ArrayList<>(mobGoals.getAllGoals(mob))) {
+            String key = keyOf(goal);
+            if (!key.equals("rangedbowattack") && !key.equals("rangedcrossbowattack")) continue;
+            mobGoals.removeGoal(mob, goal);
+            mobGoals.addGoal(mob, 0, goal);
+        }
+    }
+
     private static Goal<Mob> custom(Token token, Mob mob, BetterMobPlugin plugin, Predicate<Entity> managed) {
         return switch (normalize(token.name())) {
             case "lookattarget" -> {

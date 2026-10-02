@@ -687,7 +687,11 @@ final class SkillEngine implements org.bukkit.event.Listener {
         EntityEquipment equipment = living.getEquipment();
         equipment.setItem(slot, stack);
         // Gegenstaende, die ein Skill anlegt, sollen beim Tod nicht zusaetzlich herumliegen.
-        if (living instanceof Mob) equipment.setDropChance(slot, 0f);
+        if (living instanceof Mob mob) {
+            equipment.setDropChance(slot, 0f);
+            MobDefinition definition = mobManager.definitionOf(mob.getUniqueId());
+            if (definition != null && !definition.aiGoalSelectors.isEmpty()) AiGoalApplier.promoteRanged(mob);
+        }
     }
 
     private static final String TAG_PREFIX = "bettermob_tag_";
