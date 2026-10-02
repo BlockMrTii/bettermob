@@ -5,6 +5,7 @@ import static eu.northsoft.bettermob.skill.Params.*;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.ai.AiGoalApplier;
 import eu.northsoft.bettermob.api.CustomMechanic;
+import eu.northsoft.bettermob.debug.DebugManager;
 import eu.northsoft.bettermob.api.MechanicContext;
 import eu.northsoft.bettermob.item.ItemDefinition;
 import eu.northsoft.bettermob.item.ItemRegistry;
@@ -64,6 +65,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private final Map<UUID, Long> gcdUntilMillis = new ConcurrentHashMap<>();
     private final Map<String, Long> cooldowns = new ConcurrentHashMap<>();
 
+    private final DebugManager debug;
     private final Map<UUID, Map<String, Aura>> auras = new ConcurrentHashMap<>();
     private final Map<String, List<SkillStep>> inlineSkills = new ConcurrentHashMap<>();
 
@@ -84,6 +86,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         this.betterModel = betterModel;
         this.modelEngine = modelEngine;
         this.items = items;
+        this.debug = plugin.debug();
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
@@ -141,6 +144,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
         double speed = Math.max(0.1, parseFloat(p.get("velocity"), 1f) * 2);
         double damage = parseFloat(p.get("damage"), 2f);
+        if (debug.verbose()) debug.verbose("shoot " + typeName + " at " + aim.getName() + ", speed " + speed + ", damage " + damage, subject(caster));
         double spread = Math.toRadians(parseFloat(p.get("spread"), 0f));
         boolean gravity = !"false".equalsIgnoreCase(p.get("gravity"));
         Vector direction = aim.getEyeLocation().toVector().subtract(caster.getEyeLocation().toVector()).normalize();
@@ -267,13 +271,31 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     public void run(SkillDefinition skill, SkillContext context) {
-        if (check(skill.conditions, context, null) != Check.PASS) return;
+        String caster = debug.info() ? subject(context.caster()) : null;
+        if (debug.info()) debug.info("skill '" + skill.id + "' started by " + caster, skill.id, caster);
+        Check conditions = check(skill.conditions, context, null);
+        if (conditions != Check.PASS) {
+            if (debug.info()) debug.info("skill '" + skill.id + "' stopped: conditions " + conditions.name().toLowerCase(Locale.ROOT), skill.id, caster);
+            return;
+        }
         if (!skill.targetConditions.isEmpty()) {
             Target obstructing = resolve("obstructingblock", Map.of(), context);
-            if (check(skill.targetConditions, context, obstructing) != Check.PASS) return;
+            Check targetConditions = check(skill.targetConditions, context, obstructing);
+            if (targetConditions != Check.PASS) {
+                if (debug.info()) debug.info("skill '" + skill.id + "' stopped: target conditions " + targetConditions.name().toLowerCase(Locale.ROOT), skill.id, caster);
+                return;
+            }
         }
-        if (skill.cooldown > 0 && !acquireSkillCooldown(context.caster(), skill)) return;
+        if (skill.cooldown > 0 && !acquireSkillCooldown(context.caster(), skill)) {
+            if (debug.info()) debug.info("skill '" + skill.id + "' stopped: on cooldown", skill.id, caster);
+            return;
+        }
         executeSteps(skill.steps, 0, context);
+    }
+
+    private String subject(LivingEntity entity) {
+        MobDefinition definition = mobManager.definitionOf(entity.getUniqueId());
+        return definition != null ? definition.id : entity.getName();
     }
 
     private enum Check { PASS, FAIL, REDIRECTED }
@@ -285,10 +307,14 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             boolean met = evaluate(condition, context, target) == (condition.expected() == null || condition.expected());
             if ("castinstead".equals(condition.action())) {
                 if (!met) continue;
+                if (debug.info()) debug.info("condition '" + condition.name() + "' holds, casting '" + condition.actionValue() + "' instead", condition.actionValue(), subject(context.caster()));
                 if (condition.actionValue() != null) runById(condition.actionValue(), context);
                 return Check.REDIRECTED;
             }
-            if (!met) return Check.FAIL;
+            if (!met) {
+                if (debug.verbose()) debug.verbose("condition '" + condition.name() + "' failed", subject(context.caster()));
+                return Check.FAIL;
+            }
         }
         return Check.PASS;
     }
@@ -324,7 +350,10 @@ public final class SkillEngine implements org.bukkit.event.Listener {
                 Tasks.runLater(plugin, context.caster(), delay.ticks(), () -> executeSteps(steps, next, context));
                 return;
             }
-            if (step instanceof SkillStep.Mechanic mechanic && runMechanic(mechanic, context)) return;
+            if (step instanceof SkillStep.Mechanic mechanic && runMechanic(mechanic, context)) {
+                if (debug.verbose()) debug.verbose("cancelskill reached", subject(context.caster()));
+                return;
+            }
         }
     }
 
@@ -333,7 +362,10 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
         if (mechanic.inlineCondition() != null) {
             boolean passes = conditionPasses(mechanic.inlineCondition(), context, null);
-            if (mechanic.negated() == passes) return false;
+            if (mechanic.negated() == passes) {
+                if (debug.verbose()) debug.verbose("mechanic '" + mechanic.name() + "' skipped: inline condition", subject(context.caster()));
+                return false;
+            }
         }
 
         if (p.containsKey("cd") && !acquireCooldown(context, mechanic)) return false;
@@ -351,8 +383,15 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
         List<Target> targets = resolveAll(mechanic.targeter(), mechanic.targeterParams(), context);
 
-        if (targets.isEmpty()) return false;
+        if (targets.isEmpty()) {
+            if (debug.verbose()) debug.verbose("mechanic '" + mechanic.name() + "' skipped: no target for @" + mechanic.targeter(), subject(context.caster()));
+            return false;
+        }
         Map<String, String> params = substitute(p, context);
+        if (debug.verbose()) {
+            debug.verbose("mechanic '" + mechanic.name() + "' @" + (mechanic.targeter().isEmpty() ? "(inherited)" : mechanic.targeter())
+                    + " -> " + targets.size() + " target(s), params " + params, subject(context.caster()));
+        }
         for (Target target : targets) dispatch(mechanic, context, target, params);
         return false;
     }
@@ -883,6 +922,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private void totem(SkillContext context, Target target, Map<String, String> p) {
         Location origin = target.location().clone().add(0, parseFloat(firstParam(p, "yo", "yoffset"), 0f), 0);
         SkillContext at = context.withOrigin(origin);
+        if (debug.verbose()) debug.verbose("totem at " + origin.getBlockX() + " " + origin.getBlockY() + " " + origin.getBlockZ() + ", params " + p.keySet(), subject(context.caster()));
         runTotemLines(firstParam(p, "os", "onstart"), at);
 
         int duration = parseInt(firstParam(p, "md", "maxduration"), 0);
