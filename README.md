@@ -118,6 +118,9 @@ Options:
   Marker: false              # armor stands only: no hitbox
   ItemHead: my_item          # a registered item (see Items) worn on the head
   KnockbackResistance: 1
+  FollowRange: 15
+  Scale: 0.5
+  PreventItemPickup: true
 
 Modules:
   ThreatTable: true           # retarget to whoever dealt the most damage
@@ -235,7 +238,7 @@ registered in), `mountmodel` (BetterModel seats — the rider gets actual WASD
 control), `potion`, `look`, `breakblock`, `state` (plays a BetterModel animation),
 `summon` (spawns another registered mob), `remove`, `command`, `gcd`, `randomskill`
 (`s=a,b,c`), `skill`, `sudoskill` (run a skill with the target as caster), `cancelevent`,
-`cancelskill`, `damage` (`amount`), `throw` (`velocity`, `velocityY`), `lunge` (`velocity`),
+`cancelskill`, `equip` (`item=BOW:HAND`), `addtag`/`removetag`, `damage` (`amount`), `throw` (`velocity`, `velocityY`), `lunge` (`velocity`),
 `setblock` (`m`), `effect:particles` (`p`, `amount`, `hS`, `vS`, `speed`; alias `e:p`),
 `effect:particlering` (`particle`, `radius`, `points`, ...), `spin` (`duration` ticks,
 `velocity` degrees/tick), `takeitem` (`i=<item>;a=<amount>`, removes a registered item
@@ -249,7 +252,7 @@ and `cd=<seconds>` (cooldown per caster). `skill`/`randomskill` read their skill
 plugin and uses its own model IDs — these are separate registries from BetterModel's,
 so a model has to exist in whichever engine you point at it.
 
-**Conditions:** `offgcd`, `onground`, `onblock{b=...}` (block under the caster), `blocktype{type=...}`. Any mechanic line can
+**Conditions:** `offgcd`, `onground`, `chance{chance=0.75}`, `hastag{t=...}`, `hasaura{n=...}`, `onblock{b=...}` (block under the caster), `blocktype{type=...}`. Any mechanic line can
 end with `?condition{...}` (or `?!condition{...}` to negate) to run only when that
 check passes; unsupported conditions (this plugin has no variable/faction system)
 are logged and treated as passing, so the line still runs.
