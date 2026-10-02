@@ -886,7 +886,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
             // Bone-Position des Modells (p=tnt2); fehlt der Bone oder das Modell, die Brusthoehe des Casters.
             case "modelpart" -> {
                 Location bone = betterModel.bonePosition(mobManager.trackerFor(context.caster().getUniqueId()),
-                        firstParam(targeterParams, "p", "part", "bone"));
+                        firstParam(targeterParams, "p", "part", "bone"), context.caster().getLocation());
                 yield Target.ofLocation(bone != null ? bone
                         : context.caster().getLocation().add(0, context.caster().getHeight() * 0.6, 0));
             }
