@@ -8,6 +8,7 @@ import org.bukkit.entity.Mob;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 import java.util.logging.Logger;
 
@@ -18,6 +19,15 @@ import java.util.logging.Logger;
  * wieder anmelden. Nicht vorhandene Namen werden uebersprungen und geloggt.
  */
 final class AiGoalApplier {
+    /** MythicMobs-Namen, die bei Paper anders heissen (normalisiert, ohne _ und -). */
+    private static final Map<String, String> ALIASES = Map.of(
+            "attacker", "hurtby",
+            "players", "nearestattackable",
+            "nearestplayer", "nearestattackable",
+            "nearestplayers", "nearestattackable",
+            "lookatplayers", "lookatplayer",
+            "fleeplayers", "avoidentity");
+
     private AiGoalApplier() {}
 
     static void apply(Mob mob, List<String> selectors, List<String> targetSelectors, Logger logger) {
@@ -54,17 +64,30 @@ final class AiGoalApplier {
     }
 
     private static Goal<Mob> findByName(List<Goal<Mob>> snapshot, String token) {
-        String normalized = normalize(token);
+        // MythicMobs-Zeilen tragen Parameter ("meleeattack{attackReach=2}") - die gehoeren
+        // nicht zum Namen. Paper kann sie ohnehin nicht setzen.
+        int brace = token.indexOf('{');
+        String normalized = normalize(brace < 0 ? token : token.substring(0, brace));
+        normalized = ALIASES.getOrDefault(normalized, normalized);
+
         for (Goal<Mob> goal : snapshot) {
-            if (normalize(goal.getKey().getNamespacedKey().getKey()).equals(normalized)) return goal;
+            if (keyOf(goal).equals(normalized)) return goal;
         }
         // Vanilla nennt z.B. den Wander-Goal "water_avoiding_random_stroll" statt
-        // "random_stroll" - per Teilstring matchen, damit die kurzen MysticMobs-
-        // Namen trotzdem das tatsaechlich registrierte Goal treffen.
+        // "random_stroll" - per Teilstring matchen. Endet der Name auf den Suchbegriff,
+        // gewinnt er vor blossem Enthaltensein: der Eisengolem hat zusaetzlich
+        // "golem_random_stroll_in_village", das nur im Dorf wandert.
         for (Goal<Mob> goal : snapshot) {
-            if (normalize(goal.getKey().getNamespacedKey().getKey()).contains(normalized)) return goal;
+            if (keyOf(goal).endsWith(normalized)) return goal;
+        }
+        for (Goal<Mob> goal : snapshot) {
+            if (keyOf(goal).contains(normalized)) return goal;
         }
         return null;
+    }
+
+    private static String keyOf(Goal<Mob> goal) {
+        return normalize(goal.getKey().getNamespacedKey().getKey());
     }
 
     private static String normalize(String value) {
