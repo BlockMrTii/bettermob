@@ -48,7 +48,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
     private final Map<UUID, Long> gcdUntilMillis = new ConcurrentHashMap<>();
     private final Map<String, Long> cooldowns = new ConcurrentHashMap<>();
     // Aktive Auren pro Entity: Name -> Ablaufzeit in ms (Long.MAX_VALUE = ohne Ende).
-    private final Map<UUID, Map<String, Long>> auras = new ConcurrentHashMap<>();
+    private final Map<UUID, Map<String, Aura>> auras = new ConcurrentHashMap<>();
     private final Map<String, List<SkillStep>> inlineSkills = new ConcurrentHashMap<>();
     // Gesetzt, solange die damage-Mechanic Schaden austeilt: dieser Schaden soll kein ~onAttack
     // ausloesen, sonst bricht dessen CancelEvent den Schaden des Skills selbst wieder ab.
@@ -297,7 +297,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
             case "lunge" -> lunge(context, target, p);
             case "setblock" -> setBlock(target, p);
             case "equip" -> equip(target, p);
-            case "aura", "ondamaged", "onattack", "ontick", "ondeath", "onshoot" -> registerAura(target, p);
+            case "aura", "ondamaged", "onattack", "ontick", "ondeath", "onshoot" -> registerAura(target, p, mechanic.name());
             case "addtag" -> tag(target, p, true);
             case "removetag" -> tag(target, p, false);
             case "bodyrotation" -> bodyRotation(context, p);
@@ -721,26 +721,84 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return value == null ? "" : value.trim();
     }
 
-    /**
-     * onDamaged{auraName=spawn;time=50;...} und aura{...}: merkt sich die Aura "auraName" am Ziel fuer
-     * "time" Ticks (ohne time: dauerhaft), damit ?hasaura{n=spawn} sie finden kann. ponytail: Was die
-     * Aura sonst tut (cE, oS=[...] mit stun/velocity) wird nicht ausgefuehrt - nur das Merken.
-     */
-    private void registerAura(Target target, Map<String, String> p) {
+    private static final class Aura {
+        final String kind;
+        final long until;
+        final boolean cancelEvent;
+        final String onEnd;
+        final String onHit;
+        Runnable cancelTicker = () -> { };
+        Runnable cancelEnd = () -> { };
+
+        Aura(String kind, long until, boolean cancelEvent, String onEnd, String onHit) {
+            this.kind = kind;
+            this.until = until;
+            this.cancelEvent = cancelEvent;
+            this.onEnd = onEnd;
+            this.onHit = onHit;
+        }
+
+        void stop() {
+            cancelTicker.run();
+            cancelEnd.run();
+        }
+    }
+
+    private void registerAura(Target target, Map<String, String> p, String kind) {
         String name = firstParam(p, "auraname", "name", "aura");
-        if (name == null || target.entity() == null) return;
-        int ticks = parseInt(p.get("time"), 0);
+        if (name == null || !(target.entity() instanceof LivingEntity entity)) return;
+        String key = name.toLowerCase(Locale.ROOT);
+        int ticks = parseInt(firstParam(p, "time", "ticks", "duration"), 0);
         long until = ticks > 0 ? System.currentTimeMillis() + ticks * 50L : Long.MAX_VALUE;
-        auras.computeIfAbsent(target.entity().getUniqueId(), key -> new ConcurrentHashMap<>()).put(name.toLowerCase(Locale.ROOT), until);
+        Aura aura = new Aura(kind, until, Boolean.parseBoolean(firstParam(p, "ce", "cancelevent")),
+                firstParam(p, "oe", "onend"), firstParam(p, "oh", "onhit"));
+
+        Map<String, Aura> active = auras.computeIfAbsent(entity.getUniqueId(), id -> new ConcurrentHashMap<>());
+        Aura old = active.put(key, aura);
+        if (old != null) old.stop();
+
+        runAuraLines(firstParam(p, "os", "onstart"), SkillContext.of(entity));
+
+        String onTick = firstParam(p, "ot", "ontick");
+        if (onTick != null) {
+            long interval = Math.max(1, parseInt(firstParam(p, "i", "interval"), 20));
+            aura.cancelTicker = Tasks.runTimer(plugin, entity, interval, interval, () -> {
+                if (entity.isDead() || active.get(key) != aura) aura.cancelTicker.run();
+                else runAuraLines(onTick, SkillContext.of(entity));
+            });
+        }
+        if (ticks > 0) {
+            Tasks.runLater(plugin, entity, ticks, () -> endAura(entity, active, key, aura));
+        }
+    }
+
+    private void endAura(LivingEntity entity, Map<String, Aura> active, String key, Aura aura) {
+        if (!active.remove(key, aura)) return;
+        aura.stop();
+        runAuraLines(aura.onEnd, SkillContext.of(entity));
+    }
+
+    private void runAuraLines(String lines, SkillContext context) {
+        if (lines != null) executeSteps(inlineSkills.computeIfAbsent(lines, this::parseInline), 0, context);
+    }
+
+    void fireAuras(LivingEntity entity, String kind, LivingEntity trigger, org.bukkit.event.Cancellable event) {
+        Map<String, Aura> active = auras.get(entity.getUniqueId());
+        if (active == null) return;
+        for (Aura aura : active.values()) {
+            if (!aura.kind.equals(kind) || aura.until <= System.currentTimeMillis()) continue;
+            if (aura.cancelEvent && event != null) event.setCancelled(true);
+            runAuraLines(aura.onHit, new SkillContext(entity, trigger, event));
+        }
     }
 
     private boolean hasAura(LivingEntity entity, String name) {
-        Map<String, Long> active = auras.get(entity.getUniqueId());
+        Map<String, Aura> active = auras.get(entity.getUniqueId());
         if (active == null) return false;
-        Long until = active.get(name.toLowerCase(Locale.ROOT));
-        if (until == null) return false;
-        if (until <= System.currentTimeMillis()) {
-            active.remove(name.toLowerCase(Locale.ROOT));
+        Aura aura = active.get(name.toLowerCase(Locale.ROOT));
+        if (aura == null) return false;
+        if (aura.until <= System.currentTimeMillis()) {
+            active.remove(name.toLowerCase(Locale.ROOT), aura);
             return false;
         }
         return true;
@@ -756,7 +814,8 @@ final class SkillEngine implements org.bukkit.event.Listener {
 
     /** Vergisst den Zustand eines entfernten Entities (Auren, globaler Cooldown). */
     void forget(UUID entityId) {
-        auras.remove(entityId);
+        Map<String, Aura> removed = auras.remove(entityId);
+        if (removed != null) removed.values().forEach(Aura::stop);
         gcdUntilMillis.remove(entityId);
     }
 
