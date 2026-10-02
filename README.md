@@ -31,6 +31,13 @@ Every push to `main` and every PR triggers a GitHub Actions build (`.github/work
 that compiles the jar and uploads it as a build artifact. A release is cut automatically
 when the version in `pom.xml` changes (see "Getting the API").
 
+### Dev builds
+
+Pushing to the `dev` branch builds the jar and publishes it as the **Dev build**
+pre-release. There is only ever one: each push replaces it with the newest jar
+(`bettermob-<version>-dev-<commit>.jar`). It is unstable and meant for testing, the
+tagged releases above are the stable ones.
+
 ## Commands
 
 | Command | Description |
