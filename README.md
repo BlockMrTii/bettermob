@@ -115,6 +115,7 @@ Model: skeleton_knight      # BetterModel model ID; defaults to the mob ID
 Health: 60
 Damage: 8
 RemoveAi: false
+Faction: Elite              # mobs of one faction never target or hurt each other
 
 AIGoalSelectors:
   - clear
@@ -281,7 +282,7 @@ and `cd=<seconds>` (cooldown per caster). `skill`/`randomskill` read their skill
 plugin and uses its own model IDs — these are separate registries from BetterModel's,
 so a model has to exist in whichever engine you point at it.
 
-**Conditions:** `offgcd`, `onground`, `chance{chance=0.75}`, `hastag{t=...}`, `hasaura{n=...}`, `onblock{b=...}` (block under the caster), `blocktype{type=...}`, `skillOnCooldown{skill=...}`, `distance{d=0-6}` (also `>3`, `<=5`) to the trigger/target. A skill's `Conditions`/`TargetConditions` entry may end in `castinstead <skill>` to cast that skill instead when it holds. Any mechanic line can
+**Conditions:** `offgcd`, `onground`, `chance{chance=0.75}`, `hastag{t=...}`, `hasaura{n=...}`, `faction{faction=Elite,Other}` (the caster's, or each candidate's inside a multi-target targeter), `onblock{b=...}` (block under the caster), `blocktype{type=...}`, `skillOnCooldown{skill=...}`, `distance{d=0-6}` (also `>3`, `<=5`) to the trigger/target. A skill's `Conditions`/`TargetConditions` entry may end in `castinstead <skill>` to cast that skill instead when it holds. Any mechanic line can
 end with `?condition{...}` (or `?!condition{...}` to negate) to run only when that
 check passes; unsupported conditions (this plugin has no variable/faction system)
 are logged and treated as passing, so the line still runs.

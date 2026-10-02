@@ -392,6 +392,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
             case "hastag" -> context.caster().getScoreboardTags().contains(TAG_PREFIX + conditionParam(paramsRaw, "t", "tag", "n"));
             case "chance" -> ThreadLocalRandom.current().nextDouble() < parseFloat(conditionParam(paramsRaw, "chance", "c"), 1f);
             case "skilloncooldown" -> skillOnCooldown(context.caster(), conditionParam(paramsRaw, "skill", "s", "name"));
+            case "faction" -> hasFaction(context.caster(), conditionParam(paramsRaw, "faction", "f", "name"));
             case "distance" -> withinDistance(context, conditionParam(paramsRaw, "d", "distance"));
             case "onblock" -> containsBlockType(paramsRaw, context.caster().getLocation().subtract(0, 0.1, 0).getBlock());
             case "blocktype" -> targetOverride != null && targetOverride.block() != null
@@ -401,6 +402,15 @@ final class SkillEngine implements org.bukkit.event.Listener {
                 yield true;
             }
         };
+    }
+
+    private boolean hasFaction(Entity entity, String names) {
+        String faction = mobManager.factionOf(entity);
+        if (faction == null || names == null) return false;
+        for (String name : names.split(",")) {
+            if (faction.equals(name.trim().toLowerCase(Locale.ROOT))) return true;
+        }
+        return false;
     }
 
     /** Abstand zum Ausloeser (oder zum Ziel des Mobs): "0-6" Bereich, ">3", "<5", ">=2", "<=4" oder ein Wert (+-0,5). */
@@ -973,6 +983,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
             boolean actual = switch (condition.name()) {
                 case "isplayer" -> candidate instanceof Player;
                 case "iscaster" -> candidate.equals(context.caster());
+                case "faction" -> hasFaction(candidate, conditionParam(condition.params(), "faction", "f", "name"));
                 default -> {
                     plugin.getLogger().warning("Targeter-Condition '" + condition.name() + "' wird nicht unterstuetzt - wird ignoriert.");
                     yield true;

@@ -163,7 +163,8 @@ final class MobRegistry {
                 threatTable,
                 parseDamageModifiers(id, section.getStringList("DamageModifiers")),
                 parseSkillTriggers(id, section.getStringList("Skills")),
-                parseDrops(id, section.getStringList("Drops"))
+                parseDrops(id, section.getStringList("Drops")),
+                section.getString("Faction")
         );
     }
 

@@ -222,6 +222,16 @@ final class MobManager {
         }
     }
 
+    String factionOf(Entity entity) {
+        MobDefinition definition = definitions.get(entity.getUniqueId());
+        return definition == null || definition.faction == null ? null : definition.faction.toLowerCase(java.util.Locale.ROOT);
+    }
+
+    boolean sameFaction(Entity first, Entity second) {
+        String faction = factionOf(first);
+        return faction != null && faction.equals(factionOf(second));
+    }
+
     MobDefinition definitionOf(UUID entityId) {
         return definitions.get(entityId);
     }

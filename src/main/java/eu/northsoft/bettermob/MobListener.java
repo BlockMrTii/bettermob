@@ -15,6 +15,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
+import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.event.entity.PlayerLeashEntityEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -74,8 +75,21 @@ final class MobListener implements Listener {
         if (modifier != 1.0) event.setDamage(event.getDamage() * modifier);
     }
 
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onFactionTarget(EntityTargetLivingEntityEvent event) {
+        if (event.getTarget() != null && manager.sameFaction(event.getEntity(), event.getTarget())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onFactionDamage(EntityDamageByEntityEvent event) {
+        Entity source = event.getDamager();
+        if (source instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter) source = shooter;
+        if (manager.sameFaction(source, event.getEntity())) event.setCancelled(true);
+    }
+
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent event) {
+        if (event.isCancelled()) return;
         Entity source = event.getDamager();
         if (source instanceof Projectile projectile) {
             ProjectileSource shooter = projectile.getShooter();
