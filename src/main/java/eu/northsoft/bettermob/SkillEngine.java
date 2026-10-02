@@ -58,7 +58,7 @@ final class SkillEngine implements org.bukkit.event.Listener {
     private static final Set<String> BUILTIN_MECHANICS = Set.of("cancelskill", "cancelevent", "skill", "look", "sound",
             "state", "potion", "breakblock", "gcd", "model", "modelengine", "randomskill", "remove", "command",
             "summon", "mountmodel", "delay", "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "sudoskill", "damage", "throw", "lunge", "setblock", "equip", "aura", "ondamaged", "onattack", "ontick", "ondeath",
-            "onshoot", "bodyrotation", "addtag", "removetag", "ignite", "totem", "shoot", "stun", "setnodamageticks");
+            "onshoot", "bodyrotation", "addtag", "removetag", "ignite", "totem", "velocity", "freeze", "shoot", "stun", "setnodamageticks");
 
     private record CustomMechanicEntry(Plugin owner, CustomMechanic mechanic) {}
 
@@ -117,11 +117,58 @@ final class SkillEngine implements org.bukkit.event.Listener {
         });
     }
 
-    /** stun{d}: der Mob steht d Ticks still (KI aus). */
+    private void freeze(Target target, Map<String, String> p) {
+        if (target.entity() == null) return;
+        int ticks = parseInt(firstParam(p, "ticks", "t", "d", "duration"), 140);
+        target.entity().setFreezeTicks(Math.max(ticks, target.entity().getFreezeTicks()));
+    }
+
+    private void velocity(Target target, Map<String, String> p) {
+        Entity entity = target.entity();
+        if (entity == null) return;
+        String mode = p.getOrDefault("m", p.getOrDefault("mode", "SET")).trim().toUpperCase(Locale.ROOT);
+        Vector change = new Vector(parseFloat(p.get("x"), 0f), parseFloat(p.get("y"), 0f), parseFloat(p.get("z"), 0f));
+        long interval = Math.max(1, parseInt(firstParam(p, "repeatinterval", "ri"), 1));
+        applyVelocity(entity, mode, change);
+        int repeat = parseInt(p.get("repeat"), 0);
+        for (int i = 1; i <= repeat; i++) {
+            Tasks.runLater(plugin, entity, i * interval, () -> applyVelocity(entity, mode, change));
+        }
+    }
+
+    private void applyVelocity(Entity entity, String mode, Vector change) {
+        Vector current = entity.getVelocity();
+        entity.setVelocity(switch (mode) {
+            case "ADD" -> current.add(change);
+            case "MULTIPLY" -> current.multiply(change);
+            case "DIVIDE" -> new Vector(div(current.getX(), change.getX()), div(current.getY(), change.getY()), div(current.getZ(), change.getZ()));
+            default -> change.clone();
+        });
+    }
+
+    private static double div(double value, double divisor) {
+        return divisor == 0 ? value : value / divisor;
+    }
+
+    /** stun{d;ai;g;f}: d Ticks lang KI aus (ai, Standard true), ohne Schwerkraft (g) und/oder jeden Tick auf Geschwindigkeit 0 (f). */
     private void stun(Target target, Map<String, String> p) {
         if (!(target.entity() instanceof Mob mob)) return;
-        mob.setAware(false);
-        Tasks.runLater(plugin, mob, parseInt(firstParam(p, "d", "duration", "t"), 20), () -> mob.setAware(true));
+        int ticks = parseInt(firstParam(p, "d", "duration", "t"), 20);
+        boolean ai = !"false".equalsIgnoreCase(p.get("ai"));
+        boolean gravity = "true".equalsIgnoreCase(p.get("g"));
+        boolean freeze = "true".equalsIgnoreCase(p.get("f"));
+
+        boolean hadGravity = mob.hasGravity();
+        if (ai) mob.setAware(false);
+        if (gravity) mob.setGravity(false);
+        Runnable cancelFreeze = freeze
+                ? Tasks.runTimer(plugin, mob, 1L, 1L, () -> mob.setVelocity(new Vector()))
+                : () -> { };
+        Tasks.runLater(plugin, mob, ticks, () -> {
+            cancelFreeze.run();
+            if (ai) mob.setAware(true);
+            if (gravity) mob.setGravity(hadGravity);
+        });
     }
 
     boolean registerMechanic(Plugin owner, String name, CustomMechanic mechanic) {
@@ -304,6 +351,8 @@ final class SkillEngine implements org.bukkit.event.Listener {
             case "ignite" -> ignite(target, p);
             case "shoot" -> shoot(context, p);
             case "stun" -> stun(target, p);
+            case "velocity" -> velocity(target, p);
+            case "freeze" -> freeze(target, p);
             case "setnodamageticks" -> {
                 if (target.entity() instanceof LivingEntity living) living.setNoDamageTicks(parseInt(firstParam(p, "ticks", "t"), 0));
             }
