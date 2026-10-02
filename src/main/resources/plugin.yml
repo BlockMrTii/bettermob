@@ -16,3 +16,8 @@ permissions:
   bettermob.admin:
     description: Erlaubt das Spawnen und Verwalten von BetterMob-Mobs
     default: op
+    children:
+      bettermob.debug: true
+  bettermob.debug:
+    description: Erlaubt /bettermob debug
+    default: op
