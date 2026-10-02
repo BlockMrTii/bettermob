@@ -74,9 +74,12 @@ public final class AiGoalApplier {
             if (match == null) match = custom(token, mob, plugin, managed);
             if (match == null) {
                 plugin.getLogger().warning("AI-Goal '" + token.name() + "' ist fuer Mob-Typ '" + mob.getType() + "' nicht verfuegbar.");
+                if (plugin.debug().info()) plugin.debug().info("available goals of " + mob.getType() + ": " + snapshot.stream().map(AiGoalApplier::keyOf).toList());
                 continue;
             }
-            mobGoals.addGoal(mob, token.priority() != null ? token.priority() : next++, match);
+            int priority = token.priority() != null ? token.priority() : next++;
+            mobGoals.addGoal(mob, priority, match);
+            if (plugin.debug().verbose()) plugin.debug().verbose("goal '" + keyOf(match) + "' added at priority " + priority + " for " + mob.getType());
         }
     }
 
