@@ -16,14 +16,7 @@ import java.util.Map;
 import java.util.Locale;
 import java.util.logging.Logger;
 
-/**
- * Wendet AIGoalSelectors/AITargetSelectors an wie bei MysticMobs: "clear" leert die
- * Kategorie, jeder weitere Eintrag muss ein Vanilla-Goal sein, das dieser Mob-Typ
- * tatsaechlich besitzt - Paper kann keine neuen Verhalten erfinden, nur vorhandene
- * wieder anmelden. Nicht vorhandene Namen werden uebersprungen und geloggt.
- */
 final class AiGoalApplier {
-    /** MythicMobs-Namen, die bei Paper anders heissen (normalisiert, ohne _ und -); mehrere Kandidaten werden der Reihe nach probiert. */
     private static final Map<String, List<String>> ALIASES = Map.of(
             "attacker", List.of("hurtby"),
             "players", List.of("nearestattackable"),
@@ -38,7 +31,6 @@ final class AiGoalApplier {
 
     private AiGoalApplier() {}
 
-    /** Ein Eintrag aus AIGoalSelectors: optional "<prioritaet> " vorweg, dann Name und optional {Parameter}. */
     private record Token(Integer priority, String name, Map<String, String> params) {
         static Token parse(String raw) {
             String text = raw.trim();
@@ -67,8 +59,6 @@ final class AiGoalApplier {
         if (raw.isEmpty()) return;
         List<Token> tokens = raw.stream().map(Token::parse).toList();
 
-        // Vorhandene Goals sichern, bevor "clear" sie entfernt - nur daraus kann
-        // spaeter wieder angemeldet werden.
         List<Goal<Mob>> snapshot = new ArrayList<>();
         for (GoalType type : types) snapshot.addAll(mobGoals.getAllGoals(mob, type));
 
@@ -89,12 +79,6 @@ final class AiGoalApplier {
         }
     }
 
-    /** Goals, die Vanilla nicht kennt, aber Packs per Namen anfordern. */
-    /**
-     * Skelette melden ihr Bogen-Goal bei jedem Waffenwechsel selbst neu an (Prioritaet 4) - dann verliert es gegen
-     * die per AIGoalSelectors gesetzten Goals (lookAtTarget, randomstroll) und der Mob schiesst nie. Nach einem
-     * equip wird es deshalb wieder auf hoechste Prioritaet gesetzt.
-     */
     static void promoteRanged(Mob mob) {
         MobGoals mobGoals = Bukkit.getMobGoals();
         for (Goal<Mob> goal : new ArrayList<>(mobGoals.getAllGoals(mob))) {
@@ -129,10 +113,7 @@ final class AiGoalApplier {
         for (Goal<Mob> goal : snapshot) {
             if (keyOf(goal).equals(normalized)) return goal;
         }
-        // Vanilla nennt z.B. den Wander-Goal "water_avoiding_random_stroll" statt
-        // "random_stroll" - per Teilstring matchen. Endet der Name auf den Suchbegriff,
-        // gewinnt er vor blossem Enthaltensein: der Eisengolem hat zusaetzlich
-        // "golem_random_stroll_in_village", das nur im Dorf wandert.
+
         for (Goal<Mob> goal : snapshot) {
             if (keyOf(goal).endsWith(normalized)) return goal;
         }

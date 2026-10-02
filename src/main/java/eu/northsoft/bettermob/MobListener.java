@@ -34,13 +34,9 @@ final class MobListener implements Listener {
 
     @EventHandler
     public void onDeath(EntityDeathEvent event) {
-        // Tracker hier NICHT schliessen: der Entity-Body bleibt nach dem Tod noch ~20
-        // Ticks fuer die Sterbeanimation da. Macht man das Modell schon jetzt weg,
-        // sieht man stattdessen die Vanilla-Sterbeanimation. Das eigentliche Aufraeumen
-        // passiert in onRemove, wenn der Body wirklich aus der Welt verschwindet.
         MobDefinition definition = manager.definitionOf(event.getEntity().getUniqueId());
         if (definition == null) return;
-        // Eigene Drops ersetzen die Vanilla-Drops (und -XP) - dafuer braucht es kein PreventOtherDrops.
+
         if (definition.options.preventOtherDrops() || definition.drops != null) {
             event.getDrops().clear();
             event.setDroppedExp(0);
@@ -60,7 +56,6 @@ final class MobListener implements Listener {
         manager.release(event.getEntity());
     }
 
-    /** Server-Neustart/Chunk-Reload: alte BetterMob-Entities haben Tracker/Timer verloren, hier wiederherstellen. */
     @EventHandler
     public void onEntitiesLoad(EntitiesLoadEvent event) {
         for (Entity entity : event.getEntities()) {
@@ -96,7 +91,6 @@ final class MobListener implements Listener {
             source = shooter instanceof Entity shooterEntity ? shooterEntity : null;
         }
 
-        // ~onDamaged + ThreatTable: der Mob selbst wurde getroffen.
         if (event.getEntity() instanceof LivingEntity victimMob) {
             MobDefinition definition = manager.definitionOf(victimMob.getUniqueId());
             if (definition != null) {
@@ -107,9 +101,7 @@ final class MobListener implements Listener {
                         source instanceof LivingEntity living ? living : null, event);
             }
         }
-        // ~onAttack: der Mob hat selbst zugeschlagen.
-        // ~onAttack ist der Nahkampf. Ein Pfeil des Mobs zaehlt nicht: sonst bricht das uebliche
-        // "CancelEvent ~onAttack" (Nahkampf unterbinden) auch den Schaden seiner eigenen Pfeile ab.
+
         if (source instanceof LivingEntity attackerMob && !manager.inSkillDamage() && !(event.getDamager() instanceof Projectile)) {
             MobDefinition definition = manager.definitionOf(attackerMob.getUniqueId());
             if (definition != null) manager.fireTrigger(attackerMob, definition, MobDefinition.SkillTrigger.Trigger.ATTACK,
@@ -117,7 +109,6 @@ final class MobListener implements Listener {
         }
     }
 
-    /** ~onShoot: der Mob schiesst mit Bogen/Armbrust. Ausloeser ist sein Ziel, das Event laesst sich per CancelEvent abbrechen. */
     @EventHandler
     public void onShoot(EntityShootBowEvent event) {
         MobDefinition definition = manager.definitionOf(event.getEntity().getUniqueId());
@@ -144,7 +135,6 @@ final class MobListener implements Listener {
         }
     }
 
-    /** Rechtsklick auf einen Armor Stand tauscht sonst dessen Ausruestung - bei Interactable: false (z.B. Karten-Vorschau) verbieten. */
     @EventHandler
     public void onArmorStandManipulate(PlayerArmorStandManipulateEvent event) {
         MobDefinition definition = manager.definitionOf(event.getRightClicked().getUniqueId());

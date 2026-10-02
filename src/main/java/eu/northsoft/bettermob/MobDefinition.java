@@ -24,7 +24,7 @@ final class MobDefinition {
     final boolean threatTable;
     final Map<DamageCause, Double> damageModifiers;
     final List<SkillTrigger> skillTriggers;
-    /** Die "Drops:"-Liste des Mobs als namenlose Tabelle, oder null wenn er keine hat. */
+
     final DropTable drops;
     final String faction;
 
@@ -54,7 +54,6 @@ final class MobDefinition {
         return new MobInfo(id, type, displayName, modelId, health, damage);
     }
 
-    /** -1 bei movementSpeed/knockbackResistance/followRange/scale heisst: Vanilla-Wert unangetastet lassen; itemHead ist eine Item-ID oder null. */
     record Options(boolean collidable, double movementSpeed, boolean preventOtherDrops, boolean silent,
                    boolean preventRenaming, boolean preventLeashing, boolean alwaysShowName, boolean preventSunburn,
                    boolean invincible, boolean invisible, boolean canMove, boolean interactable, boolean marker,
@@ -64,13 +63,7 @@ final class MobDefinition {
                 false, true, true, false, null, -1, -1, false, -1);
     }
 
-    /**
-     * Eine Zeile aus Skills: "<mechanic>{params} @targeter ~onTrigger[:ticks]" - wie bei
-     * MythicMobs. Die Mechanic kann direkt sound/model/randomskill/... sein, oder ueber
-     * "skill{s=<id>}" eine Skill-Datei aus skills/ aufrufen.
-     */
     record SkillTrigger(SkillStep step, Trigger trigger, int timerTicks) {
-        // Hinter dem Trigger darf noch eine Bedingung stehen: "... ~onDamaged ?hasaura{n=spawn}".
         private static final Pattern PATTERN = Pattern.compile("^(.*\\S)\\s+~on(\\w+?)(?::(\\d+))?(?:\\s+(\\?!?\\w+(?:\\{.*})?))?\\s*$", Pattern.CASE_INSENSITIVE);
 
         static SkillTrigger parse(String line) {

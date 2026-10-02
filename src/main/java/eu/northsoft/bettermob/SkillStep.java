@@ -6,17 +6,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Eine Zeile aus Skills: entweder "delay N" oder eine Mechanic:
- * "<name>{params} @targeter{params} ?condition{params}" - Name/Targeter/Condition
- * optional in Klammern, alles danach optional. Echtes MythicMobs-Syntax verschachtelt
- * Klammern beliebig (z.B. "@eno{conditions=[ - faction{faction=X} ]}"), deshalb ein
- * handgeschriebener Cursor statt Regex mit "[^}]*", das an der ersten inneren "}" abbricht.
- */
 sealed interface SkillStep {
     record Delay(int ticks) implements SkillStep {}
 
-    /** inlineCondition ist "name{params}" nach einem "?"/"?!" am Ende der Zeile, oder null. */
     record Mechanic(String name, Map<String, String> params, String targeter, Map<String, String> targeterParams,
                      String inlineCondition, boolean negated) implements SkillStep {}
 
@@ -36,7 +28,7 @@ sealed interface SkillStep {
         Map<String, String> params = cursor.peek() == '{' ? parseParams(cursor.readBraced()) : Map.of();
 
         cursor.skipWhitespace();
-        // Leer = kein @Targeter geschrieben: dann gilt das Ziel des aufrufenden Skills (siehe SkillContext).
+
         String targeter = "";
         Map<String, String> targeterParams = Map.<String, String>of();
         if (cursor.peek() == '@') {
@@ -62,8 +54,6 @@ sealed interface SkillStep {
         return new Mechanic(name.toLowerCase(Locale.ROOT), params, targeter, targeterParams, inlineCondition, negated);
     }
 
-    /** Split bei ";" - aber nicht innerhalb verschachtelter {} oder [], sonst reisst es
-     *  z.B. "conditions=[ - faction{faction=X} ]" mittendrin auseinander. */
     static Map<String, String> parseParams(String raw) {
         Map<String, String> params = new LinkedHashMap<>();
         if (raw == null || raw.isBlank()) return params;
@@ -114,8 +104,6 @@ sealed interface SkillStep {
             return s.substring(start, pos);
         }
 
-        /** Erwartet, dass das aktuelle Zeichen "{" ist - liefert den Inhalt ohne die aeusseren
-         *  Klammern und steht danach hinter der passenden schliessenden Klammer. */
         String readBraced() {
             int start = pos + 1;
             int depth = 0;

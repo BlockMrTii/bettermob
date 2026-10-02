@@ -82,7 +82,6 @@ final class BetterMobApiImpl implements BetterMobAPI, Listener {
         skillEngine.unregisterMechanic(name);
     }
 
-    /** Mechanics eines deaktivierten Plugins entfernen, sonst bleibt dessen Classloader haengen. */
     @EventHandler
     public void onPluginDisable(PluginDisableEvent event) {
         skillEngine.unregisterMechanics(event.getPlugin());

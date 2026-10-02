@@ -4,7 +4,6 @@ import org.bukkit.Material;
 
 import java.util.List;
 
-/** Ein Item aus items/*.yml: Material, optionale CustomModelData, Name, Lore und ~onUse-Skills. */
 final class ItemDefinition {
     final String id;
     final Material material;

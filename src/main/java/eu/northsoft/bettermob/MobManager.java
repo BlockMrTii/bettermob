@@ -31,9 +31,7 @@ final class MobManager {
     private final ModelEngineHook modelEngine;
     private final ItemRegistry items;
     private final Map<UUID, Object> trackers = new ConcurrentHashMap<>();
-    // Getrennt von trackers: jede Engine hat ihre eigene close()-Methode, ein gemischter
-    // Pool wuerde beim Aufraeumen versuchen, z.B. ein ModelEngine-Objekt ueber BetterModels
-    // close() zu schliessen (und umgekehrt) - das schlaegt fehl und lasst es als Leak liegen.
+
     private final Map<UUID, Object> modelEngineTrackers = new ConcurrentHashMap<>();
     private final Map<UUID, Map<UUID, Threat>> threatTables = new ConcurrentHashMap<>();
     private final Map<UUID, Map<DamageCause, Double>> damageModifiers = new ConcurrentHashMap<>();
@@ -41,12 +39,6 @@ final class MobManager {
     private final Map<UUID, List<Runnable>> timers = new ConcurrentHashMap<>();
     private SkillEngine skillEngine;
 
-    // Nur die Mob-ID muss als NBT am Entity haengen - die braucht man nach einem Neustart/
-    // Chunk-Reload, um die Definition ueberhaupt wiederzufinden (handleLoad). Alle anderen
-    // Flags (PreventOtherDrops etc.) stehen schon in der im RAM gehaltenen MobDefinition;
-    // die zusaetzlich als eigene PDC-Eintraege zu fuehren hiesse, bei JEDEM Damage-/
-    // Interact-/Leash-Event server-weit (auch fuer Entities, die gar keine BetterMob-Mobs
-    // sind) unnoetig NBT zu lesen, statt einmal im schon vorhandenen HashMap nachzuschauen.
     final NamespacedKey mobIdKey;
 
     MobManager(BetterMobPlugin plugin, MobRegistry registry, BetterModelHook betterModel, ModelEngineHook modelEngine, ItemRegistry items) {
@@ -89,20 +81,11 @@ final class MobManager {
             if (entity instanceof AbstractSkeleton skeleton) skeleton.setShouldBurnInDay(false);
         }
 
-        // Packs wie nogs_menagerie haengen ihr Modell selbst per "model{}"-Skill an
-        // ~onSpawn/~onLoad an (fuer benannte Teile/mehrere Modelle). Haengen wir hier
-        // zusaetzlich automatisch ueber "Model:" an, schliesst der Skill-Mechanic den
-        // gerade erst erzeugten Tracker im selben Tick wieder und erstellt sofort einen
-        // neuen - dieses Schliessen-und-Neuerstellen auf demselben Entity im selben Tick
-        // laesst BetterModel nichts mehr rendern. Also nur automatisch anhaengen, wenn
-        // kein eigener Skill das ohnehin uebernimmt.
         if (!hasModelSkill(definition, MobDefinition.SkillTrigger.Trigger.SPAWN)) {
             Object tracker = betterModel.attachIfPresent(entity, definition.modelId);
             if (tracker != null) {
                 trackers.put(entity.getUniqueId(), tracker);
-                // BetterModel loescht das Vanilla-Aussehen nicht von selbst - ohne das hier
-                // steht das Modell einfach zusaetzlich zum voll sichtbaren Pig/Zombie/etc. da
-                // und man sieht effektiv nur noch den Vanilla-Mob.
+
                 entity.setInvisible(true);
             }
         }
@@ -114,7 +97,6 @@ final class MobManager {
         return entity;
     }
 
-    /** Invisible/CanMove/Marker/ItemHead/Knockback - alles, was nur Aussehen und Beweglichkeit der Huelle betrifft. */
     private void applyAppearanceOptions(LivingEntity entity, MobDefinition definition) {
         MobDefinition.Options options = definition.options;
         if (options.invisible()) entity.setInvisible(true);
@@ -143,13 +125,12 @@ final class MobManager {
                 plugin.getLogger().warning("Mob '" + definition.id + "': ItemHead-Item '" + options.itemHead() + "' ist nicht registriert.");
             } else if (equipment != null) {
                 equipment.setHelmet(items.create(item, 1));
-                // Drop-Chancen gibt es nur bei Mobs - bei Armor Stands wirft Paper eine Exception.
+
                 if (entity instanceof Mob) equipment.setHelmetDropChance(0f);
             }
         }
     }
 
-    /** Ob die Huelle auch ohne Modell unsichtbar bleiben soll (Options.Invisible). */
     private boolean staysInvisible(Entity entity) {
         MobDefinition definition = definitions.get(entity.getUniqueId());
         return definition != null && definition.options.invisible();
@@ -168,7 +149,6 @@ final class MobManager {
         if (cancellers != null) cancellers.forEach(Runnable::run);
     }
 
-    /** True, solange gerade die damage-Mechanic eines Skills Schaden austeilt. */
     boolean inSkillDamage() {
         return skillEngine != null && skillEngine.isApplyingDamage();
     }
@@ -181,7 +161,6 @@ final class MobManager {
         return trackers.get(entityId);
     }
 
-    /** Fuer den "model"-Skill-Mechanic: altes Modell schliessen, neues merken, Vanilla-Optik passend ein-/ausblenden. */
     void replaceTracker(Entity entity, Object newTracker) {
         Object old = trackers.remove(entity.getUniqueId());
         if (old != null) betterModel.close(old);
@@ -189,7 +168,6 @@ final class MobManager {
         entity.setInvisible(newTracker != null || staysInvisible(entity));
     }
 
-    /** Pendant zu replaceTracker(), aber fuer den "modelengine"-Skill-Mechanic. */
     void replaceModelEngineTracker(Entity entity, Object newTracker) {
         Object old = modelEngineTrackers.remove(entity.getUniqueId());
         if (old != null) modelEngine.close(old);
@@ -197,7 +175,6 @@ final class MobManager {
         entity.setInvisible(newTracker != null || staysInvisible(entity));
     }
 
-    /** Fuehrt alle Skills aus, die der Mob fuer diesen Trigger-Typ registriert hat. */
     void fireTrigger(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
                       LivingEntity trigger, Cancellable event) {
         if (skillEngine == null) return;
@@ -235,7 +212,6 @@ final class MobManager {
         return definition == null || definition.faction == null ? null : definition.faction.toLowerCase(java.util.Locale.ROOT);
     }
 
-    /** Mob mit dieser Faction:, oder Spieler mit Permission bettermob.faction.<name> bzw. Eintrag unter factions: in der config.yml. */
     boolean inFaction(Entity entity, String faction) {
         if (faction == null) return false;
         String own = factionOf(entity);
@@ -250,7 +226,6 @@ final class MobManager {
 
     private final java.util.Set<String> registeredFactionPermissions = ConcurrentHashMap.newKeySet();
 
-    /** Ohne eigene Registrierung gilt eine unbekannte Permission fuer Ops als erteilt - hier explizit "default: false". */
     private String factionPermission(String faction) {
         String node = "bettermob.faction." + faction;
         if (registeredFactionPermissions.add(node) && Bukkit.getPluginManager().getPermission(node) == null) {
@@ -259,7 +234,6 @@ final class MobManager {
         return node;
     }
 
-    /** Gleiche Fraktion, wenn mindestens einer ein Mob mit Faction: ist; zwei Spieler sind nie "gleich". */
     boolean sameFaction(Entity first, Entity second) {
         String faction = factionOf(first);
         if (faction != null) return inFaction(second, faction);
@@ -271,12 +245,6 @@ final class MobManager {
         return definitions.get(entityId);
     }
 
-    /**
-     * Ein Chunk mit einem alten BetterMob-Entity wird geladen (Neustart, Chunk-Reload):
-     * Tracker/Threat-Table/Timer waren nur im Arbeitsspeicher und sind weg, hier werden
-     * sie anhand der am Entity gespeicherten Mob-ID wiederhergestellt. Bereits bekannte
-     * Entities (z.B. gerade erst gespawnt) werden uebersprungen.
-     */
     void handleLoad(LivingEntity entity) {
         if (definitions.containsKey(entity.getUniqueId())) return;
         String id = entity.getPersistentDataContainer().get(mobIdKey, PersistentDataType.STRING);
@@ -300,8 +268,6 @@ final class MobManager {
         fireTrigger(entity, definition, MobDefinition.SkillTrigger.Trigger.LOAD, null, null);
     }
 
-    /** True, wenn ein eigener "model{}"-Skill fuer diesen Trigger bereits existiert - dann
-     *  soll die automatische "Model:"-Anheftung nicht zusaetzlich dagegenlaufen. */
     private boolean hasModelSkill(MobDefinition definition, MobDefinition.SkillTrigger.Trigger trigger) {
         for (MobDefinition.SkillTrigger skillTrigger : definition.skillTriggers) {
             if (skillTrigger.trigger() == trigger && skillTrigger.step() instanceof SkillStep.Mechanic mechanic
@@ -312,13 +278,11 @@ final class MobManager {
         return false;
     }
 
-    /** Fuer Options.DamageModifiers: Schaden dieser Ursache mit dem konfigurierten Faktor skalieren. */
     double modifierFor(UUID entityId, DamageCause cause) {
         Map<DamageCause, Double> modifiers = damageModifiers.get(entityId);
         return modifiers == null ? 1.0 : modifiers.getOrDefault(cause, 1.0);
     }
 
-    /** Gesammelter Schaden eines Angreifers; die Referenz ist schwach, damit Tote nicht im Speicher haengen. */
     private static final class Threat {
         final WeakReference<LivingEntity> attacker;
         double amount;
@@ -328,13 +292,11 @@ final class MobManager {
         }
     }
 
-    /** Fuer Modules.ThreatTable: Schaden sammeln, statt des Verursachers wird spaeter das hoechste Ziel angegriffen. */
     void registerThreat(UUID mobId, LivingEntity attacker, double amount) {
         Map<UUID, Threat> table = threatTables.get(mobId);
         if (table != null) table.computeIfAbsent(attacker.getUniqueId(), id -> new Threat(attacker)).amount += amount;
     }
 
-    /** Alle 20 Ticks pro Mob (auf dessen eigenem Thread): auf das aktuell gefaehrlichste Ziel umlenken. */
     private void retarget(Mob mob) {
         Map<UUID, Threat> table = threatTables.get(mob.getUniqueId());
         if (table == null || !mob.isValid()) return;

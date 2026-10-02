@@ -5,12 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Sammelt alle .yml-Dateien unter einem Ordner, beliebig tief verschachtelt. Grosse Packs
- * (z.B. nogs_menagerie) legen die meisten Mobs/Skills in Unterordnern ab wie
- * Mobs/npcs/, Mobs/companions/, Skills/cards/ - eine flache Ordnerliste wuerde davon
- * fast alles uebersehen.
- */
 final class YamlFiles {
     private YamlFiles() {}
 

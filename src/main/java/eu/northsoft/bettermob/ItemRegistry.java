@@ -20,12 +20,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Laedt items/**.yml (plus items/ jedes Packs) - jeder Top-Level-Key mit einem "Id:" ist ein
- * Item. Wie bei MythicMobs ist "Id" das Vanilla-Material und "Model" die CustomModelData,
- * ueber die das Resourcepack das Aussehen waehlt. Gebaute Items tragen ihre ID im PDC, damit
- * ~onUse und takeitem sie wiedererkennen.
- */
 final class ItemRegistry {
     private final BetterMobPlugin plugin;
     private final PackScanner packScanner;
@@ -69,7 +63,6 @@ final class ItemRegistry {
         return items.keySet();
     }
 
-    /** Definition hinter einem gebauten Item, oder null wenn es keins von uns ist. */
     ItemDefinition definitionOf(ItemStack stack) {
         String id = idOf(stack);
         return id == null ? null : get(id);
@@ -95,7 +88,6 @@ final class ItemRegistry {
         return stack;
     }
 
-    /** Ohne das Ausschalten von Kursiv zeigt der Client benannte Items schraeg an. */
     private Component text(String raw) {
         return LegacyComponentSerializer.legacyAmpersand().deserialize(raw).decoration(TextDecoration.ITALIC, false);
     }

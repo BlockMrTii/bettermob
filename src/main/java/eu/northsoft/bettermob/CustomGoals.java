@@ -14,14 +14,9 @@ import org.bukkit.plugin.Plugin;
 import java.util.EnumSet;
 import java.util.function.Predicate;
 
-/**
- * KI-Verhalten, das Vanilla nicht mitbringt, aber MythicMobs-Packs per Namen anfordern
- * (lookAtTarget, monsters). Paper erlaubt eigene Goals - diese hier sind bewusst klein.
- */
 final class CustomGoals {
     private CustomGoals() {}
 
-    /** Dreht den Kopf zum Ziel, solange es im Radius ist - noetig, wenn die Waffen-Goals nach "clear" fehlen. */
     static Goal<Mob> lookAtTarget(Plugin plugin, Mob mob, double radius) {
         GoalKey<Mob> key = GoalKey.of(Mob.class, new NamespacedKey(plugin, "look_at_target"));
         return new Goal<>() {
@@ -50,10 +45,6 @@ final class CustomGoals {
         };
     }
 
-    /**
-     * Greift das naechste feindliche Monster an. Ohne Fraktionen gelten alle Mobs, die BetterMob selbst
-     * verwaltet, als Freunde (sonst wuerden sich z.B. zwei Haustier-Skelette gegenseitig jagen).
-     */
     static Goal<Mob> nearestMonster(Plugin plugin, Mob mob, Predicate<Entity> managed) {
         GoalKey<Mob> key = GoalKey.of(Mob.class, new NamespacedKey(plugin, "nearest_monster"));
         return new Goal<>() {
@@ -63,7 +54,7 @@ final class CustomGoals {
             @Override
             public boolean shouldActivate() {
                 if (mob.getTarget() != null) return false;
-                // Das Umfeld nur alle 10 Ticks absuchen, nicht in jedem Tick.
+
                 if (++ticks % 10 != 0) return false;
                 var follow = mob.getAttribute(Attribute.FOLLOW_RANGE);
                 double radius = follow == null ? 16 : follow.getValue();
