@@ -23,9 +23,11 @@ import org.bukkit.projectiles.ProjectileSource;
 
 final class MobListener implements Listener {
     private final MobManager manager;
+    private final DropRegistry drops;
 
-    MobListener(MobManager manager) {
+    MobListener(MobManager manager, DropRegistry drops) {
         this.manager = manager;
+        this.drops = drops;
     }
 
     @EventHandler
@@ -36,7 +38,15 @@ final class MobListener implements Listener {
         // passiert in onRemove, wenn der Body wirklich aus der Welt verschwindet.
         MobDefinition definition = manager.definitionOf(event.getEntity().getUniqueId());
         if (definition == null) return;
-        if (definition.options.preventOtherDrops()) event.getDrops().clear();
+        if (definition.options.preventOtherDrops()) {
+            event.getDrops().clear();
+            event.setDroppedExp(0);
+        }
+        if (definition.drops != null) {
+            DropRegistry.Result result = drops.roll(definition.drops);
+            event.getDrops().addAll(result.items());
+            event.setDroppedExp(event.getDroppedExp() + result.exp());
+        }
 
         Bukkit.getPluginManager().callEvent(new BetterMobDeathEvent(event.getEntity(), definition.toInfo()));
         manager.fireTrigger(event.getEntity(), definition, MobDefinition.SkillTrigger.Trigger.DEATH, null, null);

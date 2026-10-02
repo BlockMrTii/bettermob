@@ -58,19 +58,18 @@ final class DropRegistry {
                     tables.put(id.toLowerCase(Locale.ROOT), new DropTable(id,
                             Math.max(0, section.getInt("MinItems", 0)),
                             section.getInt("MaxItems", Integer.MAX_VALUE),
-                            parse(id, section.getStringList("Drops"))));
+                            parseLines(id, section.getStringList("Drops"))));
                 }
             }
         }
         plugin.getLogger().info(tables.size() + " Drop-Tables geladen.");
     }
 
-    /** Die Drop-Zeilen eines Mobs ("Drops:" in der Mob-Datei) in Eintraege umwandeln. */
-    List<DropEntry> parse(String owner, List<String> lines) {
+    private List<DropEntry> parseLines(String owner, List<String> lines) {
         List<DropEntry> entries = new ArrayList<>();
         for (String line : lines) {
             DropEntry entry = DropEntry.parse(line);
-            if (entry == null) plugin.getLogger().warning("'" + owner + "': Drop-Zeile '" + line + "' konnte nicht geparst werden.");
+            if (entry == null) plugin.getLogger().warning("Drop-Table '" + owner + "': Zeile '" + line + "' konnte nicht geparst werden.");
             else entries.add(entry);
         }
         return entries;

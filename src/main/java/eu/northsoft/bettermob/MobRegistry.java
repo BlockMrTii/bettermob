@@ -159,8 +159,20 @@ final class MobRegistry {
                 options,
                 threatTable,
                 parseDamageModifiers(id, section.getStringList("DamageModifiers")),
-                parseSkillTriggers(id, section.getStringList("Skills"))
+                parseSkillTriggers(id, section.getStringList("Skills")),
+                parseDrops(id, section.getStringList("Drops"))
         );
+    }
+
+    /** "Drops:" eines Mobs: Zeilen wie in einer Drop-Table (auch Verweise auf Tabellen). Null, wenn leer. */
+    private DropTable parseDrops(String id, List<String> lines) {
+        List<DropEntry> entries = new ArrayList<>();
+        for (String line : lines) {
+            DropEntry entry = DropEntry.parse(line);
+            if (entry == null) plugin.getLogger().warning("Mob '" + id + "': Drop-Zeile '" + line + "' konnte nicht geparst werden.");
+            else entries.add(entry);
+        }
+        return entries.isEmpty() ? null : DropTable.anonymous(entries);
     }
 
     /** "skill{s=xyz} ~onInteract" - ungueltige Zeilen werden uebersprungen und geloggt. */

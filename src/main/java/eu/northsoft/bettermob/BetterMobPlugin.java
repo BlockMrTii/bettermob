@@ -24,13 +24,16 @@ public final class BetterMobPlugin extends JavaPlugin {
         ItemRegistry itemRegistry = new ItemRegistry(this, packScanner);
         itemRegistry.load();
 
+        DropRegistry dropRegistry = new DropRegistry(this, packScanner, itemRegistry);
+        dropRegistry.load();
+
         MobManager manager = new MobManager(this, registry, betterModel, modelEngine, itemRegistry);
         SkillEngine skillEngine = new SkillEngine(this, skillRegistry, manager, betterModel, modelEngine, itemRegistry);
         manager.setSkillEngine(skillEngine);
-        getServer().getPluginManager().registerEvents(new MobListener(manager), this);
+        getServer().getPluginManager().registerEvents(new MobListener(manager, dropRegistry), this);
         getServer().getPluginManager().registerEvents(new ItemListener(itemRegistry, skillEngine), this);
 
-        BetterMobCommand commandHandler = new BetterMobCommand(this, manager, skillRegistry, packScanner, skillEngine, itemRegistry);
+        BetterMobCommand commandHandler = new BetterMobCommand(this, manager, skillRegistry, packScanner, skillEngine, itemRegistry, dropRegistry);
         PluginCommand command = getCommand("bettermob");
         if (command == null) {
             getLogger().severe("Command /bettermob fehlt in plugin.yml.");
