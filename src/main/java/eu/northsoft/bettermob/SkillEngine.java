@@ -10,7 +10,10 @@ import org.bukkit.SoundCategory;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
@@ -52,7 +55,7 @@ final class SkillEngine {
 
     private static final Set<String> BUILTIN_MECHANICS = Set.of("cancelskill", "cancelevent", "skill", "look", "sound",
             "state", "potion", "breakblock", "gcd", "model", "modelengine", "randomskill", "remove", "command",
-            "summon", "mountmodel", "delay", "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "sudoskill", "damage", "throw", "lunge", "setblock");
+            "summon", "mountmodel", "delay", "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "sudoskill", "damage", "throw", "lunge", "setblock", "equip");
 
     private record CustomMechanicEntry(Plugin owner, CustomMechanic mechanic) {}
 
@@ -182,6 +185,7 @@ final class SkillEngine {
             case "throw" -> throwTarget(context, target, p);
             case "lunge" -> lunge(context, target, p);
             case "setblock" -> setBlock(target, p);
+            case "equip" -> equip(target, p);
             default -> {
                 CustomMechanicEntry custom = customMechanics.get(mechanic.name());
                 if (custom == null) {
@@ -456,6 +460,43 @@ final class SkillEngine {
             return;
         }
         target.location().getBlock().setType(material);
+    }
+
+    /**
+     * "item=<item>:<slot>" legt dem Ziel einen Gegenstand an. Item ist ein registriertes BetterMob-Item
+     * oder ein Vanilla-Material, Slot HAND (Standard), OFFHAND, HEAD, CHEST, LEGS oder FEET.
+     */
+    private void equip(Target target, Map<String, String> p) {
+        if (!(target.entity() instanceof LivingEntity living) || living.getEquipment() == null) return;
+        String spec = firstParam(p, "item", "i", "type");
+        if (spec == null) return;
+        String[] parts = spec.trim().split(":", 2);
+
+        ItemStack stack;
+        ItemDefinition custom = items.get(parts[0]);
+        if (custom != null) {
+            stack = items.create(custom, 1);
+        } else {
+            Material material = Material.matchMaterial(parts[0]);
+            if (material == null || !material.isItem()) {
+                plugin.getLogger().warning("equip: '" + parts[0] + "' ist weder ein Item noch ein Material.");
+                return;
+            }
+            stack = new ItemStack(material);
+        }
+
+        EquipmentSlot slot = switch ((parts.length > 1 ? parts[1] : "hand").trim().toLowerCase(Locale.ROOT)) {
+            case "offhand", "off_hand" -> EquipmentSlot.OFF_HAND;
+            case "head", "helmet" -> EquipmentSlot.HEAD;
+            case "chest", "chestplate" -> EquipmentSlot.CHEST;
+            case "legs", "leggings" -> EquipmentSlot.LEGS;
+            case "feet", "boots" -> EquipmentSlot.FEET;
+            default -> EquipmentSlot.HAND;
+        };
+        EntityEquipment equipment = living.getEquipment();
+        equipment.setItem(slot, stack);
+        // Gegenstaende, die ein Skill anlegt, sollen beim Tod nicht zusaetzlich herumliegen.
+        if (living instanceof Mob) equipment.setDropChance(slot, 0f);
     }
 
     private void remove(Target target) {

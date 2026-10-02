@@ -52,13 +52,14 @@ final class MobDefinition {
         return new MobInfo(id, type, displayName, modelId, health, damage);
     }
 
-    /** -1 bei movementSpeed/knockbackResistance heisst: Vanilla-Wert unangetastet lassen; itemHead ist eine Item-ID oder null. */
+    /** -1 bei movementSpeed/knockbackResistance/followRange/scale heisst: Vanilla-Wert unangetastet lassen; itemHead ist eine Item-ID oder null. */
     record Options(boolean collidable, double movementSpeed, boolean preventOtherDrops, boolean silent,
                    boolean preventRenaming, boolean preventLeashing, boolean alwaysShowName, boolean preventSunburn,
                    boolean invincible, boolean invisible, boolean canMove, boolean interactable, boolean marker,
-                   String itemHead, double knockbackResistance) {
+                   String itemHead, double knockbackResistance, double followRange, boolean preventItemPickup,
+                   double scale) {
         static final Options DEFAULT = new Options(true, -1, false, false, false, false, false, true, false,
-                false, true, true, false, null, -1);
+                false, true, true, false, null, -1, -1, false, -1);
     }
 
     /**

@@ -141,7 +141,10 @@ final class MobRegistry {
                 optionsSection.getBoolean("Interactable", true),
                 optionsSection.getBoolean("Marker", false),
                 optionsSection.getString("ItemHead"),
-                optionsSection.contains("KnockbackResistance") ? optionsSection.getDouble("KnockbackResistance") : -1
+                optionsSection.contains("KnockbackResistance") ? optionsSection.getDouble("KnockbackResistance") : -1,
+                optionsSection.contains("FollowRange") ? optionsSection.getDouble("FollowRange") : -1,
+                optionsSection.getBoolean("PreventItemPickup", false),
+                optionsSection.contains("Scale") ? optionsSection.getDouble("Scale") : -1
         );
         ConfigurationSection modulesSection = section.getConfigurationSection("Modules");
         boolean threatTable = modulesSection != null && modulesSection.getBoolean("ThreatTable", false);

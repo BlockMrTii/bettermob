@@ -127,6 +127,15 @@ final class MobManager {
             var knockback = entity.getAttribute(Attribute.KNOCKBACK_RESISTANCE);
             if (knockback != null) knockback.setBaseValue(options.knockbackResistance());
         }
+        if (options.followRange() >= 0) {
+            var follow = entity.getAttribute(Attribute.FOLLOW_RANGE);
+            if (follow != null) follow.setBaseValue(options.followRange());
+        }
+        if (options.scale() >= 0) {
+            var scale = entity.getAttribute(Attribute.SCALE);
+            if (scale != null) scale.setBaseValue(options.scale());
+        }
+        if (options.preventItemPickup()) entity.setCanPickupItems(false);
         if (options.itemHead() != null) {
             ItemDefinition item = items.get(options.itemHead());
             EntityEquipment equipment = entity.getEquipment();
