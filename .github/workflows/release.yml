@@ -2,10 +2,16 @@ name: Build and Release
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch: {}
+
+# Pro Branch hoechstens ein Lauf gleichzeitig: sonst koennten zwei schnelle Pushes auf dev
+# sich beim Loeschen und Neuanlegen des Dev-Releases ins Gehege kommen.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -61,3 +67,19 @@ jobs:
         run: mvn -B deploy -DskipTests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Auf dev gibt es immer genau einen Pre-Release "dev", der bei jedem Push durch den
+      # neuesten Build ersetzt wird (Tag und Release werden geloescht und neu angelegt).
+      - name: Publish rolling dev release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/dev'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=$(mvn -B -q help:evaluate -Dexpression=project.version -DforceStdout)
+          sha=$(git rev-parse --short HEAD)
+          asset="bettermob-${version}-dev-${sha}.jar"
+          cp "target/bettermob-${version}.jar" "$asset"
+          gh release delete dev --cleanup-tag --yes || true
+          gh release create dev "$asset" --prerelease --target "$GITHUB_SHA" \
+            --title "Dev build" \
+            --notes "Automatic build of the \`dev\` branch at commit ${sha}. Unstable, may contain unfinished features. This release is replaced on every push to dev."
