@@ -6,7 +6,6 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
-/** Wird ausgeloest, wenn ein BetterMob-Mob stirbt (vor dem Aufraeumen; Drops sind noch aenderbar). */
 public class BetterMobDeathEvent extends Event {
     private static final HandlerList HANDLERS = new HandlerList();
 

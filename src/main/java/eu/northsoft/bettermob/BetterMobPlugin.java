@@ -1,14 +1,35 @@
 package eu.northsoft.bettermob;
 
 import eu.northsoft.bettermob.api.BetterMobAPI;
+import eu.northsoft.bettermob.command.BetterMobCommand;
+import eu.northsoft.bettermob.debug.DebugManager;
+import eu.northsoft.bettermob.drop.DropRegistry;
+import eu.northsoft.bettermob.item.ItemListener;
+import eu.northsoft.bettermob.item.ItemRegistry;
+import eu.northsoft.bettermob.mob.MobListener;
+import eu.northsoft.bettermob.mob.MobManager;
+import eu.northsoft.bettermob.mob.MobRegistry;
+import eu.northsoft.bettermob.model.BetterModelHook;
+import eu.northsoft.bettermob.model.ModelEngineHook;
+import eu.northsoft.bettermob.pack.PackScanner;
+import eu.northsoft.bettermob.service.BetterMobApiImpl;
+import eu.northsoft.bettermob.skill.SkillEngine;
+import eu.northsoft.bettermob.skill.SkillRegistry;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class BetterMobPlugin extends JavaPlugin {
+    private DebugManager debug;
+
+    public DebugManager debug() {
+        return debug;
+    }
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        debug = new DebugManager(this);
         PackScanner packScanner = new PackScanner(this);
 
         MobRegistry registry = new MobRegistry(this, packScanner);

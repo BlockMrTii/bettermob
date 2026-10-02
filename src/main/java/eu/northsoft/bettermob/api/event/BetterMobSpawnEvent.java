@@ -6,7 +6,6 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
-/** Wird ausgeloest, nachdem BetterMob einen Mob gespawnt hat (nach Attributen, Modell und ~onSpawn-Skills). */
 public class BetterMobSpawnEvent extends Event {
     private static final HandlerList HANDLERS = new HandlerList();
 

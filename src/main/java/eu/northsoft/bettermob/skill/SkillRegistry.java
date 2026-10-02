@@ -1,5 +1,8 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.skill;
 
+import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.pack.PackScanner;
+import eu.northsoft.bettermob.pack.YamlFiles;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -11,24 +14,19 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Laedt skills/*.yml - wie bei MythicMobs duerfen mehrere zusammengehoerige Skills
- * (z.B. ein "_parse"- und ein "_activate"-Skill) in derselben Datei stehen. Zusaetzlich
- * wird jeder Unterordner in packs/ mit einem eigenen skills/-Ordner mitgeladen.
- */
-final class SkillRegistry {
+public final class SkillRegistry {
     private final BetterMobPlugin plugin;
     private final File folder;
     private final PackScanner packScanner;
     private final Map<String, SkillDefinition> skills = new LinkedHashMap<>();
 
-    SkillRegistry(BetterMobPlugin plugin, PackScanner packScanner) {
+    public SkillRegistry(BetterMobPlugin plugin, PackScanner packScanner) {
         this.plugin = plugin;
         this.packScanner = packScanner;
         this.folder = new File(plugin.getDataFolder(), "skills");
     }
 
-    void load() {
+    public void load() {
         if (!folder.exists()) {
             folder.mkdirs();
             plugin.saveResource("skills/chew_wood.yml", false);
@@ -53,11 +51,11 @@ final class SkillRegistry {
         plugin.getLogger().info(skills.size() + " Skills geladen.");
     }
 
-    SkillDefinition get(String id) {
+    public SkillDefinition get(String id) {
         return skills.get(id.toLowerCase(Locale.ROOT));
     }
 
-    Set<String> ids() {
+    public Set<String> ids() {
         return skills.keySet();
     }
 
@@ -73,7 +71,6 @@ final class SkillRegistry {
         return new SkillDefinition(id, conditions, targetConditions, steps, section.getDouble("Cooldown", 0));
     }
 
-    /** MythicMobs akzeptiert sowohl den Plural- als auch den Singular-Schluessel. */
     private static List<String> stringList(ConfigurationSection section, String pluralKey, String singularKey) {
         if (section.isList(pluralKey)) return section.getStringList(pluralKey);
         if (section.isList(singularKey)) return section.getStringList(singularKey);

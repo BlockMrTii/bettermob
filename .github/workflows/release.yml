@@ -22,6 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-java@v4
         with:
@@ -29,6 +31,18 @@ jobs:
           java-version: '21'
           cache: maven
           server-id: github
+
+      - name: List commits since the last release
+        if: github.event_name != 'pull_request'
+        run: |
+          last=$(git tag --list 'v*' --sort=-v:refname | head -1)
+          range=${last:+$last..HEAD}
+          {
+            echo "## Commits${last:+ since $last}"
+            echo
+            git log $range --pretty=format:"- %s ([\`%h\`](https://github.com/${{ github.repository }}/commit/%H))"
+            echo
+          } > "$RUNNER_TEMP/commits.md"
 
       - name: Build
         run: mvn -B clean package
@@ -60,6 +74,7 @@ jobs:
           tag_name: v${{ steps.version.outputs.version }}
           target_commitish: ${{ github.sha }}
           files: target/bettermob-*.jar
+          body_path: ${{ runner.temp }}/commits.md
           generate_release_notes: true
 
       - name: Publish to GitHub Packages
@@ -83,4 +98,4 @@ jobs:
           gh release delete dev-build --cleanup-tag --yes || true
           gh release create dev-build "$asset" --prerelease --target "$GITHUB_SHA" \
             --title "Dev build" \
-            --notes "Automatic build of the \`dev\` branch at commit ${sha}. Unstable, may contain unfinished features. This release is replaced on every push to dev."
+            --notes "$(printf 'Automatic build of the `dev` branch at commit %s. Unstable, may contain unfinished features. This release is replaced on every push to dev.\n\n' "$sha"; cat "$RUNNER_TEMP/commits.md")"

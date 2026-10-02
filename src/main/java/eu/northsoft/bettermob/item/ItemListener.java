@@ -1,24 +1,25 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.item;
 
+import eu.northsoft.bettermob.mob.MobDefinition;
+import eu.northsoft.bettermob.skill.SkillContext;
+import eu.northsoft.bettermob.skill.SkillEngine;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
-/** Rechtsklick mit einem BetterMob-Item loest dessen ~onUse-Skills aus, der Spieler ist Caster und Trigger. */
-final class ItemListener implements Listener {
+public final class ItemListener implements Listener {
     private final ItemRegistry items;
     private final SkillEngine skillEngine;
 
-    ItemListener(ItemRegistry items, SkillEngine skillEngine) {
+    public ItemListener(ItemRegistry items, SkillEngine skillEngine) {
         this.items = items;
         this.skillEngine = skillEngine;
     }
 
     @EventHandler
     public void onUse(PlayerInteractEvent event) {
-        // Der Event feuert fuer beide Haende - nur die Haupthand zaehlt, sonst laeuft alles doppelt.
         if (event.getHand() != EquipmentSlot.HAND) return;
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 

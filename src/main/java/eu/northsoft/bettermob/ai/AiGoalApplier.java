@@ -1,29 +1,23 @@
-package eu.northsoft.bettermob;
+package eu.northsoft.bettermob.ai;
 
 import com.destroystokyo.paper.entity.ai.Goal;
 import com.destroystokyo.paper.entity.ai.GoalType;
 import com.destroystokyo.paper.entity.ai.MobGoals;
+import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.skill.SkillStep;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.List;
-import java.util.Map;
-import java.util.Locale;
-import java.util.logging.Logger;
 
-/**
- * Wendet AIGoalSelectors/AITargetSelectors an wie bei MysticMobs: "clear" leert die
- * Kategorie, jeder weitere Eintrag muss ein Vanilla-Goal sein, das dieser Mob-Typ
- * tatsaechlich besitzt - Paper kann keine neuen Verhalten erfinden, nur vorhandene
- * wieder anmelden. Nicht vorhandene Namen werden uebersprungen und geloggt.
- */
-final class AiGoalApplier {
-    /** MythicMobs-Namen, die bei Paper anders heissen (normalisiert, ohne _ und -); mehrere Kandidaten werden der Reihe nach probiert. */
+public final class AiGoalApplier {
     private static final Map<String, List<String>> ALIASES = Map.of(
             "attacker", List.of("hurtby"),
             "players", List.of("nearestattackable"),
@@ -38,9 +32,8 @@ final class AiGoalApplier {
 
     private AiGoalApplier() {}
 
-    /** Ein Eintrag aus AIGoalSelectors: optional "<prioritaet> " vorweg, dann Name und optional {Parameter}. */
     private record Token(Integer priority, String name, Map<String, String> params) {
-        static Token parse(String raw) {
+        public static Token parse(String raw) {
             String text = raw.trim();
             Integer priority = null;
             Matcher matcher = PRIORITY.matcher(text);
@@ -56,7 +49,7 @@ final class AiGoalApplier {
         }
     }
 
-    static void apply(Mob mob, List<String> selectors, List<String> targetSelectors, BetterMobPlugin plugin, Predicate<Entity> managed) {
+    public static void apply(Mob mob, List<String> selectors, List<String> targetSelectors, BetterMobPlugin plugin, Predicate<Entity> managed) {
         MobGoals mobGoals = Bukkit.getMobGoals();
         applyCategory(mobGoals, mob, selectors, plugin, managed, GoalType.MOVE, GoalType.LOOK, GoalType.JUMP);
         applyCategory(mobGoals, mob, targetSelectors, plugin, managed, GoalType.TARGET);
@@ -67,8 +60,6 @@ final class AiGoalApplier {
         if (raw.isEmpty()) return;
         List<Token> tokens = raw.stream().map(Token::parse).toList();
 
-        // Vorhandene Goals sichern, bevor "clear" sie entfernt - nur daraus kann
-        // spaeter wieder angemeldet werden.
         List<Goal<Mob>> snapshot = new ArrayList<>();
         for (GoalType type : types) snapshot.addAll(mobGoals.getAllGoals(mob, type));
 
@@ -83,19 +74,16 @@ final class AiGoalApplier {
             if (match == null) match = custom(token, mob, plugin, managed);
             if (match == null) {
                 plugin.getLogger().warning("AI-Goal '" + token.name() + "' ist fuer Mob-Typ '" + mob.getType() + "' nicht verfuegbar.");
+                if (plugin.debug().info()) plugin.debug().info("available goals of " + mob.getType() + ": " + snapshot.stream().map(AiGoalApplier::keyOf).toList());
                 continue;
             }
-            mobGoals.addGoal(mob, token.priority() != null ? token.priority() : next++, match);
+            int priority = token.priority() != null ? token.priority() : next++;
+            mobGoals.addGoal(mob, priority, match);
+            if (plugin.debug().verbose()) plugin.debug().verbose("goal '" + keyOf(match) + "' added at priority " + priority + " for " + mob.getType());
         }
     }
 
-    /** Goals, die Vanilla nicht kennt, aber Packs per Namen anfordern. */
-    /**
-     * Skelette melden ihr Bogen-Goal bei jedem Waffenwechsel selbst neu an (Prioritaet 4) - dann verliert es gegen
-     * die per AIGoalSelectors gesetzten Goals (lookAtTarget, randomstroll) und der Mob schiesst nie. Nach einem
-     * equip wird es deshalb wieder auf hoechste Prioritaet gesetzt.
-     */
-    static void promoteRanged(Mob mob) {
+    public static void promoteRanged(Mob mob) {
         MobGoals mobGoals = Bukkit.getMobGoals();
         for (Goal<Mob> goal : new ArrayList<>(mobGoals.getAllGoals(mob))) {
             String key = keyOf(goal);
@@ -129,10 +117,7 @@ final class AiGoalApplier {
         for (Goal<Mob> goal : snapshot) {
             if (keyOf(goal).equals(normalized)) return goal;
         }
-        // Vanilla nennt z.B. den Wander-Goal "water_avoiding_random_stroll" statt
-        // "random_stroll" - per Teilstring matchen. Endet der Name auf den Suchbegriff,
-        // gewinnt er vor blossem Enthaltensein: der Eisengolem hat zusaetzlich
-        // "golem_random_stroll_in_village", das nur im Dorf wandert.
+
         for (Goal<Mob> goal : snapshot) {
             if (keyOf(goal).endsWith(normalized)) return goal;
         }
