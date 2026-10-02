@@ -313,7 +313,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             case "command" -> command(context, p);
             case "summon" -> summon(target, p);
             case "mountmodel" -> mountModel(context, target, p);
-            case "effect:particles", "e:p", "particles" -> particles(target, p);
+            case "effect:particles", "e:p", "particles" -> particles(mechanic, context, target, p);
             case "effect:particlering" -> particleRing(target, p);
             case "spin" -> spin(target, p);
             case "takeitem" -> takeItem(target, p);
@@ -490,17 +490,20 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return true;
     }
 
-    private void particles(Target target, Map<String, String> p) {
+    private void particles(SkillStep.Mechanic mechanic, SkillContext context, Target target, Map<String, String> p) {
         Particle particle = particle(firstParam(p, "p", "particle"));
         if (particle == null) return;
-        Location at = target.location().clone().add(0, parseFloat(firstParam(p, "y", "yoffset"), 0f), 0);
-        spawnParticles(at, particle, p);
+        double yOffset = parseFloat(firstParam(p, "y", "yoffset"), 0f);
+        spawnParticles(target.location().clone().add(0, yOffset, 0), particle, p);
 
         int repeat = parseInt(p.get("repeat"), 0);
         long interval = Math.max(1, parseInt(p.get("repeatinterval"), 1));
-        Entity anchor = target.entity() != null ? target.entity() : null;
-        for (int i = 1; i <= repeat && anchor != null; i++) {
-            Tasks.runLater(plugin, anchor, i * interval, () -> spawnParticles(target.location().clone().add(0, at.getY() - target.location().getY(), 0), particle, p));
+        for (int i = 1; i <= repeat; i++) {
+            Tasks.runLater(plugin, context.caster(), i * interval, () -> {
+                for (Target again : resolveAll(mechanic.targeter(), mechanic.targeterParams(), context)) {
+                    spawnParticles(again.location().clone().add(0, yOffset, 0), particle, p);
+                }
+            });
         }
     }
 
