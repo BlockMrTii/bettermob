@@ -192,8 +192,8 @@ Drops:
 - DIAMOND 1 5%
 ```
 
-`PreventOtherDrops: true` removes the vanilla drops **and** the vanilla experience, so only the
-mob's own `Drops:` remain.
+A mob with a `Drops:` list loses its vanilla drops **and** vanilla experience automatically, only
+its own drops remain. `PreventOtherDrops: true` does the same for mobs without any `Drops:`.
 
 ## Skills
 
