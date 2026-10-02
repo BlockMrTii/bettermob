@@ -158,6 +158,9 @@ final class SkillEngine implements org.bukkit.event.Listener {
         boolean gravity = "true".equalsIgnoreCase(p.get("g"));
         boolean freeze = "true".equalsIgnoreCase(p.get("f"));
 
+        String animation = firstParam(p, "state", "animation", "s");
+        if (animation != null) state(mob, animation);
+
         boolean hadGravity = mob.hasGravity();
         if (ai) mob.setAware(false);
         if (gravity) mob.setGravity(false);
