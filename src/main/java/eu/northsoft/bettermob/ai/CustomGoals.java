@@ -14,7 +14,7 @@ import org.bukkit.plugin.Plugin;
 import java.util.EnumSet;
 import java.util.function.Predicate;
 
-public final class CustomGoals {
+final class CustomGoals {
     private CustomGoals() {}
 
     public static Goal<Mob> lookAtTarget(Plugin plugin, Mob mob, double radius) {
