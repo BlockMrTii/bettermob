@@ -5,8 +5,9 @@ import static eu.northsoft.bettermob.skill.Params.*;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.ai.AiGoalApplier;
 import eu.northsoft.bettermob.api.CustomMechanic;
-import eu.northsoft.bettermob.debug.DebugManager;
 import eu.northsoft.bettermob.api.MechanicContext;
+import eu.northsoft.bettermob.debug.DebugManager;
+import eu.northsoft.bettermob.integration.PlaceholderHook;
 import eu.northsoft.bettermob.item.ItemDefinition;
 import eu.northsoft.bettermob.item.ItemRegistry;
 import eu.northsoft.bettermob.mob.MobDefinition;
@@ -14,6 +15,7 @@ import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.model.BetterModelHook;
 import eu.northsoft.bettermob.model.ModelEngineHook;
 import eu.northsoft.bettermob.util.Tasks;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -72,7 +74,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private final ThreadLocal<Boolean> applyingDamage = ThreadLocal.withInitial(() -> false);
     private final Map<String, CustomMechanicEntry> customMechanics = new ConcurrentHashMap<>();
 
-    private static final Set<String> BUILTIN_MECHANICS = Set.of("cancelskill", "cancelevent", "skill", "look", "sound",
+    private static final Set<String> BUILTIN_MECHANICS = Set.of("cancelskill", "cancelevent", "message", "msg", "skill", "look", "sound",
             "state", "potion", "breakblock", "gcd", "model", "modelengine", "randomskill", "remove", "command",
             "summon", "mountmodel", "delay", "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "sudoskill", "damage", "throw", "lunge", "setblock", "equip", "aura", "ondamaged", "onattack", "ontick", "ondeath",
             "onshoot", "bodyrotation", "addtag", "removetag", "ignite", "totem", "velocity", "freeze", "shoot", "stun", "setnodamageticks");
@@ -413,6 +415,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             }
             case "look" -> look(target, context.caster());
             case "sound" -> sound(target, p);
+            case "message", "msg" -> message(context, target, p);
             case "state" -> state(context.caster(), firstParam(p, "state", "s"));
             case "potion" -> potion(target, p);
             case "breakblock" -> breakBlock(target, p);
@@ -993,10 +996,24 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private void command(SkillContext context, Map<String, String> p) {
         String raw = p.get("c");
         if (raw == null) return;
-        String command = stripQuotes(raw)
+        String command = PlaceholderHook.apply(placeholderPlayer(context), stripQuotes(raw)
                 .replace("<caster.name>", context.caster().getName())
-                .replace("<target.name>", context.trigger() != null ? context.trigger().getName() : context.caster().getName());
+                .replace("<target.name>", context.trigger() != null ? context.trigger().getName() : context.caster().getName()));
         Tasks.runGlobal(plugin, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command));
+    }
+
+    private static Player placeholderPlayer(SkillContext context) {
+        if (context.trigger() instanceof Player player) return player;
+        return context.caster() instanceof Player player ? player : null;
+    }
+
+    private void message(SkillContext context, Target target, Map<String, String> p) {
+        String raw = firstParam(p, "m", "message", "msg");
+        if (raw == null || !(target.entity() instanceof Player receiver)) return;
+        String text = PlaceholderHook.apply(receiver, stripQuotes(raw)
+                .replace("<caster.name>", context.caster().getName())
+                .replace("<target.name>", receiver.getName()));
+        receiver.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(text));
     }
 
     private void summon(SkillContext context, Target target, Map<String, String> p) {
