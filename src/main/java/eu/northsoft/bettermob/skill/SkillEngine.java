@@ -1,5 +1,7 @@
 package eu.northsoft.bettermob.skill;
 
+import static eu.northsoft.bettermob.skill.Params.*;
+
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.ai.AiGoalApplier;
 import eu.northsoft.bettermob.api.CustomMechanic;
@@ -351,12 +353,6 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         }
     }
 
-    private static Map<String, String> without(Map<String, String> params, String key) {
-        Map<String, String> copy = new LinkedHashMap<>(params);
-        copy.remove(key);
-        return copy;
-    }
-
     private record Condition(String name, String params, Boolean expected, String action, String actionValue) {}
 
     private static Condition parseCondition(String raw) {
@@ -538,14 +534,6 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return true;
     }
 
-    private static String firstParam(Map<String, String> params, String... keys) {
-        for (String key : keys) {
-            String value = params.get(key);
-            if (value != null) return value;
-        }
-        return null;
-    }
-
     private void particles(Target target, Map<String, String> p) {
         Particle particle = particle(firstParam(p, "p", "particle"));
         if (particle == null) return;
@@ -711,12 +699,6 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private static final String TAG_PREFIX = "bettermob_tag_";
-
-    private static String conditionParam(String paramsRaw, String... keys) {
-        if (paramsRaw == null) return "";
-        String value = firstParam(SkillStep.parseParams(paramsRaw), keys);
-        return value == null ? "" : value.trim();
-    }
 
     private static final class Aura {
         public final String kind;
@@ -968,12 +950,6 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         Tasks.runGlobal(plugin, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command));
     }
 
-    private static String stripQuotes(String value) {
-        String trimmed = value.trim();
-        if (trimmed.length() >= 2 && trimmed.startsWith("\"") && trimmed.endsWith("\"")) return trimmed.substring(1, trimmed.length() - 1);
-        return trimmed;
-    }
-
     private void summon(Target target, Map<String, String> p) {
         String mobId = firstParam(p, "type", "t", "mob", "m");
         if (mobId == null) return;
@@ -1102,21 +1078,5 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private Block obstructingBlock(LivingEntity caster) {
         var result = caster.getWorld().rayTraceBlocks(caster.getEyeLocation(), caster.getEyeLocation().getDirection(), 2.5);
         return result != null ? result.getHitBlock() : caster.getEyeLocation().add(caster.getEyeLocation().getDirection()).getBlock();
-    }
-
-    private static float parseFloat(String value, float fallback) {
-        try {
-            return value == null ? fallback : Float.parseFloat(value);
-        } catch (NumberFormatException exception) {
-            return fallback;
-        }
-    }
-
-    private static int parseInt(String value, int fallback) {
-        try {
-            return value == null ? fallback : Integer.parseInt(value);
-        } catch (NumberFormatException exception) {
-            return fallback;
-        }
     }
 }
