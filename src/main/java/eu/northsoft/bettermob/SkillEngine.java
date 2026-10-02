@@ -150,11 +150,25 @@ final class SkillEngine implements org.bukkit.event.Listener {
         return divisor == 0 ? value : value / divisor;
     }
 
-    /** stun{d}: der Mob steht d Ticks still (KI aus). */
+    /** stun{d;ai;g;f}: d Ticks lang KI aus (ai, Standard true), ohne Schwerkraft (g) und/oder jeden Tick auf Geschwindigkeit 0 (f). */
     private void stun(Target target, Map<String, String> p) {
         if (!(target.entity() instanceof Mob mob)) return;
-        mob.setAware(false);
-        Tasks.runLater(plugin, mob, parseInt(firstParam(p, "d", "duration", "t"), 20), () -> mob.setAware(true));
+        int ticks = parseInt(firstParam(p, "d", "duration", "t"), 20);
+        boolean ai = !"false".equalsIgnoreCase(p.get("ai"));
+        boolean gravity = "true".equalsIgnoreCase(p.get("g"));
+        boolean freeze = "true".equalsIgnoreCase(p.get("f"));
+
+        boolean hadGravity = mob.hasGravity();
+        if (ai) mob.setAware(false);
+        if (gravity) mob.setGravity(false);
+        Runnable cancelFreeze = freeze
+                ? Tasks.runTimer(plugin, mob, 1L, 1L, () -> mob.setVelocity(new Vector()))
+                : () -> { };
+        Tasks.runLater(plugin, mob, ticks, () -> {
+            cancelFreeze.run();
+            if (ai) mob.setAware(true);
+            if (gravity) mob.setGravity(hadGravity);
+        });
     }
 
     boolean registerMechanic(Plugin owner, String name, CustomMechanic mechanic) {
