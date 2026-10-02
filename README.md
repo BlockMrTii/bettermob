@@ -246,7 +246,8 @@ control), `potion`, `look`, `breakblock`, `state` (plays a BetterModel animation
 from the target player), `ignite` (`t` ticks), `stun` (`d` ticks, disables the mob's AI),
 `setNoDamageTicks` (`ticks`), `shoot` (`type=arrow;velocity;damage;oh=[ ...]` fires an arrow at
 the target, the `oh` lines run on a hit with the hit entity as target), `totem` (`os=[ ... ]`
-runs once at the targeter's location, `yo` shifts it up; `md`/`ot`/`oe` are ignored).
+runs once at the targeter's location, `yo` shifts it up; with `md` ticks, `ot=[ ... ]` repeats every `i` ticks
+(default 20) and `oe=[ ... ]` runs at the end; stops early if the caster dies).
 
 `<caster.damage>` and `<caster.name>` inside mechanic parameters are replaced with the caster's
 attack damage and name. A skill may set `Cooldown: <seconds>` (per caster).
