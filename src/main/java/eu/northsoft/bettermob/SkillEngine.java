@@ -957,6 +957,8 @@ final class SkillEngine implements org.bukkit.event.Listener {
         int duration = parseInt(firstParam(p, "md", "maxduration"), 0);
         String onTick = firstParam(p, "ot", "ontick");
         String onEnd = firstParam(p, "oe", "onend");
+        String onHit = firstParam(p, "oh", "onhit");
+        if (onHit != null) spawnTotemBody(context, at, onHit, duration > 0 ? duration : 100);
         if (duration <= 0 || (onTick == null && onEnd == null)) return;
 
         long interval = Math.max(1, parseInt(firstParam(p, "i", "interval"), 20));
@@ -974,6 +976,39 @@ final class SkillEngine implements org.bukkit.event.Listener {
                 runTotemLines(onEnd, at);
             }
         });
+    }
+
+    private record TotemBody(LivingEntity caster, String lines, SkillContext at) {}
+
+    private final Map<UUID, TotemBody> totemBodies = new ConcurrentHashMap<>();
+
+    private void spawnTotemBody(SkillContext context, SkillContext at, String lines, int duration) {
+        Location origin = at.origin();
+        ArmorStand body = origin.getWorld().spawn(origin, ArmorStand.class, stand -> {
+            stand.setInvisible(true);
+            stand.setSmall(true);
+            stand.setGravity(false);
+            stand.setSilent(true);
+            stand.setPersistent(false);
+        });
+        totemBodies.put(body.getUniqueId(), new TotemBody(context.caster(), lines, at));
+        Tasks.runLater(plugin, body, duration, () -> {
+            totemBodies.remove(body.getUniqueId());
+            body.remove();
+        });
+    }
+
+    @org.bukkit.event.EventHandler(ignoreCancelled = true)
+    public void onTotemHit(org.bukkit.event.entity.EntityDamageByEntityEvent event) {
+        TotemBody totem = totemBodies.get(event.getEntity().getUniqueId());
+        if (totem == null) return;
+        event.setCancelled(true);
+        Entity damager = event.getDamager();
+        if (damager instanceof org.bukkit.entity.Projectile projectile && projectile.getShooter() instanceof Entity shooter) damager = shooter;
+        if (damager instanceof LivingEntity attacker && !attacker.equals(totem.caster())) {
+            executeSteps(inlineSkills.computeIfAbsent(totem.lines(), this::parseInline), 0,
+                    new SkillContext(totem.caster(), attacker, null, totem.at().origin(), true));
+        }
     }
 
     private void runTotemLines(String lines, SkillContext context) {
