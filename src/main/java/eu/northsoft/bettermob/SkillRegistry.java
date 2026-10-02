@@ -70,7 +70,7 @@ final class SkillRegistry {
             if (step != null) steps.add(step);
             else plugin.getLogger().warning("Skill '" + id + "': Zeile '" + line + "' konnte nicht geparst werden.");
         }
-        return new SkillDefinition(id, conditions, targetConditions, steps);
+        return new SkillDefinition(id, conditions, targetConditions, steps, section.getDouble("Cooldown", 0));
     }
 
     /** MythicMobs akzeptiert sowohl den Plural- als auch den Singular-Schluessel. */

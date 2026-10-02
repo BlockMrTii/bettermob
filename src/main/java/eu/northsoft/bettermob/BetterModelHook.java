@@ -148,6 +148,30 @@ final class BetterModelHook {
      * vollqualifizierte Klasse zu erraten - schlaegt ein Schritt fehl, gibt's eine
      * konkrete Logzeile statt eines stillen Nichts-Passiert.
      */
+    /**
+     * Weltposition eines Bones (z.B. der Bombe am Modell): BetterModel liefert sie relativ zum Modell-Ursprung
+     * (Vector3f in Bloecken), also auf die Tracker-Position addiert. null, wenn der Bone fehlt.
+     */
+    org.bukkit.Location bonePosition(Object tracker, String boneName, org.bukkit.Location origin) {
+        if (tracker == null) return null;
+        try {
+            Object bone = tracker.getClass().getMethod("bone", String.class).invoke(tracker, boneName);
+            if (bone == null) {
+                plugin.getLogger().warning("@ModelPart: Bone '" + boneName + "' existiert nicht am Modell.");
+                return null;
+            }
+            Object offset = bone.getClass().getMethod("worldPosition").invoke(bone);
+            Class<?> vector = offset.getClass();
+            double x = ((Number) vector.getField("x").get(offset)).doubleValue();
+            double y = ((Number) vector.getField("y").get(offset)).doubleValue();
+            double z = ((Number) vector.getField("z").get(offset)).doubleValue();
+            return origin.clone().add(x, y, z);
+        } catch (ReflectiveOperationException | RuntimeException exception) {
+            plugin.getLogger().warning("@ModelPart '" + boneName + "' fehlgeschlagen: " + exception);
+            return null;
+        }
+    }
+
     boolean mount(Object tracker, String seat, Entity rider) {
         if (tracker == null) return false;
         try {

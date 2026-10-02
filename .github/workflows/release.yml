@@ -68,8 +68,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Auf dev gibt es immer genau einen Pre-Release "dev", der bei jedem Push durch den
-      # neuesten Build ersetzt wird (Tag und Release werden geloescht und neu angelegt).
+      # Auf dev gibt es immer genau einen Pre-Release "dev-build", der bei jedem Push durch den
+      # neuesten Build ersetzt wird (Tag und Release werden geloescht und neu angelegt). Der Tag
+      # heisst bewusst nicht "dev", sonst waere der Name zweideutig (Branch und Tag).
       - name: Publish rolling dev release
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/dev'
         env:
@@ -79,7 +80,7 @@ jobs:
           sha=$(git rev-parse --short HEAD)
           asset="bettermob-${version}-dev-${sha}.jar"
           cp "target/bettermob-${version}.jar" "$asset"
-          gh release delete dev --cleanup-tag --yes || true
-          gh release create dev "$asset" --prerelease --target "$GITHUB_SHA" \
+          gh release delete dev-build --cleanup-tag --yes || true
+          gh release create dev-build "$asset" --prerelease --target "$GITHUB_SHA" \
             --title "Dev build" \
             --notes "Automatic build of the \`dev\` branch at commit ${sha}. Unstable, may contain unfinished features. This release is replaced on every push to dev."

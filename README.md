@@ -34,7 +34,7 @@ when the version in `pom.xml` changes (see "Getting the API").
 ### Dev builds
 
 Pushing to the `dev` branch builds the jar and publishes it as the **Dev build**
-pre-release. There is only ever one: each push replaces it with the newest jar
+pre-release (tag `dev-build`). There is only ever one: each push replaces it with the newest jar
 (`bettermob-<version>-dev-<commit>.jar`). It is unstable and meant for testing, the
 tagged releases above are the stable ones.
 
@@ -62,11 +62,14 @@ plugins/BetterMob/
 │   └── my_skill.yml
 ├── items/                # default item files
 │   └── my_item.yml
+├── droptables/           # default drop tables
+│   └── my_drops.yml
 └── packs/
     └── some_pack/
         ├── mobs/
         ├── skills/
-        └── items/
+        ├── items/
+        └── droptables/
 ```
 
 The flat `mobs/`/`skills/` folders are always loaded. Each subfolder under `packs/`
@@ -115,6 +118,9 @@ Options:
   Marker: false              # armor stands only: no hitbox
   ItemHead: my_item          # a registered item (see Items) worn on the head
   KnockbackResistance: 1
+  FollowRange: 15
+  Scale: 0.5
+  PreventItemPickup: true
 
 Modules:
   ThreatTable: true           # retarget to whoever dealt the most damage
@@ -164,6 +170,34 @@ nm_pack_starter_pack:
 `~onUse` skills with the player as caster. The same item ids can be used as a mob's
 `Options.ItemHead`. Furniture settings on an item (`Type: FURNITURE`) are ignored.
 
+## Drop tables
+
+`droptables/*.yml` (and each pack's `DropTables/`) define what a mob drops on death:
+
+```yaml
+nm_bison_drops:
+  MinItems: 2           # at least / at most this many item entries drop
+  MaxItems: 3
+  Drops:
+  - EXP 5-11 100%       # experience, not counted towards MinItems/MaxItems
+  - LEATHER 4-5 80%     # <item> <amount or range> <chance>
+  - nm_bison_fur 2-3 40%
+```
+
+A line is `<what> <amount> <chance>`. The amount is a number or a range (`2-4`) and the chance is
+`80%` or `0.8`; both are optional (1 piece, 100%). `<what>` is `EXP`, another drop table, a
+registered [item](#items) or a Vanilla material. Point a mob at a table (or write drops directly)
+with `Drops:`:
+
+```yaml
+Drops:
+- nm_bison_drops
+- DIAMOND 1 5%
+```
+
+A mob with a `Drops:` list loses its vanilla drops **and** vanilla experience automatically, only
+its own drops remain. `PreventOtherDrops: true` does the same for mobs without any `Drops:`.
+
 ## Skills
 
 Skill files under `skills/` hold named, reusable skills (a file may contain several,
@@ -195,7 +229,8 @@ Skills:
 ```
 
 **Triggers:** `~onSpawn`, `~onLoad` (chunk/restart rehydration), `~onInteract`,
-`~onDamaged`, `~onAttack`, `~onDeath`, `~onTimer:<ticks>` (repeats). Triggers fire for any
+`~onDamaged`, `~onAttack` (melee hits only, projectiles don't count), `~onShoot` (bow/crossbow
+shot, `CancelEvent` stops the vanilla arrow), `~onDeath`, `~onTimer:<ticks>` (repeats). Triggers fire for any
 living entity, armor stands included. On items: `~onUse` (right click, see [Items](#items)).
 
 **Mechanics:** `sound`, `model` (attach via BetterModel), `modelengine` (attach the
@@ -204,11 +239,17 @@ registered in), `mountmodel` (BetterModel seats — the rider gets actual WASD
 control), `potion`, `look`, `breakblock`, `state` (plays a BetterModel animation),
 `summon` (spawns another registered mob), `remove`, `command`, `gcd`, `randomskill`
 (`s=a,b,c`), `skill`, `sudoskill` (run a skill with the target as caster), `cancelevent`,
-`cancelskill`, `damage` (`amount`), `throw` (`velocity`, `velocityY`), `lunge` (`velocity`),
+`cancelskill`, `equip` (`item=BOW:HAND`), `addtag`/`removetag`, `damage` (`amount`), `throw` (`velocity`, `velocityY`, both scaled by 1/10), `lunge` (`velocity`),
 `setblock` (`m`), `effect:particles` (`p`, `amount`, `hS`, `vS`, `speed`; alias `e:p`),
 `effect:particlering` (`particle`, `radius`, `points`, ...), `spin` (`duration` ticks,
 `velocity` degrees/tick), `takeitem` (`i=<item>;a=<amount>`, removes a registered item
-from the target player).
+from the target player), `ignite` (`t` ticks), `stun` (`d` ticks, disables the mob's AI),
+`setNoDamageTicks` (`ticks`), `shoot` (`type=arrow;velocity;damage;oh=[ ...]` fires an arrow at
+the target, the `oh` lines run on a hit with the hit entity as target), `totem` (`os=[ ... ]`
+runs once at the targeter's location, `yo` shifts it up; `md`/`ot`/`oe` are ignored).
+
+`<caster.damage>` and `<caster.name>` inside mechanic parameters are replaced with the caster's
+attack damage and name. A skill may set `Cooldown: <seconds>` (per caster).
 
 Every mechanic accepts `delay=<ticks>` (run this line later without holding up the rest)
 and `cd=<seconds>` (cooldown per caster). `skill`/`randomskill` read their skill ids from
@@ -218,14 +259,14 @@ and `cd=<seconds>` (cooldown per caster). `skill`/`randomskill` read their skill
 plugin and uses its own model IDs — these are separate registries from BetterModel's,
 so a model has to exist in whichever engine you point at it.
 
-**Conditions:** `offgcd`, `onground`, `onblock{b=...}` (block under the caster), `blocktype{type=...}`. Any mechanic line can
+**Conditions:** `offgcd`, `onground`, `chance{chance=0.75}`, `hastag{t=...}`, `hasaura{n=...}`, `onblock{b=...}` (block under the caster), `blocktype{type=...}`, `skillOnCooldown{skill=...}`, `distance{d=0-6}` (also `>3`, `<=5`) to the trigger/target. A skill's `Conditions`/`TargetConditions` entry may end in `castinstead <skill>` to cast that skill instead when it holds. Any mechanic line can
 end with `?condition{...}` (or `?!condition{...}` to negate) to run only when that
 check passes; unsupported conditions (this plugin has no variable/faction system)
 are logged and treated as passing, so the line still runs.
 
 **Targeters:** `@self`, `@trigger`/`@target`, `@ObstructingBlock`, `@Forward{f=1.5;
 uel=true;yoffset=-1;rotate=-22}` (point in front of the caster, `rotate` swings it sideways,
-positive = right), `@SelfLocation{x;y;z}` (caster position, optionally shifted), `@PIR{r=2}` (nearest player within `r`).
+positive = right), `@SelfLocation{x;y;z}` (caster position, optionally shifted), `@PIR{r=2}` (nearest player within `r`), `@EntitiesNearOrigin{r=4;Conditions=[ - isPlayer{} true - isCaster{} false]}` (alias `@ENO`, around a totem's location) and `@EntitiesInRadius` (`@EIR`, around the caster) hit every matching entity, `@ModelPart{p=<bone>}` (position of a BetterModel bone, falls back to chest height). A skill line without a targeter inherits the target of the line that called it.
 
 Unknown mechanics/conditions/targeters are logged with a clear warning and skipped
 rather than crashing the skill or the server.
@@ -254,7 +295,7 @@ in `pom.xml` and push.
 <dependency>
     <groupId>com.github.HyperGaming99</groupId>
     <artifactId>bettermob</artifactId>
-    <version>v1.1.3</version> <!-- a tag -->
+    <version>v1.1.4</version> <!-- a tag -->
     <scope>provided</scope>
 </dependency>
 ```
@@ -270,7 +311,7 @@ in `pom.xml` and push.
 <dependency>
     <groupId>eu.northsoft</groupId>
     <artifactId>bettermob</artifactId>
-    <version>1.1.3</version>
+    <version>1.1.4</version>
     <scope>provided</scope>
 </dependency>
 ```

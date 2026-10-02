@@ -18,14 +18,16 @@ final class BetterMobCommand implements CommandExecutor, TabCompleter {
     private final PackScanner packScanner;
     private final SkillEngine skillEngine;
     private final ItemRegistry itemRegistry;
+    private final DropRegistry dropRegistry;
 
-    BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry) {
+    BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry, DropRegistry dropRegistry) {
         this.plugin = plugin;
         this.manager = manager;
         this.skillRegistry = skillRegistry;
         this.packScanner = packScanner;
         this.skillEngine = skillEngine;
         this.itemRegistry = itemRegistry;
+        this.dropRegistry = dropRegistry;
     }
 
     @Override
@@ -45,6 +47,7 @@ final class BetterMobCommand implements CommandExecutor, TabCompleter {
                 plugin.reloadConfig();
                 skillRegistry.load();
                 itemRegistry.load();
+                dropRegistry.load();
                 manager.registry().load();
                 sender.sendMessage("§aBetterMob neu geladen.");
             }

@@ -14,6 +14,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
+import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.PlayerLeashEntityEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -23,9 +24,11 @@ import org.bukkit.projectiles.ProjectileSource;
 
 final class MobListener implements Listener {
     private final MobManager manager;
+    private final DropRegistry drops;
 
-    MobListener(MobManager manager) {
+    MobListener(MobManager manager, DropRegistry drops) {
         this.manager = manager;
+        this.drops = drops;
     }
 
     @EventHandler
@@ -36,7 +39,16 @@ final class MobListener implements Listener {
         // passiert in onRemove, wenn der Body wirklich aus der Welt verschwindet.
         MobDefinition definition = manager.definitionOf(event.getEntity().getUniqueId());
         if (definition == null) return;
-        if (definition.options.preventOtherDrops()) event.getDrops().clear();
+        // Eigene Drops ersetzen die Vanilla-Drops (und -XP) - dafuer braucht es kein PreventOtherDrops.
+        if (definition.options.preventOtherDrops() || definition.drops != null) {
+            event.getDrops().clear();
+            event.setDroppedExp(0);
+        }
+        if (definition.drops != null) {
+            DropRegistry.Result result = drops.roll(definition.drops);
+            event.getDrops().addAll(result.items());
+            event.setDroppedExp(event.getDroppedExp() + result.exp());
+        }
 
         Bukkit.getPluginManager().callEvent(new BetterMobDeathEvent(event.getEntity(), definition.toInfo()));
         manager.fireTrigger(event.getEntity(), definition, MobDefinition.SkillTrigger.Trigger.DEATH, null, null);
@@ -82,11 +94,22 @@ final class MobListener implements Listener {
             }
         }
         // ~onAttack: der Mob hat selbst zugeschlagen.
-        if (source instanceof LivingEntity attackerMob && !manager.inSkillDamage()) {
+        // ~onAttack ist der Nahkampf. Ein Pfeil des Mobs zaehlt nicht: sonst bricht das uebliche
+        // "CancelEvent ~onAttack" (Nahkampf unterbinden) auch den Schaden seiner eigenen Pfeile ab.
+        if (source instanceof LivingEntity attackerMob && !manager.inSkillDamage() && !(event.getDamager() instanceof Projectile)) {
             MobDefinition definition = manager.definitionOf(attackerMob.getUniqueId());
             if (definition != null) manager.fireTrigger(attackerMob, definition, MobDefinition.SkillTrigger.Trigger.ATTACK,
                     event.getEntity() instanceof LivingEntity living ? living : null, event);
         }
+    }
+
+    /** ~onShoot: der Mob schiesst mit Bogen/Armbrust. Ausloeser ist sein Ziel, das Event laesst sich per CancelEvent abbrechen. */
+    @EventHandler
+    public void onShoot(EntityShootBowEvent event) {
+        MobDefinition definition = manager.definitionOf(event.getEntity().getUniqueId());
+        if (definition == null) return;
+        LivingEntity target = event.getEntity() instanceof Mob mob ? mob.getTarget() : null;
+        manager.fireTrigger(event.getEntity(), definition, MobDefinition.SkillTrigger.Trigger.SHOOT, target, event);
     }
 
     @EventHandler

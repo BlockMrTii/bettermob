@@ -8,15 +8,21 @@ import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.SoundCategory;
 import org.bukkit.block.Block;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -25,8 +31,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Fuehrt SkillDefinitions aus - ein kleiner, auf die tatsaechlich gebrauchten Mechaniken
@@ -34,9 +38,7 @@ import java.util.regex.Pattern;
  * ein, die im Pack vorkommen; unbekannte Mechanics/Conditions werden geloggt statt den
  * Server zum Absturz zu bringen.
  */
-final class SkillEngine {
-    private static final Pattern CONDITION_PATTERN = Pattern.compile("^(\\w+)(\\{([^}]*)})?(\\s+(\\S+))?(\\s+(\\S+))?$");
-
+final class SkillEngine implements org.bukkit.event.Listener {
     private final BetterMobPlugin plugin;
     private final SkillRegistry registry;
     private final MobManager mobManager;
@@ -45,6 +47,9 @@ final class SkillEngine {
     private final ItemRegistry items;
     private final Map<UUID, Long> gcdUntilMillis = new ConcurrentHashMap<>();
     private final Map<String, Long> cooldowns = new ConcurrentHashMap<>();
+    // Aktive Auren pro Entity: Name -> Ablaufzeit in ms (Long.MAX_VALUE = ohne Ende).
+    private final Map<UUID, Map<String, Long>> auras = new ConcurrentHashMap<>();
+    private final Map<String, List<SkillStep>> inlineSkills = new ConcurrentHashMap<>();
     // Gesetzt, solange die damage-Mechanic Schaden austeilt: dieser Schaden soll kein ~onAttack
     // ausloesen, sonst bricht dessen CancelEvent den Schaden des Skills selbst wieder ab.
     private final ThreadLocal<Boolean> applyingDamage = ThreadLocal.withInitial(() -> false);
@@ -52,7 +57,8 @@ final class SkillEngine {
 
     private static final Set<String> BUILTIN_MECHANICS = Set.of("cancelskill", "cancelevent", "skill", "look", "sound",
             "state", "potion", "breakblock", "gcd", "model", "modelengine", "randomskill", "remove", "command",
-            "summon", "mountmodel", "delay", "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "sudoskill", "damage", "throw", "lunge", "setblock");
+            "summon", "mountmodel", "delay", "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "sudoskill", "damage", "throw", "lunge", "setblock", "equip", "aura", "ondamaged", "onattack", "ontick", "ondeath",
+            "onshoot", "bodyrotation", "addtag", "removetag", "ignite", "totem", "shoot", "stun", "setnodamageticks");
 
     private record CustomMechanicEntry(Plugin owner, CustomMechanic mechanic) {}
 
@@ -63,6 +69,59 @@ final class SkillEngine {
         this.betterModel = betterModel;
         this.modelEngine = modelEngine;
         this.items = items;
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+    }
+
+    /** Der Wurf eines Skills darf nicht ueber den Tod hinaus wirken: Respawnende starten ohne Restgeschwindigkeit. */
+    @org.bukkit.event.EventHandler
+    public void onRespawn(org.bukkit.event.player.PlayerRespawnEvent event) {
+        Player player = event.getPlayer();
+        player.setVelocity(new Vector());
+        Tasks.runLater(plugin, player, 1L, () -> player.setVelocity(new Vector()));
+    }
+
+    /** Pfeil eines shoot{oh=[...]}: die Treffer-Zeilen laufen mit dem Schuetzen als Caster und dem Getroffenen als Ziel. */
+    private record PendingShot(LivingEntity shooter, List<SkillStep> onHit) {}
+
+    private final Map<UUID, PendingShot> shots = new ConcurrentHashMap<>();
+
+    @org.bukkit.event.EventHandler
+    public void onProjectileHit(org.bukkit.event.entity.ProjectileHitEvent event) {
+        PendingShot shot = shots.remove(event.getEntity().getUniqueId());
+        if (shot == null) return;
+        if (event.getHitEntity() instanceof LivingEntity hit && !hit.equals(shot.shooter())) {
+            executeSteps(shot.onHit(), 0, new SkillContext(shot.shooter(), hit, null).withTrigger(hit));
+        }
+    }
+
+    /**
+     * shoot{type=arrow;velocity;damage;oh=[...]}: schiesst einen Pfeil auf den Ausloeser bzw. das Ziel des Mobs.
+     * ponytail: nur Pfeile; Geschwindigkeit = velocity*2 (grob wie Vanilla-Bogen), Schaden = damage-Param.
+     */
+    private void shoot(SkillContext context, Map<String, String> p) {
+        LivingEntity caster = context.caster();
+        LivingEntity aim = context.trigger();
+        if (aim == null && caster instanceof Mob mob) aim = mob.getTarget();
+        if (aim == null) return;
+        double speed = Math.max(0.1, parseFloat(p.get("velocity"), 1f) * 2);
+        Vector direction = aim.getEyeLocation().toVector().subtract(caster.getEyeLocation().toVector()).normalize();
+        double damage = parseFloat(p.get("damage"), 2f);
+        caster.launchProjectile(org.bukkit.entity.Arrow.class, direction.multiply(speed), arrow -> {
+            arrow.setDamage(damage / speed);
+            arrow.setPickupStatus(org.bukkit.entity.AbstractArrow.PickupStatus.DISALLOWED);
+            String hit = p.get("oh");
+            if (hit != null) {
+                shots.put(arrow.getUniqueId(), new PendingShot(caster, inlineSkills.computeIfAbsent(hit, this::parseInline)));
+                Tasks.runLater(plugin, arrow, 400L, () -> shots.remove(arrow.getUniqueId()));
+            }
+        });
+    }
+
+    /** stun{d}: der Mob steht d Ticks still (KI aus). */
+    private void stun(Target target, Map<String, String> p) {
+        if (!(target.entity() instanceof Mob mob)) return;
+        mob.setAware(false);
+        Tasks.runLater(plugin, mob, parseInt(firstParam(p, "d", "duration", "t"), 20), () -> mob.setAware(true));
     }
 
     boolean registerMechanic(Plugin owner, String name, CustomMechanic mechanic) {
@@ -89,12 +148,54 @@ final class SkillEngine {
     }
 
     void run(SkillDefinition skill, SkillContext context) {
-        for (String condition : skill.conditions) if (!conditionPasses(condition, context, null)) return;
+        if (check(skill.conditions, context, null) != Check.PASS) return;
         if (!skill.targetConditions.isEmpty()) {
             Target obstructing = resolve("obstructingblock", Map.of(), context);
-            for (String condition : skill.targetConditions) if (!conditionPasses(condition, context, obstructing)) return;
+            if (check(skill.targetConditions, context, obstructing) != Check.PASS) return;
         }
+        if (skill.cooldown > 0 && !acquireSkillCooldown(context.caster(), skill)) return;
         executeSteps(skill.steps, 0, context);
+    }
+
+    private enum Check { PASS, FAIL, REDIRECTED }
+
+    /**
+     * Prueft eine Bedingungsliste. Eine Bedingung mit "castinstead <skill>" startet bei Erfuellung
+     * stattdessen jenen Skill (der aktuelle bricht ab), sonst wird sie uebergangen; jede andere
+     * nicht erfuellte Bedingung bricht den Skill ab.
+     */
+    private Check check(List<String> conditions, SkillContext context, Target target) {
+        for (String raw : conditions) {
+            Condition condition = parseCondition(raw);
+            if (condition == null) continue;
+            boolean met = evaluate(condition, context, target) == (condition.expected() == null || condition.expected());
+            if ("castinstead".equals(condition.action())) {
+                if (!met) continue;
+                if (condition.actionValue() != null) runById(condition.actionValue(), context);
+                return Check.REDIRECTED;
+            }
+            if (!met) return Check.FAIL;
+        }
+        return Check.PASS;
+    }
+
+    private boolean acquireSkillCooldown(LivingEntity caster, SkillDefinition skill) {
+        long now = System.currentTimeMillis();
+        String key = skillCooldownKey(caster, skill.id);
+        Long until = cooldowns.get(key);
+        if (until != null && until > now) return false;
+        if (cooldowns.size() > 2048) cooldowns.values().removeIf(time -> time <= now);
+        cooldowns.put(key, now + (long) (skill.cooldown * 1000));
+        return true;
+    }
+
+    private boolean skillOnCooldown(LivingEntity caster, String skillId) {
+        Long until = cooldowns.get(skillCooldownKey(caster, skillId));
+        return until != null && until > System.currentTimeMillis();
+    }
+
+    private static String skillCooldownKey(LivingEntity caster, String skillId) {
+        return caster.getUniqueId() + "@" + skillId.toLowerCase(Locale.ROOT);
     }
 
     /** Fuehrt einen einzelnen Schritt aus - fuer Mob-level "Skills:"-Zeilen, die direkt
@@ -149,20 +250,33 @@ final class SkillEngine {
 
         if (mechanic.name().equals("cancelskill")) return true;
 
-        Target target = resolve(mechanic.targeter(), mechanic.targeterParams(), context);
+        List<Target> targets = resolveAll(mechanic.targeter(), mechanic.targeterParams(), context);
         // Ein Targeter wie @PIR findet unter Umstaenden niemanden - dann gibt es nichts auszufuehren.
-        if (target == null) return false;
+        if (targets.isEmpty()) return false;
+        Map<String, String> params = substitute(p, context);
+        for (Target target : targets) dispatch(mechanic, context, target, params);
+        return false;
+    }
+
+    /** Fuehrt eine Mechanic fuer genau ein aufgeloestes Ziel aus (bei Mehrfach-Targetern einmal pro Ziel). */
+    private void dispatch(SkillStep.Mechanic mechanic, SkillContext context, Target target, Map<String, String> p) {
         switch (mechanic.name()) {
             case "cancelevent" -> {
                 if (context.event() != null) context.event().setCancelled(true);
             }
             case "skill" -> {
                 String id = firstParam(p, "s", "skill", "skills");
-                if (id != null) runById(id.trim(), context);
+                if (id == null) break;
+                // Mit eigenem Targeter laeuft der Skill fuer dieses Ziel; seine Zeilen ohne Targeter erben es.
+                boolean forTarget = !mechanic.targeter().isEmpty() && !mechanic.targeter().equals("self")
+                        && target.entity() instanceof LivingEntity;
+                SkillContext child = forTarget ? context.withTrigger((LivingEntity) target.entity()) : context;
+                if (id.trim().startsWith("[")) runInline(id, child);
+                else runById(id.trim(), child);
             }
             case "look" -> look(target, context.caster());
             case "sound" -> sound(target, p);
-            case "state" -> state(context.caster(), p.get("state"));
+            case "state" -> state(context.caster(), firstParam(p, "state", "s"));
             case "potion" -> potion(target, p);
             case "breakblock" -> breakBlock(target, p);
             case "gcd" -> setGcd(context.caster().getUniqueId(), p);
@@ -182,6 +296,18 @@ final class SkillEngine {
             case "throw" -> throwTarget(context, target, p);
             case "lunge" -> lunge(context, target, p);
             case "setblock" -> setBlock(target, p);
+            case "equip" -> equip(target, p);
+            case "aura", "ondamaged", "onattack", "ontick", "ondeath", "onshoot" -> registerAura(target, p);
+            case "addtag" -> tag(target, p, true);
+            case "removetag" -> tag(target, p, false);
+            case "bodyrotation" -> { }
+            case "ignite" -> ignite(target, p);
+            case "shoot" -> shoot(context, p);
+            case "stun" -> stun(target, p);
+            case "setnodamageticks" -> {
+                if (target.entity() instanceof LivingEntity living) living.setNoDamageTicks(parseInt(firstParam(p, "ticks", "t"), 0));
+            }
+            case "totem" -> totem(context, target, p);
             default -> {
                 CustomMechanicEntry custom = customMechanics.get(mechanic.name());
                 if (custom == null) {
@@ -197,7 +323,6 @@ final class SkillEngine {
                 }
             }
         }
-        return false;
     }
 
     private static Map<String, String> without(Map<String, String> params, String key) {
@@ -206,26 +331,95 @@ final class SkillEngine {
         return copy;
     }
 
-    private boolean conditionPasses(String raw, SkillContext context, Target targetOverride) {
-        Matcher matcher = CONDITION_PATTERN.matcher(raw.trim());
-        if (!matcher.matches()) return true;
-        String name = matcher.group(1).toLowerCase(Locale.ROOT);
-        String paramsRaw = matcher.group(3);
-        String expected = matcher.group(5);
+    /** Eine Bedingungszeile: "name{params} [true|false] [aktion [wert]]", z.B. "distance{d=0-6} castinstead mein_skill". */
+    private record Condition(String name, String params, Boolean expected, String action, String actionValue) {}
 
-        boolean actual = switch (name) {
+    private static Condition parseCondition(String raw) {
+        String text = raw.trim();
+        int i = 0;
+        while (i < text.length() && (Character.isLetterOrDigit(text.charAt(i)) || text.charAt(i) == '_' || text.charAt(i) == ':')) i++;
+        if (i == 0) return null;
+        String name = text.substring(0, i).toLowerCase(Locale.ROOT);
+
+        String params = null;
+        if (i < text.length() && text.charAt(i) == '{') {
+            int depth = 0;
+            int j = i;
+            for (; j < text.length(); j++) {
+                char c = text.charAt(j);
+                if (c == '{' || c == '[') depth++;
+                else if (c == '}' || c == ']') {
+                    depth--;
+                    if (depth == 0) break;
+                }
+            }
+            params = text.substring(i + 1, Math.min(j, text.length()));
+            i = j + 1;
+        }
+
+        Boolean expected = null;
+        String action = null;
+        String value = null;
+        String rest = i < text.length() ? text.substring(i).trim() : "";
+        if (!rest.isEmpty()) {
+            String[] tokens = rest.split("\\s+");
+            int k = 0;
+            if (tokens[0].equalsIgnoreCase("true") || tokens[0].equalsIgnoreCase("false")) {
+                expected = Boolean.parseBoolean(tokens[0]);
+                k = 1;
+            }
+            if (k < tokens.length) {
+                action = tokens[k].toLowerCase(Locale.ROOT);
+                if (k + 1 < tokens.length) value = String.join(" ", java.util.Arrays.copyOfRange(tokens, k + 1, tokens.length));
+            }
+        }
+        return new Condition(name, params, expected, action, value);
+    }
+
+    /** Einzelne Bedingung ohne Aktion, z.B. fuer "?cond{...}" am Zeilenende: erfuellt = true. */
+    private boolean conditionPasses(String raw, SkillContext context, Target targetOverride) {
+        Condition condition = parseCondition(raw);
+        if (condition == null) return true;
+        return evaluate(condition, context, targetOverride) == (condition.expected() == null || condition.expected());
+    }
+
+    private boolean evaluate(Condition condition, SkillContext context, Target targetOverride) {
+        String paramsRaw = condition.params();
+        return switch (condition.name()) {
             case "offgcd" -> !hasActiveGcd(context.caster().getUniqueId());
             case "onground" -> context.caster().isOnGround();
+            case "hasaura" -> hasAura(context.caster(), conditionParam(paramsRaw, "n", "name", "aura", "auraname"));
+            case "hastag" -> context.caster().getScoreboardTags().contains(TAG_PREFIX + conditionParam(paramsRaw, "t", "tag", "n"));
+            case "chance" -> ThreadLocalRandom.current().nextDouble() < parseFloat(conditionParam(paramsRaw, "chance", "c"), 1f);
+            case "skilloncooldown" -> skillOnCooldown(context.caster(), conditionParam(paramsRaw, "skill", "s", "name"));
+            case "distance" -> withinDistance(context, conditionParam(paramsRaw, "d", "distance"));
             case "onblock" -> containsBlockType(paramsRaw, context.caster().getLocation().subtract(0, 0.1, 0).getBlock());
             case "blocktype" -> targetOverride != null && targetOverride.block() != null
                     && containsBlockType(paramsRaw, targetOverride.block());
             default -> {
-                plugin.getLogger().warning("Skill-Condition '" + name + "' wird nicht unterstuetzt - wird ignoriert.");
+                plugin.getLogger().warning("Skill-Condition '" + condition.name() + "' wird nicht unterstuetzt - wird ignoriert.");
                 yield true;
             }
         };
-        if (expected == null || expected.equalsIgnoreCase("cancel")) return actual;
-        return actual == Boolean.parseBoolean(expected);
+    }
+
+    /** Abstand zum Ausloeser (oder zum Ziel des Mobs): "0-6" Bereich, ">3", "<5", ">=2", "<=4" oder ein Wert (+-0,5). */
+    private boolean withinDistance(SkillContext context, String spec) {
+        LivingEntity other = context.trigger();
+        if (other == null && context.caster() instanceof Mob mob) other = mob.getTarget();
+        if (other == null || !other.getWorld().equals(context.caster().getWorld())) return false;
+        double distance = other.getLocation().distance(context.caster().getLocation());
+        try {
+            if (spec.startsWith(">=")) return distance >= Double.parseDouble(spec.substring(2));
+            if (spec.startsWith("<=")) return distance <= Double.parseDouble(spec.substring(2));
+            if (spec.startsWith(">")) return distance > Double.parseDouble(spec.substring(1));
+            if (spec.startsWith("<")) return distance < Double.parseDouble(spec.substring(1));
+            int dash = spec.indexOf('-', 1);
+            if (dash > 0) return distance >= Double.parseDouble(spec.substring(0, dash)) && distance <= Double.parseDouble(spec.substring(dash + 1));
+            return Math.abs(distance - Double.parseDouble(spec)) < 0.5;
+        } catch (NumberFormatException exception) {
+            return false;
+        }
     }
 
     private boolean containsBlockType(String paramsRaw, Block block) {
@@ -263,13 +457,13 @@ final class SkillEngine {
 
     private void potion(Target target, Map<String, String> p) {
         if (!(target.entity() instanceof LivingEntity living)) return;
-        PotionEffectType type = PotionEffectType.getByName(p.getOrDefault("type", "SLOW"));
+        PotionEffectType type = PotionEffectType.getByName(firstParam(p, "type", "t") == null ? "SLOW" : firstParam(p, "type", "t").trim());
         if (type == null) {
             plugin.getLogger().warning("Unbekannter Potion-Typ '" + p.get("type") + "'.");
             return;
         }
-        int duration = parseInt(p.get("duration"), 20);
-        int level = parseInt(p.get("level"), 1);
+        int duration = parseInt(firstParam(p, "duration", "d"), 20);
+        int level = parseInt(firstParam(p, "level", "l"), 1);
         living.addPotionEffect(new PotionEffect(type, duration, Math.max(0, level - 1)));
     }
 
@@ -330,7 +524,16 @@ final class SkillEngine {
 
     private void particles(Target target, Map<String, String> p) {
         Particle particle = particle(firstParam(p, "p", "particle"));
-        if (particle != null) spawnParticles(target.location(), particle, p);
+        if (particle == null) return;
+        Location at = target.location().clone().add(0, parseFloat(firstParam(p, "y", "yoffset"), 0f), 0);
+        spawnParticles(at, particle, p);
+        // repeat=N;repeatInterval=T: der Schub wird N weitere Male alle T Ticks wiederholt.
+        int repeat = parseInt(p.get("repeat"), 0);
+        long interval = Math.max(1, parseInt(p.get("repeatinterval"), 1));
+        Entity anchor = target.entity() != null ? target.entity() : null;
+        for (int i = 1; i <= repeat && anchor != null; i++) {
+            Tasks.runLater(plugin, anchor, i * interval, () -> spawnParticles(target.location().clone().add(0, at.getY() - target.location().getY(), 0), particle, p));
+        }
     }
 
     /** Ring aus "points" Punkten mit "radius" um das Ziel, an jedem Punkt ein Partikelschub. */
@@ -433,11 +636,11 @@ final class SkillEngine {
      */
     private void throwTarget(SkillContext context, Target target, Map<String, String> p) {
         Entity thrown = target.entity();
-        if (thrown == null) return;
+        if (thrown == null || thrown instanceof LivingEntity living && living.isDead()) return;
         Vector away = thrown.getLocation().toVector().subtract(context.caster().getLocation().toVector()).setY(0);
         if (away.lengthSquared() < 1e-6) away = context.caster().getLocation().getDirection().setY(0);
-        thrown.setVelocity(away.normalize().multiply(parseFloat(p.get("velocity"), 4f) / 10.0)
-                .setY(parseFloat(firstParam(p, "velocityy", "vy"), 0f)));
+        thrown.setVelocity(away.normalize().multiply(parseFloat(firstParam(p, "velocity", "v"), 4f) / 10.0)
+                .setY(parseFloat(firstParam(p, "velocityy", "vy"), 0f) / 10.0));
     }
 
     /** Der Caster springt mit "velocity" Bloecken pro Tick auf das Ziel zu. */
@@ -456,6 +659,173 @@ final class SkillEngine {
             return;
         }
         target.location().getBlock().setType(material);
+    }
+
+    /**
+     * "item=<item>:<slot>" legt dem Ziel einen Gegenstand an. Item ist ein registriertes BetterMob-Item
+     * oder ein Vanilla-Material, Slot HAND (Standard), OFFHAND, HEAD, CHEST, LEGS oder FEET.
+     */
+    private void equip(Target target, Map<String, String> p) {
+        if (!(target.entity() instanceof LivingEntity living) || living.getEquipment() == null) return;
+        String spec = firstParam(p, "item", "i", "type");
+        if (spec == null) return;
+        String[] parts = spec.trim().split(":", 2);
+
+        ItemStack stack;
+        ItemDefinition custom = items.get(parts[0]);
+        if (custom != null) {
+            stack = items.create(custom, 1);
+        } else {
+            Material material = Material.matchMaterial(parts[0]);
+            if (material == null || !material.isItem()) {
+                plugin.getLogger().warning("equip: '" + parts[0] + "' ist weder ein Item noch ein Material.");
+                return;
+            }
+            stack = new ItemStack(material);
+        }
+
+        EquipmentSlot slot = switch ((parts.length > 1 ? parts[1] : "hand").trim().toLowerCase(Locale.ROOT)) {
+            case "offhand", "off_hand" -> EquipmentSlot.OFF_HAND;
+            case "head", "helmet" -> EquipmentSlot.HEAD;
+            case "chest", "chestplate" -> EquipmentSlot.CHEST;
+            case "legs", "leggings" -> EquipmentSlot.LEGS;
+            case "feet", "boots" -> EquipmentSlot.FEET;
+            default -> EquipmentSlot.HAND;
+        };
+        EntityEquipment equipment = living.getEquipment();
+        equipment.setItem(slot, stack);
+        // Gegenstaende, die ein Skill anlegt, sollen beim Tod nicht zusaetzlich herumliegen.
+        if (living instanceof Mob mob) {
+            equipment.setDropChance(slot, 0f);
+            MobDefinition definition = mobManager.definitionOf(mob.getUniqueId());
+            if (definition != null && !definition.aiGoalSelectors.isEmpty()) AiGoalApplier.promoteRanged(mob);
+        }
+    }
+
+    private static final String TAG_PREFIX = "bettermob_tag_";
+
+    /** Liest einen Parameter aus dem rohen "{a=b;c=d}"-Inhalt einer Bedingung. */
+    private static String conditionParam(String paramsRaw, String... keys) {
+        if (paramsRaw == null) return "";
+        String value = firstParam(SkillStep.parseParams(paramsRaw), keys);
+        return value == null ? "" : value.trim();
+    }
+
+    /**
+     * onDamaged{auraName=spawn;time=50;...} und aura{...}: merkt sich die Aura "auraName" am Ziel fuer
+     * "time" Ticks (ohne time: dauerhaft), damit ?hasaura{n=spawn} sie finden kann. ponytail: Was die
+     * Aura sonst tut (cE, oS=[...] mit stun/velocity) wird nicht ausgefuehrt - nur das Merken.
+     */
+    private void registerAura(Target target, Map<String, String> p) {
+        String name = firstParam(p, "auraname", "name", "aura");
+        if (name == null || target.entity() == null) return;
+        int ticks = parseInt(p.get("time"), 0);
+        long until = ticks > 0 ? System.currentTimeMillis() + ticks * 50L : Long.MAX_VALUE;
+        auras.computeIfAbsent(target.entity().getUniqueId(), key -> new ConcurrentHashMap<>()).put(name.toLowerCase(Locale.ROOT), until);
+    }
+
+    private boolean hasAura(LivingEntity entity, String name) {
+        Map<String, Long> active = auras.get(entity.getUniqueId());
+        if (active == null) return false;
+        Long until = active.get(name.toLowerCase(Locale.ROOT));
+        if (until == null) return false;
+        if (until <= System.currentTimeMillis()) {
+            active.remove(name.toLowerCase(Locale.ROOT));
+            return false;
+        }
+        return true;
+    }
+
+    /** addtag{t=...}/removetag{t=...}: Markierungen am Ziel, abfragbar mit ?hastag{t=...}. */
+    private void tag(Target target, Map<String, String> p, boolean add) {
+        String tag = firstParam(p, "t", "tag");
+        if (tag == null || target.entity() == null) return;
+        if (add) target.entity().addScoreboardTag(TAG_PREFIX + tag.trim());
+        else target.entity().removeScoreboardTag(TAG_PREFIX + tag.trim());
+    }
+
+    /** Vergisst den Zustand eines entfernten Entities (Auren, globaler Cooldown). */
+    void forget(UUID entityId) {
+        auras.remove(entityId);
+        gcdUntilMillis.remove(entityId);
+    }
+
+    /** Skill-Zeilen direkt im Parameter: "skill{s=[ - sound{...} - delay 5 ]}" - einmal geparst und gemerkt. */
+    private void runInline(String raw, SkillContext context) {
+        executeSteps(inlineSkills.computeIfAbsent(raw, this::parseInline), 0, context);
+    }
+
+    private List<SkillStep> parseInline(String raw) {
+        List<SkillStep> steps = new ArrayList<>();
+        for (String line : splitInline(raw)) {
+            SkillStep step = SkillStep.parse(line);
+            if (step == null) plugin.getLogger().warning("Inline-Skill: Zeile '" + line + "' konnte nicht geparst werden.");
+            else steps.add(step);
+        }
+        return List.copyOf(steps);
+    }
+
+    /** "[ - a{..} - b{..} ]" in die einzelnen Zeilen zerlegen: an jedem "-" auf oberster Ebene, das von Leerraum umgeben ist. */
+    private static List<String> splitInline(String raw) {
+        String body = raw.trim();
+        if (body.startsWith("[")) body = body.substring(1);
+        if (body.endsWith("]")) body = body.substring(0, body.length() - 1);
+
+        List<String> lines = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        int depth = 0;
+        for (int i = 0; i < body.length(); i++) {
+            char c = body.charAt(i);
+            if (c == '{' || c == '[') depth++;
+            else if (c == '}' || c == ']') depth--;
+            boolean separator = c == '-' && depth == 0 && (i == 0 || Character.isWhitespace(body.charAt(i - 1)))
+                    && i + 1 < body.length() && Character.isWhitespace(body.charAt(i + 1));
+            if (separator) {
+                lines.add(current.toString().trim());
+                current.setLength(0);
+            } else {
+                current.append(c);
+            }
+        }
+        lines.add(current.toString().trim());
+        lines.removeIf(String::isBlank);
+        return lines;
+    }
+
+    /** <caster.damage> u.a. in Parameterwerten durch den echten Wert ersetzen (der Angriffsschaden des Casters, sein Name). */
+    private Map<String, String> substitute(Map<String, String> p, SkillContext context) {
+        boolean placeholders = false;
+        for (String value : p.values()) {
+            if (value.indexOf("<caster.") >= 0) {
+                placeholders = true;
+                break;
+            }
+        }
+        if (!placeholders) return p;
+        var attackDamage = context.caster().getAttribute(Attribute.ATTACK_DAMAGE);
+        String damage = String.valueOf(attackDamage == null ? 1.0 : attackDamage.getValue());
+        Map<String, String> result = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : p.entrySet()) {
+            result.put(entry.getKey(), entry.getValue()
+                    .replace("<caster.damage>", damage).replace("<caster.name>", context.caster().getName()));
+        }
+        return result;
+    }
+
+    private void ignite(Target target, Map<String, String> p) {
+        if (target.entity() != null) target.entity().setFireTicks(parseInt(firstParam(p, "t", "ticks", "duration", "d"), 100));
+    }
+
+    /**
+     * Totem: fuehrt die "os=[ - ... ]"-Zeilen einmal am Totem-Ort aus (Ziel des Targeters, um "yo" nach oben
+     * verschoben), @EntitiesNearOrigin darin bezieht sich auf diesen Ort. ponytail: md/ot/oe/oh (Dauer und
+     * Tick-Skills) werden nicht ausgewertet - der Totem feuert nur sein Start-Skript, wie bei der Bombe des Packs.
+     */
+    private void totem(SkillContext context, Target target, Map<String, String> p) {
+        String lines = firstParam(p, "os", "onstart");
+        if (lines == null) return;
+        Location origin = target.location().clone().add(0, parseFloat(firstParam(p, "yo", "yoffset"), 0f), 0);
+        executeSteps(inlineSkills.computeIfAbsent(lines, this::parseInline), 0, context.withOrigin(origin));
     }
 
     private void remove(Target target) {
@@ -521,9 +891,65 @@ final class SkillEngine {
             case "forward" -> Target.ofLocation(forwardLocation(context.caster(), targeterParams));
             case "selflocation" -> Target.ofLocation(context.caster().getLocation().add(
                     parseFloat(targeterParams.get("x"), 0f), parseFloat(targeterParams.get("y"), 0f), parseFloat(targeterParams.get("z"), 0f)));
+            // Bone-Position des Modells (p=tnt2); fehlt der Bone oder das Modell, die Brusthoehe des Casters.
+            case "modelpart" -> {
+                Location bone = betterModel.bonePosition(mobManager.trackerFor(context.caster().getUniqueId()),
+                        firstParam(targeterParams, "p", "part", "bone"), context.caster().getLocation());
+                yield Target.ofLocation(bone != null ? bone
+                        : context.caster().getLocation().add(0, context.caster().getHeight() * 0.6, 0));
+            }
             case "pir", "playersinradius" -> nearestPlayer(context.caster(), targeterParams);
-            default -> Target.ofEntity(context.caster());
+            case "self" -> Target.ofEntity(context.caster());
+            // Kein @Targeter geschrieben: das Ziel erben, das der aufrufende Skill gesetzt hat.
+            default -> context.targetIsTrigger() && context.trigger() != null
+                    ? Target.ofEntity(context.trigger()) : Target.ofEntity(context.caster());
         };
+    }
+
+    /** Wie resolve(), aber Mehrfach-Targeter (@EntitiesNearOrigin, @EntitiesInRadius) liefern mehrere Ziele. */
+    private List<Target> resolveAll(String targeter, Map<String, String> params, SkillContext context) {
+        String key = targeter.toLowerCase(Locale.ROOT);
+        boolean nearOrigin = key.equals("entitiesnearorigin") || key.equals("eno");
+        if (nearOrigin || key.equals("entitiesinradius") || key.equals("eir")) {
+            Location center = nearOrigin && context.origin() != null ? context.origin() : context.caster().getLocation();
+            return entitiesInRadius(center, params, context);
+        }
+        Target single = resolve(targeter, params, context);
+        return single == null ? List.of() : List.of(single);
+    }
+
+    /** Lebewesen im Radius "r" um center, nach Abstand sortiert; "conditions=[ - isPlayer{} true ... ]" filtert. */
+    private List<Target> entitiesInRadius(Location center, Map<String, String> params, SkillContext context) {
+        double radius = parseFloat(params.get("r"), 5f);
+        List<String> conditions = params.containsKey("conditions") ? splitInline(params.get("conditions")) : List.of();
+        List<LivingEntity> hits = new ArrayList<>();
+        for (Entity entity : center.getWorld().getNearbyEntities(center, radius, radius, radius)) {
+            if (!(entity instanceof LivingEntity living) || entity instanceof ArmorStand || living.isDead()) continue;
+            if (living.getLocation().distanceSquared(center) > radius * radius) continue;
+            if (candidateMatches(living, conditions, context)) hits.add(living);
+        }
+        hits.sort(java.util.Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(center)));
+        List<Target> targets = new ArrayList<>();
+        for (LivingEntity hit : hits) targets.add(Target.ofEntity(hit));
+        return targets;
+    }
+
+    /** Bedingungen eines Targeters pruefen ein einzelnes Kandidaten-Lebewesen: isPlayer, isCaster. */
+    private boolean candidateMatches(LivingEntity candidate, List<String> conditions, SkillContext context) {
+        for (String raw : conditions) {
+            Condition condition = parseCondition(raw);
+            if (condition == null) continue;
+            boolean actual = switch (condition.name()) {
+                case "isplayer" -> candidate instanceof Player;
+                case "iscaster" -> candidate.equals(context.caster());
+                default -> {
+                    plugin.getLogger().warning("Targeter-Condition '" + condition.name() + "' wird nicht unterstuetzt - wird ignoriert.");
+                    yield true;
+                }
+            };
+            if (actual != (condition.expected() == null || condition.expected())) return false;
+        }
+        return true;
     }
 
     /** ponytail: nur der naechste Spieler im Radius "r" - sort/limit aus @PIR{...} werden nicht ausgewertet, im Pack ist es immer NEAREST/1. */
