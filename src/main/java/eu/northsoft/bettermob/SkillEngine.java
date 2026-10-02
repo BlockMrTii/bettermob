@@ -816,16 +816,35 @@ final class SkillEngine implements org.bukkit.event.Listener {
         if (target.entity() != null) target.entity().setFireTicks(parseInt(firstParam(p, "t", "ticks", "duration", "d"), 100));
     }
 
-    /**
-     * Totem: fuehrt die "os=[ - ... ]"-Zeilen einmal am Totem-Ort aus (Ziel des Targeters, um "yo" nach oben
-     * verschoben), @EntitiesNearOrigin darin bezieht sich auf diesen Ort. ponytail: md/ot/oe/oh (Dauer und
-     * Tick-Skills) werden nicht ausgewertet - der Totem feuert nur sein Start-Skript, wie bei der Bombe des Packs.
-     */
     private void totem(SkillContext context, Target target, Map<String, String> p) {
-        String lines = firstParam(p, "os", "onstart");
-        if (lines == null) return;
         Location origin = target.location().clone().add(0, parseFloat(firstParam(p, "yo", "yoffset"), 0f), 0);
-        executeSteps(inlineSkills.computeIfAbsent(lines, this::parseInline), 0, context.withOrigin(origin));
+        SkillContext at = context.withOrigin(origin);
+        runTotemLines(firstParam(p, "os", "onstart"), at);
+
+        int duration = parseInt(firstParam(p, "md", "maxduration"), 0);
+        String onTick = firstParam(p, "ot", "ontick");
+        String onEnd = firstParam(p, "oe", "onend");
+        if (duration <= 0 || (onTick == null && onEnd == null)) return;
+
+        long interval = Math.max(1, parseInt(firstParam(p, "i", "interval"), 20));
+        long[] elapsed = {0};
+        Runnable[] cancel = {() -> { }};
+        cancel[0] = Tasks.runTimer(plugin, context.caster(), interval, interval, () -> {
+            if (context.caster().isDead()) {
+                cancel[0].run();
+                return;
+            }
+            elapsed[0] += interval;
+            runTotemLines(onTick, at);
+            if (elapsed[0] >= duration) {
+                cancel[0].run();
+                runTotemLines(onEnd, at);
+            }
+        });
+    }
+
+    private void runTotemLines(String lines, SkillContext context) {
+        if (lines != null) executeSteps(inlineSkills.computeIfAbsent(lines, this::parseInline), 0, context);
     }
 
     private void remove(Target target) {
