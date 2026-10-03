@@ -13,3 +13,7 @@ factions: {}
 # Debug-Ausgabe: off, info (Trigger, Skills, KI) oder verbose (zusaetzlich jede Mechanik, Bones, Projektile).
 # Zur Laufzeit mit /bettermob debug <off|info|verbose>.
 Debug: off
+
+# Language of console and command messages: the name of a file in lang/ without .yml (en, de).
+# Add your own lang/<code>.yml to translate; missing keys fall back to English.
+Language: en
