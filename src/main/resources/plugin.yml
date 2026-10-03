@@ -11,13 +11,32 @@ commands:
     description: Verwaltet BetterMob
     usage: /bettermob help
     aliases: [bmob]
-    permission: bettermob.admin
 permissions:
   bettermob.admin:
-    description: Erlaubt das Spawnen und Verwalten von BetterMob-Mobs
+    description: Grants every BetterMob command
     default: op
     children:
+      bettermob.spawn: true
+      bettermob.list: true
+      bettermob.reload: true
+      bettermob.skill: true
+      bettermob.give: true
       bettermob.debug: true
+  bettermob.spawn:
+    description: Allows /bettermob spawn
+    default: op
+  bettermob.list:
+    description: Allows /bettermob list and /bettermob packs
+    default: op
+  bettermob.reload:
+    description: Allows /bettermob reload
+    default: op
+  bettermob.skill:
+    description: Allows /bettermob skill
+    default: op
+  bettermob.give:
+    description: Allows /bettermob give
+    default: op
   bettermob.debug:
-    description: Erlaubt /bettermob debug
+    description: Allows /bettermob debug
     default: op
