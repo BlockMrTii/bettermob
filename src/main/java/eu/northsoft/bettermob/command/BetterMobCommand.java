@@ -92,15 +92,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
 
         switch (subcommand) {
             case "reload" -> {
-                plugin.reloadConfig();
-                messages.reload();
-                plugin.debug().reload();
-                plugin.stats().reload(plugin.getConfig());
-                skillRegistry.load();
-                itemRegistry.load();
-                dropRegistry.load();
-                manager.registry().load();
-                int updated = manager.reloadLiving();
+                int updated = plugin.reloadAll();
                 messages.send(sender, "command.reloaded");
                 if (updated > 0) messages.send(sender, "command.reloadedLiving", "count", updated);
             }

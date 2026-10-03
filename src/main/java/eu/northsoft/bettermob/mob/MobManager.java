@@ -116,10 +116,13 @@ public final class MobManager {
 
         if (definition.removeAi) entity.setAI(false);
 
-        if (definition.options.preventSunburn()) {
-            if (entity instanceof Zombie zombie) zombie.setShouldBurnInDay(false);
-            if (entity instanceof AbstractSkeleton skeleton) skeleton.setShouldBurnInDay(false);
-        }
+        preventSunburn(entity, definition);
+    }
+
+    private static void preventSunburn(LivingEntity entity, MobDefinition definition) {
+        if (!definition.options.preventSunburn()) return;
+        if (entity instanceof Zombie zombie) zombie.setShouldBurnInDay(false);
+        if (entity instanceof AbstractSkeleton skeleton) skeleton.setShouldBurnInDay(false);
     }
 
     private void applyAppearanceOptions(LivingEntity entity, MobDefinition definition) {
@@ -391,6 +394,11 @@ public final class MobManager {
         definitions.put(entity.getUniqueId(), definition);
         if (definition.threatTable) threatTables.put(entity.getUniqueId(), new ConcurrentHashMap<>());
         if (!definition.damageModifiers.isEmpty()) damageModifiers.put(entity.getUniqueId(), definition.damageModifiers);
+
+        if (entity instanceof Mob mob) {
+            AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
+        }
+        preventSunburn(entity, definition);
 
         if (!hasModelSkill(definition, MobDefinition.SkillTrigger.Trigger.LOAD)) {
             Object tracker = betterModel.attachIfPresent(entity, definition.modelId);
