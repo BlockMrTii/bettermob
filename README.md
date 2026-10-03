@@ -81,6 +81,7 @@ tagged releases above are the stable ones.
 | `/bettermob reload` | Reload config, mobs, skills, and packs |
 | `/bettermob skill <id> [player]` | Manually run a registered skill, bypassing its normal triggers |
 | `/bettermob give <item> [player] [amount]` | Give a registered item (see [Items](#items)) |
+| `/bettermob killall [mob\|*] [world]` | Remove all living BetterMob mobs, or only one type and/or one world, and report how many |
 | `/bettermob debug [off\|info\|verbose\|filter <id>\|filter clear\|chat]` | Show or change the debug output (permission `bettermob.debug`, part of `bettermob.admin`) |
 
 Alias: `/bmob`.
@@ -93,11 +94,14 @@ Alias: `/bmob`.
 | `bettermob.reload` | `/bettermob reload` | op |
 | `bettermob.skill` | `/bettermob skill` | op |
 | `bettermob.give` | `/bettermob give` | op |
+| `bettermob.killall` | `/bettermob killall` | op |
 | `bettermob.debug` | `/bettermob debug` | op |
 
 `bettermob.admin` is the parent of all the others. Without a node the subcommand is refused, left out of the help and left out of tab completion. `bettermob.faction.<name>` (see `factions` in `config.yml`) is unrelated to the commands.
 
 **Reload:** `/bettermob reload` also updates mobs that are already alive. Each one is bound to the new definition of the same id: name, health cap, attack, speed and the options are applied again, its timers are restarted (the old ones are cancelled, so nothing runs twice), its auras and global cooldown are cleared, the model is attached again and the `~onLoad` skills run again. AI goals are applied again only when `AIGoalSelectors` or `AITargetSelectors` changed and the new list starts with `clear`; goals an earlier `clear` removed cannot come back until the mob is respawned. A mob whose definition was removed keeps the old one and a warning is logged. Totem bodies that are already in the world run out on their own.
+
+**Killall:** `/bettermob killall` removes every loaded living BetterMob mob; `<mob>` limits it to one id (`*` means all) and `<world>` to one world. Mobs in unloaded chunks are not touched. Without a mob id it also removes helper armor stands (the hit bodies of `totem` skills). Those carry the scoreboard tag `bettermob_helper`, and only entities with that tag are ever removed. Leftover helpers are also removed on startup and whenever a chunk loads.
 
 **Debug:** set `Debug: off|info|verbose` in `config.yml`, or change it at runtime with `/bettermob debug`.
 `info` logs every trigger that fires (and whether the event was cancelled), every skill run with the reason it

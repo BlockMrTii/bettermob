@@ -14,6 +14,7 @@ command:
     skill: "&7/bettermob skill <id> [Spieler] &8- &7Skill manuell auslösen"
     give: "&7/bettermob give <item> [Spieler] [amount] &8- &7Item geben"
     debug: "&7/bettermob debug [off|info|verbose|filter|chat] &8- &7Debug-Ausgabe steuern"
+    killall: "&7/bettermob killall [mob|*] [Welt] &8- &7Lebende BetterMob-Mobs entfernen"
   reloaded: "&aBetterMob neu geladen."
   reloadedLiving: "&7{count} lebende Mobs auf die neue Definition umgestellt."
   mobList: "&7Mobs: &f{mobs}"
@@ -42,6 +43,9 @@ command:
     usage: "&cNutzung: /bettermob give <item> [Spieler] [amount]"
     notRegistered: "&cItem '{item}' ist nicht registriert."
     done: "&a{amount}x '{item}' an {player} gegeben."
+  killall:
+    worldMissing: "&cWelt '{world}' existiert nicht."
+    done: "&a{count} Mobs entfernt."
 
 pack:
   enabled: "&a(aktiv)"
