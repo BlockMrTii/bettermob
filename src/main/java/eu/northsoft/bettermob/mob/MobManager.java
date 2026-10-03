@@ -17,6 +17,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.ArmorStand;
@@ -283,6 +284,23 @@ public final class MobManager {
     private static List<String> changedSelectors(List<String> before, List<String> after) {
         if (before.equals(after)) return List.of();
         return after.stream().anyMatch(line -> line.trim().equalsIgnoreCase("clear")) ? after : List.of();
+    }
+
+    public int killAll(String mobId, World world) {
+        int removed = 0;
+        for (Map.Entry<UUID, MobDefinition> entry : List.copyOf(definitions.entrySet())) {
+            if (mobId != null && !entry.getValue().id.equalsIgnoreCase(mobId)) continue;
+            Entity entity = Bukkit.getEntity(entry.getKey());
+            if (entity == null || (world != null && !entity.getWorld().equals(world))) continue;
+            Tasks.runLater(plugin, entity, 1L, entity::remove);
+            removed++;
+        }
+        if (mobId == null && !Tasks.FOLIA) {
+            for (World target : world != null ? List.of(world) : Bukkit.getWorlds()) {
+                removeLeftoverHelpers(target.getEntitiesByClass(ArmorStand.class));
+            }
+        }
+        return removed;
     }
 
     public void removeLeftoverHelpers(Collection<? extends Entity> entities) {
