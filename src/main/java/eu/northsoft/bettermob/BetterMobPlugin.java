@@ -27,6 +27,7 @@ public final class BetterMobPlugin extends JavaPlugin {
     private DebugManager debug;
     private Messages messages;
     private BetterMobExpansion expansion;
+    private MobManager manager;
 
     public DebugManager debug() {
         return debug;
@@ -59,7 +60,7 @@ public final class BetterMobPlugin extends JavaPlugin {
         DropRegistry dropRegistry = new DropRegistry(this, packScanner, itemRegistry);
         dropRegistry.load();
 
-        MobManager manager = new MobManager(this, registry, betterModel, modelEngine, itemRegistry);
+        manager = new MobManager(this, registry, betterModel, modelEngine, itemRegistry);
         SkillEngine skillEngine = new SkillEngine(this, skillRegistry, manager, betterModel, modelEngine, itemRegistry);
         manager.setSkillEngine(skillEngine);
         getServer().getPluginManager().registerEvents(new MobListener(manager, dropRegistry), this);
@@ -92,5 +93,6 @@ public final class BetterMobPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         if (expansion != null) expansion.unregister();
+        if (manager != null) manager.shutdown();
     }
 }

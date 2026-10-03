@@ -5,6 +5,8 @@ import eu.northsoft.bettermob.drop.DropEntry;
 import eu.northsoft.bettermob.drop.DropTable;
 import eu.northsoft.bettermob.pack.PackScanner;
 import eu.northsoft.bettermob.pack.YamlFiles;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
@@ -155,8 +157,43 @@ public final class MobRegistry {
                 parseDamageModifiers(id, section.getStringList("DamageModifiers")),
                 parseSkillTriggers(id, section.getStringList("Skills")),
                 parseDrops(id, section.getStringList("Drops")),
-                section.getString("Faction")
+                section.getString("Faction"),
+                parseBossBar(id, modulesSection)
         );
+    }
+
+    private BossBarSettings parseBossBar(String id, ConfigurationSection modules) {
+        if (modules == null) return null;
+        ConfigurationSection bar = modules.getConfigurationSection("BossBar");
+        if (bar == null) return modules.getBoolean("BossBar", false) ? BossBarSettings.defaults() : null;
+        String colorName = bar.getString("Color", "RED");
+        BarColor color = enumOrNull(BarColor.class, colorName);
+        if (color == null) {
+            plugin.messages().warn("mob.bossBarColorInvalid", "mob", id, "value", colorName);
+            color = BarColor.RED;
+        }
+        String styleName = bar.getString("Style", "SOLID");
+        BarStyle style = enumOrNull(BarStyle.class, styleName);
+        if (style == null) {
+            plugin.messages().warn("mob.bossBarStyleInvalid", "mob", id, "value", styleName);
+            style = BarStyle.SOLID;
+        }
+        return new BossBarSettings(
+                bar.getString("Title", BossBarSettings.DEFAULT_TITLE),
+                Math.max(1, bar.getDouble("Range", BossBarSettings.DEFAULT_RANGE)),
+                color,
+                style,
+                bar.getBoolean("CreateFog", false),
+                bar.getBoolean("DarkenSky", false),
+                bar.getBoolean("PlayMusic", false));
+    }
+
+    private static <E extends Enum<E>> E enumOrNull(Class<E> type, String value) {
+        try {
+            return Enum.valueOf(type, value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
     }
 
     private DropTable parseDrops(String id, List<String> lines) {
