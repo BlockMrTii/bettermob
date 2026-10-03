@@ -15,6 +15,7 @@ import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.model.BetterModelHook;
 import eu.northsoft.bettermob.model.ModelEngineHook;
+import eu.northsoft.bettermob.skill.condition.ConditionRegistry;
 import eu.northsoft.bettermob.skill.target.TargeterRegistry;
 import eu.northsoft.bettermob.util.Tasks;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -70,6 +71,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
     private final DebugManager debug;
     private final TargeterRegistry targeters;
+    private final ConditionRegistry conditionRegistry;
     private final Map<String, List<SkillStep>> inlineSkills = new ConcurrentHashMap<>();
 
     private final Map<String, CustomMechanicEntry> customMechanics = new ConcurrentHashMap<>();
@@ -90,6 +92,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         this.items = items;
         this.debug = plugin.debug();
         this.targeters = new TargeterRegistry(this);
+        this.conditionRegistry = new ConditionRegistry(this);
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
@@ -103,6 +106,10 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
     public BetterModelHook betterModel() {
         return betterModel;
+    }
+
+    public SkillState state() {
+        return state;
     }
 
     public TargeterRegistry targeters() {
@@ -316,7 +323,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         for (String raw : conditions) {
             Condition condition = Condition.parse(raw);
             if (condition == null) continue;
-            boolean met = evaluate(condition, context, target) == (condition.expected() == null || condition.expected());
+            boolean met = conditionRegistry.evaluate(condition, context, target) == (condition.expected() == null || condition.expected());
             if ("castinstead".equals(condition.action())) {
                 if (!met) continue;
                 if (debug.info()) debug.info("condition '" + condition.name() + "' holds, casting '" + condition.actionValue() + "' instead", condition.actionValue(), subject(context.caster()));
@@ -460,56 +467,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private boolean conditionPasses(String raw, SkillContext context, Target targetOverride) {
         Condition condition = Condition.parse(raw);
         if (condition == null) return true;
-        return evaluate(condition, context, targetOverride) == (condition.expected() == null || condition.expected());
-    }
-
-    private boolean evaluate(Condition condition, SkillContext context, Target targetOverride) {
-        String paramsRaw = condition.params();
-        return switch (condition.name()) {
-            case "offgcd" -> !state.hasActiveGcd(context.caster().getUniqueId());
-            case "onground" -> context.caster().isOnGround();
-            case "hasaura" -> state.hasAura(context.caster(), conditionParam(paramsRaw, "n", "name", "aura", "auraname"));
-            case "hastag" -> context.caster().getScoreboardTags().contains(TAG_PREFIX + conditionParam(paramsRaw, "t", "tag", "n"));
-            case "chance" -> ThreadLocalRandom.current().nextDouble() < parseFloat(conditionParam(paramsRaw, "chance", "c"), 1f);
-            case "skilloncooldown" -> state.skillOnCooldown(context.caster(), conditionParam(paramsRaw, "skill", "s", "name"));
-            case "faction" -> Factions.has(mobManager, context.caster(), conditionParam(paramsRaw, "faction", "f", "name"));
-            case "distance" -> withinDistance(context, conditionParam(paramsRaw, "d", "distance"));
-            case "onblock" -> containsBlockType(paramsRaw, context.caster().getLocation().subtract(0, 0.1, 0).getBlock());
-            case "blocktype" -> targetOverride != null && targetOverride.block() != null
-                    && containsBlockType(paramsRaw, targetOverride.block());
-            default -> {
-                plugin.messages().warn("skill.conditionUnsupported", "condition", condition.name());
-                yield true;
-            }
-        };
-    }
-
-    private boolean withinDistance(SkillContext context, String spec) {
-        LivingEntity other = context.trigger();
-        if (other == null && context.caster() instanceof Mob mob) other = mob.getTarget();
-        if (other == null || !other.getWorld().equals(context.caster().getWorld())) return false;
-        double distance = other.getLocation().distance(context.caster().getLocation());
-        try {
-            if (spec.startsWith(">=")) return distance >= Double.parseDouble(spec.substring(2));
-            if (spec.startsWith("<=")) return distance <= Double.parseDouble(spec.substring(2));
-            if (spec.startsWith(">")) return distance > Double.parseDouble(spec.substring(1));
-            if (spec.startsWith("<")) return distance < Double.parseDouble(spec.substring(1));
-            int dash = spec.indexOf('-', 1);
-            if (dash > 0) return distance >= Double.parseDouble(spec.substring(0, dash)) && distance <= Double.parseDouble(spec.substring(dash + 1));
-            return Math.abs(distance - Double.parseDouble(spec)) < 0.5;
-        } catch (NumberFormatException exception) {
-            return false;
-        }
-    }
-
-    private boolean containsBlockType(String paramsRaw, Block block) {
-        if (paramsRaw == null) return false;
-        int eq = paramsRaw.indexOf('=');
-        String list = eq < 0 ? paramsRaw : paramsRaw.substring(eq + 1);
-        for (String type : list.split(",")) {
-            if (type.trim().equalsIgnoreCase(block.getType().name())) return true;
-        }
-        return false;
+        return conditionRegistry.evaluate(condition, context, targetOverride) == (condition.expected() == null || condition.expected());
     }
 
     private void look(Target target, LivingEntity caster) {
