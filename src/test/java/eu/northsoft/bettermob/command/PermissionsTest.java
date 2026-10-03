@@ -17,7 +17,7 @@ class PermissionsTest {
 
     @Test
     void everySubcommandHasANode() {
-        assertEquals(Set.of("spawn", "list", "packs", "reload", "skill", "give", "debug"), BetterMobCommand.PERMISSIONS.keySet());
+        assertEquals(Set.of("spawn", "list", "packs", "reload", "skill", "give", "killall", "debug"), BetterMobCommand.PERMISSIONS.keySet());
     }
 
     @Test
