@@ -17,11 +17,6 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Loads the YAML files shipped with the plugin plus every pack under {@code src/test/resources/packs}
- * and checks that each mob, item, skill and drop table line parses. Drop a pack in there (any layout,
- * the folder names Mobs, Items, Skills and DropTables decide how a file is read) to cover it.
- */
 class PackFilesTest {
     private static final List<Path> ROOTS = List.of(Path.of("src/main/resources"), Path.of("src/test/resources/packs"));
 
@@ -80,7 +75,6 @@ class PackFilesTest {
         return 1;
     }
 
-    /** Which kind of definitions a file holds, taken from the closest folder named like one. */
     private static String kindOf(Path relative) {
         for (int i = relative.getNameCount() - 2; i >= 0; i--) {
             String name = relative.getName(i).toString().toLowerCase(Locale.ROOT);
