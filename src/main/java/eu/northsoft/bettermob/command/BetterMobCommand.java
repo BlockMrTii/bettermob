@@ -5,6 +5,7 @@ import eu.northsoft.bettermob.debug.DebugManager;
 import eu.northsoft.bettermob.drop.DropRegistry;
 import eu.northsoft.bettermob.item.ItemDefinition;
 import eu.northsoft.bettermob.item.ItemRegistry;
+import eu.northsoft.bettermob.lang.Messages;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.pack.PackScanner;
@@ -24,6 +25,7 @@ import java.util.Locale;
 
 public final class BetterMobCommand implements CommandExecutor, TabCompleter {
     private final BetterMobPlugin plugin;
+    private final Messages messages;
     private final MobManager manager;
     private final SkillRegistry skillRegistry;
     private final PackScanner packScanner;
@@ -33,6 +35,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
 
     public BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry, DropRegistry dropRegistry) {
         this.plugin = plugin;
+        this.messages = plugin.messages();
         this.manager = manager;
         this.skillRegistry = skillRegistry;
         this.packScanner = packScanner;
@@ -44,50 +47,50 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage("§7/bettermob spawn <id> [amount] §8- §7Mob spawnen");
-            sender.sendMessage("§7/bettermob list §8- §7Verfuegbare Mobs anzeigen");
-            sender.sendMessage("§7/bettermob packs §8- §7Geladene Packs anzeigen");
-            sender.sendMessage("§7/bettermob reload §8- §7Mobs, Skills und Packs neu laden");
-            sender.sendMessage("§7/bettermob skill <id> [Spieler] §8- §7Skill manuell ausloesen");
-            sender.sendMessage("§7/bettermob give <item> [Spieler] [amount] §8- §7Item geben");
-            sender.sendMessage("§7/bettermob debug [off|info|verbose|filter|chat] §8- §7Debug-Ausgabe steuern");
+            messages.send(sender, "command.help.spawn");
+            messages.send(sender, "command.help.list");
+            messages.send(sender, "command.help.packs");
+            messages.send(sender, "command.help.reload");
+            messages.send(sender, "command.help.skill");
+            messages.send(sender, "command.help.give");
+            messages.send(sender, "command.help.debug");
             return true;
         }
 
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "reload" -> {
                 plugin.reloadConfig();
+                messages.reload();
                 plugin.debug().reload();
                 skillRegistry.load();
                 itemRegistry.load();
                 dropRegistry.load();
                 manager.registry().load();
-                sender.sendMessage("§aBetterMob neu geladen.");
+                messages.send(sender, "command.reloaded");
             }
-            case "list" -> sender.sendMessage("§7Mobs: §f" + String.join(", ", manager.registry().all().keySet()));
+            case "list" -> messages.send(sender, "command.mobList", "mobs", String.join(", ", manager.registry().all().keySet()));
             case "packs" -> {
                 List<String> packs = packScanner.listPacks();
-                if (packs.isEmpty()) sender.sendMessage("§7Keine Packs in packs/ gefunden.");
-                else packs.forEach(line -> sender.sendMessage("§7- §f" + line));
+                if (packs.isEmpty()) messages.send(sender, "command.packsNone");
+                else packs.forEach(line -> messages.send(sender, "command.packEntry", "pack", line));
             }
             case "spawn" -> handleSpawn(sender, args);
             case "skill" -> handleSkill(sender, args);
             case "give" -> handleGive(sender, args);
             case "debug" -> handleDebug(sender, args);
-            default -> sender.sendMessage("§cUnbekannter Befehl.");
+            default -> messages.send(sender, "command.unknown");
         }
         return true;
     }
 
     private void handleDebug(CommandSender sender, String[] args) {
         if (!sender.hasPermission("bettermob.debug")) {
-            sender.sendMessage("§cKeine Berechtigung.");
+            messages.send(sender, "command.noPermission");
             return;
         }
         DebugManager debug = plugin.debug();
         if (args.length < 2) {
-            String filters = debug.filters().isEmpty() ? "alle" : String.join(", ", debug.filters());
-            sender.sendMessage("§7Debug: §f" + debug.level().name().toLowerCase(Locale.ROOT) + " §7- Filter: §f" + filters);
+            sendDebugStatus(sender, debug);
             return;
         }
         switch (args[1].toLowerCase(Locale.ROOT)) {
@@ -100,33 +103,37 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             }
             case "chat" -> {
                 if (!(sender instanceof Player player)) {
-                    sender.sendMessage("§cNur von Spielern nutzbar.");
+                    messages.send(sender, "command.playersOnly");
                     return;
                 }
-                sender.sendMessage(debug.toggleWatcher(player) ? "§aDebug-Ausgabe im Chat an." : "§7Debug-Ausgabe im Chat aus.");
+                messages.send(sender, debug.toggleWatcher(player) ? "command.debug.chatOn" : "command.debug.chatOff");
                 return;
             }
             default -> {
-                sender.sendMessage("§cNutzung: /bettermob debug [off|info|verbose|filter <id>|filter clear|chat]");
+                messages.send(sender, "command.debug.usage");
                 return;
             }
         }
-        sender.sendMessage("§7Debug: §f" + debug.level().name().toLowerCase(Locale.ROOT)
-                + " §7- Filter: §f" + (debug.filters().isEmpty() ? "alle" : String.join(", ", debug.filters())));
+        sendDebugStatus(sender, debug);
+    }
+
+    private void sendDebugStatus(CommandSender sender, DebugManager debug) {
+        String filters = debug.filters().isEmpty() ? messages.get("command.debug.filtersAll") : String.join(", ", debug.filters());
+        messages.send(sender, "command.debug.status", "level", debug.level().name().toLowerCase(Locale.ROOT), "filters", filters);
     }
 
     private void handleSpawn(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage("§cNutzung: /bettermob spawn <id> [amount]");
+            messages.send(sender, "command.spawn.usage");
             return;
         }
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("§cNur von Spielern nutzbar.");
+            messages.send(sender, "command.playersOnly");
             return;
         }
         MobDefinition definition = manager.registry().get(args[1]);
         if (definition == null) {
-            sender.sendMessage("§cMob '" + args[1] + "' ist nicht registriert.");
+            messages.send(sender, "command.spawn.notRegistered", "mob", args[1]);
             return;
         }
         int amount = 1;
@@ -137,17 +144,17 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             }
         }
         for (int i = 0; i < amount; i++) manager.spawn(definition, player.getLocation());
-        sender.sendMessage("§a" + amount + "x '" + definition.id + "' gespawnt.");
+        messages.send(sender, "command.spawn.done", "amount", amount, "mob", definition.id);
     }
 
     private void handleSkill(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage("§cNutzung: /bettermob skill <id> [Spieler]");
+            messages.send(sender, "command.skill.usage");
             return;
         }
         String skillId = args[1];
         if (skillRegistry.get(skillId) == null) {
-            sender.sendMessage("§cSkill '" + skillId + "' ist nicht registriert.");
+            messages.send(sender, "command.skill.notRegistered", "skill", skillId);
             return;
         }
 
@@ -155,41 +162,41 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         if (args.length >= 3) {
             caster = Bukkit.getPlayer(args[2]);
             if (caster == null) {
-                sender.sendMessage("§cSpieler '" + args[2] + "' ist nicht online.");
+                messages.send(sender, "command.playerOffline", "player", args[2]);
                 return;
             }
         } else if (sender instanceof Player player) {
             caster = player;
         } else {
-            sender.sendMessage("§cOhne Spielerangabe nur von Spielern nutzbar.");
+            messages.send(sender, "command.playerRequired");
             return;
         }
 
         skillEngine.runById(skillId, SkillContext.of(caster));
-        sender.sendMessage("§aSkill '" + skillId + "' auf " + caster.getName() + " ausgefuehrt.");
+        messages.send(sender, "command.skill.done", "skill", skillId, "player", caster.getName());
     }
 
     private void handleGive(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage("§cNutzung: /bettermob give <item> [Spieler] [amount]");
+            messages.send(sender, "command.give.usage");
             return;
         }
         ItemDefinition definition = itemRegistry.get(args[1]);
         if (definition == null) {
-            sender.sendMessage("§cItem '" + args[1] + "' ist nicht registriert.");
+            messages.send(sender, "command.give.notRegistered", "item", args[1]);
             return;
         }
         Player receiver;
         if (args.length >= 3) {
             receiver = Bukkit.getPlayer(args[2]);
             if (receiver == null) {
-                sender.sendMessage("§cSpieler '" + args[2] + "' ist nicht online.");
+                messages.send(sender, "command.playerOffline", "player", args[2]);
                 return;
             }
         } else if (sender instanceof Player player) {
             receiver = player;
         } else {
-            sender.sendMessage("§cOhne Spielerangabe nur von Spielern nutzbar.");
+            messages.send(sender, "command.playerRequired");
             return;
         }
         int amount = 1;
@@ -201,7 +208,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         }
         receiver.getInventory().addItem(itemRegistry.create(definition, amount)).values()
                 .forEach(rest -> receiver.getWorld().dropItemNaturally(receiver.getLocation(), rest));
-        sender.sendMessage("§a" + amount + "x '" + definition.id + "' an " + receiver.getName() + " gegeben.");
+        messages.send(sender, "command.give.done", "amount", amount, "item", definition.id, "player", receiver.getName());
     }
 
     @Override

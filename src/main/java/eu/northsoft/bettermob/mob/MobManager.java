@@ -133,7 +133,7 @@ public final class MobManager {
             ItemDefinition item = items.get(options.itemHead());
             EntityEquipment equipment = entity.getEquipment();
             if (item == null) {
-                plugin.getLogger().warning("Mob '" + definition.id + "': ItemHead-Item '" + options.itemHead() + "' ist nicht registriert.");
+                plugin.messages().warn("mob.itemHeadMissing", "mob", definition.id, "item", options.itemHead());
             } else if (equipment != null) {
                 equipment.setHelmet(items.create(item, 1));
 

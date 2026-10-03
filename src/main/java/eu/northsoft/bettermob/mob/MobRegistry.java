@@ -48,7 +48,7 @@ public final class MobRegistry {
                 for (Map.Entry<String, ConfigurationSection> entry : extractMobSections(file).entrySet()) {
                     String id = entry.getKey();
                     if (mobs.containsKey(id.toLowerCase(Locale.ROOT))) {
-                        plugin.getLogger().warning("Mob '" + id + "' aus " + sourceFolder.getPath() + " ueberschreibt eine bereits geladene Definition - ignoriert.");
+                        plugin.messages().warn("mob.duplicate", "mob", id, "folder", sourceFolder.getPath());
                         continue;
                     }
                     MobDefinition definition = parse(id, entry.getValue());
@@ -56,7 +56,7 @@ public final class MobRegistry {
                 }
             }
         }
-        plugin.getLogger().info(mobs.size() + " Mobs geladen.");
+        plugin.messages().info("mob.loaded", "count", mobs.size());
     }
 
     private void migrateLegacyFile() {
@@ -73,12 +73,12 @@ public final class MobRegistry {
             try {
                 single.save(target);
             } catch (IOException exception) {
-                plugin.getLogger().warning("Migration von '" + id + "' fehlgeschlagen: " + exception.getMessage());
+                plugin.messages().warn("mob.migrationFailed", "mob", id, "error", exception.getMessage());
             }
         }
         File backup = new File(plugin.getDataFolder(), "mobs.yml.migrated");
         legacyFile.renameTo(backup);
-        plugin.getLogger().info("mobs.yml automatisch nach mobs/ migriert (Sicherung: mobs.yml.migrated).");
+        plugin.messages().info("mob.migrated");
     }
 
     private Map<String, ConfigurationSection> extractMobSections(File file) {
@@ -113,7 +113,7 @@ public final class MobRegistry {
         try {
             type = EntityType.valueOf(section.getString("Type", "ZOMBIE").toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException exception) {
-            plugin.getLogger().warning("Mob '" + id + "': unbekannter Type '" + section.getString("Type") + "'.");
+            plugin.messages().warn("mob.unknownType", "mob", id, "type", section.getString("Type"));
             return null;
         }
         ConfigurationSection optionsSection = section.getConfigurationSection("Options");
@@ -163,7 +163,7 @@ public final class MobRegistry {
         List<DropEntry> entries = new ArrayList<>();
         for (String line : lines) {
             DropEntry entry = DropEntry.parse(line);
-            if (entry == null) plugin.getLogger().warning("Mob '" + id + "': Drop-Zeile '" + line + "' konnte nicht geparst werden.");
+            if (entry == null) plugin.messages().warn("mob.dropLineInvalid", "mob", id, "line", line);
             else entries.add(entry);
         }
         return entries.isEmpty() ? null : DropTable.anonymous(entries);
@@ -173,7 +173,7 @@ public final class MobRegistry {
         List<MobDefinition.SkillTrigger> triggers = new ArrayList<>();
         for (String entry : entries) {
             MobDefinition.SkillTrigger trigger = MobDefinition.SkillTrigger.parse(entry);
-            if (trigger == null) plugin.getLogger().warning("Mob '" + id + "': Skill-Zeile '" + entry + "' konnte nicht geparst werden.");
+            if (trigger == null) plugin.messages().warn("mob.skillLineInvalid", "mob", id, "line", entry);
             else triggers.add(trigger);
         }
         return triggers;
@@ -184,20 +184,20 @@ public final class MobRegistry {
         for (String entry : entries) {
             String[] parts = entry.trim().split("\\s+");
             if (parts.length != 2) {
-                plugin.getLogger().warning("Mob '" + id + "': ungueltiger DamageModifier-Eintrag '" + entry + "'.");
+                plugin.messages().warn("mob.damageModifierInvalid", "mob", id, "entry", entry);
                 continue;
             }
             DamageCause cause;
             try {
                 cause = DamageCause.valueOf(parts[0].toUpperCase(Locale.ROOT));
             } catch (IllegalArgumentException exception) {
-                plugin.getLogger().warning("Mob '" + id + "': unbekannte DamageCause '" + parts[0] + "'.");
+                plugin.messages().warn("mob.damageCauseUnknown", "mob", id, "cause", parts[0]);
                 continue;
             }
             try {
                 modifiers.put(cause, Double.parseDouble(parts[1]));
             } catch (NumberFormatException exception) {
-                plugin.getLogger().warning("Mob '" + id + "': ungueltiger Multiplikator '" + parts[1] + "'.");
+                plugin.messages().warn("mob.multiplierInvalid", "mob", id, "value", parts[1]);
             }
         }
         return modifiers;
