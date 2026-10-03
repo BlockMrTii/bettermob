@@ -274,7 +274,7 @@ control), `potion`, `look`, `breakblock`, `state` (plays a BetterModel animation
 `effect:particlering` (`particle`, `radius`, `points`, ...), `spin` (`duration` ticks,
 `velocity` degrees/tick), `takeitem` (`i=<item>;a=<amount>`, removes a registered item
 from the target player), `ignite` (`t` ticks), `stun` (`d` ticks; `ai` default true disables the AI, `g=true` also turns gravity off, `f=true` holds the mob still, `state=<animation>` plays that BetterModel animation), `velocity` (`m=SET|ADD|MULTIPLY|DIVIDE`, `x`, `y`, `z`, `repeat`, `repeatInterval`), `freeze` (`ticks`, powder-snow effect),
-`setNoDamageTicks` (`ticks`), `onDamaged`/`onAttack`/`onDeath`/`onShoot`/`aura` (`auraName`, `time`, `cE`, `oS`, `oE`, `oT`, `i`, `oH`: a timed aura that runs `oS` at start, `oE` at end, `oT` every `i` ticks and `oH` on its event, `cE=true` cancels that event meanwhile), `bodyrotation` (`headUneven`, `bodyUneven`, `minHead`, `maxHead`, `minBody`, `maxBody`, `delay`; BetterModel only), `shoot` (`type=arrow|spectral_arrow|trident|snowball|egg|fireball|smallfireball`, `velocity`, `damage`, `spread` degrees, `gravity=false`; `oh=[ ... ]` runs on a hit with the hit entity as target, `oe=[ ... ]` when it lands anywhere, `ot=[ ... ]` every `i` ticks (default 5) in flight), `totem` (`os=[ ... ]`
+`message` (`m`, to the target player, `&` colors, `<caster.name>`, `<target.name>`), `setNoDamageTicks` (`ticks`), `onDamaged`/`onAttack`/`onDeath`/`onShoot`/`aura` (`auraName`, `time`, `cE`, `oS`, `oE`, `oT`, `i`, `oH`: a timed aura that runs `oS` at start, `oE` at end, `oT` every `i` ticks and `oH` on its event, `cE=true` cancels that event meanwhile), `bodyrotation` (`headUneven`, `bodyUneven`, `minHead`, `maxHead`, `minBody`, `maxBody`, `delay`; BetterModel only), `shoot` (`type=arrow|spectral_arrow|trident|snowball|egg|fireball|smallfireball`, `velocity`, `damage`, `spread` degrees, `gravity=false`; `oh=[ ... ]` runs on a hit with the hit entity as target, `oe=[ ... ]` when it lands anywhere, `ot=[ ... ]` every `i` ticks (default 5) in flight), `totem` (`os=[ ... ]`
 runs once at the targeter's location, `yo` shifts it up; with `md` ticks, `ot=[ ... ]` repeats every `i` ticks
 (default 20) and `oe=[ ... ]` runs at the end; stops early if the caster dies; with `oh=[ ... ]` an invisible, unbreakable body is placed at the totem for `md` ticks (default 100) and the lines run whenever someone hits it, with the attacker as target).
 
@@ -302,6 +302,20 @@ positive = right), `@SelfLocation{x;y;z}` (caster position, optionally shifted),
 
 Unknown mechanics/conditions/targeters are logged with a clear warning and skipped
 rather than crashing the skill or the server.
+
+## PlaceholderAPI
+
+[PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) is optional. When it is installed:
+
+| Placeholder | Value |
+|---|---|
+| `%bettermob_mobs_alive%` | Number of loaded BetterMob mobs |
+| `%bettermob_mobs_alive_<id>%` | Number of loaded mobs with that id |
+| `%bettermob_loaded_mobs%` | Registered mob definitions |
+| `%bettermob_loaded_skills%` | Registered skills |
+| `%bettermob_loaded_items%` | Registered items |
+
+Placeholders from any expansion are also resolved in a mob's `Display:` name and in the text of `command{c=...}` and `message{m=...}`; the player used is the trigger if it is a player, otherwise the caster.
 
 ## Developer API
 

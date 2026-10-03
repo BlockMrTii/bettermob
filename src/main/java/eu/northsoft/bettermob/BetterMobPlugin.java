@@ -4,6 +4,7 @@ import eu.northsoft.bettermob.api.BetterMobAPI;
 import eu.northsoft.bettermob.command.BetterMobCommand;
 import eu.northsoft.bettermob.debug.DebugManager;
 import eu.northsoft.bettermob.drop.DropRegistry;
+import eu.northsoft.bettermob.integration.BetterMobExpansion;
 import eu.northsoft.bettermob.item.ItemListener;
 import eu.northsoft.bettermob.item.ItemRegistry;
 import eu.northsoft.bettermob.mob.MobListener;
@@ -21,6 +22,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class BetterMobPlugin extends JavaPlugin {
     private DebugManager debug;
+    private BetterMobExpansion expansion;
 
     public DebugManager debug() {
         return debug;
@@ -67,5 +69,15 @@ public final class BetterMobPlugin extends JavaPlugin {
         BetterMobApiImpl api = new BetterMobApiImpl(this, manager, skillRegistry, skillEngine);
         getServer().getServicesManager().register(BetterMobAPI.class, api, this, ServicePriority.Normal);
         getServer().getPluginManager().registerEvents(api, this);
+
+        if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            expansion = new BetterMobExpansion(this, manager, skillRegistry, itemRegistry);
+            expansion.register();
+        }
+    }
+
+    @Override
+    public void onDisable() {
+        if (expansion != null) expansion.unregister();
     }
 }
