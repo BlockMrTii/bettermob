@@ -85,6 +85,8 @@ tagged releases above are the stable ones.
 
 Alias: `/bmob`. Permission: `bettermob.admin` (default: op).
 
+**Reload:** `/bettermob reload` also updates mobs that are already alive. Each one is bound to the new definition of the same id: name, health cap, attack, speed and the options are applied again, its timers are restarted (the old ones are cancelled, so nothing runs twice), its auras and global cooldown are cleared, the model is attached again and the `~onLoad` skills run again. AI goals are applied again only when `AIGoalSelectors` or `AITargetSelectors` changed and the new list starts with `clear`; goals an earlier `clear` removed cannot come back until the mob is respawned. A mob whose definition was removed keeps the old one and a warning is logged. Totem bodies that are already in the world run out on their own.
+
 **Debug:** set `Debug: off|info|verbose` in `config.yml`, or change it at runtime with `/bettermob debug`.
 `info` logs every trigger that fires (and whether the event was cancelled), every skill run with the reason it
 stopped (conditions, target conditions, cooldown, `castinstead`) and AI goals that are missing (with the goals
