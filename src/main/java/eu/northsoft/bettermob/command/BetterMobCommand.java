@@ -20,10 +20,26 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public final class BetterMobCommand implements CommandExecutor, TabCompleter {
+    static final Map<String, String> PERMISSIONS = permissions();
+
+    private static Map<String, String> permissions() {
+        Map<String, String> nodes = new LinkedHashMap<>();
+        nodes.put("spawn", "bettermob.spawn");
+        nodes.put("list", "bettermob.list");
+        nodes.put("packs", "bettermob.list");
+        nodes.put("reload", "bettermob.reload");
+        nodes.put("skill", "bettermob.skill");
+        nodes.put("give", "bettermob.give");
+        nodes.put("debug", "bettermob.debug");
+        return nodes;
+    }
+
     private final BetterMobPlugin plugin;
     private final Messages messages;
     private final MobManager manager;
@@ -47,17 +63,26 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            messages.send(sender, "command.help.spawn");
-            messages.send(sender, "command.help.list");
-            messages.send(sender, "command.help.packs");
-            messages.send(sender, "command.help.reload");
-            messages.send(sender, "command.help.skill");
-            messages.send(sender, "command.help.give");
-            messages.send(sender, "command.help.debug");
+            boolean shown = false;
+            shown |= help(sender, "spawn", "command.help.spawn");
+            shown |= help(sender, "list", "command.help.list");
+            shown |= help(sender, "packs", "command.help.packs");
+            shown |= help(sender, "reload", "command.help.reload");
+            shown |= help(sender, "skill", "command.help.skill");
+            shown |= help(sender, "give", "command.help.give");
+            shown |= help(sender, "debug", "command.help.debug");
+            if (!shown) messages.send(sender, "command.noPermission");
             return true;
         }
 
-        switch (args[0].toLowerCase(Locale.ROOT)) {
+        String subcommand = args[0].toLowerCase(Locale.ROOT);
+        String node = PERMISSIONS.get(subcommand);
+        if (node != null && !sender.hasPermission(node)) {
+            messages.send(sender, "command.noPermission");
+            return true;
+        }
+
+        switch (subcommand) {
             case "reload" -> {
                 plugin.reloadConfig();
                 messages.reload();
@@ -85,11 +110,13 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    private boolean help(CommandSender sender, String subcommand, String key) {
+        if (!sender.hasPermission(PERMISSIONS.get(subcommand))) return false;
+        messages.send(sender, key);
+        return true;
+    }
+
     private void handleDebug(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("bettermob.debug")) {
-            messages.send(sender, "command.noPermission");
-            return;
-        }
         DebugManager debug = plugin.debug();
         if (args.length < 2) {
             sendDebugStatus(sender, debug);
@@ -215,7 +242,14 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (args.length == 1) return List.of("spawn", "list", "packs", "reload", "skill", "give", "debug");
+        if (args.length == 1) {
+            return PERMISSIONS.entrySet().stream()
+                    .filter(entry -> sender.hasPermission(entry.getValue()))
+                    .map(Map.Entry::getKey)
+                    .toList();
+        }
+        String node = PERMISSIONS.get(args[0].toLowerCase(Locale.ROOT));
+        if (node == null || !sender.hasPermission(node)) return List.of();
         if (args.length == 2 && args[0].equalsIgnoreCase("debug")) return List.of("off", "info", "verbose", "filter", "chat");
         if (args.length == 2 && args[0].equalsIgnoreCase("spawn")) return new ArrayList<>(manager.registry().all().keySet());
         if (args.length == 2 && args[0].equalsIgnoreCase("skill")) return new ArrayList<>(skillRegistry.ids());
