@@ -58,6 +58,15 @@ and of any pack placed under `src/test/resources/packs/` - use the usual `Mobs/`
 `Skills/` and `DropTables/` folder names. The workflow runs `mvn test` on every push and pull
 request, and a failing test stops the build and the release.
 
+## Code layout
+
+Everything lives under `eu.northsoft.bettermob`: `api`/`api.event` (public API), `command`, `mob`,
+`skill` (engine and parser) with `skill.mechanic`, `skill.condition` and `skill.target` (one class per
+mechanic, condition and targeter behind the `Mechanic`, `SkillCondition` and `Targeter` interfaces),
+`ai`, `model`, `drop`, `item`, `pack`, `lang`, `debug`, `integration` (PlaceholderAPI), `service` and `util`.
+To add a mechanic, implement `Mechanic` and register it in `BuiltinMechanics.registerAll`; see the
+[Development](https://github.com/HyperGaming99/bettermob/wiki/Development) wiki page.
+
 ## Releases
 
 Every push to `main` and every PR triggers a GitHub Actions build (`.github/workflows/release.yml`)
