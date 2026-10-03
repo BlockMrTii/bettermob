@@ -1,0 +1,8 @@
+nm_bison_drops:
+  MinItems: 2
+  MaxItems: 3
+  Drops:
+  - EXP 5-11 100%
+  - LEATHER 4-5 80%
+  - nm_bison_fur 2-3 40%
+  - DIAMOND 1 5%

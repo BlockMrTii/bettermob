@@ -1,0 +1,9 @@
+nm_pack_starter_pack:
+  Id: PAPER
+  Model: 635000
+  Display: '&9Starter &fBooster Pack'
+  Lore:
+  - '&7Contains &f&l2 &r&7Trading Cards!'
+  Skills:
+  - skill{s=nm_pack_open_starter_pack;cd=1} @self ~onUse
+  - takeitem{i=nm_pack_starter_pack;a=1} @self ~onUse
