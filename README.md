@@ -92,11 +92,24 @@ the mob type has). `verbose` adds every mechanic with its targeter, target count
 bone offsets, `shoot` and `totem`. `filter <id>` limits the output to one mob id, skill id or player name,
 `chat` also sends it to you in chat. Nothing is built or logged while debug is off.
 
+## Languages
+
+Console and command messages live in `plugins/BetterMob/lang/<code>.yml`. `en` and `de` are written
+there on first start. Pick one with `Language:` in `config.yml` (default `en`) and apply it with
+`/bettermob reload`.
+
+To add a language, copy `lang/en.yml` to `lang/<code>.yml`, translate the values and set
+`Language: <code>`. Keys you leave out fall back to the bundled English text. Values use `&` colour codes
+and placeholders such as `{mob}`, `{skill}`, `{folder}` or `{error}`, keep the placeholders of the English
+original. Debug output (`/bettermob debug`) stays English.
+
 ## Folder layout
 
 ```
 plugins/BetterMob/
 ├── config.yml          # DisabledPacks: [...]
+├── lang/                 # message files (en.yml, de.yml, your own)
+│   └── en.yml
 ├── mobs/                # default mob files
 │   └── my_mob.yml
 ├── skills/               # default skill files
