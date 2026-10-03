@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -318,6 +319,16 @@ public final class MobManager {
                 Tasks.runLater(plugin, stand, 1L, stand::remove);
             }
         }
+    }
+
+    public Map<String, Integer> aliveCounts() {
+        Map<String, Integer> counts = new TreeMap<>();
+        for (MobDefinition definition : definitions.values()) counts.merge(definition.id, 1, Integer::sum);
+        return counts;
+    }
+
+    public int timerCount() {
+        return timers.values().stream().mapToInt(List::size).sum();
     }
 
     public int aliveCount() {
