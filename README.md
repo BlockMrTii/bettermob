@@ -46,6 +46,18 @@ mvn clean package
 Produces `target/bettermob-<version>.jar`. Drop it into your server's `plugins/`
 folder.
 
+## Tests
+
+```bash
+mvn test
+```
+
+JUnit 5 tests cover the line parsers (skill steps, conditions, mob triggers, drop lines, inline
+skills). `PackFilesTest` also parses every line of the YAML files shipped in `src/main/resources`
+and of any pack placed under `src/test/resources/packs/` - use the usual `Mobs/`, `Items/`,
+`Skills/` and `DropTables/` folder names. The workflow runs `mvn test` on every push and pull
+request, and a failing test stops the build and the release.
+
 ## Releases
 
 Every push to `main` and every PR triggers a GitHub Actions build (`.github/workflows/release.yml`)
