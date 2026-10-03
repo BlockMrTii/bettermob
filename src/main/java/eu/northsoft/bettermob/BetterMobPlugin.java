@@ -7,6 +7,7 @@ import eu.northsoft.bettermob.drop.DropRegistry;
 import eu.northsoft.bettermob.integration.BetterMobExpansion;
 import eu.northsoft.bettermob.item.ItemListener;
 import eu.northsoft.bettermob.item.ItemRegistry;
+import eu.northsoft.bettermob.lang.Messages;
 import eu.northsoft.bettermob.mob.MobListener;
 import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.mob.MobRegistry;
@@ -22,15 +23,21 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class BetterMobPlugin extends JavaPlugin {
     private DebugManager debug;
+    private Messages messages;
     private BetterMobExpansion expansion;
 
     public DebugManager debug() {
         return debug;
     }
 
+    public Messages messages() {
+        return messages;
+    }
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        messages = new Messages(this);
         debug = new DebugManager(this);
         PackScanner packScanner = new PackScanner(this);
 
@@ -38,7 +45,7 @@ public final class BetterMobPlugin extends JavaPlugin {
         registry.load();
 
         BetterModelHook betterModel = new BetterModelHook(this);
-        if (!betterModel.available()) getLogger().warning("BetterModel ist nicht installiert oder aktiv - Mobs spawnen ohne Modell.");
+        if (!betterModel.available()) messages.warn("plugin.betterModelMissing");
         ModelEngineHook modelEngine = new ModelEngineHook(this);
 
         SkillRegistry skillRegistry = new SkillRegistry(this, packScanner);
@@ -59,7 +66,7 @@ public final class BetterMobPlugin extends JavaPlugin {
         BetterMobCommand commandHandler = new BetterMobCommand(this, manager, skillRegistry, packScanner, skillEngine, itemRegistry, dropRegistry);
         PluginCommand command = getCommand("bettermob");
         if (command == null) {
-            getLogger().severe("Command /bettermob fehlt in plugin.yml.");
+            messages.severe("plugin.commandMissing");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }

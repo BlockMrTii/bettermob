@@ -53,7 +53,7 @@ public final class PackScanner {
                 .map(value -> value.toLowerCase(Locale.ROOT)).toList();
         for (File packDir : packDirs) {
             boolean enabled = !disabled.contains(packDir.getName().toLowerCase(Locale.ROOT));
-            result.add(packDir.getName() + (enabled ? " §a(aktiv)" : " §c(deaktiviert)"));
+            result.add(packDir.getName() + " " + plugin.messages().get(enabled ? "pack.enabled" : "pack.disabled"));
         }
         return result;
     }

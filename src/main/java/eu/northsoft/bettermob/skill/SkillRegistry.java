@@ -41,14 +41,14 @@ public final class SkillRegistry {
                     ConfigurationSection section = config.getConfigurationSection(id);
                     if (section == null) continue;
                     if (skills.containsKey(id.toLowerCase(Locale.ROOT))) {
-                        plugin.getLogger().warning("Skill '" + id + "' aus " + sourceFolder.getPath() + " ueberschreibt eine bereits geladene Definition - ignoriert.");
+                        plugin.messages().warn("skill.duplicate", "skill", id, "folder", sourceFolder.getPath());
                         continue;
                     }
                     skills.put(id.toLowerCase(Locale.ROOT), parse(id, section));
                 }
             }
         }
-        plugin.getLogger().info(skills.size() + " Skills geladen.");
+        plugin.messages().info("skill.loaded", "count", skills.size());
     }
 
     public SkillDefinition get(String id) {
@@ -66,7 +66,7 @@ public final class SkillRegistry {
         for (String line : stringList(section, "Skills", "Skill")) {
             SkillStep step = SkillStep.parse(line);
             if (step != null) steps.add(step);
-            else plugin.getLogger().warning("Skill '" + id + "': Zeile '" + line + "' konnte nicht geparst werden.");
+            else plugin.messages().warn("skill.lineInvalid", "skill", id, "line", line);
         }
         return new SkillDefinition(id, conditions, targetConditions, steps, section.getDouble("Cooldown", 0));
     }

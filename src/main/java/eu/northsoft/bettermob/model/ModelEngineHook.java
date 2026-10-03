@@ -28,11 +28,11 @@ public final class ModelEngineHook {
 
     public Object attach(Entity entity, String modelId) {
         if (!Bukkit.getPluginManager().isPluginEnabled("ModelEngine")) {
-            plugin.getLogger().warning("ModelEngine ist beim Spawn von '" + modelId + "' nicht aktiv - kein Modell angehaengt.");
+            plugin.messages().warn("modelEngine.inactive", "model", modelId);
             return null;
         }
         if (!classExists(API)) {
-            plugin.getLogger().warning("ModelEngine-API-Klasse '" + API + "' nicht gefunden - passt die installierte ModelEngine-Version?");
+            plugin.messages().warn("modelEngine.apiClassMissing", "class", API);
             return null;
         }
         try {
@@ -40,14 +40,14 @@ public final class ModelEngineHook {
             Object activeModel = createActiveModelMethod().invoke(null, modelId);
             Object result = addModelMethod(modeledEntity).invoke(modeledEntity, activeModel, true);
             if (result instanceof Optional<?> optional && optional.isEmpty()) {
-                plugin.getLogger().warning("ModelEngine-Modell '" + modelId + "' konnte nicht hinzugefuegt werden (existiert die Model-ID?).");
+                plugin.messages().warn("modelEngine.addFailed", "model", modelId);
                 return null;
             }
 
             trySetBaseEntityInvisible(modeledEntity);
             return activeModel;
         } catch (ReflectiveOperationException | LinkageError exception) {
-            plugin.getLogger().warning("ModelEngine '" + modelId + "' konnte nicht angehaengt werden: " + rootMessage(exception));
+            plugin.messages().warn("modelEngine.attachFailed", "model", modelId, "error", rootMessage(exception));
             return null;
         }
     }

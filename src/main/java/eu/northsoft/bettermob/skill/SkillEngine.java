@@ -140,7 +140,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         String typeName = p.getOrDefault("type", "arrow").toLowerCase(Locale.ROOT).replace("_", "");
         Class<? extends Projectile> type = PROJECTILES.get(typeName);
         if (type == null) {
-            plugin.getLogger().warning("shoot: unknown projectile type '" + p.get("type") + "', using arrow.");
+            plugin.messages().warn("skill.shootUnknownProjectile", "type", p.get("type"));
             type = Arrow.class;
         }
 
@@ -266,7 +266,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     public void runById(String skillId, SkillContext context) {
         SkillDefinition skill = registry.get(skillId);
         if (skill == null) {
-            plugin.getLogger().warning("Skill '" + skillId + "' ist nicht registriert.");
+            plugin.messages().warn("skill.notRegistered", "skill", skillId);
             return;
         }
         run(skill, context);
@@ -453,14 +453,13 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             default -> {
                 CustomMechanicEntry custom = customMechanics.get(mechanic.name());
                 if (custom == null) {
-                    plugin.getLogger().warning("Skill-Mechanic '" + mechanic.name() + "' wird nicht unterstuetzt.");
+                    plugin.messages().warn("skill.mechanicUnsupported", "mechanic", mechanic.name());
                 } else {
                     try {
                         custom.mechanic().execute(new MechanicContext(context.caster(), context.trigger(), context.event(),
                                 target.entity(), target.location(), p));
                     } catch (RuntimeException exception) {
-                        plugin.getLogger().warning("Eigene Mechanic '" + mechanic.name() + "' von " + custom.owner().getName()
-                                + " ist fehlgeschlagen: " + exception);
+                        plugin.messages().warn("skill.customMechanicFailed", "mechanic", mechanic.name(), "plugin", custom.owner().getName(), "error", exception);
                     }
                 }
             }
@@ -488,7 +487,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             case "blocktype" -> targetOverride != null && targetOverride.block() != null
                     && containsBlockType(paramsRaw, targetOverride.block());
             default -> {
-                plugin.getLogger().warning("Skill-Condition '" + condition.name() + "' wird nicht unterstuetzt - wird ignoriert.");
+                plugin.messages().warn("skill.conditionUnsupported", "condition", condition.name());
                 yield true;
             }
         };
@@ -555,7 +554,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         if (!(target.entity() instanceof LivingEntity living)) return;
         PotionEffectType type = PotionEffectType.getByName(firstParam(p, "type", "t") == null ? "SLOW" : firstParam(p, "type", "t").trim());
         if (type == null) {
-            plugin.getLogger().warning("Unbekannter Potion-Typ '" + p.get("type") + "'.");
+            plugin.messages().warn("skill.potionUnknown", "type", p.get("type"));
             return;
         }
         int duration = parseInt(firstParam(p, "duration", "d"), 20);
@@ -641,7 +640,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         try {
             location.getWorld().spawnParticle(particle, location, amount, horizontal, vertical, horizontal, speed);
         } catch (IllegalArgumentException exception) {
-            plugin.getLogger().warning("Partikel '" + particle + "' braucht Zusatzdaten (z.B. Farbe) und wird nicht unterstuetzt.");
+            plugin.messages().warn("skill.particleNeedsData", "particle", particle);
         }
     }
 
@@ -650,7 +649,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         try {
             return Particle.valueOf(name.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException exception) {
-            plugin.getLogger().warning("Unbekannter Partikel '" + name + "'.");
+            plugin.messages().warn("skill.particleUnknown", "particle", name);
             return null;
         }
     }
@@ -728,7 +727,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private void setBlock(Target target, Map<String, String> p) {
         Material material = Material.matchMaterial(firstParam(p, "m", "material", "type", "block") == null ? "" : firstParam(p, "m", "material", "type", "block").trim());
         if (material == null || !material.isBlock()) {
-            plugin.getLogger().warning("setblock: unbekanntes Material '" + firstParam(p, "m", "material", "type", "block") + "'.");
+            plugin.messages().warn("skill.setblockUnknownMaterial", "material", firstParam(p, "m", "material", "type", "block"));
             return;
         }
         target.location().getBlock().setType(material);
@@ -747,7 +746,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         } else {
             Material material = Material.matchMaterial(parts[0]);
             if (material == null || !material.isItem()) {
-                plugin.getLogger().warning("equip: '" + parts[0] + "' ist weder ein Item noch ein Material.");
+                plugin.messages().warn("skill.equipUnknown", "value", parts[0]);
                 return;
             }
             stack = new ItemStack(material);
@@ -855,7 +854,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         List<SkillStep> steps = new ArrayList<>();
         for (String line : splitInline(raw)) {
             SkillStep step = SkillStep.parse(line);
-            if (step == null) plugin.getLogger().warning("Inline-Skill: Zeile '" + line + "' konnte nicht geparst werden.");
+            if (step == null) plugin.messages().warn("skill.inlineLineInvalid", "line", line);
             else steps.add(step);
         }
         return List.copyOf(steps);
@@ -1021,7 +1020,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         if (mobId == null) return;
         MobDefinition definition = mobManager.registry().get(mobId.trim());
         if (definition == null) {
-            plugin.getLogger().warning("summon: Mob '" + mobId + "' ist nicht registriert.");
+            plugin.messages().warn("skill.summonNotRegistered", "mob", mobId);
             return;
         }
         LivingEntity spawned = mobManager.spawn(definition, target.location());
@@ -1032,7 +1031,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         if (!(target.entity() instanceof LivingEntity rider)) return;
         Object tracker = mobManager.trackerFor(context.caster().getUniqueId());
         if (tracker == null) {
-            plugin.getLogger().warning("mountmodel: kein BetterModel-Tracker am Caster vorhanden.");
+            plugin.messages().warn("skill.mountNoTracker");
             return;
         }
         betterModel.mount(tracker, p.getOrDefault("seat", "mount"), rider);
@@ -1079,7 +1078,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private final Set<String> warnedTargeters = ConcurrentHashMap.newKeySet();
 
     private void warnUnknownTargeter(String name) {
-        if (warnedTargeters.add(name)) plugin.getLogger().warning("Unknown targeter '@" + name + "', the line targets the default target instead.");
+        if (warnedTargeters.add(name)) plugin.messages().warn("skill.targeterUnknown", "targeter", name);
     }
 
     private Target fixedLocation(LivingEntity caster, Map<String, String> p) {
@@ -1161,7 +1160,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
                 case "hastag" -> candidate.getScoreboardTags().contains(TAG_PREFIX + conditionParam(condition.params(), "t", "tag", "n"));
                 case "faction" -> hasFaction(candidate, conditionParam(condition.params(), "faction", "f", "name"));
                 default -> {
-                    plugin.getLogger().warning("Targeter-Condition '" + condition.name() + "' wird nicht unterstuetzt - wird ignoriert.");
+                    plugin.messages().warn("skill.targeterConditionUnsupported", "condition", condition.name());
                     yield true;
                 }
             };

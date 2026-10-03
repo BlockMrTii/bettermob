@@ -43,23 +43,23 @@ public final class BetterModelHook {
 
     public Object attach(Entity entity, String modelId) {
         if (!Bukkit.getPluginManager().isPluginEnabled("BetterModel")) {
-            plugin.getLogger().warning("BetterModel ist beim Spawn von '" + modelId + "' nicht aktiv - kein Modell angehaengt.");
+            plugin.messages().warn("betterModel.inactive", "model", modelId);
             return null;
         }
         if (!classExists(API)) {
-            plugin.getLogger().warning("BetterModel-API-Klasse '" + API + "' nicht gefunden - passt die installierte BetterModel-Version?");
+            plugin.messages().warn("betterModel.apiClassMissing", "class", API);
             return null;
         }
         try {
             Object renderer = modelOrNullMethod().invoke(null, modelId);
             if (renderer == null) {
-                plugin.getLogger().warning("BetterModel-Modell '" + modelId + "' existiert nicht.");
+                plugin.messages().warn("betterModel.modelMissing", "model", modelId);
                 return null;
             }
             Object adapted = adaptMethod().invoke(null, entity);
             return renderer.getClass().getMethod("getOrCreate", platformEntityClass()).invoke(renderer, adapted);
         } catch (ReflectiveOperationException | LinkageError exception) {
-            plugin.getLogger().warning("BetterModel '" + modelId + "' konnte nicht angehängt werden: " + rootMessage(exception));
+            plugin.messages().warn("betterModel.attachFailed", "model", modelId, "error", rootMessage(exception));
             return null;
         }
     }
@@ -78,7 +78,7 @@ public final class BetterModelHook {
             }
             return result instanceof Boolean bool && bool;
         } catch (ReflectiveOperationException | LinkageError exception) {
-            plugin.getLogger().warning("BetterModel-Animation '" + animation + "' fehlgeschlagen: " + rootMessage(exception));
+            plugin.messages().warn("betterModel.animationFailed", "animation", animation, "error", rootMessage(exception));
             return false;
         }
     }
@@ -125,7 +125,7 @@ public final class BetterModelHook {
         try {
             Object bone = tracker.getClass().getMethod("bone", String.class).invoke(tracker, boneName);
             if (bone == null) {
-                plugin.getLogger().warning("@ModelPart: Bone '" + boneName + "' existiert nicht am Modell.");
+                plugin.messages().warn("betterModel.boneMissing", "bone", boneName);
                 return null;
             }
             Object offset = bone.getClass().getMethod("worldPosition").invoke(bone);
@@ -136,7 +136,7 @@ public final class BetterModelHook {
             if (plugin.debug().verbose()) plugin.debug().verbose("bone '" + boneName + "' offset " + String.format("%.2f %.2f %.2f", x, y, z));
             return origin.clone().add(x, y, z);
         } catch (ReflectiveOperationException | RuntimeException exception) {
-            plugin.getLogger().warning("@ModelPart '" + boneName + "' fehlgeschlagen: " + exception);
+            plugin.messages().warn("betterModel.modelPartFailed", "bone", boneName, "error", exception);
             return null;
         }
     }
@@ -159,7 +159,7 @@ public final class BetterModelHook {
             });
             return true;
         } catch (ReflectiveOperationException | RuntimeException exception) {
-            plugin.getLogger().warning("BodyRotation fehlgeschlagen: " + exception);
+            plugin.messages().warn("betterModel.bodyRotationFailed", "error", exception);
             return false;
         }
     }
@@ -174,7 +174,7 @@ public final class BetterModelHook {
                         : (Object) Float.parseFloat(value.trim());
                 method.invoke(data, parsed);
             } catch (ReflectiveOperationException | NumberFormatException exception) {
-                plugin.getLogger().warning("BodyRotation: '" + value + "' ist kein gueltiger Wert fuer " + name + ".");
+                plugin.messages().warn("betterModel.bodyRotationInvalid", "value", value, "name", name);
             }
             return;
         }
@@ -185,12 +185,12 @@ public final class BetterModelHook {
         try {
             Object bone = tracker.getClass().getMethod("bone", String.class).invoke(tracker, seat);
             if (bone == null) {
-                plugin.getLogger().warning("mountmodel: Bone/Sitz '" + seat + "' existiert nicht an diesem Modell.");
+                plugin.messages().warn("betterModel.mount.seatMissing", "seat", seat);
                 return false;
             }
             Object hitBox = bone.getClass().getMethod("getHitBox").invoke(bone);
             if (hitBox == null) {
-                plugin.getLogger().warning("mountmodel: Bone '" + seat + "' hat keine Hitbox zum Draufsitzen.");
+                plugin.messages().warn("betterModel.mount.noHitbox", "seat", seat);
                 return false;
             }
             allowControl(hitBox);
@@ -198,13 +198,13 @@ public final class BetterModelHook {
             Object adapted = adaptMethod().invoke(null, rider);
             Method mountMethod = findMethod(hitBox.getClass(), "mount", 1);
             if (mountMethod == null) {
-                plugin.getLogger().warning("mountmodel: HitBox-Klasse '" + hitBox.getClass().getName() + "' hat keine mount(...)-Methode.");
+                plugin.messages().warn("betterModel.mount.noMountMethod", "class", hitBox.getClass().getName());
                 return false;
             }
             mountMethod.invoke(hitBox, adapted);
             return true;
         } catch (ReflectiveOperationException | LinkageError exception) {
-            plugin.getLogger().warning("mountmodel Sitz '" + seat + "' fehlgeschlagen: " + rootMessage(exception));
+            plugin.messages().warn("betterModel.mount.seatFailed", "seat", seat, "error", rootMessage(exception));
             return false;
         }
     }
@@ -214,13 +214,13 @@ public final class BetterModelHook {
         if (method == null) return;
         Object control = resolveConstant(method.getParameterTypes()[0], "CONTROL");
         if (control == null) {
-            plugin.getLogger().warning("mountmodel: Steuerungs-Konstante 'CONTROL' fuer " + method.getParameterTypes()[0].getName() + " nicht gefunden - Sitz bleibt ohne Lenkung.");
+            plugin.messages().warn("betterModel.mount.controlConstantMissing", "type", method.getParameterTypes()[0].getName());
             return;
         }
         try {
             method.invoke(hitBox, control);
         } catch (ReflectiveOperationException exception) {
-            plugin.getLogger().warning("mountmodel: Steuerungsmodus konnte nicht gesetzt werden: " + rootMessage(exception));
+            plugin.messages().warn("betterModel.mount.controlModeFailed", "error", rootMessage(exception));
         }
     }
 
