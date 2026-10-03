@@ -17,6 +17,7 @@ import eu.northsoft.bettermob.pack.PackScanner;
 import eu.northsoft.bettermob.service.BetterMobApiImpl;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillRegistry;
+import eu.northsoft.bettermob.stats.SkillStats;
 import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.command.PluginCommand;
@@ -25,12 +26,17 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class BetterMobPlugin extends JavaPlugin {
     private DebugManager debug;
+    private SkillStats stats;
     private Messages messages;
     private BetterMobExpansion expansion;
     private MobManager manager;
 
     public DebugManager debug() {
         return debug;
+    }
+
+    public SkillStats stats() {
+        return stats;
     }
 
     public Messages messages() {
@@ -42,6 +48,8 @@ public final class BetterMobPlugin extends JavaPlugin {
         saveDefaultConfig();
         messages = new Messages(this);
         debug = new DebugManager(this);
+        stats = new SkillStats();
+        stats.reload(getConfig());
         PackScanner packScanner = new PackScanner(this);
 
         MobRegistry registry = new MobRegistry(this, packScanner);
