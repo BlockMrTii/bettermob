@@ -1,0 +1,14 @@
+{
+  "projectName": "bettermob",
+  "projectOwner": "HyperGaming99",
+  "repoType": "github",
+  "files": [
+    "CONTRIBUTORS.md"
+  ],
+  "imageSize": 100,
+  "contributorsPerLine": 7,
+  "contributorsSortAlphabetically": false,
+  "linkToUsage": true,
+  "skipCi": true,
+  "contributors": []
+}
