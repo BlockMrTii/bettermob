@@ -3,6 +3,7 @@ package eu.northsoft.bettermob.mob;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.ai.AiGoalApplier;
 import eu.northsoft.bettermob.api.event.BetterMobSpawnEvent;
+import eu.northsoft.bettermob.integration.PlaceholderHook;
 import eu.northsoft.bettermob.item.ItemDefinition;
 import eu.northsoft.bettermob.item.ItemRegistry;
 import eu.northsoft.bettermob.model.BetterModelHook;
@@ -10,11 +11,13 @@ import eu.northsoft.bettermob.model.ModelEngineHook;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillStep;
+import eu.northsoft.bettermob.skill.SkillTags;
 import eu.northsoft.bettermob.util.Tasks;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.ArmorStand;
@@ -29,8 +32,12 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -47,6 +54,7 @@ public final class MobManager {
     private final Map<UUID, Map<DamageCause, Double>> damageModifiers = new ConcurrentHashMap<>();
     private final Map<UUID, MobDefinition> definitions = new ConcurrentHashMap<>();
     private final Map<UUID, List<Runnable>> timers = new ConcurrentHashMap<>();
+    private final BossBarManager bossBars;
     private SkillEngine skillEngine;
 
     public final NamespacedKey mobIdKey;
@@ -58,38 +66,16 @@ public final class MobManager {
         this.modelEngine = modelEngine;
         this.items = items;
         this.mobIdKey = new NamespacedKey(plugin, "mob_id");
+        this.bossBars = new BossBarManager(plugin);
     }
 
     public LivingEntity spawn(MobDefinition definition, Location location) {
         LivingEntity entity = (LivingEntity) location.getWorld().spawnEntity(location, definition.type);
-        entity.customName(LegacyComponentSerializer.legacyAmpersand().deserialize(definition.displayName));
-        entity.setCustomNameVisible(definition.options.alwaysShowName());
+        applyDefinition(entity, definition, true);
 
-        var maxHealth = entity.getAttribute(Attribute.MAX_HEALTH);
-        if (maxHealth != null) {
-            maxHealth.setBaseValue(definition.health);
-            entity.setHealth(definition.health);
-        }
-        var damage = entity.getAttribute(Attribute.ATTACK_DAMAGE);
-        if (damage != null) damage.setBaseValue(definition.damage);
-        var speed = entity.getAttribute(Attribute.MOVEMENT_SPEED);
-        if (speed != null && definition.options.movementSpeed() >= 0) speed.setBaseValue(definition.options.movementSpeed());
-
-        entity.setCollidable(definition.options.collidable());
-        entity.setSilent(definition.options.silent());
-        entity.setInvulnerable(definition.options.invincible());
-        entity.getPersistentDataContainer().set(mobIdKey, PersistentDataType.STRING, definition.id);
-        applyAppearanceOptions(entity, definition);
-
-        if (definition.removeAi) entity.setAI(false);
         if (entity instanceof Mob mob) AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
         if (definition.threatTable) threatTables.put(entity.getUniqueId(), new ConcurrentHashMap<>());
         if (!definition.damageModifiers.isEmpty()) damageModifiers.put(entity.getUniqueId(), definition.damageModifiers);
-
-        if (definition.options.preventSunburn()) {
-            if (entity instanceof Zombie zombie) zombie.setShouldBurnInDay(false);
-            if (entity instanceof AbstractSkeleton skeleton) skeleton.setShouldBurnInDay(false);
-        }
 
         if (!hasModelSkill(definition, MobDefinition.SkillTrigger.Trigger.SPAWN)) {
             Object tracker = betterModel.attachIfPresent(entity, definition.modelId);
@@ -103,8 +89,40 @@ public final class MobManager {
         definitions.put(entity.getUniqueId(), definition);
         fireTrigger(entity, definition, MobDefinition.SkillTrigger.Trigger.SPAWN, null, null);
         scheduleTimers(entity, definition);
+        bossBars.attach(entity, definition);
         Bukkit.getPluginManager().callEvent(new BetterMobSpawnEvent(entity, definition.toInfo()));
         return entity;
+    }
+
+    private void applyDefinition(LivingEntity entity, MobDefinition definition, boolean spawning) {
+        entity.customName(LegacyComponentSerializer.legacyAmpersand().deserialize(PlaceholderHook.apply(null, definition.displayName)));
+        entity.setCustomNameVisible(definition.options.alwaysShowName());
+
+        var maxHealth = entity.getAttribute(Attribute.MAX_HEALTH);
+        if (maxHealth != null) {
+            maxHealth.setBaseValue(definition.health);
+            entity.setHealth(spawning ? definition.health : Math.min(entity.getHealth(), definition.health));
+        }
+        var damage = entity.getAttribute(Attribute.ATTACK_DAMAGE);
+        if (damage != null) damage.setBaseValue(definition.damage);
+        var speed = entity.getAttribute(Attribute.MOVEMENT_SPEED);
+        if (speed != null && definition.options.movementSpeed() >= 0) speed.setBaseValue(definition.options.movementSpeed());
+
+        entity.setCollidable(definition.options.collidable());
+        entity.setSilent(definition.options.silent());
+        entity.setInvulnerable(definition.options.invincible());
+        entity.getPersistentDataContainer().set(mobIdKey, PersistentDataType.STRING, definition.id);
+        applyAppearanceOptions(entity, definition);
+
+        if (definition.removeAi) entity.setAI(false);
+
+        preventSunburn(entity, definition);
+    }
+
+    private static void preventSunburn(LivingEntity entity, MobDefinition definition) {
+        if (!definition.options.preventSunburn()) return;
+        if (entity instanceof Zombie zombie) zombie.setShouldBurnInDay(false);
+        if (entity instanceof AbstractSkeleton skeleton) skeleton.setShouldBurnInDay(false);
     }
 
     private void applyAppearanceOptions(LivingEntity entity, MobDefinition definition) {
@@ -132,7 +150,7 @@ public final class MobManager {
             ItemDefinition item = items.get(options.itemHead());
             EntityEquipment equipment = entity.getEquipment();
             if (item == null) {
-                plugin.getLogger().warning("Mob '" + definition.id + "': ItemHead-Item '" + options.itemHead() + "' ist nicht registriert.");
+                plugin.messages().warn("mob.itemHeadMissing", "mob", definition.id, "item", options.itemHead());
             } else if (equipment != null) {
                 equipment.setHelmet(items.create(item, 1));
 
@@ -148,6 +166,7 @@ public final class MobManager {
 
     public void release(Entity entity) {
         if (skillEngine != null) skillEngine.forget(entity.getUniqueId());
+        bossBars.detach(entity.getUniqueId());
         Object tracker = trackers.remove(entity.getUniqueId());
         if (tracker != null) betterModel.close(tracker);
         Object modelEngineTracker = modelEngineTrackers.remove(entity.getUniqueId());
@@ -157,6 +176,10 @@ public final class MobManager {
         definitions.remove(entity.getUniqueId());
         List<Runnable> cancellers = timers.remove(entity.getUniqueId());
         if (cancellers != null) cancellers.forEach(Runnable::run);
+    }
+
+    public void shutdown() {
+        bossBars.clear();
     }
 
     public boolean inSkillDamage() {
@@ -219,6 +242,110 @@ public final class MobManager {
         }
     }
 
+    public int reloadLiving() {
+        int updated = 0;
+        Set<String> removed = new HashSet<>();
+        for (Map.Entry<UUID, MobDefinition> entry : List.copyOf(definitions.entrySet())) {
+            Entity entity = Bukkit.getEntity(entry.getKey());
+            if (!(entity instanceof LivingEntity living) || !living.isValid()) continue;
+            MobDefinition old = entry.getValue();
+            MobDefinition fresh = registry.get(old.id);
+            if (fresh == null) {
+                if (removed.add(old.id)) plugin.messages().warn("mob.reloadRemoved", "mob", old.id);
+                continue;
+            }
+            updated++;
+            Tasks.runLater(plugin, living, 1L, () -> rebind(living, fresh));
+        }
+        return updated;
+    }
+
+    private void rebind(LivingEntity entity, MobDefinition fresh) {
+        UUID id = entity.getUniqueId();
+        MobDefinition old = definitions.get(id);
+        if (old == null || !entity.isValid()) return;
+
+        List<Runnable> cancellers = timers.remove(id);
+        if (cancellers != null) cancellers.forEach(Runnable::run);
+        if (skillEngine != null) skillEngine.forget(id);
+
+        definitions.put(id, fresh);
+        if (fresh.threatTable) threatTables.putIfAbsent(id, new ConcurrentHashMap<>());
+        else threatTables.remove(id);
+        if (fresh.damageModifiers.isEmpty()) damageModifiers.remove(id);
+        else damageModifiers.put(id, fresh.damageModifiers);
+
+        if ((old.removeAi || !old.options.canMove()) && fresh.options.canMove() && !fresh.removeAi) {
+            entity.setAI(true);
+            entity.setGravity(true);
+        }
+        applyDefinition(entity, fresh, false);
+        if (entity instanceof Mob mob) {
+            AiGoalApplier.apply(mob, changedSelectors(old.aiGoalSelectors, fresh.aiGoalSelectors),
+                    changedSelectors(old.aiTargetSelectors, fresh.aiTargetSelectors), plugin, other -> definitions.containsKey(other.getUniqueId()));
+        }
+
+        if (!hasModelSkill(fresh, MobDefinition.SkillTrigger.Trigger.LOAD)) {
+            Object tracker = betterModel.attachIfPresent(entity, fresh.modelId);
+            if (tracker != null) replaceTracker(entity, tracker);
+        }
+        scheduleTimers(entity, fresh);
+        bossBars.attach(entity, fresh);
+        fireTrigger(entity, fresh, MobDefinition.SkillTrigger.Trigger.LOAD, null, null);
+    }
+
+    private static List<String> changedSelectors(List<String> before, List<String> after) {
+        if (before.equals(after)) return List.of();
+        return after.stream().anyMatch(line -> line.trim().equalsIgnoreCase("clear")) ? after : List.of();
+    }
+
+    public int killAll(String mobId, World world) {
+        int removed = 0;
+        for (Map.Entry<UUID, MobDefinition> entry : List.copyOf(definitions.entrySet())) {
+            if (mobId != null && !entry.getValue().id.equalsIgnoreCase(mobId)) continue;
+            Entity entity = Bukkit.getEntity(entry.getKey());
+            if (entity == null || (world != null && !entity.getWorld().equals(world))) continue;
+            Tasks.runLater(plugin, entity, 1L, entity::remove);
+            removed++;
+        }
+        if (mobId == null && !Tasks.FOLIA) {
+            for (World target : world != null ? List.of(world) : Bukkit.getWorlds()) {
+                removeLeftoverHelpers(target.getEntitiesByClass(ArmorStand.class));
+            }
+        }
+        return removed;
+    }
+
+    public void removeLeftoverHelpers(Collection<? extends Entity> entities) {
+        for (Entity entity : entities) {
+            if (entity instanceof ArmorStand stand && stand.getScoreboardTags().contains(SkillTags.HELPER_TAG)) {
+                Tasks.runLater(plugin, stand, 1L, stand::remove);
+            }
+        }
+    }
+
+    public Map<String, Integer> aliveCounts() {
+        Map<String, Integer> counts = new TreeMap<>();
+        for (MobDefinition definition : definitions.values()) counts.merge(definition.id, 1, Integer::sum);
+        return counts;
+    }
+
+    public int timerCount() {
+        return timers.values().stream().mapToInt(List::size).sum();
+    }
+
+    public int aliveCount() {
+        return definitions.size();
+    }
+
+    public int aliveCount(String id) {
+        int count = 0;
+        for (MobDefinition definition : definitions.values()) {
+            if (definition.id.equalsIgnoreCase(id)) count++;
+        }
+        return count;
+    }
+
     public String factionOf(Entity entity) {
         MobDefinition definition = definitions.get(entity.getUniqueId());
         return definition == null || definition.faction == null ? null : definition.faction.toLowerCase(java.util.Locale.ROOT);
@@ -268,6 +395,11 @@ public final class MobManager {
         if (definition.threatTable) threatTables.put(entity.getUniqueId(), new ConcurrentHashMap<>());
         if (!definition.damageModifiers.isEmpty()) damageModifiers.put(entity.getUniqueId(), definition.damageModifiers);
 
+        if (entity instanceof Mob mob) {
+            AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
+        }
+        preventSunburn(entity, definition);
+
         if (!hasModelSkill(definition, MobDefinition.SkillTrigger.Trigger.LOAD)) {
             Object tracker = betterModel.attachIfPresent(entity, definition.modelId);
             if (tracker != null) {
@@ -277,6 +409,7 @@ public final class MobManager {
         }
 
         scheduleTimers(entity, definition);
+        bossBars.attach(entity, definition);
         fireTrigger(entity, definition, MobDefinition.SkillTrigger.Trigger.LOAD, null, null);
     }
 

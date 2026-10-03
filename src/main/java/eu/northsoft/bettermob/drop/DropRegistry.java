@@ -51,7 +51,7 @@ public final class DropRegistry {
                     ConfigurationSection section = config.getConfigurationSection(id);
                     if (section == null || !section.isList("Drops")) continue;
                     if (tables.containsKey(id.toLowerCase(Locale.ROOT))) {
-                        plugin.getLogger().warning("Drop-Table '" + id + "' aus " + sourceFolder.getPath() + " ueberschreibt eine bereits geladene Definition - ignoriert.");
+                        plugin.messages().warn("drop.duplicate", "table", id, "folder", sourceFolder.getPath());
                         continue;
                     }
                     tables.put(id.toLowerCase(Locale.ROOT), new DropTable(id,
@@ -61,14 +61,14 @@ public final class DropRegistry {
                 }
             }
         }
-        plugin.getLogger().info(tables.size() + " Drop-Tables geladen.");
+        plugin.messages().info("drop.loaded", "count", tables.size());
     }
 
     private List<DropEntry> parseLines(String owner, List<String> lines) {
         List<DropEntry> entries = new ArrayList<>();
         for (String line : lines) {
             DropEntry entry = DropEntry.parse(line);
-            if (entry == null) plugin.getLogger().warning("Drop-Table '" + owner + "': Zeile '" + line + "' konnte nicht geparst werden.");
+            if (entry == null) plugin.messages().warn("drop.lineInvalid", "table", owner, "line", line);
             else entries.add(entry);
         }
         return entries;
@@ -116,7 +116,7 @@ public final class DropRegistry {
         DropTable nested = get(entry.name());
         if (nested != null) {
             if (depth >= MAX_DEPTH) {
-                warnOnce("Drop-Table '" + entry.name() + "' ist zu tief verschachtelt (Schleife?).");
+                warnOnce("drop.tooDeep", "table", entry.name());
                 return 0;
             }
             int exp = 0;
@@ -133,7 +133,7 @@ public final class DropRegistry {
             addStacks(out, new ItemStack(material), amount);
             return 0;
         }
-        warnOnce("Drop '" + entry.name() + "' ist weder EXP, Drop-Table, Item noch Material - wird uebersprungen.");
+        warnOnce("drop.unresolvable", "drop", entry.name());
         return 0;
     }
 
@@ -151,7 +151,7 @@ public final class DropRegistry {
         }
     }
 
-    private void warnOnce(String message) {
-        if (warned.add(message)) plugin.getLogger().warning(message);
+    private void warnOnce(String key, Object... placeholders) {
+        if (warned.add(plugin.messages().get(key, placeholders))) plugin.messages().warn(key, placeholders);
     }
 }

@@ -48,7 +48,7 @@ public final class ItemRegistry {
                     ConfigurationSection section = config.getConfigurationSection(id);
                     if (section == null || !section.contains("Id")) continue;
                     if (items.containsKey(id.toLowerCase(Locale.ROOT))) {
-                        plugin.getLogger().warning("Item '" + id + "' aus " + sourceFolder.getPath() + " ueberschreibt eine bereits geladene Definition - ignoriert.");
+                        plugin.messages().warn("item.duplicate", "item", id, "folder", sourceFolder.getPath());
                         continue;
                     }
                     ItemDefinition definition = parse(id, section);
@@ -56,7 +56,7 @@ public final class ItemRegistry {
                 }
             }
         }
-        plugin.getLogger().info(items.size() + " Items geladen.");
+        plugin.messages().info("item.loaded", "count", items.size());
     }
 
     public ItemDefinition get(String id) {
@@ -99,13 +99,13 @@ public final class ItemRegistry {
     private ItemDefinition parse(String id, ConfigurationSection section) {
         Material material = Material.matchMaterial(section.getString("Id", ""));
         if (material == null) {
-            plugin.getLogger().warning("Item '" + id + "': unbekanntes Material '" + section.getString("Id") + "'.");
+            plugin.messages().warn("item.unknownMaterial", "item", id, "material", section.getString("Id"));
             return null;
         }
         List<MobDefinition.SkillTrigger> triggers = new ArrayList<>();
         for (String line : section.getStringList("Skills")) {
             MobDefinition.SkillTrigger trigger = MobDefinition.SkillTrigger.parse(line);
-            if (trigger == null) plugin.getLogger().warning("Item '" + id + "': Skill-Zeile '" + line + "' konnte nicht geparst werden.");
+            if (trigger == null) plugin.messages().warn("item.skillLineInvalid", "item", id, "line", line);
             else triggers.add(trigger);
         }
         return new ItemDefinition(id, material, section.getInt("Model", -1), section.getString("Display", id),

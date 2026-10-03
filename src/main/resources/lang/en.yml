@@ -1,0 +1,145 @@
+lang:
+  missing: "Language file lang/{language}.yml not found - falling back to English."
+
+plugin:
+  betterModelMissing: "BetterModel is not installed or enabled - mobs spawn without a model."
+  commandMissing: "Command /bettermob is missing from plugin.yml."
+
+command:
+  help:
+    spawn: "&7/bettermob spawn <id> [amount] &8- &7Spawn a mob"
+    list: "&7/bettermob list &8- &7Show available mobs"
+    packs: "&7/bettermob packs &8- &7Show loaded packs"
+    reload: "&7/bettermob reload &8- &7Reload mobs, skills and packs"
+    skill: "&7/bettermob skill <id> [player] &8- &7Run a skill manually"
+    give: "&7/bettermob give <item> [player] [amount] &8- &7Give an item"
+    debug: "&7/bettermob debug [off|info|verbose|filter|chat] &8- &7Control debug output"
+    killall: "&7/bettermob killall [mob|*] [world] &8- &7Remove living BetterMob mobs"
+    stats: "&7/bettermob stats [on|off|reset] &8- &7Show mob, timer and skill statistics"
+  reloaded: "&aBetterMob reloaded."
+  reloadedLiving: "&7{count} living mobs updated to their new definition."
+  mobList: "&7Mobs: &f{mobs}"
+  packsNone: "&7No packs found in packs/."
+  packEntry: "&7- &f{pack}"
+  unknown: "&cUnknown command."
+  noPermission: "&cYou do not have permission."
+  playersOnly: "&cOnly players can use this."
+  playerRequired: "&cWithout a player name only players can use this."
+  playerOffline: "&cPlayer '{player}' is not online."
+  debug:
+    status: "&7Debug: &f{level} &7- Filter: &f{filters}"
+    filtersAll: "all"
+    chatOn: "&aDebug output in chat enabled."
+    chatOff: "&7Debug output in chat disabled."
+    usage: "&cUsage: /bettermob debug [off|info|verbose|filter <id>|filter clear|chat]"
+  spawn:
+    usage: "&cUsage: /bettermob spawn <id> [amount]"
+    notRegistered: "&cMob '{mob}' is not registered."
+    done: "&a{amount}x '{mob}' spawned."
+  skill:
+    usage: "&cUsage: /bettermob skill <id> [player]"
+    notRegistered: "&cSkill '{skill}' is not registered."
+    done: "&aSkill '{skill}' run on {player}."
+  give:
+    usage: "&cUsage: /bettermob give <item> [player] [amount]"
+    notRegistered: "&cItem '{item}' is not registered."
+    done: "&a{amount}x '{item}' given to {player}."
+  killall:
+    worldMissing: "&cWorld '{world}' does not exist."
+    done: "&a{count} mobs removed."
+  stats:
+    usage: "&cUsage: /bettermob stats [on|off|reset]"
+    enabled: "&aSkill profiling enabled."
+    disabled: "&7Skill profiling disabled."
+    reset: "&aStatistics reset."
+    header: "&7BetterMob statistics:"
+    mobs: "&7Living mobs: &f{total}"
+    mobEntry: "&7- &f{mob}&7: &f{count}"
+    overview: "&7Timers: &f{timers} &8| &7Pending delayed steps: &f{pending} &8| &7Skills: &f{skills} &8| &7Packs: &f{packs}"
+    profilingOff: "&7Skill profiling is off, enable it with /bettermob stats on."
+    timingNone: "&7No skill has run since profiling was enabled."
+    timingHeader: "&7Skill timing (top {limit} by total time):"
+    timingEntry: "&7- &f{skill}&7: &f{calls}&7 calls, avg &f{avg}&7 ms, max &f{max}&7 ms, total &f{total}&7 ms"
+
+pack:
+  enabled: "&a(enabled)"
+  disabled: "&c(disabled)"
+
+ai:
+  goalUnavailable: "AI goal '{goal}' is not available for mob type '{type}'."
+
+mob:
+  loaded: "{count} mobs loaded."
+  duplicate: "Mob '{mob}' from {folder} overrides an already loaded definition - ignored."
+  unknownType: "Mob '{mob}': unknown Type '{type}'."
+  dropLineInvalid: "Mob '{mob}': drop line '{line}' could not be parsed."
+  skillLineInvalid: "Mob '{mob}': skill line '{line}' could not be parsed."
+  damageModifierInvalid: "Mob '{mob}': invalid DamageModifier entry '{entry}'."
+  damageCauseUnknown: "Mob '{mob}': unknown DamageCause '{cause}'."
+  multiplierInvalid: "Mob '{mob}': invalid multiplier '{value}'."
+  reloadRemoved: "Mob '{mob}' no longer has a definition - living ones keep the old definition."
+  bossBarColorInvalid: "Mob '{mob}': unknown BossBar Color '{value}', using RED."
+  bossBarStyleInvalid: "Mob '{mob}': unknown BossBar Style '{value}', using SOLID."
+  itemHeadMissing: "Mob '{mob}': ItemHead item '{item}' is not registered."
+  migrated: "mobs.yml was migrated to mobs/ automatically (backup: mobs.yml.migrated)."
+  migrationFailed: "Migration of '{mob}' failed: {error}"
+
+skill:
+  loaded: "{count} skills loaded."
+  duplicate: "Skill '{skill}' from {folder} overrides an already loaded definition - ignored."
+  lineInvalid: "Skill '{skill}': line '{line}' could not be parsed."
+  notRegistered: "Skill '{skill}' is not registered."
+  inlineLineInvalid: "Inline skill: line '{line}' could not be parsed."
+  mechanicUnsupported: "Skill mechanic '{mechanic}' is not supported."
+  customMechanicFailed: "Custom mechanic '{mechanic}' from {plugin} failed: {error}"
+  conditionUnsupported: "Skill condition '{condition}' is not supported - ignored."
+  targeterConditionUnsupported: "Targeter condition '{condition}' is not supported - ignored."
+  targeterUnknown: "Unknown targeter '@{targeter}', the line targets the default target instead."
+  shootUnknownProjectile: "shoot: unknown projectile type '{type}', using arrow."
+  potionUnknown: "Unknown potion type '{type}'."
+  particleNeedsData: "Particle '{particle}' needs extra data (e.g. a color) and is not supported."
+  particleUnknown: "Unknown particle '{particle}'."
+  setblockUnknownMaterial: "setblock: unknown material '{material}'."
+  equipUnknown: "equip: '{value}' is neither an item nor a material."
+  summonNotRegistered: "summon: mob '{mob}' is not registered."
+  mountNoTracker: "mountmodel: the caster has no BetterModel tracker."
+
+item:
+  loaded: "{count} items loaded."
+  duplicate: "Item '{item}' from {folder} overrides an already loaded definition - ignored."
+  unknownMaterial: "Item '{item}': unknown material '{material}'."
+  skillLineInvalid: "Item '{item}': skill line '{line}' could not be parsed."
+
+drop:
+  loaded: "{count} drop tables loaded."
+  duplicate: "Drop table '{table}' from {folder} overrides an already loaded definition - ignored."
+  lineInvalid: "Drop table '{table}': line '{line}' could not be parsed."
+  tooDeep: "Drop table '{table}' is nested too deeply (loop?)."
+  unresolvable: "Drop '{drop}' is neither EXP, a drop table, an item nor a material - skipped."
+
+betterModel:
+  inactive: "BetterModel is not active while spawning '{model}' - no model attached."
+  apiClassMissing: "BetterModel API class '{class}' not found - does the installed BetterModel version match?"
+  modelMissing: "BetterModel model '{model}' does not exist."
+  attachFailed: "BetterModel '{model}' could not be attached: {error}"
+  animationFailed: "BetterModel animation '{animation}' failed: {error}"
+  boneMissing: "@ModelPart: bone '{bone}' does not exist on the model."
+  modelPartFailed: "@ModelPart '{bone}' failed: {error}"
+  bodyRotationFailed: "BodyRotation failed: {error}"
+  bodyRotationInvalid: "BodyRotation: '{value}' is not a valid value for {name}."
+  mount:
+    seatMissing: "mountmodel: bone/seat '{seat}' does not exist on this model."
+    noHitbox: "mountmodel: bone '{seat}' has no hitbox to sit on."
+    noMountMethod: "mountmodel: hitbox class '{class}' has no mount(...) method."
+    seatFailed: "mountmodel seat '{seat}' failed: {error}"
+    controlConstantMissing: "mountmodel: control constant 'CONTROL' not found for {type} - the seat stays without steering."
+    controlModeFailed: "mountmodel: could not set the control mode: {error}"
+
+modelEngine:
+  inactive: "ModelEngine is not active while spawning '{model}' - no model attached."
+  apiClassMissing: "ModelEngine API class '{class}' not found - does the installed ModelEngine version match?"
+  addFailed: "ModelEngine model '{model}' could not be added (does the model ID exist?)."
+  attachFailed: "ModelEngine '{model}' could not be attached: {error}"
+
+stats:
+  slowSkill: "Skill '{skill}' took {millis} ms (threshold {threshold} ms)."

@@ -13,3 +13,13 @@ factions: {}
 # Debug-Ausgabe: off, info (Trigger, Skills, KI) oder verbose (zusaetzlich jede Mechanik, Bones, Projektile).
 # Zur Laufzeit mit /bettermob debug <off|info|verbose>.
 Debug: off
+
+# Language of console and command messages: the name of a file in lang/ without .yml (en, de).
+# Add your own lang/<code>.yml to translate; missing keys fall back to English.
+Language: en
+
+# Skill profiling for /bettermob stats: off or on. Costs nothing while off.
+Stats: off
+
+# With profiling on, warn in the console when one skill run takes longer than this many milliseconds (0 = never).
+StatsWarnMillis: 50

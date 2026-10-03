@@ -1,0 +1,11 @@
+nm_card_keeper:
+  Type: SKELETON
+  Display: '&fCard Keeper'
+  Health: 20
+  Drops:
+  - nm_bison_drops
+  - DIAMOND 1 5%
+  Skills:
+  - skill{s=my_skill_id} ~onInteract
+  - sound{s=entity.skeleton.ambient;p=1.0;v=1} @self ~onTimer:200
+  - message{m=ouch} ~onDamaged ?!sneaking

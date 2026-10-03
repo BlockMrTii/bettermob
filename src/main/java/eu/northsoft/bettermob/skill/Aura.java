@@ -1,15 +1,15 @@
 package eu.northsoft.bettermob.skill;
 
-final class Aura {
-final String kind;
-final long until;
-final boolean cancelEvent;
-final String onEnd;
-final String onHit;
-Runnable cancelTicker = () -> { };
-Runnable cancelEnd = () -> { };
+public final class Aura {
+    public final String kind;
+    public final long until;
+    public final boolean cancelEvent;
+    public final String onEnd;
+    public final String onHit;
+    public Runnable cancelTicker = () -> { };
+    public Runnable cancelEnd = () -> { };
 
-Aura(String kind, long until, boolean cancelEvent, String onEnd, String onHit) {
+    public Aura(String kind, long until, boolean cancelEvent, String onEnd, String onHit) {
         this.kind = kind;
         this.until = until;
         this.cancelEvent = cancelEvent;
@@ -17,7 +17,7 @@ Aura(String kind, long until, boolean cancelEvent, String onEnd, String onHit) {
         this.onHit = onHit;
     }
 
-void stop() {
+    public void stop() {
         cancelTicker.run();
         cancelEnd.run();
     }
