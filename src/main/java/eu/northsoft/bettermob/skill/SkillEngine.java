@@ -1,6 +1,7 @@
 package eu.northsoft.bettermob.skill;
 
 import static eu.northsoft.bettermob.skill.Params.*;
+import static eu.northsoft.bettermob.skill.SkillTags.*;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.ai.AiGoalApplier;
@@ -64,14 +65,11 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private final BetterModelHook betterModel;
     private final ModelEngineHook modelEngine;
     private final ItemRegistry items;
-    private final Map<UUID, Long> gcdUntilMillis = new ConcurrentHashMap<>();
-    private final Map<String, Long> cooldowns = new ConcurrentHashMap<>();
+    private final SkillState state = new SkillState();
 
     private final DebugManager debug;
-    private final Map<UUID, Map<String, Aura>> auras = new ConcurrentHashMap<>();
     private final Map<String, List<SkillStep>> inlineSkills = new ConcurrentHashMap<>();
 
-    private final ThreadLocal<Boolean> applyingDamage = ThreadLocal.withInitial(() -> false);
     private final Map<String, CustomMechanicEntry> customMechanics = new ConcurrentHashMap<>();
 
     private static final Set<String> BUILTIN_MECHANICS = Set.of("cancelskill", "cancelevent", "message", "msg", "skill", "look", "sound",
@@ -118,14 +116,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         if (shot == null) return;
         shot.stopTicker().run();
         if (event.getHitEntity() instanceof LivingEntity hit && !hit.equals(shot.shooter())) {
-            if (shot.damage() > 0) {
-                applyingDamage.set(true);
-                try {
-                    hit.damage(shot.damage(), shot.shooter());
-                } finally {
-                    applyingDamage.set(false);
-                }
-            }
+            if (shot.damage() > 0) state.applyDamage(hit, shot.damage(), shot.shooter());
             if (shot.onHit() != null) executeSteps(shot.onHit(), 0, new SkillContext(shot.shooter(), hit, null).withTrigger(hit));
         }
         if (shot.onEnd() != null) executeSteps(shot.onEnd(), 0, SkillContext.of(shot.shooter()).withOrigin(event.getEntity().getLocation()));
@@ -288,7 +279,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
                 return;
             }
         }
-        if (skill.cooldown > 0 && !acquireSkillCooldown(context.caster(), skill)) {
+        if (skill.cooldown > 0 && !state.acquireSkillCooldown(context.caster(), skill)) {
             if (debug.info()) debug.info("skill '" + skill.id + "' stopped: on cooldown", skill.id, caster);
             return;
         }
@@ -319,25 +310,6 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             }
         }
         return Check.PASS;
-    }
-
-    private boolean acquireSkillCooldown(LivingEntity caster, SkillDefinition skill) {
-        long now = System.currentTimeMillis();
-        String key = skillCooldownKey(caster, skill.id);
-        Long until = cooldowns.get(key);
-        if (until != null && until > now) return false;
-        if (cooldowns.size() > 2048) cooldowns.values().removeIf(time -> time <= now);
-        cooldowns.put(key, now + (long) (skill.cooldown * 1000));
-        return true;
-    }
-
-    private boolean skillOnCooldown(LivingEntity caster, String skillId) {
-        Long until = cooldowns.get(skillCooldownKey(caster, skillId));
-        return until != null && until > System.currentTimeMillis();
-    }
-
-    private static String skillCooldownKey(LivingEntity caster, String skillId) {
-        return caster.getUniqueId() + "@" + skillId.toLowerCase(Locale.ROOT);
     }
 
     public void runStep(SkillStep step, SkillContext context) {
@@ -419,7 +391,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             case "state" -> state(context.caster(), firstParam(p, "state", "s"));
             case "potion" -> potion(target, p);
             case "breakblock" -> breakBlock(target, p);
-            case "gcd" -> setGcd(context.caster().getUniqueId(), p);
+            case "gcd" -> state.setGcd(context.caster().getUniqueId(), parseInt(p.get("ticks"), 20));
             case "model" -> model(target, p);
             case "modelengine" -> modelEngineAttach(target, p);
             case "randomskill" -> randomSkill(context, p);
@@ -475,12 +447,12 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private boolean evaluate(Condition condition, SkillContext context, Target targetOverride) {
         String paramsRaw = condition.params();
         return switch (condition.name()) {
-            case "offgcd" -> !hasActiveGcd(context.caster().getUniqueId());
+            case "offgcd" -> !state.hasActiveGcd(context.caster().getUniqueId());
             case "onground" -> context.caster().isOnGround();
-            case "hasaura" -> hasAura(context.caster(), conditionParam(paramsRaw, "n", "name", "aura", "auraname"));
+            case "hasaura" -> state.hasAura(context.caster(), conditionParam(paramsRaw, "n", "name", "aura", "auraname"));
             case "hastag" -> context.caster().getScoreboardTags().contains(TAG_PREFIX + conditionParam(paramsRaw, "t", "tag", "n"));
             case "chance" -> ThreadLocalRandom.current().nextDouble() < parseFloat(conditionParam(paramsRaw, "chance", "c"), 1f);
-            case "skilloncooldown" -> skillOnCooldown(context.caster(), conditionParam(paramsRaw, "skill", "s", "name"));
+            case "skilloncooldown" -> state.skillOnCooldown(context.caster(), conditionParam(paramsRaw, "skill", "s", "name"));
             case "faction" -> hasFaction(context.caster(), conditionParam(paramsRaw, "faction", "f", "name"));
             case "distance" -> withinDistance(context, conditionParam(paramsRaw, "d", "distance"));
             case "onblock" -> containsBlockType(paramsRaw, context.caster().getLocation().subtract(0, 0.1, 0).getBlock());
@@ -594,13 +566,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private boolean acquireCooldown(SkillContext context, SkillStep.Mechanic mechanic) {
         float seconds = parseFloat(mechanic.params().get("cd"), 0f);
         if (seconds <= 0) return true;
-        long now = System.currentTimeMillis();
-        String key = context.caster().getUniqueId() + "#" + System.identityHashCode(mechanic);
-        Long until = cooldowns.get(key);
-        if (until != null && until > now) return false;
-        if (cooldowns.size() > 2048) cooldowns.values().removeIf(time -> time <= now);
-        cooldowns.put(key, now + (long) (seconds * 1000));
-        return true;
+        return state.acquireStepCooldown(context.caster(), mechanic, seconds);
     }
 
     private void particles(SkillStep.Mechanic mechanic, SkillContext context, Target target, Map<String, String> p) {
@@ -694,18 +660,13 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     public boolean isApplyingDamage() {
-        return applyingDamage.get();
+        return state.isApplyingDamage();
     }
 
     private void damage(SkillContext context, Target target, Map<String, String> p) {
         if (!(target.entity() instanceof LivingEntity victim)) return;
         double amount = parseFloat(firstParam(p, "amount", "a"), 1f);
-        applyingDamage.set(true);
-        try {
-            victim.damage(amount, context.caster());
-        } finally {
-            applyingDamage.set(false);
-        }
+        state.applyDamage(victim, amount, context.caster());
     }
 
     private void throwTarget(SkillContext context, Target target, Map<String, String> p) {
@@ -770,9 +731,6 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         }
     }
 
-    private static final String TAG_PREFIX = "bettermob_tag_";
-    private static final String OWNER_PREFIX = "bettermob_owner_";
-
     private void registerAura(Target target, Map<String, String> p, String kind) {
         String name = firstParam(p, "auraname", "name", "aura");
         if (name == null || !(target.entity() instanceof LivingEntity entity)) return;
@@ -782,7 +740,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         Aura aura = new Aura(kind, until, Boolean.parseBoolean(firstParam(p, "ce", "cancelevent")),
                 firstParam(p, "oe", "onend"), firstParam(p, "oh", "onhit"));
 
-        Map<String, Aura> active = auras.computeIfAbsent(entity.getUniqueId(), id -> new ConcurrentHashMap<>());
+        Map<String, Aura> active = state.aurasOf(entity.getUniqueId());
         Aura old = active.put(key, aura);
         if (old != null) old.stop();
 
@@ -812,25 +770,13 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     public void fireAuras(LivingEntity entity, String kind, LivingEntity trigger, org.bukkit.event.Cancellable event) {
-        Map<String, Aura> active = auras.get(entity.getUniqueId());
+        Map<String, Aura> active = state.activeAuras(entity.getUniqueId());
         if (active == null) return;
         for (Aura aura : active.values()) {
             if (!aura.kind.equals(kind) || aura.until <= System.currentTimeMillis()) continue;
             if (aura.cancelEvent && event != null) event.setCancelled(true);
             runAuraLines(aura.onHit, new SkillContext(entity, trigger, event));
         }
-    }
-
-    private boolean hasAura(LivingEntity entity, String name) {
-        Map<String, Aura> active = auras.get(entity.getUniqueId());
-        if (active == null) return false;
-        Aura aura = active.get(name.toLowerCase(Locale.ROOT));
-        if (aura == null) return false;
-        if (aura.until <= System.currentTimeMillis()) {
-            active.remove(name.toLowerCase(Locale.ROOT), aura);
-            return false;
-        }
-        return true;
     }
 
     private void tag(Target target, Map<String, String> p, boolean add) {
@@ -841,9 +787,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     public void forget(UUID entityId) {
-        Map<String, Aura> removed = auras.remove(entityId);
-        if (removed != null) removed.values().forEach(Aura::stop);
-        gcdUntilMillis.remove(entityId);
+        state.forget(entityId);
     }
 
     private void runInline(String raw, SkillContext context) {
@@ -860,7 +804,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return List.copyOf(steps);
     }
 
-    static List<String> splitInline(String raw) {
+    public static List<String> splitInline(String raw) {
         String body = raw.trim();
         if (body.startsWith("[")) body = body.substring(1);
         if (body.endsWith("]")) body = body.substring(0, body.length() - 1);
@@ -1035,16 +979,6 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             return;
         }
         betterModel.mount(tracker, p.getOrDefault("seat", "mount"), rider);
-    }
-
-    private void setGcd(UUID casterId, Map<String, String> p) {
-        int ticks = parseInt(p.get("ticks"), 20);
-        gcdUntilMillis.put(casterId, System.currentTimeMillis() + ticks * 50L);
-    }
-
-    private boolean hasActiveGcd(UUID casterId) {
-        Long until = gcdUntilMillis.get(casterId);
-        return until != null && until > System.currentTimeMillis();
     }
 
     private Target resolve(String targeter, Map<String, String> targeterParams, SkillContext context) {
