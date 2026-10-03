@@ -1,53 +1,26 @@
 package eu.northsoft.bettermob.skill;
 
 import static eu.northsoft.bettermob.skill.Params.*;
-import static eu.northsoft.bettermob.skill.SkillTags.*;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
-import eu.northsoft.bettermob.ai.AiGoalApplier;
 import eu.northsoft.bettermob.api.CustomMechanic;
-import eu.northsoft.bettermob.api.MechanicContext;
 import eu.northsoft.bettermob.debug.DebugManager;
-import eu.northsoft.bettermob.integration.PlaceholderHook;
-import eu.northsoft.bettermob.item.ItemDefinition;
 import eu.northsoft.bettermob.item.ItemRegistry;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.model.BetterModelHook;
 import eu.northsoft.bettermob.model.ModelEngineHook;
 import eu.northsoft.bettermob.skill.condition.ConditionRegistry;
+import eu.northsoft.bettermob.skill.mechanic.BuiltinMechanics;
+import eu.northsoft.bettermob.skill.mechanic.Mechanic;
+import eu.northsoft.bettermob.skill.mechanic.MechanicCall;
+import eu.northsoft.bettermob.skill.mechanic.MechanicRegistry;
 import eu.northsoft.bettermob.skill.target.TargeterRegistry;
 import eu.northsoft.bettermob.util.Tasks;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Particle;
-import org.bukkit.SoundCategory;
-import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.block.Block;
-import org.bukkit.entity.AbstractArrow;
-import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.Egg;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Fireball;
-import org.bukkit.entity.LargeFireball;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
-import org.bukkit.entity.SmallFireball;
-import org.bukkit.entity.Snowball;
-import org.bukkit.entity.SpectralArrow;
-import org.bukkit.entity.Trident;
-import org.bukkit.inventory.EntityEquipment;
-import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
@@ -55,10 +28,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadLocalRandom;
 
 public final class SkillEngine implements org.bukkit.event.Listener {
     private final BetterMobPlugin plugin;
@@ -67,21 +38,12 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private final BetterModelHook betterModel;
     private final ModelEngineHook modelEngine;
     private final ItemRegistry items;
-    private final SkillState state = new SkillState();
-
     private final DebugManager debug;
+    private final SkillState state = new SkillState();
+    private final Map<String, List<SkillStep>> inlineSkills = new ConcurrentHashMap<>();
     private final TargeterRegistry targeters;
     private final ConditionRegistry conditionRegistry;
-    private final Map<String, List<SkillStep>> inlineSkills = new ConcurrentHashMap<>();
-
-    private final Map<String, CustomMechanicEntry> customMechanics = new ConcurrentHashMap<>();
-
-    private static final Set<String> BUILTIN_MECHANICS = Set.of("cancelskill", "cancelevent", "message", "msg", "skill", "look", "sound",
-            "state", "potion", "breakblock", "gcd", "model", "modelengine", "randomskill", "remove", "command",
-            "summon", "mountmodel", "delay", "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "sudoskill", "damage", "throw", "lunge", "setblock", "equip", "aura", "ondamaged", "onattack", "ontick", "ondeath",
-            "onshoot", "bodyrotation", "addtag", "removetag", "ignite", "totem", "velocity", "freeze", "shoot", "stun", "setnodamageticks");
-
-    private record CustomMechanicEntry(Plugin owner, CustomMechanic mechanic) {}
+    private final MechanicRegistry mechanics;
 
     public SkillEngine(BetterMobPlugin plugin, SkillRegistry registry, MobManager mobManager, BetterModelHook betterModel, ModelEngineHook modelEngine, ItemRegistry items) {
         this.plugin = plugin;
@@ -93,7 +55,12 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         this.debug = plugin.debug();
         this.targeters = new TargeterRegistry(this);
         this.conditionRegistry = new ConditionRegistry(this);
+        this.mechanics = new MechanicRegistry(plugin);
+        BuiltinMechanics.registerAll(mechanics, this);
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        for (Mechanic mechanic : mechanics.builtins()) {
+            if (mechanic instanceof org.bukkit.event.Listener listener) plugin.getServer().getPluginManager().registerEvents(listener, plugin);
+        }
     }
 
     public BetterMobPlugin plugin() {
@@ -106,6 +73,18 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
     public BetterModelHook betterModel() {
         return betterModel;
+    }
+
+    public ModelEngineHook modelEngine() {
+        return modelEngine;
+    }
+
+    public ItemRegistry items() {
+        return items;
+    }
+
+    public DebugManager debug() {
+        return debug;
     }
 
     public SkillState state() {
@@ -123,161 +102,16 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         Tasks.runLater(plugin, player, 1L, () -> player.setVelocity(new Vector()));
     }
 
-    private record PendingShot(LivingEntity shooter, List<SkillStep> onHit, List<SkillStep> onEnd, double damage, Runnable stopTicker) {}
-
-    private final Map<UUID, PendingShot> shots = new ConcurrentHashMap<>();
-
-    private static final Map<String, Class<? extends Projectile>> PROJECTILES = Map.of(
-            "arrow", Arrow.class,
-            "spectralarrow", SpectralArrow.class,
-            "trident", Trident.class,
-            "snowball", Snowball.class,
-            "egg", Egg.class,
-            "fireball", LargeFireball.class,
-            "smallfireball", SmallFireball.class);
-
-    @org.bukkit.event.EventHandler
-    public void onProjectileHit(org.bukkit.event.entity.ProjectileHitEvent event) {
-        PendingShot shot = shots.remove(event.getEntity().getUniqueId());
-        if (shot == null) return;
-        shot.stopTicker().run();
-        if (event.getHitEntity() instanceof LivingEntity hit && !hit.equals(shot.shooter())) {
-            if (shot.damage() > 0) state.applyDamage(hit, shot.damage(), shot.shooter());
-            if (shot.onHit() != null) executeSteps(shot.onHit(), 0, new SkillContext(shot.shooter(), hit, null).withTrigger(hit));
-        }
-        if (shot.onEnd() != null) executeSteps(shot.onEnd(), 0, SkillContext.of(shot.shooter()).withOrigin(event.getEntity().getLocation()));
-    }
-
-    private void shoot(SkillContext context, Map<String, String> p) {
-        LivingEntity caster = context.caster();
-        LivingEntity aim = context.trigger();
-        if (aim == null && caster instanceof Mob mob) aim = mob.getTarget();
-        if (aim == null) return;
-
-        String typeName = p.getOrDefault("type", "arrow").toLowerCase(Locale.ROOT).replace("_", "");
-        Class<? extends Projectile> type = PROJECTILES.get(typeName);
-        if (type == null) {
-            plugin.messages().warn("skill.shootUnknownProjectile", "type", p.get("type"));
-            type = Arrow.class;
-        }
-
-        double speed = Math.max(0.1, parseFloat(p.get("velocity"), 1f) * 2);
-        double damage = parseFloat(p.get("damage"), 2f);
-        if (debug.verbose()) debug.verbose("shoot " + typeName + " at " + aim.getName() + ", speed " + speed + ", damage " + damage, subject(caster));
-        double spread = Math.toRadians(parseFloat(p.get("spread"), 0f));
-        boolean gravity = !"false".equalsIgnoreCase(p.get("gravity"));
-        Vector direction = aim.getEyeLocation().toVector().subtract(caster.getEyeLocation().toVector()).normalize();
-        if (spread > 0) {
-            ThreadLocalRandom random = ThreadLocalRandom.current();
-            direction.add(new Vector(random.nextDouble(-spread, spread), random.nextDouble(-spread, spread), random.nextDouble(-spread, spread))).normalize();
-        }
-        Vector heading = direction.clone();
-        String onHit = p.get("oh");
-        String onEnd = p.get("oe");
-        String onTick = p.get("ot");
-        long interval = Math.max(1, parseInt(firstParam(p, "i", "interval"), 5));
-
-        caster.launchProjectile(type, direction.multiply(speed), projectile -> {
-            double extraDamage = damage;
-            if (projectile instanceof AbstractArrow arrow) {
-                arrow.setDamage(damage / speed);
-                arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-                extraDamage = 0;
-            }
-            if (projectile instanceof Fireball fireball) {
-                fireball.setDirection(heading);
-                fireball.setYield(0);
-                fireball.setIsIncendiary(false);
-            }
-            if (!gravity) projectile.setGravity(false);
-
-            Runnable[] stop = {() -> { }};
-            if (onTick != null) {
-                List<SkillStep> tickSteps = inlineSkills.computeIfAbsent(onTick, this::parseInline);
-                stop[0] = Tasks.runTimer(plugin, projectile, interval, interval,
-                        () -> executeSteps(tickSteps, 0, SkillContext.of(caster).withOrigin(projectile.getLocation())));
-            }
-            if (onHit != null || onEnd != null || extraDamage > 0 || onTick != null) {
-                shots.put(projectile.getUniqueId(), new PendingShot(caster,
-                        onHit == null ? null : inlineSkills.computeIfAbsent(onHit, this::parseInline),
-                        onEnd == null ? null : inlineSkills.computeIfAbsent(onEnd, this::parseInline),
-                        extraDamage, () -> stop[0].run()));
-                Tasks.runLater(plugin, projectile, 400L, () -> {
-                    shots.remove(projectile.getUniqueId());
-                    stop[0].run();
-                });
-            }
-        });
-    }
-
-    private void freeze(Target target, Map<String, String> p) {
-        if (target.entity() == null) return;
-        int ticks = parseInt(firstParam(p, "ticks", "t", "d", "duration"), 140);
-        target.entity().setFreezeTicks(Math.max(ticks, target.entity().getFreezeTicks()));
-    }
-
-    private void velocity(Target target, Map<String, String> p) {
-        Entity entity = target.entity();
-        if (entity == null) return;
-        String mode = p.getOrDefault("m", p.getOrDefault("mode", "SET")).trim().toUpperCase(Locale.ROOT);
-        Vector change = new Vector(parseFloat(p.get("x"), 0f), parseFloat(p.get("y"), 0f), parseFloat(p.get("z"), 0f));
-        long interval = Math.max(1, parseInt(firstParam(p, "repeatinterval", "ri"), 1));
-        applyVelocity(entity, mode, change);
-        int repeat = parseInt(p.get("repeat"), 0);
-        for (int i = 1; i <= repeat; i++) {
-            Tasks.runLater(plugin, entity, i * interval, () -> applyVelocity(entity, mode, change));
-        }
-    }
-
-    private void applyVelocity(Entity entity, String mode, Vector change) {
-        Vector current = entity.getVelocity();
-        entity.setVelocity(switch (mode) {
-            case "ADD" -> current.add(change);
-            case "MULTIPLY" -> current.multiply(change);
-            case "DIVIDE" -> new Vector(div(current.getX(), change.getX()), div(current.getY(), change.getY()), div(current.getZ(), change.getZ()));
-            default -> change.clone();
-        });
-    }
-
-    private static double div(double value, double divisor) {
-        return divisor == 0 ? value : value / divisor;
-    }
-
-    private void stun(Target target, Map<String, String> p) {
-        if (!(target.entity() instanceof Mob mob)) return;
-        int ticks = parseInt(firstParam(p, "d", "duration", "t"), 20);
-        boolean ai = !"false".equalsIgnoreCase(p.get("ai"));
-        boolean gravity = "true".equalsIgnoreCase(p.get("g"));
-        boolean freeze = "true".equalsIgnoreCase(p.get("f"));
-
-        String animation = firstParam(p, "state", "animation", "s");
-        if (animation != null) state(mob, animation);
-
-        boolean hadGravity = mob.hasGravity();
-        if (ai) mob.setAware(false);
-        if (gravity) mob.setGravity(false);
-        Runnable cancelFreeze = freeze
-                ? Tasks.runTimer(plugin, mob, 1L, 1L, () -> mob.setVelocity(new Vector()))
-                : () -> { };
-        Tasks.runLater(plugin, mob, ticks, () -> {
-            cancelFreeze.run();
-            if (ai) mob.setAware(true);
-            if (gravity) mob.setGravity(hadGravity);
-        });
-    }
-
     public boolean registerMechanic(Plugin owner, String name, CustomMechanic mechanic) {
-        String key = name.toLowerCase(Locale.ROOT);
-        if (BUILTIN_MECHANICS.contains(key)) return false;
-        return customMechanics.putIfAbsent(key, new CustomMechanicEntry(owner, mechanic)) == null;
+        return mechanics.registerCustom(owner, name, mechanic);
     }
 
     public void unregisterMechanic(String name) {
-        customMechanics.remove(name.toLowerCase(Locale.ROOT));
+        mechanics.unregisterCustom(name);
     }
 
     public void unregisterMechanics(Plugin owner) {
-        customMechanics.values().removeIf(entry -> entry.owner().equals(owner));
+        mechanics.unregisterCustom(owner);
     }
 
     public void runById(String skillId, SkillContext context) {
@@ -312,7 +146,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         executeSteps(skill.steps, 0, context);
     }
 
-    private String subject(LivingEntity entity) {
+    public String subject(LivingEntity entity) {
         MobDefinition definition = mobManager.definitionOf(entity.getUniqueId());
         return definition != null ? definition.id : entity.getName();
     }
@@ -340,6 +174,10 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
     public void runStep(SkillStep step, SkillContext context) {
         executeSteps(List.of(step), 0, context);
+    }
+
+    public void runSteps(List<SkillStep> steps, SkillContext context) {
+        executeSteps(steps, 0, context);
     }
 
     private void executeSteps(List<SkillStep> steps, int index, SkillContext context) {
@@ -397,71 +235,9 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private void dispatch(SkillStep.Mechanic mechanic, SkillContext context, Target target, Map<String, String> p) {
-        switch (mechanic.name()) {
-            case "cancelevent" -> {
-                if (context.event() != null) context.event().setCancelled(true);
-            }
-            case "skill" -> {
-                String id = firstParam(p, "s", "skill", "skills");
-                if (id == null) break;
-
-                boolean forTarget = !mechanic.targeter().isEmpty() && !mechanic.targeter().equals("self")
-                        && target.entity() instanceof LivingEntity;
-                SkillContext child = forTarget ? context.withTrigger((LivingEntity) target.entity()) : context;
-                if (id.trim().startsWith("[")) runInline(id, child);
-                else runById(id.trim(), child);
-            }
-            case "look" -> look(target, context.caster());
-            case "sound" -> sound(target, p);
-            case "message", "msg" -> message(context, target, p);
-            case "state" -> state(context.caster(), firstParam(p, "state", "s"));
-            case "potion" -> potion(target, p);
-            case "breakblock" -> breakBlock(target, p);
-            case "gcd" -> state.setGcd(context.caster().getUniqueId(), parseInt(p.get("ticks"), 20));
-            case "model" -> model(target, p);
-            case "modelengine" -> modelEngineAttach(target, p);
-            case "randomskill" -> randomSkill(context, p);
-            case "remove" -> remove(target);
-            case "command" -> command(context, p);
-            case "summon" -> summon(context, target, p);
-            case "mountmodel" -> mountModel(context, target, p);
-            case "effect:particles", "e:p", "particles" -> particles(mechanic, context, target, p);
-            case "effect:particlering" -> particleRing(target, p);
-            case "spin" -> spin(target, p);
-            case "takeitem" -> takeItem(target, p);
-            case "sudoskill" -> sudoSkill(context, target, p);
-            case "damage" -> damage(context, target, p);
-            case "throw" -> throwTarget(context, target, p);
-            case "lunge" -> lunge(context, target, p);
-            case "setblock" -> setBlock(target, p);
-            case "equip" -> equip(target, p);
-            case "aura", "ondamaged", "onattack", "ontick", "ondeath", "onshoot" -> registerAura(target, p, mechanic.name());
-            case "addtag" -> tag(target, p, true);
-            case "removetag" -> tag(target, p, false);
-            case "bodyrotation" -> bodyRotation(context, p);
-            case "ignite" -> ignite(target, p);
-            case "shoot" -> shoot(context, p);
-            case "stun" -> stun(target, p);
-            case "velocity" -> velocity(target, p);
-            case "freeze" -> freeze(target, p);
-            case "setnodamageticks" -> {
-                if (target.entity() instanceof LivingEntity living) living.setNoDamageTicks(parseInt(firstParam(p, "ticks", "t"), 0));
-            }
-            case "totem" -> totem(context, target, p);
-            default -> {
-                CustomMechanicEntry custom = customMechanics.get(mechanic.name());
-                if (custom == null) {
-                    plugin.messages().warn("skill.mechanicUnsupported", "mechanic", mechanic.name());
-                } else {
-                    try {
-                        custom.mechanic().execute(new MechanicContext(context.caster(), context.trigger(), context.event(),
-                                target.entity(), target.location(), p));
-                    } catch (RuntimeException exception) {
-                        plugin.messages().warn("skill.customMechanicFailed", "mechanic", mechanic.name(), "plugin", custom.owner().getName(), "error", exception);
-                    }
-                }
-            }
-        }
+        Mechanic handler = mechanics.get(mechanic.name());
+        if (handler == null) plugin.messages().warn("skill.mechanicUnsupported", "mechanic", mechanic.name());
+        else handler.execute(new MechanicCall(mechanic, context, target, p));
     }
 
     private boolean conditionPasses(String raw, SkillContext context, Target targetOverride) {
@@ -470,272 +246,18 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return conditionRegistry.evaluate(condition, context, targetOverride) == (condition.expected() == null || condition.expected());
     }
 
-    private void look(Target target, LivingEntity caster) {
-        Location from = caster.getLocation();
-        Location facing = from.clone();
-        facing.setDirection(target.location().toVector().subtract(from.toVector()));
-        caster.setRotation(facing.getYaw(), facing.getPitch());
-    }
-
-    private void sound(Target target, Map<String, String> p) {
-        String name = p.get("s");
-        if (name == null) return;
-        float pitch = parseFloat(p.get("p"), 1f);
-        float volume = parseFloat(p.get("v"), 1f);
-        Location location = target.location();
-        location.getWorld().playSound(location, name, SoundCategory.HOSTILE, volume, pitch);
-    }
-
-    private void state(LivingEntity caster, String stateName) {
-        if (stateName == null) return;
-        betterModel.play(mobManager.trackerFor(caster.getUniqueId()), stateName);
-    }
-
-    private void potion(Target target, Map<String, String> p) {
-        if (!(target.entity() instanceof LivingEntity living)) return;
-        PotionEffectType type = PotionEffectType.getByName(firstParam(p, "type", "t") == null ? "SLOW" : firstParam(p, "type", "t").trim());
-        if (type == null) {
-            plugin.messages().warn("skill.potionUnknown", "type", p.get("type"));
-            return;
-        }
-        int duration = parseInt(firstParam(p, "duration", "d"), 20);
-        int level = parseInt(firstParam(p, "level", "l"), 1);
-        living.addPotionEffect(new PotionEffect(type, duration, Math.max(0, level - 1)));
-    }
-
-    private void breakBlock(Target target, Map<String, String> p) {
-        if (target.block() == null) return;
-        boolean useTool = Boolean.parseBoolean(p.getOrDefault("usetool", "false"));
-        if (useTool) target.block().breakNaturally();
-        else target.block().setType(Material.AIR);
-    }
-
-    private void model(Target target, Map<String, String> p) {
-        String modelId = p.get("mid");
-        if (modelId == null || target.entity() == null) return;
-        Object tracker = betterModel.attach(target.entity(), modelId);
-        mobManager.replaceTracker(target.entity(), tracker);
-    }
-
-    private void modelEngineAttach(Target target, Map<String, String> p) {
-        String modelId = p.get("mid");
-        if (modelId == null || target.entity() == null) return;
-        Object tracker = modelEngine.attach(target.entity(), modelId);
-        mobManager.replaceModelEngineTracker(target.entity(), tracker);
-    }
-
-    private void randomSkill(SkillContext context, Map<String, String> p) {
-        String list = firstParam(p, "s", "skills", "skill");
-        if (list == null) return;
-        String[] ids = list.split(",");
-        if (ids.length == 0) return;
-        runById(ids[ThreadLocalRandom.current().nextInt(ids.length)].trim(), context);
-    }
-
     private boolean acquireCooldown(SkillContext context, SkillStep.Mechanic mechanic) {
         float seconds = parseFloat(mechanic.params().get("cd"), 0f);
         if (seconds <= 0) return true;
         return state.acquireStepCooldown(context.caster(), mechanic, seconds);
     }
 
-    private void particles(SkillStep.Mechanic mechanic, SkillContext context, Target target, Map<String, String> p) {
-        Particle particle = particle(firstParam(p, "p", "particle"));
-        if (particle == null) return;
-        double yOffset = parseFloat(firstParam(p, "y", "yoffset"), 0f);
-        spawnParticles(target.location().clone().add(0, yOffset, 0), particle, p);
-
-        int repeat = parseInt(p.get("repeat"), 0);
-        long interval = Math.max(1, parseInt(p.get("repeatinterval"), 1));
-        for (int i = 1; i <= repeat; i++) {
-            Tasks.runLater(plugin, context.caster(), i * interval, () -> {
-                for (Target again : targeters.resolveAll(mechanic.targeter(), mechanic.targeterParams(), context)) {
-                    spawnParticles(again.location().clone().add(0, yOffset, 0), particle, p);
-                }
-            });
-        }
-    }
-
-    private void particleRing(Target target, Map<String, String> p) {
-        Particle particle = particle(firstParam(p, "particle", "p"));
-        if (particle == null) return;
-        double radius = parseFloat(p.get("radius"), 1f);
-        int points = Math.max(1, parseInt(p.get("points"), 8));
-        Location center = target.location();
-        for (int i = 0; i < points; i++) {
-            double angle = 2 * Math.PI * i / points;
-            spawnParticles(center.clone().add(Math.cos(angle) * radius, 0, Math.sin(angle) * radius), particle, p);
-        }
-    }
-
-    private void spawnParticles(Location location, Particle particle, Map<String, String> p) {
-        int amount = Math.max(1, parseInt(firstParam(p, "amount", "a"), 1));
-        double horizontal = parseFloat(p.get("hs"), 0f);
-        double vertical = parseFloat(p.get("vs"), 0f);
-        double speed = parseFloat(firstParam(p, "speed", "s"), 0f);
-        try {
-            location.getWorld().spawnParticle(particle, location, amount, horizontal, vertical, horizontal, speed);
-        } catch (IllegalArgumentException exception) {
-            plugin.messages().warn("skill.particleNeedsData", "particle", particle);
-        }
-    }
-
-    private Particle particle(String name) {
-        if (name == null) return null;
-        try {
-            return Particle.valueOf(name.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException exception) {
-            plugin.messages().warn("skill.particleUnknown", "particle", name);
-            return null;
-        }
-    }
-
-    private void spin(Target target, Map<String, String> p) {
-        Entity entity = target.entity();
-        if (entity == null) return;
-        int duration = parseInt(p.get("duration"), 100);
-        float velocity = parseFloat(p.get("velocity"), 10f);
-        int[] elapsed = {0};
-        Runnable[] cancel = new Runnable[1];
-        cancel[0] = Tasks.runTimer(plugin, entity, 1L, 1L, () -> {
-            if (++elapsed[0] > duration || !entity.isValid()) {
-                cancel[0].run();
-                return;
-            }
-            entity.setRotation(entity.getYaw() + velocity, entity.getPitch());
-        });
-    }
-
-    private void takeItem(Target target, Map<String, String> p) {
-        if (!(target.entity() instanceof Player player)) return;
-        String itemId = firstParam(p, "i", "item", "type");
-        if (itemId == null) return;
-        int remaining = Math.max(1, parseInt(firstParam(p, "a", "amount"), 1));
-
-        ItemStack[] contents = player.getInventory().getContents();
-        for (int slot = 0; slot < contents.length && remaining > 0; slot++) {
-            ItemStack stack = contents[slot];
-            if (stack == null || !itemId.trim().equalsIgnoreCase(items.idOf(stack))) continue;
-            int taken = Math.min(remaining, stack.getAmount());
-            stack.setAmount(stack.getAmount() - taken);
-            player.getInventory().setItem(slot, stack.getAmount() <= 0 ? null : stack);
-            remaining -= taken;
-        }
-    }
-
-    private void sudoSkill(SkillContext context, Target target, Map<String, String> p) {
-        if (!(target.entity() instanceof LivingEntity executor)) return;
-        String id = firstParam(p, "s", "skill", "skills");
-        if (id != null) runById(id.trim(), new SkillContext(executor, context.caster(), null));
-    }
-
     public boolean isApplyingDamage() {
         return state.isApplyingDamage();
     }
 
-    private void damage(SkillContext context, Target target, Map<String, String> p) {
-        if (!(target.entity() instanceof LivingEntity victim)) return;
-        double amount = parseFloat(firstParam(p, "amount", "a"), 1f);
-        state.applyDamage(victim, amount, context.caster());
-    }
-
-    private void throwTarget(SkillContext context, Target target, Map<String, String> p) {
-        Entity thrown = target.entity();
-        if (thrown == null || thrown instanceof LivingEntity living && living.isDead()) return;
-        Vector away = thrown.getLocation().toVector().subtract(context.caster().getLocation().toVector()).setY(0);
-        if (away.lengthSquared() < 1e-6) away = context.caster().getLocation().getDirection().setY(0);
-        thrown.setVelocity(away.normalize().multiply(parseFloat(firstParam(p, "velocity", "v"), 4f) / 10.0)
-                .setY(parseFloat(firstParam(p, "velocityy", "vy"), 0f) / 10.0));
-    }
-
-    private void lunge(SkillContext context, Target target, Map<String, String> p) {
-        Vector toward = target.location().toVector().subtract(context.caster().getLocation().toVector()).setY(0);
-        if (toward.lengthSquared() < 1e-6) return;
-        context.caster().setVelocity(toward.normalize().multiply(parseFloat(p.get("velocity"), 1f))
-                .setY(parseFloat(firstParam(p, "velocityy", "vy"), 0f)));
-    }
-
-    private void setBlock(Target target, Map<String, String> p) {
-        Material material = Material.matchMaterial(firstParam(p, "m", "material", "type", "block") == null ? "" : firstParam(p, "m", "material", "type", "block").trim());
-        if (material == null || !material.isBlock()) {
-            plugin.messages().warn("skill.setblockUnknownMaterial", "material", firstParam(p, "m", "material", "type", "block"));
-            return;
-        }
-        target.location().getBlock().setType(material);
-    }
-
-    private void equip(Target target, Map<String, String> p) {
-        if (!(target.entity() instanceof LivingEntity living) || living.getEquipment() == null) return;
-        String spec = firstParam(p, "item", "i", "type");
-        if (spec == null) return;
-        String[] parts = spec.trim().split(":", 2);
-
-        ItemStack stack;
-        ItemDefinition custom = items.get(parts[0]);
-        if (custom != null) {
-            stack = items.create(custom, 1);
-        } else {
-            Material material = Material.matchMaterial(parts[0]);
-            if (material == null || !material.isItem()) {
-                plugin.messages().warn("skill.equipUnknown", "value", parts[0]);
-                return;
-            }
-            stack = new ItemStack(material);
-        }
-
-        EquipmentSlot slot = switch ((parts.length > 1 ? parts[1] : "hand").trim().toLowerCase(Locale.ROOT)) {
-            case "offhand", "off_hand" -> EquipmentSlot.OFF_HAND;
-            case "head", "helmet" -> EquipmentSlot.HEAD;
-            case "chest", "chestplate" -> EquipmentSlot.CHEST;
-            case "legs", "leggings" -> EquipmentSlot.LEGS;
-            case "feet", "boots" -> EquipmentSlot.FEET;
-            default -> EquipmentSlot.HAND;
-        };
-        EntityEquipment equipment = living.getEquipment();
-        equipment.setItem(slot, stack);
-
-        if (living instanceof Mob mob) {
-            equipment.setDropChance(slot, 0f);
-            MobDefinition definition = mobManager.definitionOf(mob.getUniqueId());
-            if (definition != null && !definition.aiGoalSelectors.isEmpty()) AiGoalApplier.promoteRanged(mob);
-        }
-    }
-
-    private void registerAura(Target target, Map<String, String> p, String kind) {
-        String name = firstParam(p, "auraname", "name", "aura");
-        if (name == null || !(target.entity() instanceof LivingEntity entity)) return;
-        String key = name.toLowerCase(Locale.ROOT);
-        int ticks = parseInt(firstParam(p, "time", "ticks", "duration"), 0);
-        long until = ticks > 0 ? System.currentTimeMillis() + ticks * 50L : Long.MAX_VALUE;
-        Aura aura = new Aura(kind, until, Boolean.parseBoolean(firstParam(p, "ce", "cancelevent")),
-                firstParam(p, "oe", "onend"), firstParam(p, "oh", "onhit"));
-
-        Map<String, Aura> active = state.aurasOf(entity.getUniqueId());
-        Aura old = active.put(key, aura);
-        if (old != null) old.stop();
-
-        runAuraLines(firstParam(p, "os", "onstart"), SkillContext.of(entity));
-
-        String onTick = firstParam(p, "ot", "ontick");
-        if (onTick != null) {
-            long interval = Math.max(1, parseInt(firstParam(p, "i", "interval"), 20));
-            aura.cancelTicker = Tasks.runTimer(plugin, entity, interval, interval, () -> {
-                if (entity.isDead() || active.get(key) != aura) aura.cancelTicker.run();
-                else runAuraLines(onTick, SkillContext.of(entity));
-            });
-        }
-        if (ticks > 0) {
-            Tasks.runLater(plugin, entity, ticks, () -> endAura(entity, active, key, aura));
-        }
-    }
-
-    private void endAura(LivingEntity entity, Map<String, Aura> active, String key, Aura aura) {
-        if (!active.remove(key, aura)) return;
-        aura.stop();
-        runAuraLines(aura.onEnd, SkillContext.of(entity));
-    }
-
     private void runAuraLines(String lines, SkillContext context) {
-        if (lines != null) executeSteps(inlineSkills.computeIfAbsent(lines, this::parseInline), 0, context);
+        if (lines != null) executeSteps(inline(lines), 0, context);
     }
 
     public void fireAuras(LivingEntity entity, String kind, LivingEntity trigger, org.bukkit.event.Cancellable event) {
@@ -748,19 +270,16 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         }
     }
 
-    private void tag(Target target, Map<String, String> p, boolean add) {
-        String tag = firstParam(p, "t", "tag");
-        if (tag == null || target.entity() == null) return;
-        if (add) target.entity().addScoreboardTag(TAG_PREFIX + tag.trim());
-        else target.entity().removeScoreboardTag(TAG_PREFIX + tag.trim());
-    }
-
     public void forget(UUID entityId) {
         state.forget(entityId);
     }
 
-    private void runInline(String raw, SkillContext context) {
-        executeSteps(inlineSkills.computeIfAbsent(raw, this::parseInline), 0, context);
+    public void runInline(String raw, SkillContext context) {
+        executeSteps(inline(raw), 0, context);
+    }
+
+    public List<SkillStep> inline(String raw) {
+        return inlineSkills.computeIfAbsent(raw, this::parseInline);
     }
 
     private List<SkillStep> parseInline(String raw) {
@@ -816,137 +335,5 @@ public final class SkillEngine implements org.bukkit.event.Listener {
                     .replace("<caster.damage>", damage).replace("<caster.name>", context.caster().getName()));
         }
         return result;
-    }
-
-    private void bodyRotation(SkillContext context, Map<String, String> p) {
-        UUID id = context.caster().getUniqueId();
-        if (betterModel.bodyRotation(mobManager.trackerFor(id), p)) return;
-        java.util.concurrent.atomic.AtomicBoolean applied = new java.util.concurrent.atomic.AtomicBoolean();
-        for (int attempt = 1; attempt <= 5; attempt++) {
-            Tasks.runLater(plugin, context.caster(), attempt * 2L, () -> {
-                Object tracker = mobManager.trackerFor(id);
-                if (tracker != null && !applied.get() && betterModel.bodyRotation(tracker, p)) applied.set(true);
-            });
-        }
-    }
-
-    private void ignite(Target target, Map<String, String> p) {
-        if (target.entity() != null) target.entity().setFireTicks(parseInt(firstParam(p, "t", "ticks", "duration", "d"), 100));
-    }
-
-    private void totem(SkillContext context, Target target, Map<String, String> p) {
-        Location origin = target.location().clone().add(0, parseFloat(firstParam(p, "yo", "yoffset"), 0f), 0);
-        SkillContext at = context.withOrigin(origin);
-        if (debug.verbose()) debug.verbose("totem at " + origin.getBlockX() + " " + origin.getBlockY() + " " + origin.getBlockZ() + ", params " + p.keySet(), subject(context.caster()));
-        runTotemLines(firstParam(p, "os", "onstart"), at);
-
-        int duration = parseInt(firstParam(p, "md", "maxduration"), 0);
-        String onTick = firstParam(p, "ot", "ontick");
-        String onEnd = firstParam(p, "oe", "onend");
-        String onHit = firstParam(p, "oh", "onhit");
-        if (onHit != null) spawnTotemBody(context, at, onHit, duration > 0 ? duration : 100);
-        if (duration <= 0 || (onTick == null && onEnd == null)) return;
-
-        long interval = Math.max(1, parseInt(firstParam(p, "i", "interval"), 20));
-        long[] elapsed = {0};
-        Runnable[] cancel = {() -> { }};
-        cancel[0] = Tasks.runTimer(plugin, context.caster(), interval, interval, () -> {
-            if (context.caster().isDead()) {
-                cancel[0].run();
-                return;
-            }
-            elapsed[0] += interval;
-            runTotemLines(onTick, at);
-            if (elapsed[0] >= duration) {
-                cancel[0].run();
-                runTotemLines(onEnd, at);
-            }
-        });
-    }
-
-    private record TotemBody(LivingEntity caster, String lines, SkillContext at) {}
-
-    private final Map<UUID, TotemBody> totemBodies = new ConcurrentHashMap<>();
-
-    private void spawnTotemBody(SkillContext context, SkillContext at, String lines, int duration) {
-        Location origin = at.origin();
-        ArmorStand body = origin.getWorld().spawn(origin, ArmorStand.class, stand -> {
-            stand.setInvisible(true);
-            stand.setSmall(true);
-            stand.setGravity(false);
-            stand.setSilent(true);
-            stand.setPersistent(false);
-        });
-        totemBodies.put(body.getUniqueId(), new TotemBody(context.caster(), lines, at));
-        Tasks.runLater(plugin, body, duration, () -> {
-            totemBodies.remove(body.getUniqueId());
-            body.remove();
-        });
-    }
-
-    @org.bukkit.event.EventHandler(ignoreCancelled = true)
-    public void onTotemHit(org.bukkit.event.entity.EntityDamageByEntityEvent event) {
-        TotemBody totem = totemBodies.get(event.getEntity().getUniqueId());
-        if (totem == null) return;
-        event.setCancelled(true);
-        Entity damager = event.getDamager();
-        if (damager instanceof org.bukkit.entity.Projectile projectile && projectile.getShooter() instanceof Entity shooter) damager = shooter;
-        if (damager instanceof LivingEntity attacker && !attacker.equals(totem.caster())) {
-            executeSteps(inlineSkills.computeIfAbsent(totem.lines(), this::parseInline), 0,
-                    new SkillContext(totem.caster(), attacker, null, totem.at().origin(), true));
-        }
-    }
-
-    private void runTotemLines(String lines, SkillContext context) {
-        if (lines != null) executeSteps(inlineSkills.computeIfAbsent(lines, this::parseInline), 0, context);
-    }
-
-    private void remove(Target target) {
-        if (target.entity() != null) target.entity().remove();
-    }
-
-    private void command(SkillContext context, Map<String, String> p) {
-        String raw = p.get("c");
-        if (raw == null) return;
-        String command = PlaceholderHook.apply(placeholderPlayer(context), stripQuotes(raw)
-                .replace("<caster.name>", context.caster().getName())
-                .replace("<target.name>", context.trigger() != null ? context.trigger().getName() : context.caster().getName()));
-        Tasks.runGlobal(plugin, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command));
-    }
-
-    private static Player placeholderPlayer(SkillContext context) {
-        if (context.trigger() instanceof Player player) return player;
-        return context.caster() instanceof Player player ? player : null;
-    }
-
-    private void message(SkillContext context, Target target, Map<String, String> p) {
-        String raw = firstParam(p, "m", "message", "msg");
-        if (raw == null || !(target.entity() instanceof Player receiver)) return;
-        String text = PlaceholderHook.apply(receiver, stripQuotes(raw)
-                .replace("<caster.name>", context.caster().getName())
-                .replace("<target.name>", receiver.getName()));
-        receiver.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(text));
-    }
-
-    private void summon(SkillContext context, Target target, Map<String, String> p) {
-        String mobId = firstParam(p, "type", "t", "mob", "m");
-        if (mobId == null) return;
-        MobDefinition definition = mobManager.registry().get(mobId.trim());
-        if (definition == null) {
-            plugin.messages().warn("skill.summonNotRegistered", "mob", mobId);
-            return;
-        }
-        LivingEntity spawned = mobManager.spawn(definition, target.location());
-        if (spawned != null) spawned.addScoreboardTag(OWNER_PREFIX + context.caster().getUniqueId());
-    }
-
-    private void mountModel(SkillContext context, Target target, Map<String, String> p) {
-        if (!(target.entity() instanceof LivingEntity rider)) return;
-        Object tracker = mobManager.trackerFor(context.caster().getUniqueId());
-        if (tracker == null) {
-            plugin.messages().warn("skill.mountNoTracker");
-            return;
-        }
-        betterModel.mount(tracker, p.getOrDefault("seat", "mount"), rider);
     }
 }
