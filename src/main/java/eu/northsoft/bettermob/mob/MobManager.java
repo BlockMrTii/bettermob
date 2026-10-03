@@ -30,8 +30,10 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -63,34 +65,11 @@ public final class MobManager {
 
     public LivingEntity spawn(MobDefinition definition, Location location) {
         LivingEntity entity = (LivingEntity) location.getWorld().spawnEntity(location, definition.type);
-        entity.customName(LegacyComponentSerializer.legacyAmpersand().deserialize(PlaceholderHook.apply(null, definition.displayName)));
-        entity.setCustomNameVisible(definition.options.alwaysShowName());
+        applyDefinition(entity, definition, true);
 
-        var maxHealth = entity.getAttribute(Attribute.MAX_HEALTH);
-        if (maxHealth != null) {
-            maxHealth.setBaseValue(definition.health);
-            entity.setHealth(definition.health);
-        }
-        var damage = entity.getAttribute(Attribute.ATTACK_DAMAGE);
-        if (damage != null) damage.setBaseValue(definition.damage);
-        var speed = entity.getAttribute(Attribute.MOVEMENT_SPEED);
-        if (speed != null && definition.options.movementSpeed() >= 0) speed.setBaseValue(definition.options.movementSpeed());
-
-        entity.setCollidable(definition.options.collidable());
-        entity.setSilent(definition.options.silent());
-        entity.setInvulnerable(definition.options.invincible());
-        entity.getPersistentDataContainer().set(mobIdKey, PersistentDataType.STRING, definition.id);
-        applyAppearanceOptions(entity, definition);
-
-        if (definition.removeAi) entity.setAI(false);
         if (entity instanceof Mob mob) AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
         if (definition.threatTable) threatTables.put(entity.getUniqueId(), new ConcurrentHashMap<>());
         if (!definition.damageModifiers.isEmpty()) damageModifiers.put(entity.getUniqueId(), definition.damageModifiers);
-
-        if (definition.options.preventSunburn()) {
-            if (entity instanceof Zombie zombie) zombie.setShouldBurnInDay(false);
-            if (entity instanceof AbstractSkeleton skeleton) skeleton.setShouldBurnInDay(false);
-        }
 
         if (!hasModelSkill(definition, MobDefinition.SkillTrigger.Trigger.SPAWN)) {
             Object tracker = betterModel.attachIfPresent(entity, definition.modelId);
@@ -106,6 +85,34 @@ public final class MobManager {
         scheduleTimers(entity, definition);
         Bukkit.getPluginManager().callEvent(new BetterMobSpawnEvent(entity, definition.toInfo()));
         return entity;
+    }
+
+    private void applyDefinition(LivingEntity entity, MobDefinition definition, boolean spawning) {
+        entity.customName(LegacyComponentSerializer.legacyAmpersand().deserialize(PlaceholderHook.apply(null, definition.displayName)));
+        entity.setCustomNameVisible(definition.options.alwaysShowName());
+
+        var maxHealth = entity.getAttribute(Attribute.MAX_HEALTH);
+        if (maxHealth != null) {
+            maxHealth.setBaseValue(definition.health);
+            entity.setHealth(spawning ? definition.health : Math.min(entity.getHealth(), definition.health));
+        }
+        var damage = entity.getAttribute(Attribute.ATTACK_DAMAGE);
+        if (damage != null) damage.setBaseValue(definition.damage);
+        var speed = entity.getAttribute(Attribute.MOVEMENT_SPEED);
+        if (speed != null && definition.options.movementSpeed() >= 0) speed.setBaseValue(definition.options.movementSpeed());
+
+        entity.setCollidable(definition.options.collidable());
+        entity.setSilent(definition.options.silent());
+        entity.setInvulnerable(definition.options.invincible());
+        entity.getPersistentDataContainer().set(mobIdKey, PersistentDataType.STRING, definition.id);
+        applyAppearanceOptions(entity, definition);
+
+        if (definition.removeAi) entity.setAI(false);
+
+        if (definition.options.preventSunburn()) {
+            if (entity instanceof Zombie zombie) zombie.setShouldBurnInDay(false);
+            if (entity instanceof AbstractSkeleton skeleton) skeleton.setShouldBurnInDay(false);
+        }
     }
 
     private void applyAppearanceOptions(LivingEntity entity, MobDefinition definition) {
@@ -218,6 +225,62 @@ public final class MobManager {
             });
             timers.computeIfAbsent(entity.getUniqueId(), key -> new ArrayList<>()).add(cancel);
         }
+    }
+
+    public int reloadLiving() {
+        int updated = 0;
+        Set<String> removed = new HashSet<>();
+        for (Map.Entry<UUID, MobDefinition> entry : List.copyOf(definitions.entrySet())) {
+            Entity entity = Bukkit.getEntity(entry.getKey());
+            if (!(entity instanceof LivingEntity living) || !living.isValid()) continue;
+            MobDefinition old = entry.getValue();
+            MobDefinition fresh = registry.get(old.id);
+            if (fresh == null) {
+                if (removed.add(old.id)) plugin.messages().warn("mob.reloadRemoved", "mob", old.id);
+                continue;
+            }
+            updated++;
+            Tasks.runLater(plugin, living, 1L, () -> rebind(living, fresh));
+        }
+        return updated;
+    }
+
+    private void rebind(LivingEntity entity, MobDefinition fresh) {
+        UUID id = entity.getUniqueId();
+        MobDefinition old = definitions.get(id);
+        if (old == null || !entity.isValid()) return;
+
+        List<Runnable> cancellers = timers.remove(id);
+        if (cancellers != null) cancellers.forEach(Runnable::run);
+        if (skillEngine != null) skillEngine.forget(id);
+
+        definitions.put(id, fresh);
+        if (fresh.threatTable) threatTables.putIfAbsent(id, new ConcurrentHashMap<>());
+        else threatTables.remove(id);
+        if (fresh.damageModifiers.isEmpty()) damageModifiers.remove(id);
+        else damageModifiers.put(id, fresh.damageModifiers);
+
+        if ((old.removeAi || !old.options.canMove()) && fresh.options.canMove() && !fresh.removeAi) {
+            entity.setAI(true);
+            entity.setGravity(true);
+        }
+        applyDefinition(entity, fresh, false);
+        if (entity instanceof Mob mob) {
+            AiGoalApplier.apply(mob, changedSelectors(old.aiGoalSelectors, fresh.aiGoalSelectors),
+                    changedSelectors(old.aiTargetSelectors, fresh.aiTargetSelectors), plugin, other -> definitions.containsKey(other.getUniqueId()));
+        }
+
+        if (!hasModelSkill(fresh, MobDefinition.SkillTrigger.Trigger.LOAD)) {
+            Object tracker = betterModel.attachIfPresent(entity, fresh.modelId);
+            if (tracker != null) replaceTracker(entity, tracker);
+        }
+        scheduleTimers(entity, fresh);
+        fireTrigger(entity, fresh, MobDefinition.SkillTrigger.Trigger.LOAD, null, null);
+    }
+
+    private static List<String> changedSelectors(List<String> before, List<String> after) {
+        if (before.equals(after)) return List.of();
+        return after.stream().anyMatch(line -> line.trim().equalsIgnoreCase("clear")) ? after : List.of();
     }
 
     public int aliveCount() {

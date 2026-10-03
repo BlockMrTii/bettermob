@@ -66,7 +66,9 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
                 itemRegistry.load();
                 dropRegistry.load();
                 manager.registry().load();
+                int updated = manager.reloadLiving();
                 messages.send(sender, "command.reloaded");
+                if (updated > 0) messages.send(sender, "command.reloadedLiving", "count", updated);
             }
             case "list" -> messages.send(sender, "command.mobList", "mobs", String.join(", ", manager.registry().all().keySet()));
             case "packs" -> {
