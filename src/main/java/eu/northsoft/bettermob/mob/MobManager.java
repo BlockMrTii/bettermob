@@ -11,6 +11,7 @@ import eu.northsoft.bettermob.model.ModelEngineHook;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillStep;
+import eu.northsoft.bettermob.skill.SkillTags;
 import eu.northsoft.bettermob.util.Tasks;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
@@ -30,6 +31,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -281,6 +283,14 @@ public final class MobManager {
     private static List<String> changedSelectors(List<String> before, List<String> after) {
         if (before.equals(after)) return List.of();
         return after.stream().anyMatch(line -> line.trim().equalsIgnoreCase("clear")) ? after : List.of();
+    }
+
+    public void removeLeftoverHelpers(Collection<? extends Entity> entities) {
+        for (Entity entity : entities) {
+            if (entity instanceof ArmorStand stand && stand.getScoreboardTags().contains(SkillTags.HELPER_TAG)) {
+                Tasks.runLater(plugin, stand, 1L, stand::remove);
+            }
+        }
     }
 
     public int aliveCount() {

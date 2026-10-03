@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static eu.northsoft.bettermob.skill.Params.firstParam;
 import static eu.northsoft.bettermob.skill.Params.parseFloat;
 import static eu.northsoft.bettermob.skill.Params.parseInt;
+import static eu.northsoft.bettermob.skill.SkillTags.HELPER_TAG;
 
 public final class TotemMechanic implements Mechanic, Listener {
     private record TotemBody(LivingEntity caster, String lines, SkillContext at) {}
@@ -71,6 +72,7 @@ public final class TotemMechanic implements Mechanic, Listener {
             stand.setGravity(false);
             stand.setSilent(true);
             stand.setPersistent(false);
+            stand.addScoreboardTag(HELPER_TAG);
         });
         totemBodies.put(body.getUniqueId(), new TotemBody(context.caster(), lines, at));
         Tasks.runLater(engine.plugin(), body, duration, () -> {
