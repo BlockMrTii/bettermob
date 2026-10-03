@@ -7,6 +7,8 @@ import eu.northsoft.bettermob.skill.SkillRegistry;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.OfflinePlayer;
 
+import java.util.Locale;
+
 public final class BetterMobExpansion extends PlaceholderExpansion {
     private final BetterMobPlugin plugin;
     private final MobManager manager;
@@ -42,7 +44,7 @@ public final class BetterMobExpansion extends PlaceholderExpansion {
 
     @Override
     public String onRequest(OfflinePlayer player, String params) {
-        String key = params.toLowerCase();
+        String key = params.toLowerCase(Locale.ROOT);
         if (key.equals("mobs_alive")) return String.valueOf(manager.aliveCount());
         if (key.startsWith("mobs_alive_")) return String.valueOf(manager.aliveCount(key.substring("mobs_alive_".length())));
         return switch (key) {
