@@ -13,6 +13,7 @@ import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillRegistry;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -36,6 +37,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         nodes.put("reload", "bettermob.reload");
         nodes.put("skill", "bettermob.skill");
         nodes.put("give", "bettermob.give");
+        nodes.put("killall", "bettermob.killall");
         nodes.put("debug", "bettermob.debug");
         return nodes;
     }
@@ -70,6 +72,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             shown |= help(sender, "reload", "command.help.reload");
             shown |= help(sender, "skill", "command.help.skill");
             shown |= help(sender, "give", "command.help.give");
+            shown |= help(sender, "killall", "command.help.killall");
             shown |= help(sender, "debug", "command.help.debug");
             if (!shown) messages.send(sender, "command.noPermission");
             return true;
@@ -104,6 +107,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             case "spawn" -> handleSpawn(sender, args);
             case "skill" -> handleSkill(sender, args);
             case "give" -> handleGive(sender, args);
+            case "killall" -> handleKillAll(sender, args);
             case "debug" -> handleDebug(sender, args);
             default -> messages.send(sender, "command.unknown");
         }
@@ -205,6 +209,23 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         messages.send(sender, "command.skill.done", "skill", skillId, "player", caster.getName());
     }
 
+    private void handleKillAll(CommandSender sender, String[] args) {
+        String mobId = args.length >= 2 && !args[1].equals("*") ? args[1] : null;
+        World world = null;
+        if (args.length >= 3) {
+            world = Bukkit.getWorld(args[2]);
+            if (world == null) {
+                messages.send(sender, "command.killall.worldMissing", "world", args[2]);
+                return;
+            }
+        }
+        if (mobId != null && manager.registry().get(mobId) == null) {
+            messages.send(sender, "command.spawn.notRegistered", "mob", mobId);
+            return;
+        }
+        messages.send(sender, "command.killall.done", "count", manager.killAll(mobId, world));
+    }
+
     private void handleGive(CommandSender sender, String[] args) {
         if (args.length < 2) {
             messages.send(sender, "command.give.usage");
@@ -254,6 +275,14 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         if (args.length == 2 && args[0].equalsIgnoreCase("spawn")) return new ArrayList<>(manager.registry().all().keySet());
         if (args.length == 2 && args[0].equalsIgnoreCase("skill")) return new ArrayList<>(skillRegistry.ids());
         if (args.length == 2 && args[0].equalsIgnoreCase("give")) return new ArrayList<>(itemRegistry.ids());
+        if (args.length == 2 && args[0].equalsIgnoreCase("killall")) {
+            List<String> ids = new ArrayList<>(manager.registry().all().keySet());
+            ids.add("*");
+            return ids;
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("killall")) {
+            return Bukkit.getWorlds().stream().map(World::getName).toList();
+        }
         if (args.length == 3 && (args[0].equalsIgnoreCase("skill") || args[0].equalsIgnoreCase("give"))) {
             List<String> names = new ArrayList<>();
             for (Player player : Bukkit.getOnlinePlayers()) names.add(player.getName());

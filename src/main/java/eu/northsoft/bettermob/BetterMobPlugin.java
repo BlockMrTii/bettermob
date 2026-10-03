@@ -17,6 +17,8 @@ import eu.northsoft.bettermob.pack.PackScanner;
 import eu.northsoft.bettermob.service.BetterMobApiImpl;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillRegistry;
+import eu.northsoft.bettermob.util.Tasks;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -62,6 +64,10 @@ public final class BetterMobPlugin extends JavaPlugin {
         manager.setSkillEngine(skillEngine);
         getServer().getPluginManager().registerEvents(new MobListener(manager, dropRegistry), this);
         getServer().getPluginManager().registerEvents(new ItemListener(itemRegistry, skillEngine), this);
+        if (!Tasks.FOLIA) {
+            Tasks.runGlobal(this, () -> getServer().getWorlds()
+                    .forEach(world -> manager.removeLeftoverHelpers(world.getEntitiesByClass(ArmorStand.class))));
+        }
 
         BetterMobCommand commandHandler = new BetterMobCommand(this, manager, skillRegistry, packScanner, skillEngine, itemRegistry, dropRegistry);
         PluginCommand command = getCommand("bettermob");

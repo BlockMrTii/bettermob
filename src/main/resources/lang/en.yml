@@ -14,6 +14,7 @@ command:
     skill: "&7/bettermob skill <id> [player] &8- &7Run a skill manually"
     give: "&7/bettermob give <item> [player] [amount] &8- &7Give an item"
     debug: "&7/bettermob debug [off|info|verbose|filter|chat] &8- &7Control debug output"
+    killall: "&7/bettermob killall [mob|*] [world] &8- &7Remove living BetterMob mobs"
   reloaded: "&aBetterMob reloaded."
   reloadedLiving: "&7{count} living mobs updated to their new definition."
   mobList: "&7Mobs: &f{mobs}"
@@ -42,6 +43,9 @@ command:
     usage: "&cUsage: /bettermob give <item> [player] [amount]"
     notRegistered: "&cItem '{item}' is not registered."
     done: "&a{amount}x '{item}' given to {player}."
+  killall:
+    worldMissing: "&cWorld '{world}' does not exist."
+    done: "&a{count} mobs removed."
 
 pack:
   enabled: "&a(enabled)"
