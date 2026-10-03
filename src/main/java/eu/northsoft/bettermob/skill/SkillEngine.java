@@ -861,7 +861,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return List.copyOf(steps);
     }
 
-    private static List<String> splitInline(String raw) {
+    static List<String> splitInline(String raw) {
         String body = raw.trim();
         if (body.startsWith("[")) body = body.substring(1);
         if (body.endsWith("]")) body = body.substring(0, body.length() - 1);
