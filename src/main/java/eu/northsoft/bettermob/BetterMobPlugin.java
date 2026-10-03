@@ -30,6 +30,9 @@ public final class BetterMobPlugin extends JavaPlugin {
     private Messages messages;
     private BetterMobExpansion expansion;
     private MobManager manager;
+    private SkillRegistry skillRegistry;
+    private ItemRegistry itemRegistry;
+    private DropRegistry dropRegistry;
 
     public DebugManager debug() {
         return debug;
@@ -59,13 +62,13 @@ public final class BetterMobPlugin extends JavaPlugin {
         if (!betterModel.available()) messages.warn("plugin.betterModelMissing");
         ModelEngineHook modelEngine = new ModelEngineHook(this);
 
-        SkillRegistry skillRegistry = new SkillRegistry(this, packScanner);
+        skillRegistry = new SkillRegistry(this, packScanner);
         skillRegistry.load();
 
-        ItemRegistry itemRegistry = new ItemRegistry(this, packScanner);
+        itemRegistry = new ItemRegistry(this, packScanner);
         itemRegistry.load();
 
-        DropRegistry dropRegistry = new DropRegistry(this, packScanner, itemRegistry);
+        dropRegistry = new DropRegistry(this, packScanner, itemRegistry);
         dropRegistry.load();
 
         manager = new MobManager(this, registry, betterModel, modelEngine, itemRegistry);
@@ -96,6 +99,18 @@ public final class BetterMobPlugin extends JavaPlugin {
             expansion = new BetterMobExpansion(this, manager, skillRegistry, itemRegistry);
             expansion.register();
         }
+    }
+
+    public int reloadAll() {
+        reloadConfig();
+        messages.reload();
+        debug.reload();
+        stats.reload(getConfig());
+        skillRegistry.load();
+        itemRegistry.load();
+        dropRegistry.load();
+        manager.registry().load();
+        return manager.reloadLiving();
     }
 
     @Override
