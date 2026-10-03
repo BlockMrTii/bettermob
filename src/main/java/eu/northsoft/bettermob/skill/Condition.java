@@ -3,8 +3,8 @@ package eu.northsoft.bettermob.skill;
 import java.util.Arrays;
 import java.util.Locale;
 
-record Condition(String name, String params, Boolean expected, String action, String actionValue) {
-    static Condition parse(String raw) {
+public record Condition(String name, String params, Boolean expected, String action, String actionValue) {
+    public static Condition parse(String raw) {
         String text = raw.trim();
         int i = 0;
         while (i < text.length() && (Character.isLetterOrDigit(text.charAt(i)) || text.charAt(i) == '_' || text.charAt(i) == ':')) i++;

@@ -1,0 +1,89 @@
+package eu.northsoft.bettermob.skill;
+
+import org.bukkit.entity.LivingEntity;
+
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+public final class SkillState {
+    private final Map<UUID, Long> gcdUntilMillis = new ConcurrentHashMap<>();
+    private final Map<String, Long> cooldowns = new ConcurrentHashMap<>();
+    private final Map<UUID, Map<String, Aura>> auras = new ConcurrentHashMap<>();
+    private final ThreadLocal<Boolean> applyingDamage = ThreadLocal.withInitial(() -> false);
+
+    public void setGcd(UUID casterId, int ticks) {
+        gcdUntilMillis.put(casterId, System.currentTimeMillis() + ticks * 50L);
+    }
+
+    public boolean hasActiveGcd(UUID casterId) {
+        Long until = gcdUntilMillis.get(casterId);
+        return until != null && until > System.currentTimeMillis();
+    }
+
+    boolean acquireSkillCooldown(LivingEntity caster, SkillDefinition skill) {
+        return acquire(skillCooldownKey(caster, skill.id), (long) (skill.cooldown * 1000));
+    }
+
+    boolean acquireStepCooldown(LivingEntity caster, Object step, float seconds) {
+        return acquire(caster.getUniqueId() + "#" + System.identityHashCode(step), (long) (seconds * 1000));
+    }
+
+    public boolean skillOnCooldown(LivingEntity caster, String skillId) {
+        Long until = cooldowns.get(skillCooldownKey(caster, skillId));
+        return until != null && until > System.currentTimeMillis();
+    }
+
+    private boolean acquire(String key, long millis) {
+        long now = System.currentTimeMillis();
+        Long until = cooldowns.get(key);
+        if (until != null && until > now) return false;
+        if (cooldowns.size() > 2048) cooldowns.values().removeIf(time -> time <= now);
+        cooldowns.put(key, now + millis);
+        return true;
+    }
+
+    private static String skillCooldownKey(LivingEntity caster, String skillId) {
+        return caster.getUniqueId() + "@" + skillId.toLowerCase(Locale.ROOT);
+    }
+
+    public Map<String, Aura> aurasOf(UUID entityId) {
+        return auras.computeIfAbsent(entityId, id -> new ConcurrentHashMap<>());
+    }
+
+    public Map<String, Aura> activeAuras(UUID entityId) {
+        return auras.get(entityId);
+    }
+
+    public boolean hasAura(LivingEntity entity, String name) {
+        Map<String, Aura> active = auras.get(entity.getUniqueId());
+        if (active == null) return false;
+        Aura aura = active.get(name.toLowerCase(Locale.ROOT));
+        if (aura == null) return false;
+        if (aura.until <= System.currentTimeMillis()) {
+            active.remove(name.toLowerCase(Locale.ROOT), aura);
+            return false;
+        }
+        return true;
+    }
+
+    public void applyDamage(LivingEntity victim, double amount, LivingEntity source) {
+        applyingDamage.set(true);
+        try {
+            victim.damage(amount, source);
+        } finally {
+            applyingDamage.set(false);
+        }
+    }
+
+    public boolean isApplyingDamage() {
+        return applyingDamage.get();
+    }
+
+    public void forget(UUID entityId) {
+        Map<String, Aura> removed = auras.remove(entityId);
+        if (removed != null) removed.values().forEach(Aura::stop);
+        gcdUntilMillis.remove(entityId);
+    }
+}
