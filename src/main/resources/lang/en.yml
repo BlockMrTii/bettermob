@@ -15,6 +15,7 @@ command:
     give: "&7/bettermob give <item> [player] [amount] &8- &7Give an item"
     debug: "&7/bettermob debug [off|info|verbose|filter|chat] &8- &7Control debug output"
     killall: "&7/bettermob killall [mob|*] [world] &8- &7Remove living BetterMob mobs"
+    stats: "&7/bettermob stats [on|off|reset] &8- &7Show mob, timer and skill statistics"
   reloaded: "&aBetterMob reloaded."
   reloadedLiving: "&7{count} living mobs updated to their new definition."
   mobList: "&7Mobs: &f{mobs}"
@@ -46,6 +47,19 @@ command:
   killall:
     worldMissing: "&cWorld '{world}' does not exist."
     done: "&a{count} mobs removed."
+  stats:
+    usage: "&cUsage: /bettermob stats [on|off|reset]"
+    enabled: "&aSkill profiling enabled."
+    disabled: "&7Skill profiling disabled."
+    reset: "&aStatistics reset."
+    header: "&7BetterMob statistics:"
+    mobs: "&7Living mobs: &f{total}"
+    mobEntry: "&7- &f{mob}&7: &f{count}"
+    overview: "&7Timers: &f{timers} &8| &7Pending delayed steps: &f{pending} &8| &7Skills: &f{skills} &8| &7Packs: &f{packs}"
+    profilingOff: "&7Skill profiling is off, enable it with /bettermob stats on."
+    timingNone: "&7No skill has run since profiling was enabled."
+    timingHeader: "&7Skill timing (top {limit} by total time):"
+    timingEntry: "&7- &f{skill}&7: &f{calls}&7 calls, avg &f{avg}&7 ms, max &f{max}&7 ms, total &f{total}&7 ms"
 
 pack:
   enabled: "&a(enabled)"
@@ -126,3 +140,6 @@ modelEngine:
   apiClassMissing: "ModelEngine API class '{class}' not found - does the installed ModelEngine version match?"
   addFailed: "ModelEngine model '{model}' could not be added (does the model ID exist?)."
   attachFailed: "ModelEngine '{model}' could not be attached: {error}"
+
+stats:
+  slowSkill: "Skill '{skill}' took {millis} ms (threshold {threshold} ms)."
