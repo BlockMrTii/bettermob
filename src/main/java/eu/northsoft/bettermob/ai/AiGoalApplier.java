@@ -73,7 +73,7 @@ public final class AiGoalApplier {
             Goal<Mob> match = findByName(snapshot, token.name());
             if (match == null) match = custom(token, mob, plugin, managed);
             if (match == null) {
-                plugin.getLogger().warning("AI-Goal '" + token.name() + "' ist fuer Mob-Typ '" + mob.getType() + "' nicht verfuegbar.");
+                plugin.messages().warn("ai.goalUnavailable", "goal", token.name(), "type", mob.getType());
                 if (plugin.debug().info()) plugin.debug().info("available goals of " + mob.getType() + ": " + snapshot.stream().map(AiGoalApplier::keyOf).toList());
                 continue;
             }

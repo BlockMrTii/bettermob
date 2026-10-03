@@ -95,8 +95,6 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
 
     @Override
     public void reload() {
-        plugin.reloadConfig();
-        skillRegistry.load();
-        manager.registry().load();
+        plugin.reloadAll();
     }
 }

@@ -59,6 +59,7 @@ public final class MobListener implements Listener {
 
     @EventHandler
     public void onEntitiesLoad(EntitiesLoadEvent event) {
+        manager.removeLeftoverHelpers(event.getEntities());
         for (Entity entity : event.getEntities()) {
             if (entity instanceof LivingEntity living) manager.handleLoad(living);
         }

@@ -1,0 +1,145 @@
+lang:
+  missing: "Sprachdatei lang/{language}.yml nicht gefunden - es wird Englisch verwendet."
+
+plugin:
+  betterModelMissing: "BetterModel ist nicht installiert oder aktiv - Mobs spawnen ohne Modell."
+  commandMissing: "Der Befehl /bettermob fehlt in der plugin.yml."
+
+command:
+  help:
+    spawn: "&7/bettermob spawn <id> [amount] &8- &7Mob spawnen"
+    list: "&7/bettermob list &8- &7Verfügbare Mobs anzeigen"
+    packs: "&7/bettermob packs &8- &7Geladene Packs anzeigen"
+    reload: "&7/bettermob reload &8- &7Mobs, Skills und Packs neu laden"
+    skill: "&7/bettermob skill <id> [Spieler] &8- &7Skill manuell auslösen"
+    give: "&7/bettermob give <item> [Spieler] [amount] &8- &7Item geben"
+    debug: "&7/bettermob debug [off|info|verbose|filter|chat] &8- &7Debug-Ausgabe steuern"
+    killall: "&7/bettermob killall [mob|*] [Welt] &8- &7Lebende BetterMob-Mobs entfernen"
+    stats: "&7/bettermob stats [on|off|reset] &8- &7Mob-, Timer- und Skill-Statistiken anzeigen"
+  reloaded: "&aBetterMob neu geladen."
+  reloadedLiving: "&7{count} lebende Mobs auf die neue Definition umgestellt."
+  mobList: "&7Mobs: &f{mobs}"
+  packsNone: "&7Keine Packs in packs/ gefunden."
+  packEntry: "&7- &f{pack}"
+  unknown: "&cUnbekannter Befehl."
+  noPermission: "&cKeine Berechtigung."
+  playersOnly: "&cNur von Spielern nutzbar."
+  playerRequired: "&cOhne Spielerangabe nur von Spielern nutzbar."
+  playerOffline: "&cSpieler '{player}' ist nicht online."
+  debug:
+    status: "&7Debug: &f{level} &7- Filter: &f{filters}"
+    filtersAll: "alle"
+    chatOn: "&aDebug-Ausgabe im Chat an."
+    chatOff: "&7Debug-Ausgabe im Chat aus."
+    usage: "&cNutzung: /bettermob debug [off|info|verbose|filter <id>|filter clear|chat]"
+  spawn:
+    usage: "&cNutzung: /bettermob spawn <id> [amount]"
+    notRegistered: "&cMob '{mob}' ist nicht registriert."
+    done: "&a{amount}x '{mob}' gespawnt."
+  skill:
+    usage: "&cNutzung: /bettermob skill <id> [Spieler]"
+    notRegistered: "&cSkill '{skill}' ist nicht registriert."
+    done: "&aSkill '{skill}' auf {player} ausgeführt."
+  give:
+    usage: "&cNutzung: /bettermob give <item> [Spieler] [amount]"
+    notRegistered: "&cItem '{item}' ist nicht registriert."
+    done: "&a{amount}x '{item}' an {player} gegeben."
+  killall:
+    worldMissing: "&cWelt '{world}' existiert nicht."
+    done: "&a{count} Mobs entfernt."
+  stats:
+    usage: "&cNutzung: /bettermob stats [on|off|reset]"
+    enabled: "&aSkill-Messung eingeschaltet."
+    disabled: "&7Skill-Messung ausgeschaltet."
+    reset: "&aStatistik zurückgesetzt."
+    header: "&7BetterMob-Statistik:"
+    mobs: "&7Lebende Mobs: &f{total}"
+    mobEntry: "&7- &f{mob}&7: &f{count}"
+    overview: "&7Timer: &f{timers} &8| &7Ausstehende verzögerte Schritte: &f{pending} &8| &7Skills: &f{skills} &8| &7Packs: &f{packs}"
+    profilingOff: "&7Skill-Messung ist aus, einschalten mit /bettermob stats on."
+    timingNone: "&7Seit dem Einschalten der Messung wurde kein Skill ausgeführt."
+    timingHeader: "&7Skill-Zeiten (Top {limit} nach Gesamtzeit):"
+    timingEntry: "&7- &f{skill}&7: &f{calls}&7 Aufrufe, Ø &f{avg}&7 ms, max &f{max}&7 ms, gesamt &f{total}&7 ms"
+
+pack:
+  enabled: "&a(aktiv)"
+  disabled: "&c(deaktiviert)"
+
+ai:
+  goalUnavailable: "AI-Goal '{goal}' ist für Mob-Typ '{type}' nicht verfügbar."
+
+mob:
+  loaded: "{count} Mobs geladen."
+  duplicate: "Mob '{mob}' aus {folder} überschreibt eine bereits geladene Definition - ignoriert."
+  unknownType: "Mob '{mob}': unbekannter Type '{type}'."
+  dropLineInvalid: "Mob '{mob}': Drop-Zeile '{line}' konnte nicht geparst werden."
+  skillLineInvalid: "Mob '{mob}': Skill-Zeile '{line}' konnte nicht geparst werden."
+  damageModifierInvalid: "Mob '{mob}': ungültiger DamageModifier-Eintrag '{entry}'."
+  damageCauseUnknown: "Mob '{mob}': unbekannte DamageCause '{cause}'."
+  multiplierInvalid: "Mob '{mob}': ungültiger Multiplikator '{value}'."
+  reloadRemoved: "Mob '{mob}' hat keine Definition mehr - lebende behalten die alte Definition."
+  bossBarColorInvalid: "Mob '{mob}': unbekannte BossBar-Color '{value}', es wird RED verwendet."
+  bossBarStyleInvalid: "Mob '{mob}': unbekannter BossBar-Style '{value}', es wird SOLID verwendet."
+  itemHeadMissing: "Mob '{mob}': ItemHead-Item '{item}' ist nicht registriert."
+  migrated: "mobs.yml automatisch nach mobs/ migriert (Sicherung: mobs.yml.migrated)."
+  migrationFailed: "Migration von '{mob}' fehlgeschlagen: {error}"
+
+skill:
+  loaded: "{count} Skills geladen."
+  duplicate: "Skill '{skill}' aus {folder} überschreibt eine bereits geladene Definition - ignoriert."
+  lineInvalid: "Skill '{skill}': Zeile '{line}' konnte nicht geparst werden."
+  notRegistered: "Skill '{skill}' ist nicht registriert."
+  inlineLineInvalid: "Inline-Skill: Zeile '{line}' konnte nicht geparst werden."
+  mechanicUnsupported: "Skill-Mechanic '{mechanic}' wird nicht unterstützt."
+  customMechanicFailed: "Eigene Mechanic '{mechanic}' von {plugin} ist fehlgeschlagen: {error}"
+  conditionUnsupported: "Skill-Condition '{condition}' wird nicht unterstützt - wird ignoriert."
+  targeterConditionUnsupported: "Targeter-Condition '{condition}' wird nicht unterstützt - wird ignoriert."
+  targeterUnknown: "Unbekannter Targeter '@{targeter}', die Zeile zielt stattdessen auf das Standardziel."
+  shootUnknownProjectile: "shoot: unbekannter Projektiltyp '{type}', es wird ein Pfeil verwendet."
+  potionUnknown: "Unbekannter Potion-Typ '{type}'."
+  particleNeedsData: "Partikel '{particle}' braucht Zusatzdaten (z.B. Farbe) und wird nicht unterstützt."
+  particleUnknown: "Unbekannter Partikel '{particle}'."
+  setblockUnknownMaterial: "setblock: unbekanntes Material '{material}'."
+  equipUnknown: "equip: '{value}' ist weder ein Item noch ein Material."
+  summonNotRegistered: "summon: Mob '{mob}' ist nicht registriert."
+  mountNoTracker: "mountmodel: kein BetterModel-Tracker am Caster vorhanden."
+
+item:
+  loaded: "{count} Items geladen."
+  duplicate: "Item '{item}' aus {folder} überschreibt eine bereits geladene Definition - ignoriert."
+  unknownMaterial: "Item '{item}': unbekanntes Material '{material}'."
+  skillLineInvalid: "Item '{item}': Skill-Zeile '{line}' konnte nicht geparst werden."
+
+drop:
+  loaded: "{count} Drop-Tables geladen."
+  duplicate: "Drop-Table '{table}' aus {folder} überschreibt eine bereits geladene Definition - ignoriert."
+  lineInvalid: "Drop-Table '{table}': Zeile '{line}' konnte nicht geparst werden."
+  tooDeep: "Drop-Table '{table}' ist zu tief verschachtelt (Schleife?)."
+  unresolvable: "Drop '{drop}' ist weder EXP, Drop-Table, Item noch Material - wird übersprungen."
+
+betterModel:
+  inactive: "BetterModel ist beim Spawn von '{model}' nicht aktiv - kein Modell angehängt."
+  apiClassMissing: "BetterModel-API-Klasse '{class}' nicht gefunden - passt die installierte BetterModel-Version?"
+  modelMissing: "BetterModel-Modell '{model}' existiert nicht."
+  attachFailed: "BetterModel '{model}' konnte nicht angehängt werden: {error}"
+  animationFailed: "BetterModel-Animation '{animation}' fehlgeschlagen: {error}"
+  boneMissing: "@ModelPart: Bone '{bone}' existiert nicht am Modell."
+  modelPartFailed: "@ModelPart '{bone}' fehlgeschlagen: {error}"
+  bodyRotationFailed: "BodyRotation fehlgeschlagen: {error}"
+  bodyRotationInvalid: "BodyRotation: '{value}' ist kein gültiger Wert für {name}."
+  mount:
+    seatMissing: "mountmodel: Bone/Sitz '{seat}' existiert nicht an diesem Modell."
+    noHitbox: "mountmodel: Bone '{seat}' hat keine Hitbox zum Draufsitzen."
+    noMountMethod: "mountmodel: HitBox-Klasse '{class}' hat keine mount(...)-Methode."
+    seatFailed: "mountmodel Sitz '{seat}' fehlgeschlagen: {error}"
+    controlConstantMissing: "mountmodel: Steuerungs-Konstante 'CONTROL' für {type} nicht gefunden - Sitz bleibt ohne Lenkung."
+    controlModeFailed: "mountmodel: Steuerungsmodus konnte nicht gesetzt werden: {error}"
+
+modelEngine:
+  inactive: "ModelEngine ist beim Spawn von '{model}' nicht aktiv - kein Modell angehängt."
+  apiClassMissing: "ModelEngine-API-Klasse '{class}' nicht gefunden - passt die installierte ModelEngine-Version?"
+  addFailed: "ModelEngine-Modell '{model}' konnte nicht hinzugefügt werden (existiert die Model-ID?)."
+  attachFailed: "ModelEngine '{model}' konnte nicht angehängt werden: {error}"
+
+stats:
+  slowSkill: "Skill '{skill}' brauchte {millis} ms (Schwelle {threshold} ms)."
