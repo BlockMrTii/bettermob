@@ -1,0 +1,26 @@
+{
+  "projectName": "bettermob",
+  "projectOwner": "HyperGaming99",
+  "repoType": "github",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "contributorsPerLine": 7,
+  "contributorsSortAlphabetically": false,
+  "linkToUsage": true,
+  "skipCi": true,
+  "contributors": [
+    {
+      "login": "HyperGaming99",
+      "name": "TheNull",
+      "avatar_url": "https://avatars.githubusercontent.com/u/130169800?v=4",
+      "profile": "https://0x79.one",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
+  "commitType": "docs",
+  "commitConvention": "angular"
+}
