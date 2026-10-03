@@ -15,6 +15,7 @@ import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.model.BetterModelHook;
 import eu.northsoft.bettermob.model.ModelEngineHook;
+import eu.northsoft.bettermob.skill.target.TargeterRegistry;
 import eu.northsoft.bettermob.util.Tasks;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
@@ -68,6 +69,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private final SkillState state = new SkillState();
 
     private final DebugManager debug;
+    private final TargeterRegistry targeters;
     private final Map<String, List<SkillStep>> inlineSkills = new ConcurrentHashMap<>();
 
     private final Map<String, CustomMechanicEntry> customMechanics = new ConcurrentHashMap<>();
@@ -87,7 +89,24 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         this.modelEngine = modelEngine;
         this.items = items;
         this.debug = plugin.debug();
+        this.targeters = new TargeterRegistry(this);
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+    }
+
+    public BetterMobPlugin plugin() {
+        return plugin;
+    }
+
+    public MobManager mobManager() {
+        return mobManager;
+    }
+
+    public BetterModelHook betterModel() {
+        return betterModel;
+    }
+
+    public TargeterRegistry targeters() {
+        return targeters;
     }
 
     @org.bukkit.event.EventHandler
@@ -272,7 +291,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             return;
         }
         if (!skill.targetConditions.isEmpty()) {
-            Target obstructing = resolve("obstructingblock", Map.of(), context);
+            Target obstructing = targeters.resolveAll("obstructingblock", Map.of(), context).get(0);
             Check targetConditions = check(skill.targetConditions, context, obstructing);
             if (targetConditions != Check.PASS) {
                 if (debug.info()) debug.info("skill '" + skill.id + "' stopped: target conditions " + targetConditions.name().toLowerCase(Locale.ROOT), skill.id, caster);
@@ -355,7 +374,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
         if (mechanic.name().equals("cancelskill")) return true;
 
-        List<Target> targets = resolveAll(mechanic.targeter(), mechanic.targeterParams(), context);
+        List<Target> targets = targeters.resolveAll(mechanic.targeter(), mechanic.targeterParams(), context);
 
         if (targets.isEmpty()) {
             if (debug.verbose()) debug.verbose("mechanic '" + mechanic.name() + "' skipped: no target for @" + mechanic.targeter(), subject(context.caster()));
@@ -453,7 +472,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             case "hastag" -> context.caster().getScoreboardTags().contains(TAG_PREFIX + conditionParam(paramsRaw, "t", "tag", "n"));
             case "chance" -> ThreadLocalRandom.current().nextDouble() < parseFloat(conditionParam(paramsRaw, "chance", "c"), 1f);
             case "skilloncooldown" -> state.skillOnCooldown(context.caster(), conditionParam(paramsRaw, "skill", "s", "name"));
-            case "faction" -> hasFaction(context.caster(), conditionParam(paramsRaw, "faction", "f", "name"));
+            case "faction" -> Factions.has(mobManager, context.caster(), conditionParam(paramsRaw, "faction", "f", "name"));
             case "distance" -> withinDistance(context, conditionParam(paramsRaw, "d", "distance"));
             case "onblock" -> containsBlockType(paramsRaw, context.caster().getLocation().subtract(0, 0.1, 0).getBlock());
             case "blocktype" -> targetOverride != null && targetOverride.block() != null
@@ -463,14 +482,6 @@ public final class SkillEngine implements org.bukkit.event.Listener {
                 yield true;
             }
         };
-    }
-
-    private boolean hasFaction(Entity entity, String names) {
-        if (names == null) return false;
-        for (String name : names.split(",")) {
-            if (mobManager.inFaction(entity, name.trim().toLowerCase(Locale.ROOT))) return true;
-        }
-        return false;
     }
 
     private boolean withinDistance(SkillContext context, String spec) {
@@ -579,7 +590,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         long interval = Math.max(1, parseInt(p.get("repeatinterval"), 1));
         for (int i = 1; i <= repeat; i++) {
             Tasks.runLater(plugin, context.caster(), i * interval, () -> {
-                for (Target again : resolveAll(mechanic.targeter(), mechanic.targeterParams(), context)) {
+                for (Target again : targeters.resolveAll(mechanic.targeter(), mechanic.targeterParams(), context)) {
                     spawnParticles(again.location().clone().add(0, yOffset, 0), particle, p);
                 }
             });
@@ -979,145 +990,5 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             return;
         }
         betterModel.mount(tracker, p.getOrDefault("seat", "mount"), rider);
-    }
-
-    private Target resolve(String targeter, Map<String, String> targeterParams, SkillContext context) {
-        return switch (targeter.toLowerCase(Locale.ROOT)) {
-            case "trigger", "target" -> context.trigger() != null ? Target.ofEntity(context.trigger()) : Target.ofEntity(context.caster());
-            case "obstructingblock" -> Target.ofBlock(obstructingBlock(context.caster()));
-            case "forward" -> Target.ofLocation(forwardLocation(context.caster(), targeterParams));
-            case "selflocation" -> Target.ofLocation(context.caster().getLocation().add(
-                    parseFloat(targeterParams.get("x"), 0f), parseFloat(targeterParams.get("y"), 0f), parseFloat(targeterParams.get("z"), 0f)));
-
-            case "modelpart" -> {
-                Location bone = betterModel.bonePosition(mobManager.trackerFor(context.caster().getUniqueId()),
-                        firstParam(targeterParams, "p", "part", "bone"), context.caster().getLocation());
-                yield Target.ofLocation(bone != null ? bone
-                        : context.caster().getLocation().add(0, context.caster().getHeight() * 0.6, 0));
-            }
-            case "self", "caster", "mob" -> Target.ofEntity(context.caster());
-            case "origin" -> Target.ofLocation(context.origin() != null ? context.origin() : context.caster().getLocation());
-            case "targetlocation", "tl" -> Target.ofLocation((context.trigger() != null ? context.trigger() : context.caster()).getLocation());
-            case "location" -> fixedLocation(context.caster(), targeterParams);
-            case "owner", "parent" -> owner(context.caster());
-
-            default -> {
-                if (!targeter.isEmpty()) warnUnknownTargeter(targeter);
-                yield context.targetIsTrigger() && context.trigger() != null
-                        ? Target.ofEntity(context.trigger()) : Target.ofEntity(context.caster());
-            }
-        };
-    }
-
-    private final Set<String> warnedTargeters = ConcurrentHashMap.newKeySet();
-
-    private void warnUnknownTargeter(String name) {
-        if (warnedTargeters.add(name)) plugin.messages().warn("skill.targeterUnknown", "targeter", name);
-    }
-
-    private Target fixedLocation(LivingEntity caster, Map<String, String> p) {
-        World world = caster.getWorld();
-        String name = firstParam(p, "w", "world");
-        if (name != null && Bukkit.getWorld(name.trim()) != null) world = Bukkit.getWorld(name.trim());
-        return Target.ofLocation(new Location(world, parseFloat(p.get("x"), 0f), parseFloat(p.get("y"), 0f), parseFloat(p.get("z"), 0f)));
-    }
-
-    private Target owner(LivingEntity caster) {
-        for (String tag : caster.getScoreboardTags()) {
-            if (!tag.startsWith(OWNER_PREFIX)) continue;
-            try {
-                Entity owner = Bukkit.getEntity(UUID.fromString(tag.substring(OWNER_PREFIX.length())));
-                if (owner != null) return Target.ofEntity(owner);
-            } catch (IllegalArgumentException exception) {
-                return null;
-            }
-        }
-        return null;
-    }
-
-    private List<Target> resolveAll(String targeter, Map<String, String> params, SkillContext context) {
-        String key = targeter.toLowerCase(Locale.ROOT);
-        switch (key) {
-            case "entitiesnearorigin", "eno" -> {
-                Location center = context.origin() != null ? context.origin() : context.caster().getLocation();
-                return entitiesInRadius(center, params, context, false, Integer.MAX_VALUE);
-            }
-            case "entitiesinradius", "eir", "livingentitiesinradius", "leir" -> {
-                return entitiesInRadius(context.caster().getLocation(), params, context, false, Integer.MAX_VALUE);
-            }
-            case "playersinradius" -> {
-                return entitiesInRadius(context.caster().getLocation(), params, context, true, Integer.MAX_VALUE);
-            }
-            case "pir" -> {
-                return entitiesInRadius(context.caster().getLocation(), params, context, true, 1);
-            }
-            default -> {
-                Target single = resolve(targeter, params, context);
-                return single == null ? List.of() : List.of(single);
-            }
-        }
-    }
-
-    private List<Target> entitiesInRadius(Location center, Map<String, String> params, SkillContext context, boolean playersOnly, int defaultLimit) {
-        double radius = parseFloat(firstParam(params, "r", "radius"), playersOnly ? 10f : 5f);
-        List<String> conditions = params.containsKey("conditions") ? splitInline(params.get("conditions")) : List.of();
-        List<LivingEntity> hits = new ArrayList<>();
-        for (Entity entity : center.getWorld().getNearbyEntities(center, radius, radius, radius)) {
-            if (!(entity instanceof LivingEntity living) || entity instanceof ArmorStand || living.isDead()) continue;
-            if (playersOnly && !(entity instanceof Player)) continue;
-            if (living.getLocation().distanceSquared(center) > radius * radius) continue;
-            if (candidateMatches(living, conditions, context)) hits.add(living);
-        }
-        String sort = params.getOrDefault("sort", "nearest").toLowerCase(Locale.ROOT);
-        switch (sort) {
-            case "random" -> java.util.Collections.shuffle(hits);
-            case "farthest" -> hits.sort(java.util.Comparator.comparingDouble((LivingEntity entity) -> entity.getLocation().distanceSquared(center)).reversed());
-            default -> hits.sort(java.util.Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(center)));
-        }
-        int limit = parseInt(params.get("limit"), defaultLimit);
-        List<Target> targets = new ArrayList<>();
-        for (LivingEntity hit : hits) {
-            if (targets.size() >= limit) break;
-            targets.add(Target.ofEntity(hit));
-        }
-        return targets;
-    }
-
-    private boolean candidateMatches(LivingEntity candidate, List<String> conditions, SkillContext context) {
-        for (String raw : conditions) {
-            Condition condition = Condition.parse(raw);
-            if (condition == null) continue;
-            boolean actual = switch (condition.name()) {
-                case "isplayer" -> candidate instanceof Player;
-                case "iscaster" -> candidate.equals(context.caster());
-                case "ismob" -> !(candidate instanceof Player);
-                case "hastag" -> candidate.getScoreboardTags().contains(TAG_PREFIX + conditionParam(condition.params(), "t", "tag", "n"));
-                case "faction" -> hasFaction(candidate, conditionParam(condition.params(), "faction", "f", "name"));
-                default -> {
-                    plugin.messages().warn("skill.targeterConditionUnsupported", "condition", condition.name());
-                    yield true;
-                }
-            };
-            if (actual != (condition.expected() == null || condition.expected())) return false;
-        }
-        return true;
-    }
-
-    private Location forwardLocation(LivingEntity caster, Map<String, String> p) {
-        Location origin = Boolean.parseBoolean(p.getOrDefault("uel", "false")) ? caster.getEyeLocation() : caster.getLocation();
-        double distance = parseFloat(p.get("f"), 1f);
-        double yOffset = parseFloat(p.get("yoffset"), 0f);
-        double rotate = parseFloat(p.get("rotate"), 0f);
-        Vector direction = origin.getDirection().normalize();
-
-        if (rotate != 0) direction.rotateAroundY(Math.toRadians(-rotate));
-        Location target = origin.clone().add(direction.multiply(distance));
-        target.add(0, yOffset, 0);
-        return target;
-    }
-
-    private Block obstructingBlock(LivingEntity caster) {
-        var result = caster.getWorld().rayTraceBlocks(caster.getEyeLocation(), caster.getEyeLocation().getDirection(), 2.5);
-        return result != null ? result.getHitBlock() : caster.getEyeLocation().add(caster.getEyeLocation().getDirection()).getBlock();
     }
 }
