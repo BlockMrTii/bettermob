@@ -15,6 +15,7 @@ command:
     give: "&7/bettermob give <item> [Spieler] [amount] &8- &7Item geben"
     debug: "&7/bettermob debug [off|info|verbose|filter|chat] &8- &7Debug-Ausgabe steuern"
     killall: "&7/bettermob killall [mob|*] [Welt] &8- &7Lebende BetterMob-Mobs entfernen"
+    stats: "&7/bettermob stats [on|off|reset] &8- &7Mob-, Timer- und Skill-Statistiken anzeigen"
   reloaded: "&aBetterMob neu geladen."
   reloadedLiving: "&7{count} lebende Mobs auf die neue Definition umgestellt."
   mobList: "&7Mobs: &f{mobs}"
@@ -46,6 +47,19 @@ command:
   killall:
     worldMissing: "&cWelt '{world}' existiert nicht."
     done: "&a{count} Mobs entfernt."
+  stats:
+    usage: "&cNutzung: /bettermob stats [on|off|reset]"
+    enabled: "&aSkill-Messung eingeschaltet."
+    disabled: "&7Skill-Messung ausgeschaltet."
+    reset: "&aStatistik zurückgesetzt."
+    header: "&7BetterMob-Statistik:"
+    mobs: "&7Lebende Mobs: &f{total}"
+    mobEntry: "&7- &f{mob}&7: &f{count}"
+    overview: "&7Timer: &f{timers} &8| &7Ausstehende verzögerte Schritte: &f{pending} &8| &7Skills: &f{skills} &8| &7Packs: &f{packs}"
+    profilingOff: "&7Skill-Messung ist aus, einschalten mit /bettermob stats on."
+    timingNone: "&7Seit dem Einschalten der Messung wurde kein Skill ausgeführt."
+    timingHeader: "&7Skill-Zeiten (Top {limit} nach Gesamtzeit):"
+    timingEntry: "&7- &f{skill}&7: &f{calls}&7 Aufrufe, Ø &f{avg}&7 ms, max &f{max}&7 ms, gesamt &f{total}&7 ms"
 
 pack:
   enabled: "&a(aktiv)"
@@ -126,3 +140,6 @@ modelEngine:
   apiClassMissing: "ModelEngine-API-Klasse '{class}' nicht gefunden - passt die installierte ModelEngine-Version?"
   addFailed: "ModelEngine-Modell '{model}' konnte nicht hinzugefügt werden (existiert die Model-ID?)."
   attachFailed: "ModelEngine '{model}' konnte nicht angehängt werden: {error}"
+
+stats:
+  slowSkill: "Skill '{skill}' brauchte {millis} ms (Schwelle {threshold} ms)."

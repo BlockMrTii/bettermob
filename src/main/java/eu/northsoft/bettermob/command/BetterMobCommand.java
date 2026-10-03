@@ -12,6 +12,7 @@ import eu.northsoft.bettermob.pack.PackScanner;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillRegistry;
+import eu.northsoft.bettermob.stats.SkillStats;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -27,6 +28,8 @@ import java.util.Locale;
 import java.util.Map;
 
 public final class BetterMobCommand implements CommandExecutor, TabCompleter {
+    private static final int TIMING_ROWS = 10;
+
     static final Map<String, String> PERMISSIONS = permissions();
 
     private static Map<String, String> permissions() {
@@ -39,6 +42,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         nodes.put("give", "bettermob.give");
         nodes.put("killall", "bettermob.killall");
         nodes.put("debug", "bettermob.debug");
+        nodes.put("stats", "bettermob.debug");
         return nodes;
     }
 
@@ -74,6 +78,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             shown |= help(sender, "give", "command.help.give");
             shown |= help(sender, "killall", "command.help.killall");
             shown |= help(sender, "debug", "command.help.debug");
+            shown |= help(sender, "stats", "command.help.stats");
             if (!shown) messages.send(sender, "command.noPermission");
             return true;
         }
@@ -90,6 +95,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
                 plugin.reloadConfig();
                 messages.reload();
                 plugin.debug().reload();
+                plugin.stats().reload(plugin.getConfig());
                 skillRegistry.load();
                 itemRegistry.load();
                 dropRegistry.load();
@@ -109,9 +115,57 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             case "give" -> handleGive(sender, args);
             case "killall" -> handleKillAll(sender, args);
             case "debug" -> handleDebug(sender, args);
+            case "stats" -> handleStats(sender, args);
             default -> messages.send(sender, "command.unknown");
         }
         return true;
+    }
+
+    private void handleStats(CommandSender sender, String[] args) {
+        SkillStats stats = plugin.stats();
+        if (args.length >= 2) {
+            switch (args[1].toLowerCase(Locale.ROOT)) {
+                case "on" -> {
+                    stats.enabled(true);
+                    messages.send(sender, "command.stats.enabled");
+                }
+                case "off" -> {
+                    stats.enabled(false);
+                    messages.send(sender, "command.stats.disabled");
+                }
+                case "reset" -> {
+                    stats.reset();
+                    messages.send(sender, "command.stats.reset");
+                }
+                default -> messages.send(sender, "command.stats.usage");
+            }
+            return;
+        }
+        messages.send(sender, "command.stats.header");
+        Map<String, Integer> counts = manager.aliveCounts();
+        messages.send(sender, "command.stats.mobs", "total", counts.values().stream().mapToInt(Integer::intValue).sum());
+        counts.forEach((mob, count) -> messages.send(sender, "command.stats.mobEntry", "mob", mob, "count", count));
+        messages.send(sender, "command.stats.overview", "timers", manager.timerCount(),
+                "pending", stats.enabled() ? stats.pending() : "-",
+                "skills", skillRegistry.ids().size(), "packs", packScanner.listPacks().size());
+        if (!stats.enabled()) {
+            messages.send(sender, "command.stats.profilingOff");
+            return;
+        }
+        List<SkillStats.Row> rows = stats.top(TIMING_ROWS);
+        if (rows.isEmpty()) {
+            messages.send(sender, "command.stats.timingNone");
+            return;
+        }
+        messages.send(sender, "command.stats.timingHeader", "limit", TIMING_ROWS);
+        for (SkillStats.Row row : rows) {
+            messages.send(sender, "command.stats.timingEntry", "skill", row.skill(), "calls", row.calls(),
+                    "avg", millis(row.averageMillis()), "max", millis(row.maxMillis()), "total", millis(row.totalMillis()));
+        }
+    }
+
+    private static String millis(double value) {
+        return String.format(Locale.ROOT, "%.2f", value);
     }
 
     private boolean help(CommandSender sender, String subcommand, String key) {
@@ -272,6 +326,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         String node = PERMISSIONS.get(args[0].toLowerCase(Locale.ROOT));
         if (node == null || !sender.hasPermission(node)) return List.of();
         if (args.length == 2 && args[0].equalsIgnoreCase("debug")) return List.of("off", "info", "verbose", "filter", "chat");
+        if (args.length == 2 && args[0].equalsIgnoreCase("stats")) return List.of("on", "off", "reset");
         if (args.length == 2 && args[0].equalsIgnoreCase("spawn")) return new ArrayList<>(manager.registry().all().keySet());
         if (args.length == 2 && args[0].equalsIgnoreCase("skill")) return new ArrayList<>(skillRegistry.ids());
         if (args.length == 2 && args[0].equalsIgnoreCase("give")) return new ArrayList<>(itemRegistry.ids());

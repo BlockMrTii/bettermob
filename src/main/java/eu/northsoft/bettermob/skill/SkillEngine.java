@@ -16,6 +16,7 @@ import eu.northsoft.bettermob.skill.mechanic.Mechanic;
 import eu.northsoft.bettermob.skill.mechanic.MechanicCall;
 import eu.northsoft.bettermob.skill.mechanic.MechanicRegistry;
 import eu.northsoft.bettermob.skill.target.TargeterRegistry;
+import eu.northsoft.bettermob.stats.SkillStats;
 import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
@@ -143,7 +144,23 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             if (debug.info()) debug.info("skill '" + skill.id + "' stopped: on cooldown", skill.id, caster);
             return;
         }
-        executeSteps(skill.steps, 0, context);
+        SkillStats stats = plugin.stats();
+        if (!stats.enabled()) {
+            executeSteps(skill.steps, 0, context);
+            return;
+        }
+        long start = System.nanoTime();
+        try {
+            executeSteps(skill.steps, 0, context);
+        } finally {
+            long elapsed = System.nanoTime() - start;
+            stats.record(skill.id, elapsed);
+            double millis = elapsed / 1e6;
+            if (stats.warnMillis() > 0 && millis > stats.warnMillis()) {
+                plugin.messages().warn("stats.slowSkill", "skill", skill.id,
+                        "millis", String.format(Locale.ROOT, "%.1f", millis), "threshold", stats.warnMillis());
+            }
+        }
     }
 
     public String subject(LivingEntity entity) {
@@ -185,7 +202,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             SkillStep step = steps.get(i);
             if (step instanceof SkillStep.Delay delay) {
                 int next = i + 1;
-                Tasks.runLater(plugin, context.caster(), delay.ticks(), () -> executeSteps(steps, next, context));
+                Tasks.runLater(plugin, context.caster(), delay.ticks(), plugin.stats().trackPending(() -> executeSteps(steps, next, context)));
                 return;
             }
             if (step instanceof SkillStep.Mechanic mechanic && runMechanic(mechanic, context)) {
@@ -213,7 +230,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
             SkillStep.Mechanic withoutDelay = new SkillStep.Mechanic(mechanic.name(),
                     without(without(p, "delay"), "cd"), mechanic.targeter(), mechanic.targeterParams(), null, false);
-            Tasks.runLater(plugin, context.caster(), ticks, () -> runMechanic(withoutDelay, context));
+            Tasks.runLater(plugin, context.caster(), ticks, plugin.stats().trackPending(() -> runMechanic(withoutDelay, context)));
             return false;
         }
 
