@@ -63,34 +63,11 @@ public final class MobManager {
 
     public LivingEntity spawn(MobDefinition definition, Location location) {
         LivingEntity entity = (LivingEntity) location.getWorld().spawnEntity(location, definition.type);
-        entity.customName(LegacyComponentSerializer.legacyAmpersand().deserialize(PlaceholderHook.apply(null, definition.displayName)));
-        entity.setCustomNameVisible(definition.options.alwaysShowName());
+        applyDefinition(entity, definition, true);
 
-        var maxHealth = entity.getAttribute(Attribute.MAX_HEALTH);
-        if (maxHealth != null) {
-            maxHealth.setBaseValue(definition.health);
-            entity.setHealth(definition.health);
-        }
-        var damage = entity.getAttribute(Attribute.ATTACK_DAMAGE);
-        if (damage != null) damage.setBaseValue(definition.damage);
-        var speed = entity.getAttribute(Attribute.MOVEMENT_SPEED);
-        if (speed != null && definition.options.movementSpeed() >= 0) speed.setBaseValue(definition.options.movementSpeed());
-
-        entity.setCollidable(definition.options.collidable());
-        entity.setSilent(definition.options.silent());
-        entity.setInvulnerable(definition.options.invincible());
-        entity.getPersistentDataContainer().set(mobIdKey, PersistentDataType.STRING, definition.id);
-        applyAppearanceOptions(entity, definition);
-
-        if (definition.removeAi) entity.setAI(false);
         if (entity instanceof Mob mob) AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
         if (definition.threatTable) threatTables.put(entity.getUniqueId(), new ConcurrentHashMap<>());
         if (!definition.damageModifiers.isEmpty()) damageModifiers.put(entity.getUniqueId(), definition.damageModifiers);
-
-        if (definition.options.preventSunburn()) {
-            if (entity instanceof Zombie zombie) zombie.setShouldBurnInDay(false);
-            if (entity instanceof AbstractSkeleton skeleton) skeleton.setShouldBurnInDay(false);
-        }
 
         if (!hasModelSkill(definition, MobDefinition.SkillTrigger.Trigger.SPAWN)) {
             Object tracker = betterModel.attachIfPresent(entity, definition.modelId);
@@ -106,6 +83,34 @@ public final class MobManager {
         scheduleTimers(entity, definition);
         Bukkit.getPluginManager().callEvent(new BetterMobSpawnEvent(entity, definition.toInfo()));
         return entity;
+    }
+
+    private void applyDefinition(LivingEntity entity, MobDefinition definition, boolean spawning) {
+        entity.customName(LegacyComponentSerializer.legacyAmpersand().deserialize(PlaceholderHook.apply(null, definition.displayName)));
+        entity.setCustomNameVisible(definition.options.alwaysShowName());
+
+        var maxHealth = entity.getAttribute(Attribute.MAX_HEALTH);
+        if (maxHealth != null) {
+            maxHealth.setBaseValue(definition.health);
+            entity.setHealth(spawning ? definition.health : Math.min(entity.getHealth(), definition.health));
+        }
+        var damage = entity.getAttribute(Attribute.ATTACK_DAMAGE);
+        if (damage != null) damage.setBaseValue(definition.damage);
+        var speed = entity.getAttribute(Attribute.MOVEMENT_SPEED);
+        if (speed != null && definition.options.movementSpeed() >= 0) speed.setBaseValue(definition.options.movementSpeed());
+
+        entity.setCollidable(definition.options.collidable());
+        entity.setSilent(definition.options.silent());
+        entity.setInvulnerable(definition.options.invincible());
+        entity.getPersistentDataContainer().set(mobIdKey, PersistentDataType.STRING, definition.id);
+        applyAppearanceOptions(entity, definition);
+
+        if (definition.removeAi) entity.setAI(false);
+
+        if (definition.options.preventSunburn()) {
+            if (entity instanceof Zombie zombie) zombie.setShouldBurnInDay(false);
+            if (entity instanceof AbstractSkeleton skeleton) skeleton.setShouldBurnInDay(false);
+        }
     }
 
     private void applyAppearanceOptions(LivingEntity entity, MobDefinition definition) {
