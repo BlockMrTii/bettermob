@@ -54,6 +54,12 @@ jobs:
           name: bettermob-jar
           path: target/bettermob-*.jar
 
+      - name: Build the API example
+        run: |
+          mvn -B install -DskipTests
+          version=$(mvn -B -q help:evaluate -Dexpression=project.version -DforceStdout)
+          mvn -B -f examples/api-example/pom.xml -Plocal -Dbettermob.version="$version" package
+
       - name: Check for new version
         id: version
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

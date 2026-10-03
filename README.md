@@ -459,6 +459,23 @@ api.registerMechanic(this, "heal", ctx -> {
 });
 ```
 
+### Example plugin
+
+[`examples/api-example`](examples/api-example) is a small plugin built on this API: it registers a `heal{amount=4}` mechanic, listens to `BetterMobSpawnEvent` and `BetterMobDeathEvent` and has a `/apiexample <mob>` command that spawns a mob.
+
+```bash
+mvn -f examples/api-example/pom.xml package
+```
+
+This resolves `com.github.HyperGaming99:bettermob:v1.1.5` from JitPack, the same coordinates as above. To compile it against your own checkout instead:
+
+```bash
+mvn install -DskipTests
+mvn -f examples/api-example/pom.xml -Plocal -Dbettermob.version=<version in pom.xml> package
+```
+
+The workflow builds it that way on every push and pull request, so it keeps compiling with the API.
+
 ## Persistence
 
 Mob state (model tracker, threat table, timers) lives in memory and is tied to the
