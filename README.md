@@ -5,6 +5,17 @@ and rendering them through [BetterModel](https://modrinth.com/plugin/bettermodel
 [ModelEngine](https://www.spigotmc.org/resources/model-engine-4.108821/). Includes a
 small skill engine for AI behavior, triggers, and MythicMobs-compatible skill syntax.
 
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
 ## Requirements
 
 - Paper (or a fork) **1.21+** — [Folia](https://papermc.io/software/folia) is supported too
