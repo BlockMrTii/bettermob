@@ -3,6 +3,7 @@ package eu.northsoft.bettermob.mob;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.ai.AiGoalApplier;
 import eu.northsoft.bettermob.api.event.BetterMobSpawnEvent;
+import eu.northsoft.bettermob.integration.PlaceholderHook;
 import eu.northsoft.bettermob.item.ItemDefinition;
 import eu.northsoft.bettermob.item.ItemRegistry;
 import eu.northsoft.bettermob.model.BetterModelHook;
@@ -62,7 +63,7 @@ public final class MobManager {
 
     public LivingEntity spawn(MobDefinition definition, Location location) {
         LivingEntity entity = (LivingEntity) location.getWorld().spawnEntity(location, definition.type);
-        entity.customName(LegacyComponentSerializer.legacyAmpersand().deserialize(definition.displayName));
+        entity.customName(LegacyComponentSerializer.legacyAmpersand().deserialize(PlaceholderHook.apply(null, definition.displayName)));
         entity.setCustomNameVisible(definition.options.alwaysShowName());
 
         var maxHealth = entity.getAttribute(Attribute.MAX_HEALTH);
@@ -217,6 +218,18 @@ public final class MobManager {
             });
             timers.computeIfAbsent(entity.getUniqueId(), key -> new ArrayList<>()).add(cancel);
         }
+    }
+
+    public int aliveCount() {
+        return definitions.size();
+    }
+
+    public int aliveCount(String id) {
+        int count = 0;
+        for (MobDefinition definition : definitions.values()) {
+            if (definition.id.equalsIgnoreCase(id)) count++;
+        }
+        return count;
     }
 
     public String factionOf(Entity entity) {

@@ -5,7 +5,7 @@ api-version: '1.21'
 folia-supported: true
 authors: [northsoft, HyperGaming99]
 description: Registriert eigene Mobs in einer Datei und rendert sie ueber BetterModel oder ModelEngine.
-softdepend: [BetterModel, ModelEngine]
+softdepend: [BetterModel, ModelEngine, PlaceholderAPI]
 commands:
   bettermob:
     description: Verwaltet BetterMob
