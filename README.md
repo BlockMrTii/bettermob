@@ -206,6 +206,11 @@ Options:
 
 Modules:
   ThreatTable: true           # retarget to whoever dealt the most damage
+  BossBar:                    # health bar for players nearby
+    Title: '&c<mob.name> &7<mob.hp>/<mob.maxhp>'
+    Range: 64
+    Color: RED
+    Style: SOLID
 
 DamageModifiers:
   - FIRE 1.2                  # multiply fire damage taken by 1.2
@@ -214,6 +219,18 @@ Skills:
   - skill{s=my_skill_id} ~onInteract
   - sound{s=entity.skeleton.ambient;p=1.0;v=1} @self ~onTimer:200
 ```
+
+`Modules: BossBar:` shows a boss bar with the mob's health to every player within `Range` blocks (same world). `BossBar: true` uses the defaults.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `Title` | `<mob.name>` | Text of the bar; `&` colour codes, `<mob.name>` (the `Display`), `<mob.id>`, `<mob.hp>` and `<mob.maxhp>` (rounded up) and PlaceholderAPI placeholders without a player |
+| `Range` | `64` | Blocks around the mob in which players see the bar |
+| `Color` | `RED` | `PINK`, `BLUE`, `RED`, `GREEN`, `YELLOW`, `PURPLE` or `WHITE` |
+| `Style` | `SOLID` | `SOLID`, `SEGMENTED_6`, `SEGMENTED_10`, `SEGMENTED_12` or `SEGMENTED_20` |
+| `CreateFog` / `DarkenSky` / `PlayMusic` | `false` | Boss bar effects of the client |
+
+The bar updates twice a second and is removed when the mob dies, despawns, its chunk unloads, on `/bettermob reload` (it is rebuilt from the new definition) and when the plugin is disabled. An unknown `Color` or `Style` logs a warning and uses the default.
 
 A file with multiple mobs looks like:
 

@@ -53,6 +53,7 @@ public final class MobManager {
     private final Map<UUID, Map<DamageCause, Double>> damageModifiers = new ConcurrentHashMap<>();
     private final Map<UUID, MobDefinition> definitions = new ConcurrentHashMap<>();
     private final Map<UUID, List<Runnable>> timers = new ConcurrentHashMap<>();
+    private final BossBarManager bossBars;
     private SkillEngine skillEngine;
 
     public final NamespacedKey mobIdKey;
@@ -64,6 +65,7 @@ public final class MobManager {
         this.modelEngine = modelEngine;
         this.items = items;
         this.mobIdKey = new NamespacedKey(plugin, "mob_id");
+        this.bossBars = new BossBarManager(plugin);
     }
 
     public LivingEntity spawn(MobDefinition definition, Location location) {
@@ -86,6 +88,7 @@ public final class MobManager {
         definitions.put(entity.getUniqueId(), definition);
         fireTrigger(entity, definition, MobDefinition.SkillTrigger.Trigger.SPAWN, null, null);
         scheduleTimers(entity, definition);
+        bossBars.attach(entity, definition);
         Bukkit.getPluginManager().callEvent(new BetterMobSpawnEvent(entity, definition.toInfo()));
         return entity;
     }
@@ -159,6 +162,7 @@ public final class MobManager {
 
     public void release(Entity entity) {
         if (skillEngine != null) skillEngine.forget(entity.getUniqueId());
+        bossBars.detach(entity.getUniqueId());
         Object tracker = trackers.remove(entity.getUniqueId());
         if (tracker != null) betterModel.close(tracker);
         Object modelEngineTracker = modelEngineTrackers.remove(entity.getUniqueId());
@@ -168,6 +172,10 @@ public final class MobManager {
         definitions.remove(entity.getUniqueId());
         List<Runnable> cancellers = timers.remove(entity.getUniqueId());
         if (cancellers != null) cancellers.forEach(Runnable::run);
+    }
+
+    public void shutdown() {
+        bossBars.clear();
     }
 
     public boolean inSkillDamage() {
@@ -278,6 +286,7 @@ public final class MobManager {
             if (tracker != null) replaceTracker(entity, tracker);
         }
         scheduleTimers(entity, fresh);
+        bossBars.attach(entity, fresh);
         fireTrigger(entity, fresh, MobDefinition.SkillTrigger.Trigger.LOAD, null, null);
     }
 
@@ -381,6 +390,7 @@ public final class MobManager {
         }
 
         scheduleTimers(entity, definition);
+        bossBars.attach(entity, definition);
         fireTrigger(entity, definition, MobDefinition.SkillTrigger.Trigger.LOAD, null, null);
     }
 

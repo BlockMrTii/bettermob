@@ -64,6 +64,8 @@ mob:
   damageCauseUnknown: "Mob '{mob}': unbekannte DamageCause '{cause}'."
   multiplierInvalid: "Mob '{mob}': ungültiger Multiplikator '{value}'."
   reloadRemoved: "Mob '{mob}' hat keine Definition mehr - lebende behalten die alte Definition."
+  bossBarColorInvalid: "Mob '{mob}': unbekannte BossBar-Color '{value}', es wird RED verwendet."
+  bossBarStyleInvalid: "Mob '{mob}': unbekannter BossBar-Style '{value}', es wird SOLID verwendet."
   itemHeadMissing: "Mob '{mob}': ItemHead-Item '{item}' ist nicht registriert."
   migrated: "mobs.yml automatisch nach mobs/ migriert (Sicherung: mobs.yml.migrated)."
   migrationFailed: "Migration von '{mob}' fehlgeschlagen: {error}"
