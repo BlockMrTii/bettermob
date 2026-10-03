@@ -83,7 +83,19 @@ tagged releases above are the stable ones.
 | `/bettermob give <item> [player] [amount]` | Give a registered item (see [Items](#items)) |
 | `/bettermob debug [off\|info\|verbose\|filter <id>\|filter clear\|chat]` | Show or change the debug output (permission `bettermob.debug`, part of `bettermob.admin`) |
 
-Alias: `/bmob`. Permission: `bettermob.admin` (default: op).
+Alias: `/bmob`.
+
+| Permission | Allows | Default |
+|---|---|---|
+| `bettermob.admin` | everything below | op |
+| `bettermob.spawn` | `/bettermob spawn` | op |
+| `bettermob.list` | `/bettermob list` and `/bettermob packs` | op |
+| `bettermob.reload` | `/bettermob reload` | op |
+| `bettermob.skill` | `/bettermob skill` | op |
+| `bettermob.give` | `/bettermob give` | op |
+| `bettermob.debug` | `/bettermob debug` | op |
+
+`bettermob.admin` is the parent of all the others. Without a node the subcommand is refused, left out of the help and left out of tab completion. `bettermob.faction.<name>` (see `factions` in `config.yml`) is unrelated to the commands.
 
 **Reload:** `/bettermob reload` also updates mobs that are already alive. Each one is bound to the new definition of the same id: name, health cap, attack, speed and the options are applied again, its timers are restarted (the old ones are cancelled, so nothing runs twice), its auras and global cooldown are cleared, the model is attached again and the `~onLoad` skills run again. AI goals are applied again only when `AIGoalSelectors` or `AITargetSelectors` changed and the new list starts with `clear`; goals an earlier `clear` removed cannot come back until the mob is respawned. A mob whose definition was removed keeps the old one and a warning is logged. Totem bodies that are already in the world run out on their own.
 
