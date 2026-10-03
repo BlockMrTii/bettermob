@@ -1,0 +1,6 @@
+# Contributors
+
+Thanks to everyone who contributes to BetterMob!
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->
