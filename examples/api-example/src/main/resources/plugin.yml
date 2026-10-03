@@ -1,0 +1,10 @@
+name: BetterMobApiExample
+version: '1.0.0'
+main: eu.northsoft.bettermob.example.ApiExamplePlugin
+api-version: '1.21'
+depend: [BetterMob]
+description: Example plugin for the BetterMob API
+commands:
+  apiexample:
+    description: Spawns a BetterMob mob through the API
+    usage: /apiexample <mob>
