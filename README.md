@@ -564,7 +564,7 @@ skill lines or trigger a command. `caster` and `target` are reserved namespaces.
 mvn -f examples/api-example/pom.xml package
 ```
 
-This resolves `com.github.HyperGaming99:bettermob:v1.1.7` from JitPack, the same coordinates as above. To compile it against your own checkout instead:
+This resolves `com.github.HyperGaming99:bettermob:v1.1.7.1` from JitPack, the same coordinates as above. To compile it against your own checkout instead:
 
 ```bash
 mvn install -DskipTests
