@@ -45,6 +45,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private final TargeterRegistry targeters;
     private final ConditionRegistry conditionRegistry;
     private final MechanicRegistry mechanics;
+    private final CustomPlaceholders placeholders;
 
     public SkillEngine(BetterMobPlugin plugin, SkillRegistry registry, MobManager mobManager, BetterModelHook betterModel, ModelEngineHook modelEngine, ItemRegistry items) {
         this.plugin = plugin;
@@ -54,6 +55,8 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         this.modelEngine = modelEngine;
         this.items = items;
         this.debug = plugin.debug();
+        this.placeholders = new CustomPlaceholders((namespace, owner, exception) -> plugin.messages().warn("skill.customPlaceholderFailed",
+                "namespace", namespace, "plugin", owner == null ? "?" : owner.getName(), "error", exception));
         this.targeters = new TargeterRegistry(this);
         this.conditionRegistry = new ConditionRegistry(this);
         this.mechanics = new MechanicRegistry(plugin);
@@ -94,6 +97,10 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
     public ConditionRegistry conditionRegistry() {
         return conditionRegistry;
+    }
+
+    public CustomPlaceholders placeholders() {
+        return placeholders;
     }
 
     public MechanicRegistry mechanics() {
@@ -373,15 +380,20 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return lines;
     }
 
-    private Map<String, String> substitute(String mechanicName, Map<String, String> p, SkillContext context) {
-        boolean placeholders = false;
+    private Map<String, String> substitute(String mechanicName, Map<String, String> params, SkillContext context) {
+        Map<String, String> p = params;
+        if (!placeholders.isEmpty()) {
+            p = new LinkedHashMap<>();
+            for (Map.Entry<String, String> entry : params.entrySet()) p.put(entry.getKey(), placeholders.apply(entry.getValue(), context));
+        }
+        boolean casterPlaceholders = false;
         for (String value : p.values()) {
             if (value.indexOf("<caster.") >= 0) {
-                placeholders = true;
+                casterPlaceholders = true;
                 break;
             }
         }
-        if (!placeholders) return p;
+        if (!casterPlaceholders) return p;
         var attackDamage = context.caster().getAttribute(Attribute.ATTACK_DAMAGE);
         String damage = String.valueOf(attackDamage == null ? 1.0 : attackDamage.getValue());
         String name = stripSkillSyntax(context.caster().getName());
