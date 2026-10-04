@@ -2,9 +2,26 @@ package eu.northsoft.bettermob.skill;
 
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public record Condition(String name, String params, Boolean expected, String action, String actionValue) {
+    private static final int CACHE_LIMIT = 4096;
+    private static final Condition UNPARSEABLE = new Condition("", null, null, null, null);
+    private static final Map<String, Condition> CACHE = new ConcurrentHashMap<>();
+
     public static Condition parse(String raw) {
+        Condition cached = CACHE.get(raw);
+        if (cached == null) {
+            Condition parsed = parseUncached(raw);
+            if (CACHE.size() >= CACHE_LIMIT) CACHE.clear();
+            CACHE.put(raw, parsed == null ? UNPARSEABLE : parsed);
+            return parsed;
+        }
+        return cached == UNPARSEABLE ? null : cached;
+    }
+
+    private static Condition parseUncached(String raw) {
         String text = raw.trim();
         int i = 0;
         while (i < text.length() && (Character.isLetterOrDigit(text.charAt(i)) || text.charAt(i) == '_' || text.charAt(i) == ':')) i++;
