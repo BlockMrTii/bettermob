@@ -1,0 +1,43 @@
+showcase_attack:
+  Cooldown: 3
+  TargetConditions:
+    - distance{d=0-6} castinstead showcase_bomb
+  Skills:
+    - randomskill{skills=showcase_arrow,showcase_arrow_slow}
+
+showcase_arrow:
+  Skills:
+    - potion{t=SLOW;d=45;l=10} @self
+    - setNoDamageTicks{ticks=0;delay=6}
+    - delay 7
+    - shoot{type=arrow;velocity=1.3;damage=<caster.damage>;oh=[
+        - effect:particles{particle=Crit;speed=0.4;a=14;hS=0.65;vS=0.45;y=1}
+        - potion{t=SLOW;d=40;l=1}
+        - delay 1
+        - throw{v=14;vy=3.5}
+      ]}
+
+showcase_arrow_slow:
+  Skills:
+    - shoot{type=arrow;velocity=0.8;damage=<caster.damage>;spread=3}
+
+showcase_bomb:
+  Cooldown: 5
+  Skills:
+    - stun{d=55} @self
+    - delay 14
+    - effect:particles{particle=flame;speed=0.15;a=15;repeat=2;repeatInterval=1} @ModelPart{p=tnt2}
+    - totem{yo=0;md=2;os=[
+        - skill{s=[
+            - damage{a=<caster.damage>}
+            - potion{t=BLINDNESS;d=100}
+            - ignite{t=100}
+          ];sync=true} @EntitiesNearOrigin{r=4;Conditions=[ - isPlayer{} true - isCaster{} false - ismob{} false - health{h=>0} true]}
+      ]} @ModelPart{p=tnt2}
+
+showcase_enrage:
+  Conditions:
+    - offgcd{} true
+  Skills:
+    - gcd{ticks=100}
+    - message{m=<caster.name> is enraged} @PlayersInRadius{r=20;limit=3;sort=nearest}
