@@ -43,8 +43,14 @@ public final class Variables {
         String text = value.trim();
         try {
             return switch (type) {
-                case INTEGER -> String.valueOf((long) Double.parseDouble(text));
-                case FLOAT -> format(Double.parseDouble(text));
+                case INTEGER -> {
+                    double number = Double.parseDouble(text);
+                    yield Double.isFinite(number) ? String.valueOf((long) number) : null;
+                }
+                case FLOAT -> {
+                    double number = Double.parseDouble(text);
+                    yield Double.isFinite(number) ? format(number) : null;
+                }
                 case STRING -> value;
             };
         } catch (NumberFormatException exception) {
@@ -55,16 +61,18 @@ public final class Variables {
     public static String add(String current, String delta) {
         try {
             double sum = (current == null || current.isBlank() ? 0 : Double.parseDouble(current)) + Double.parseDouble(delta.trim());
-            return format(sum);
+            return Double.isFinite(sum) ? format(sum) : null;
         } catch (NumberFormatException exception) {
             return null;
         }
     }
 
     public static boolean put(Map<String, String> scope, String name, String value) {
-        if (!scope.containsKey(name) && scope.size() >= MAX_PER_SCOPE) return false;
-        scope.put(name, value);
-        return true;
+        synchronized (scope) {
+            if (!scope.containsKey(name) && scope.size() >= MAX_PER_SCOPE) return false;
+            scope.put(name, value);
+            return true;
+        }
     }
 
     public static boolean matches(String spec, String stored) {
