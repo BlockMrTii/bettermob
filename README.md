@@ -418,7 +418,7 @@ so a model has to exist in whichever engine you point at it.
 
 **Conditions:** `offgcd`, `onground`, `health{h=<50%}` (caster health; absolute value or percent, also `>10`, `<=5`, `20-40`), `lineofsight` (alias `los`, the caster sees the trigger/target), `world{w=world,world_nether}`, `biome{b=DESERT,PLAINS}`, `time{t=day|night|<ticks or range>}`, `variable{var=caster.phase;value=>=2}`, `chance{chance=0.75}`, `hastag{t=...}`, `hasaura{n=...}`, `faction{faction=Elite,Other}` (the caster's, or each candidate's inside a multi-target targeter), `onblock{b=...}` (block under the caster), `blocktype{type=...}`, `skillOnCooldown{skill=...}`, `distance{d=0-6}` (also `>3`, `<=5`) to the trigger/target. A skill's `Conditions`/`TargetConditions` entry may end in `castinstead <skill>` to cast that skill instead when it holds. Any mechanic line can
 end with `?condition{...}` (or `?!condition{...}` to negate) to run only when that
-check passes; unsupported conditions (this plugin has no variable/faction system)
+check passes; unsupported conditions
 are logged and treated as passing, so the line still runs.
 
 **Targeters:** `@self`, `@trigger`/`@target`, `@ObstructingBlock`, `@Forward{f=1.5;

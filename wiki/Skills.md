@@ -168,11 +168,11 @@ A skill can have `Cooldown: <seconds>` (per caster). A `Conditions`/`TargetCondi
 Write `onground{} true` or `onground{} false` to require a value. Any mechanic line can end
 with `?condition{...}`, or `?!condition{...}` to negate it.
 
-Conditions BetterMob doesn't know (variables, factions, ...) are logged and treated as
+Conditions BetterMob doesn't know are logged and treated as
 **true**, so the line still runs.
 
 ## Not supported
 
-Variables and several MythicMobs mechanics. Mechanics inside aura
+Several MythicMobs mechanics, conditions and targeters. Mechanics inside aura
 effects that aren't supported (for example `velocity`) produce a warning like
 `Skill-Mechanic 'velocity' wird nicht unterstuetzt` and are skipped.
