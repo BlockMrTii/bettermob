@@ -42,10 +42,19 @@ class CustomPlaceholdersTest {
     }
 
     @Test
-    void aFailingPlaceholderLeavesTheTextAsItIs() {
-        placeholders.register(null, "pet", (key, ctx) -> {
+    void aFailingPlaceholderLeavesTheTextAsItIsAndIsReported() {
+        java.util.List<String> failures = new java.util.ArrayList<>();
+        CustomPlaceholders reporting = new CustomPlaceholders((namespace, owner, exception) -> failures.add(namespace + ":" + exception.getMessage()));
+        reporting.register(null, "pet", (key, ctx) -> {
             throw new IllegalStateException("boom");
         });
-        assertEquals("<pet.x>", placeholders.apply("<pet.x>", context));
+        assertEquals("<Pet.x>", reporting.apply("<Pet.x>", context));
+        assertEquals(java.util.List.of("pet:boom"), failures);
+    }
+
+    @Test
+    void namespacesMatchWithoutCaseSensitivity() {
+        placeholders.register(null, "Pet", (key, ctx) -> "20");
+        assertEquals("20 20", placeholders.apply("<pet.health> <PET.health>", context));
     }
 }
