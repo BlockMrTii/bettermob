@@ -33,7 +33,7 @@ jobs:
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
-          token: ${{ secrets.PR_PUSH_TOKEN || github.token }}
+          persist-credentials: false
           path: pr
           fetch-depth: 0
 
@@ -52,12 +52,14 @@ jobs:
         working-directory: pr
         continue-on-error: true
         env:
+          PUSH_TOKEN: ${{ secrets.PR_PUSH_TOKEN || github.token }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -am "Remove code comments"
-          git push origin "HEAD:$HEAD_REF"
+          auth=$(printf 'x-access-token:%s' "$PUSH_TOKEN" | base64 -w0)
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin "HEAD:$HEAD_REF"
 
       - name: Run the build check on the new commit
         if: steps.push.outcome == 'success' && github.event.pull_request.head.repo.full_name == github.repository && env.HAS_PAT != 'true'
