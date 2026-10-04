@@ -4,6 +4,7 @@ import com.destroystokyo.paper.entity.ai.Goal;
 import com.destroystokyo.paper.entity.ai.GoalType;
 import com.destroystokyo.paper.entity.ai.MobGoals;
 import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.skill.Params;
 import eu.northsoft.bettermob.skill.SkillStep;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
@@ -96,8 +97,7 @@ public final class AiGoalApplier {
     private static Goal<Mob> custom(Token token, Mob mob, BetterMobPlugin plugin, Predicate<Entity> managed) {
         return switch (normalize(token.name())) {
             case "lookattarget" -> {
-                String radius = token.params().get("r");
-                yield CustomGoals.lookAtTarget(plugin, mob, radius == null ? 15 : Double.parseDouble(radius));
+                yield CustomGoals.lookAtTarget(plugin, mob, Params.parseFloat(token.params().get("r"), 15f));
             }
             case "monsters", "monster" -> CustomGoals.nearestMonster(plugin, mob, managed);
             default -> null;
