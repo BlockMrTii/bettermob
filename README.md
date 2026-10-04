@@ -123,6 +123,7 @@ tagged releases above are the stable ones.
 | `/bettermob skill <id> [player]` | Manually run a registered skill, bypassing its normal triggers |
 | `/bettermob give <item> [player] [amount]` | Give a registered item (see [Items](#items)) |
 | `/bettermob killall [mob\|*] [world]` | Remove all living BetterMob mobs, or only one type and/or one world, and report how many |
+| `/bettermob spawner create <id> <mob> [radius] [interval] [max]` | Create a spawner at your position; `remove <id>` and `list` manage them |
 | `/bettermob stats [on\|off\|reset]` | Show living mobs per type, running timers, loaded skills and packs; `on`/`off` switch the skill timing, `reset` clears it (permission `bettermob.debug`) |
 | `/bettermob debug [off\|info\|verbose\|filter <id>\|filter clear\|chat]` | Show or change the debug output (permission `bettermob.debug`, part of `bettermob.admin`) |
 
@@ -137,6 +138,7 @@ Alias: `/bmob`.
 | `bettermob.skill` | `/bettermob skill` | op |
 | `bettermob.give` | `/bettermob give` | op |
 | `bettermob.killall` | `/bettermob killall` | op |
+| `bettermob.spawner` | `/bettermob spawner` | op |
 | `bettermob.debug` | `/bettermob debug` | op |
 
 `bettermob.admin` is the parent of all the others. Without a node the subcommand is refused, left out of the help and left out of tab completion. `bettermob.faction.<name>` (see `factions` in `config.yml`) is unrelated to the commands.
@@ -144,6 +146,8 @@ Alias: `/bmob`.
 **Reload:** `/bettermob reload` also updates mobs that are already alive. Each one is bound to the new definition of the same id: name, health cap, attack, speed and the options are applied again, its timers are restarted (the old ones are cancelled, so nothing runs twice), its auras and global cooldown are cleared, the model is attached again and the `~onLoad` skills run again. AI goals are applied again only when `AIGoalSelectors` or `AITargetSelectors` changed and the new list starts with `clear`; goals an earlier `clear` removed cannot come back until the mob is respawned. A mob whose definition was removed keeps the old one and a warning is logged. Totem bodies that are already in the world run out on their own.
 
 **Killall:** `/bettermob killall` removes every loaded living BetterMob mob; `<mob>` limits it to one id (`*` means all) and `<world>` to one world. Mobs in unloaded chunks are not touched. Without a mob id it also removes helper armor stands (the hit bodies of `totem` skills). Those carry the scoreboard tag `bettermob_helper`, and only entities with that tag are ever removed. Leftover helpers are also removed on startup and whenever a chunk loads.
+
+**Spawners:** `/bettermob spawner create camp goblin 6 20 4` makes a spawner at your position that spawns `goblin` at a random ground spot within 6 blocks every 20 seconds (defaults: radius 5, 30 s, max 3) while a player is within 32 blocks, and never lets more than 4 of its mobs live nearby. They are stored in `plugins/BetterMob/spawners.yml` (`mob`, `world`, `x`, `y`, `z`, `radius`, `interval`, `max`, `player-range`) and reloaded with `/bettermob reload`. Spawned mobs carry the scoreboard tag `bettermob_spawner:<id>`, which is how the limit survives restarts.
 
 **Stats:** `/bettermob stats` shows the living BetterMob mobs per type, the running mob timers and the loaded skills and packs. With `Stats: on` in `config.yml` (or `/bettermob stats on`) it also measures every skill run and lists the 10 skills with the most total time (calls, average, maximum), plus the delayed steps that are still waiting. A run is measured up to its first `delay` and includes the skills it starts in the same tick. `StatsWarnMillis` (default 50, 0 turns it off) logs a console warning when a single run takes longer. While stats are off nothing is measured or counted. Delayed steps whose mob disappears before they run are not subtracted, so `reset` now and then. Uses the permission `bettermob.debug`.
 

@@ -5,6 +5,11 @@ plugin:
   betterModelMissing: "BetterModel ist nicht installiert oder aktiv - Mobs spawnen ohne Modell."
   commandMissing: "Der Befehl /bettermob fehlt in der plugin.yml."
 
+spawner:
+  invalid: "Spawner '{id}' in der spawners.yml braucht einen Mob und eine Welt - uebersprungen."
+  saveFailed: "spawners.yml konnte nicht gespeichert werden: {error}"
+  spawnFailed: "Spawner '{id}' konnte '{mob}' nicht spawnen: {error}"
+
 command:
   help:
     spawn: "&7/bettermob spawn <id> [amount] &8- &7Mob spawnen"
@@ -15,6 +20,7 @@ command:
     give: "&7/bettermob give <item> [Spieler] [amount] &8- &7Item geben"
     debug: "&7/bettermob debug [off|info|verbose|filter|chat] &8- &7Debug-Ausgabe steuern"
     killall: "&7/bettermob killall [mob|*] [Welt] &8- &7Lebende BetterMob-Mobs entfernen"
+    spawner: "&7/bettermob spawner <create|remove|list> &8- &7Mob-Spawner verwalten"
     stats: "&7/bettermob stats [on|off|reset] &8- &7Mob-, Timer- und Skill-Statistiken anzeigen"
   reloaded: "&aBetterMob neu geladen."
   reloadedLiving: "&7{count} lebende Mobs auf die neue Definition umgestellt."
@@ -44,6 +50,15 @@ command:
     usage: "&cNutzung: /bettermob give <item> [Spieler] [amount]"
     notRegistered: "&cItem '{item}' ist nicht registriert."
     done: "&a{amount}x '{item}' an {player} gegeben."
+  spawner:
+    usage: "&cNutzung: /bettermob spawner create <id> <mob> [radius] [intervall sekunden] [max] | remove <id> | list"
+    created: "&aSpawner '{id}' fuer '{mob}' an deiner Position erstellt."
+    invalidId: "&cDie Spawner-ID '{id}' darf nicht leer sein oder einen Punkt enthalten."
+    exists: "&cEin Spawner namens '{id}' existiert bereits."
+    removed: "&aSpawner '{id}' entfernt."
+    missing: "&cKein Spawner namens '{id}'."
+    none: "&7Noch keine Spawner."
+    entry: "&7- &f{id}&7: &f{mob} &7bei {world} {x} {y} {z}, max &f{max}&7, alle &f{interval}&7 s"
   killall:
     worldMissing: "&cWelt '{world}' existiert nicht."
     done: "&a{count} Mobs entfernt."

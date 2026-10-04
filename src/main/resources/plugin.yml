@@ -22,6 +22,7 @@ permissions:
       bettermob.skill: true
       bettermob.give: true
       bettermob.killall: true
+      bettermob.spawner: true
       bettermob.debug: true
   bettermob.spawn:
     description: Allows /bettermob spawn
@@ -40,6 +41,9 @@ permissions:
     default: op
   bettermob.killall:
     description: Allows /bettermob killall
+    default: op
+  bettermob.spawner:
+    description: Allows /bettermob spawner
     default: op
   bettermob.debug:
     description: Allows /bettermob debug
