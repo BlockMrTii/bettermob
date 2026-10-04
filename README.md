@@ -124,6 +124,7 @@ tagged releases above are the stable ones.
 | `/bettermob spawn <id> [amount]` | Spawn a registered mob at your location |
 | `/bettermob list` | List all registered mob IDs |
 | `/bettermob packs` | List discovered packs and whether they're enabled |
+| `/bettermob info <mob>` | Show a mob's type, health, damage, faction, model, equipment, drop entries, skills by trigger and how many are alive |
 | `/bettermob reload` | Reload config, mobs, skills, and packs |
 | `/bettermob validate [pack]` | Check a pack (or all of them) for unsupported mechanics, conditions, targeters, undefined skills and unparsable lines (including drop lines) without spawning anything |
 | `/bettermob skill <id> [player]` | Manually run a registered skill, bypassing its normal triggers |
@@ -139,7 +140,7 @@ Alias: `/bmob`.
 |---|---|---|
 | `bettermob.admin` | everything below | op |
 | `bettermob.spawn` | `/bettermob spawn` | op |
-| `bettermob.list` | `/bettermob list` and `/bettermob packs` | op |
+| `bettermob.list` | `/bettermob list`, `/bettermob packs` and `/bettermob info` | op |
 | `bettermob.reload` | `/bettermob reload` and `/bettermob validate` | op |
 | `bettermob.skill` | `/bettermob skill` | op |
 | `bettermob.give` | `/bettermob give` | op |
