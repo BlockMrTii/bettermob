@@ -262,7 +262,13 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private void dispatch(SkillStep.Mechanic mechanic, SkillContext context, Target target, Map<String, String> p) {
         Mechanic handler = mechanics.get(mechanic.name());
         if (handler == null) plugin.messages().warn("skill.mechanicUnsupported", "mechanic", mechanic.name());
-        else handler.execute(new MechanicCall(mechanic, context, target, p));
+        else {
+            MechanicCall call = new MechanicCall(mechanic, context, target, p);
+            Runnable run = () -> handler.execute(call);
+            if (target.entity() != null) Tasks.runOwned(plugin, target.entity(), run);
+            else if (target.location() != null) Tasks.runOwnedAt(plugin, target.location(), run);
+            else run.run();
+        }
     }
 
     private boolean conditionPasses(String raw, SkillContext context, Target targetOverride) {
