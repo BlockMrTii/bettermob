@@ -3,6 +3,7 @@ package eu.northsoft.bettermob.skill.target;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.Target;
+import eu.northsoft.bettermob.util.RegionEntities;
 import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
@@ -45,7 +46,7 @@ public final class EntitiesInRadiusTargeter implements Targeter {
         List<String> conditions = params.containsKey("conditions") ? conditionLines.computeIfAbsent(params.get("conditions"), SkillEngine::splitInline) : List.of();
         double radiusSquared = radius * radius;
         List<Hit> hits = new ArrayList<>();
-        for (Entity entity : center.getWorld().getNearbyEntities(center, radius, radius, radius)) {
+        for (Entity entity : RegionEntities.near(center, radius)) {
             if (!(entity instanceof LivingEntity living) || entity instanceof ArmorStand || living.isDead()) continue;
             if (playersOnly && !(entity instanceof Player)) continue;
             double distance = living.getLocation().distanceSquared(center);
