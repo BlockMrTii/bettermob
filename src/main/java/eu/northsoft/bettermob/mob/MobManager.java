@@ -80,12 +80,7 @@ public final class MobManager {
         if (!definition.damageModifiers.isEmpty()) damageModifiers.put(entity.getUniqueId(), definition.damageModifiers);
 
         if (!hasModelSkill(definition, MobDefinition.SkillTrigger.Trigger.SPAWN)) {
-            Object tracker = betterModel.attachIfPresent(entity, definition.modelId);
-            if (tracker != null) {
-                trackers.put(entity.getUniqueId(), tracker);
-
-                entity.setInvisible(true);
-            }
+            attachModelField(entity, definition.modelId);
         }
 
         definitions.put(entity.getUniqueId(), definition);
@@ -212,6 +207,20 @@ public final class MobManager {
         this.skillEngine = skillEngine;
     }
 
+    private void attachModelField(Entity entity, String modelId) {
+        Object tracker = betterModel.attachIfPresent(entity, modelId);
+        if (tracker != null) {
+            replaceTracker(entity, tracker);
+            return;
+        }
+        Object engineTracker = modelEngine.attachIfPresent(entity, modelId);
+        if (engineTracker != null) replaceModelEngineTracker(entity, engineTracker);
+    }
+
+    public Object modelEngineTrackerFor(UUID entityId) {
+        return modelEngineTrackers.get(entityId);
+    }
+
     public Object trackerFor(UUID entityId) {
         return trackers.get(entityId);
     }
@@ -308,8 +317,7 @@ public final class MobManager {
         }
 
         if (!hasModelSkill(fresh, MobDefinition.SkillTrigger.Trigger.LOAD)) {
-            Object tracker = betterModel.attachIfPresent(entity, fresh.modelId);
-            if (tracker != null) replaceTracker(entity, tracker);
+            attachModelField(entity, fresh.modelId);
         }
         scheduleTimers(entity, fresh);
         bossBars.attach(entity, fresh);
@@ -442,11 +450,7 @@ public final class MobManager {
         preventSunburn(entity, definition);
 
         if (!hasModelSkill(definition, MobDefinition.SkillTrigger.Trigger.LOAD)) {
-            Object tracker = betterModel.attachIfPresent(entity, definition.modelId);
-            if (tracker != null) {
-                trackers.put(entity.getUniqueId(), tracker);
-                entity.setInvisible(true);
-            }
+            attachModelField(entity, definition.modelId);
         }
 
         scheduleTimers(entity, definition);
