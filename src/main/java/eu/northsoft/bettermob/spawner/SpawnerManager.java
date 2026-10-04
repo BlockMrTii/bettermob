@@ -61,13 +61,13 @@ public final class SpawnerManager {
         return spawners.values();
     }
 
-    public boolean add(Spawner spawner) {
+    public synchronized boolean add(Spawner spawner) {
         if (spawners.putIfAbsent(key(spawner.id), spawner) != null) return false;
         save();
         return true;
     }
 
-    public boolean remove(String id) {
+    public synchronized boolean remove(String id) {
         if (spawners.remove(key(id)) == null) return false;
         save();
         return true;
@@ -77,7 +77,7 @@ public final class SpawnerManager {
         return id.toLowerCase(Locale.ROOT);
     }
 
-    private void save() {
+    private synchronized void save() {
         YamlConfiguration yaml = new YamlConfiguration();
         spawners.values().forEach(spawner -> spawner.write(yaml.createSection(spawner.id)));
         try {
