@@ -81,6 +81,8 @@ mob:
   bossBarColorInvalid: "Mob '{mob}': unknown BossBar Color '{value}', using RED."
   bossBarStyleInvalid: "Mob '{mob}': unknown BossBar Style '{value}', using SOLID."
   itemHeadMissing: "Mob '{mob}': ItemHead item '{item}' is not registered."
+  equipmentUnknownItem: "Mob '{mob}': Equipment item '{value}' is neither a registered item nor a material."
+  equipmentUnknownSlot: "Mob '{mob}': Equipment slot '{value}' is unknown (use HAND, OFFHAND, HEAD, CHEST, LEGS or FEET)."
   migrated: "mobs.yml was migrated to mobs/ automatically (backup: mobs.yml.migrated)."
   migrationFailed: "Migration of '{mob}' failed: {error}"
 
