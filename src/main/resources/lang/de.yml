@@ -198,6 +198,11 @@ betterModel:
     controlModeFailed: "mountmodel: Steuerungsmodus konnte nicht gesetzt werden: {error}"
 
 modelEngine:
+  callFailed: "ModelEngine: {action} fehlgeschlagen: {error}"
+  boneMissing: "ModelEngine: Bone '{bone}' existiert an diesem Modell nicht."
+  mount:
+    noMountBones: "ModelEngine: dieses Modell hat keine Mount-Bones."
+    failed: "ModelEngine: Aufsteigen auf Sitz '{seat}' nicht moeglich (besetzt oder der Sitz erlaubt keine Reiter)."
   inactive: "ModelEngine ist beim Spawn von '{model}' nicht aktiv - kein Modell angehängt."
   apiClassMissing: "ModelEngine-API-Klasse '{class}' nicht gefunden - passt die installierte ModelEngine-Version?"
   addFailed: "ModelEngine-Modell '{model}' konnte nicht hinzugefügt werden (existiert die Model-ID?)."

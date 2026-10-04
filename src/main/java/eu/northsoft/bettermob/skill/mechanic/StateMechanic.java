@@ -20,6 +20,12 @@ public final class StateMechanic implements Mechanic {
     public void execute(MechanicCall call) {
         String stateName = firstParam(call.params(), "state", "s");
         if (stateName == null) return;
-        engine.betterModel().play(engine.mobManager().trackerFor(call.context().caster().getUniqueId()), stateName);
+        java.util.UUID id = call.context().caster().getUniqueId();
+        Object tracker = engine.mobManager().trackerFor(id);
+        if (tracker != null) {
+            engine.betterModel().play(tracker, stateName);
+            return;
+        }
+        engine.modelEngine().play(engine.mobManager().modelEngineTrackerFor(id), stateName, call.params());
     }
 }

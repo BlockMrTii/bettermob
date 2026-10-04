@@ -18,8 +18,10 @@ public final class ModelPartTargeter implements SingleTargeter {
 
     @Override
     public Target target(Map<String, String> params, SkillContext context) {
-        Location bone = engine.betterModel().bonePosition(engine.mobManager().trackerFor(context.caster().getUniqueId()),
-                firstParam(params, "p", "part", "bone"), context.caster().getLocation());
+        java.util.UUID id = context.caster().getUniqueId();
+        String name = firstParam(params, "p", "part", "bone");
+        Location bone = engine.betterModel().bonePosition(engine.mobManager().trackerFor(id), name, context.caster().getLocation());
+        if (bone == null) bone = engine.modelEngine().bonePosition(engine.mobManager().modelEngineTrackerFor(id), name);
         return Target.ofLocation(bone != null ? bone
                 : context.caster().getLocation().add(0, context.caster().getHeight() * 0.6, 0));
     }

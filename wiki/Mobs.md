@@ -146,15 +146,12 @@ AITargetSelectors:
 
 ## Models
 
-BetterMob attaches a BetterModel model in two ways:
+BetterMob attaches a model in three ways:
 
-1. **Automatically** through `Model:` (default: the mob ID). If no BetterModel model with
-   that name exists, nothing happens and nothing is logged.
-2. **Through a skill**: `model{mid=...} @self ~onSpawn` (and `~onLoad`). If a mob has such a
-   skill, the automatic way is skipped, otherwise the two would fight each other.
+1. **Automatically** through `Model:` (default: the mob ID). BetterModel is asked first; if it has no model with that name, ModelEngine is asked. If neither has it, nothing happens and nothing is logged.
+2. **Through a skill**: `model{mid=...} @self ~onSpawn` for BetterModel or `modelengine{mid=...} @self ~onSpawn` for ModelEngine (and `~onLoad`). If a mob has such a skill, the automatic way is skipped, otherwise the two would fight each other.
 
-The vanilla body is hidden automatically once a model is attached. For ModelEngine use
-`modelengine{mid=...}` instead of `model{...}`.
+The vanilla body is hidden automatically once a model is attached. `state`, `mountmodel`, `@ModelPart` and `bodyrotation` work with both engines, see [Skills](Skills).
 
 ## Armor-stand display mobs
 
