@@ -2,6 +2,7 @@ package eu.northsoft.bettermob.util;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -27,8 +28,12 @@ public final class Tasks {
         }
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            if (Bukkit.getEntity(entity.getUniqueId()) != null) task.run();
+            if (Bukkit.getEntity(entity.getUniqueId()) != null || isDeadLiving(entity)) task.run();
         }, ticks);
+    }
+
+    private static boolean isDeadLiving(Entity entity) {
+        return entity instanceof LivingEntity living && living.getHealth() <= 0;
     }
 
     public static Runnable runTimer(Plugin plugin, Entity entity, long delay, long period, Runnable task) {

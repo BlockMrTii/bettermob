@@ -21,10 +21,15 @@ public final class CommandMechanic implements Mechanic {
         SkillContext context = call.context();
         String raw = call.params().get("c");
         if (raw == null) return;
+        String targetName = context.trigger() != null ? context.trigger().getName() : context.caster().getName();
         String command = PlaceholderHook.apply(placeholderPlayer(context), stripQuotes(raw)
-                .replace("<caster.name>", context.caster().getName())
-                .replace("<target.name>", context.trigger() != null ? context.trigger().getName() : context.caster().getName()));
+                .replace("<caster.name>", asArgument(context.caster().getName()))
+                .replace("<target.name>", asArgument(targetName)));
         Tasks.runGlobal(engine.plugin(), () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command));
+    }
+
+    static String asArgument(String name) {
+        return name.replace(' ', '_').replaceAll("[^A-Za-z0-9_.]", "");
     }
 
     private static Player placeholderPlayer(SkillContext context) {

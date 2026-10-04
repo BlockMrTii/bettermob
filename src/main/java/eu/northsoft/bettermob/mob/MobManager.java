@@ -221,8 +221,8 @@ public final class MobManager {
         };
         if (auraKind != null) skillEngine.fireAuras(entity, auraKind, trigger, event);
         SkillContext context = new SkillContext(entity, trigger, event);
-        for (MobDefinition.SkillTrigger skillTrigger : definition.skillTriggers) {
-            if (skillTrigger.trigger() == type) skillEngine.runStep(skillTrigger.step(), context);
+        for (MobDefinition.SkillTrigger skillTrigger : definition.triggersOf(type)) {
+            skillEngine.runStep(skillTrigger.step(), context);
         }
         if (event != null && event.isCancelled()) plugin.debug().info("trigger " + type + " on " + definition.id + ": event cancelled", definition.id);
     }
@@ -232,8 +232,7 @@ public final class MobManager {
             timers.computeIfAbsent(mob.getUniqueId(), key -> new ArrayList<>())
                     .add(Tasks.runTimer(plugin, mob, 20L, 20L, () -> retarget(mob)));
         }
-        for (MobDefinition.SkillTrigger trigger : definition.skillTriggers) {
-            if (trigger.trigger() != MobDefinition.SkillTrigger.Trigger.TIMER) continue;
+        for (MobDefinition.SkillTrigger trigger : definition.triggersOf(MobDefinition.SkillTrigger.Trigger.TIMER)) {
             Runnable cancel = Tasks.runTimer(plugin, entity, trigger.timerTicks(), trigger.timerTicks(), () -> {
                 if (!entity.isValid()) return;
                 skillEngine.runStep(trigger.step(), SkillContext.of(entity));
@@ -280,6 +279,7 @@ public final class MobManager {
             entity.setGravity(true);
         }
         applyDefinition(entity, fresh, false);
+        entity.setInvisible(trackers.containsKey(id) || modelEngineTrackers.containsKey(id) || fresh.options.invisible());
         if (entity instanceof Mob mob) {
             AiGoalApplier.apply(mob, changedSelectors(old.aiGoalSelectors, fresh.aiGoalSelectors),
                     changedSelectors(old.aiTargetSelectors, fresh.aiTargetSelectors), plugin, other -> definitions.containsKey(other.getUniqueId()));
@@ -357,10 +357,29 @@ public final class MobManager {
         if (own != null) return own.equals(faction);
         if (!(entity instanceof org.bukkit.entity.Player player)) return false;
         if (player.hasPermission(factionPermission(faction))) return true;
-        for (String entry : plugin.getConfig().getStringList("factions." + faction)) {
-            if (entry.equalsIgnoreCase(player.getName()) || entry.equalsIgnoreCase(player.getUniqueId().toString())) return true;
+        Set<String> members = factionMembers().get(faction);
+        return members != null && (members.contains(player.getName().toLowerCase(java.util.Locale.ROOT)) || members.contains(player.getUniqueId().toString()));
+    }
+
+    private org.bukkit.configuration.file.FileConfiguration membersSource;
+    private Map<String, Set<String>> members = Map.of();
+
+    private Map<String, Set<String>> factionMembers() {
+        org.bukkit.configuration.file.FileConfiguration config = plugin.getConfig();
+        if (config != membersSource) {
+            Map<String, Set<String>> loaded = new java.util.HashMap<>();
+            var section = config.getConfigurationSection("factions");
+            if (section != null) {
+                for (String name : section.getKeys(false)) {
+                    Set<String> names = new HashSet<>();
+                    for (String entry : section.getStringList(name)) names.add(entry.toLowerCase(java.util.Locale.ROOT));
+                    loaded.put(name.toLowerCase(java.util.Locale.ROOT), names);
+                }
+            }
+            members = loaded;
+            membersSource = config;
         }
-        return false;
+        return members;
     }
 
     private final java.util.Set<String> registeredFactionPermissions = ConcurrentHashMap.newKeySet();
@@ -414,9 +433,8 @@ public final class MobManager {
     }
 
     private boolean hasModelSkill(MobDefinition definition, MobDefinition.SkillTrigger.Trigger trigger) {
-        for (MobDefinition.SkillTrigger skillTrigger : definition.skillTriggers) {
-            if (skillTrigger.trigger() == trigger && skillTrigger.step() instanceof SkillStep.Mechanic mechanic
-                    && mechanic.name().equals("model")) {
+        for (MobDefinition.SkillTrigger skillTrigger : definition.triggersOf(trigger)) {
+            if (skillTrigger.step() instanceof SkillStep.Mechanic mechanic && mechanic.name().equals("model")) {
                 return true;
             }
         }

@@ -29,6 +29,7 @@ import java.util.Map;
 
 public final class BetterMobCommand implements CommandExecutor, TabCompleter {
     private static final int TIMING_ROWS = 10;
+    private static final int MAX_SPAWN_AMOUNT = 100;
 
     static final Map<String, String> PERMISSIONS = permissions();
 
@@ -218,8 +219,10 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         int amount = 1;
         if (args.length >= 3) {
             try {
-                amount = Math.max(1, Integer.parseInt(args[2]));
-            } catch (NumberFormatException ignored) {
+                amount = Math.max(1, Math.min(MAX_SPAWN_AMOUNT, Integer.parseInt(args[2])));
+            } catch (NumberFormatException exception) {
+                messages.send(sender, "command.spawn.usage");
+                return;
             }
         }
         for (int i = 0; i < amount; i++) manager.spawn(definition, player.getLocation());
