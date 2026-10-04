@@ -43,7 +43,7 @@ public final class MobListener implements Listener {
         LivingEntity entity = event.getEntity();
         if (manager.definitionOf(entity.getUniqueId()) != null) return;
         Location at = entity.getLocation();
-        String biome = at.getWorld().getBiome(at).getKey().getKey();
+        String biome = at.getWorld().getBiome(at).getKey().toString();
         for (MobDefinition definition : manager.registry().all().values()) {
             SpawnRule rule = definition.spawnRule;
             if (rule == null || definition.type != entity.getType()) continue;
