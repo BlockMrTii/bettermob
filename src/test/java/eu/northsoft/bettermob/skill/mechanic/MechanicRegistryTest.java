@@ -23,7 +23,8 @@ class MechanicRegistryTest {
             "bodyrotation", "addtag", "removetag", "ignite", "totem", "velocity", "freeze", "shoot", "stun",
             "setnodamageticks");
 
-    private static final List<String> ADDED_NAMES = List.of("heal", "teleport", "explosion", "lightning", "setspeed", "setai");
+    private static final List<String> ADDED_NAMES = List.of("heal", "teleport", "explosion", "lightning", "setspeed", "setai",
+            "setvariable", "variableset", "addvariable", "variableadd");
 
     private static final Set<String> HANDLED_BY_ENGINE = Set.of("cancelskill", "delay");
 
