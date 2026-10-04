@@ -2,7 +2,13 @@ package eu.northsoft.bettermob.spawner;
 
 import org.bukkit.configuration.ConfigurationSection;
 
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 public final class Spawner {
+    private static final String TAG_PREFIX = "bettermob_spawner:";
+
     public static final int DEFAULT_RADIUS = 5;
     public static final int DEFAULT_INTERVAL_SECONDS = 30;
     public static final int DEFAULT_MAX = 3;
@@ -18,7 +24,10 @@ public final class Spawner {
     public final int intervalSeconds;
     public final int max;
     public final int playerRange;
+    final Set<UUID> alive = ConcurrentHashMap.newKeySet();
     volatile long nextSpawnAt;
+    volatile boolean reconciled;
+    volatile long playerNearAt;
 
     public Spawner(String id, String mob, String world, double x, double y, double z, int radius, int intervalSeconds, int max, int playerRange) {
         if (id.isEmpty() || id.indexOf('.') >= 0) throw new IllegalArgumentException("Invalid spawner id: " + id);
@@ -56,7 +65,18 @@ public final class Spawner {
     }
 
     public String tag() {
-        return "bettermob_spawner:" + id;
+        return TAG_PREFIX + id;
+    }
+
+    public static String idOfTag(String tag) {
+        return tag.startsWith(TAG_PREFIX) ? tag.substring(TAG_PREFIX.length()) : null;
+    }
+
+    void adopt(Spawner previous) {
+        alive.addAll(previous.alive);
+        nextSpawnAt = previous.nextSpawnAt;
+        reconciled = previous.reconciled;
+        playerNearAt = previous.playerNearAt;
     }
 
     boolean ready(long now, int alive) {

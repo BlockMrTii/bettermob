@@ -9,11 +9,14 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,6 +25,8 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class SpawnerManager {
     private static final long TICK_PERIOD = 20L;
     private static final long RETRY_MILLIS = 1000L;
+    private static final int CHUNK_SIZE = 16;
+    private static final long PLAYER_FRESH_MILLIS = 3000L;
     private static final int GROUND_SEARCH_DEPTH = 3;
 
     private final BetterMobPlugin plugin;
@@ -36,16 +41,23 @@ public final class SpawnerManager {
         this.file = new File(plugin.getDataFolder(), "spawners.yml");
     }
 
-    public void load() {
-        spawners.clear();
-        if (!file.exists()) return;
-        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
-        for (String id : yaml.getKeys(false)) {
-            ConfigurationSection section = yaml.getConfigurationSection(id);
-            Spawner spawner = section == null ? null : Spawner.read(id, section);
-            if (spawner == null) plugin.messages().warn("spawner.invalid", "id", id);
-            else spawners.put(key(id), spawner);
+    public synchronized void load() {
+        Map<String, Spawner> loaded = new HashMap<>();
+        if (file.exists()) {
+            YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
+            for (String id : yaml.getKeys(false)) {
+                ConfigurationSection section = yaml.getConfigurationSection(id);
+                Spawner spawner = section == null ? null : Spawner.read(id, section);
+                if (spawner == null) plugin.messages().warn("spawner.invalid", "id", id);
+                else loaded.put(key(id), spawner);
+            }
         }
+        loaded.forEach((key, spawner) -> {
+            Spawner previous = spawners.get(key);
+            if (previous != null) spawner.adopt(previous);
+        });
+        spawners.keySet().retainAll(loaded.keySet());
+        spawners.putAll(loaded);
     }
 
     public void start() {
@@ -62,6 +74,7 @@ public final class SpawnerManager {
     }
 
     public synchronized boolean add(Spawner spawner) {
+        spawner.reconciled = true;
         if (spawners.putIfAbsent(key(spawner.id), spawner) != null) return false;
         save();
         return true;
@@ -88,6 +101,7 @@ public final class SpawnerManager {
     }
 
     private void tick() {
+        for (Player player : plugin.getServer().getOnlinePlayers()) Tasks.runOn(plugin, player, () -> markNearby(player));
         for (Spawner spawner : spawners.values()) {
             World world = plugin.getServer().getWorld(spawner.world);
             if (world == null) continue;
@@ -99,14 +113,11 @@ public final class SpawnerManager {
     private void tick(Spawner spawner, Location center) {
         long now = System.currentTimeMillis();
         if (now < spawner.nextSpawnAt || !center.getWorld().isChunkLoaded(center.getBlockX() >> 4, center.getBlockZ() >> 4)) return;
-        if (center.getWorld().getNearbyPlayers(center, spawner.playerRange).isEmpty()) return;
+        if (!spawner.reconciled && !reconcile(spawner, center)) return;
+        if (now - spawner.playerNearAt > PLAYER_FRESH_MILLIS) return;
         MobDefinition definition = manager.registry().get(spawner.mob);
         if (definition == null) return;
-        int alive = 0;
-        for (LivingEntity entity : center.getWorld().getNearbyLivingEntities(center, spawner.playerRange + spawner.radius)) {
-            if (entity.getScoreboardTags().contains(spawner.tag())) alive++;
-        }
-        if (!spawner.ready(now, alive)) return;
+        if (!spawner.ready(now, spawner.alive.size())) return;
         Location candidate = randomPoint(center, spawner.radius);
         spawner.nextSpawnAt = now + RETRY_MILLIS;
         Tasks.runAt(plugin, candidate, () -> spawnAt(spawner, definition, candidate));
@@ -117,9 +128,60 @@ public final class SpawnerManager {
         if (spot == null) return;
         spawner.nextSpawnAt = System.currentTimeMillis() + spawner.intervalSeconds * 1000L;
         try {
-            manager.spawn(definition, spot).addScoreboardTag(spawner.tag());
+            LivingEntity entity = manager.spawn(definition, spot);
+            entity.addScoreboardTag(spawner.tag());
+            spawner.alive.add(entity.getUniqueId());
         } catch (RuntimeException exception) {
             plugin.messages().warn("spawner.spawnFailed", "id", spawner.id, "mob", spawner.mob, "error", exception.getMessage());
+        }
+    }
+
+    private boolean reconcile(Spawner spawner, Location center) {
+        int chunkRadius = spawner.radius / CHUNK_SIZE + 1;
+        if (!plugin.getServer().isOwnedByCurrentRegion(center, chunkRadius)) return false;
+        World world = center.getWorld();
+        int centerX = center.getBlockX() >> 4;
+        int centerZ = center.getBlockZ() >> 4;
+        for (int x = centerX - chunkRadius; x <= centerX + chunkRadius; x++) {
+            for (int z = centerZ - chunkRadius; z <= centerZ + chunkRadius; z++) {
+                if (!world.isChunkLoaded(x, z)) continue;
+                for (Entity entity : world.getChunkAt(x, z, false).getEntities()) {
+                    if (entity.getScoreboardTags().contains(spawner.tag())) spawner.alive.add(entity.getUniqueId());
+                }
+            }
+        }
+        spawner.reconciled = true;
+        return true;
+    }
+
+    void track(Entity entity) {
+        Spawner spawner = ownerOf(entity);
+        if (spawner != null) spawner.alive.add(entity.getUniqueId());
+    }
+
+    void untrack(Entity entity) {
+        Spawner spawner = ownerOf(entity);
+        if (spawner != null) spawner.alive.remove(entity.getUniqueId());
+    }
+
+    private Spawner ownerOf(Entity entity) {
+        for (String tag : entity.getScoreboardTags()) {
+            String id = Spawner.idOfTag(tag);
+            if (id != null) return spawners.get(key(id));
+        }
+        return null;
+    }
+
+    private void markNearby(Player player) {
+        Location at = player.getLocation();
+        String world = at.getWorld().getName();
+        long now = System.currentTimeMillis();
+        for (Spawner spawner : spawners.values()) {
+            if (!spawner.world.equals(world)) continue;
+            double dx = at.getX() - spawner.x;
+            double dy = at.getY() - spawner.y;
+            double dz = at.getZ() - spawner.z;
+            if (dx * dx + dy * dy + dz * dz <= (double) spawner.playerRange * spawner.playerRange) spawner.playerNearAt = now;
         }
     }
 

@@ -3,6 +3,8 @@ package eu.northsoft.bettermob.spawner;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -47,6 +49,24 @@ class SpawnerTest {
     void idsThatBreakTheYamlPathAreRejected() {
         assertThrows(IllegalArgumentException.class, () -> new Spawner("a.b", "goblin", "world", 0, 0, 0, 5, 30, 3, 32));
         assertThrows(IllegalArgumentException.class, () -> new Spawner("", "goblin", "world", 0, 0, 0, 5, 30, 3, 32));
+    }
+
+    @Test
+    void tagRoundTripsTheId() {
+        assertEquals("camp", Spawner.idOfTag(new Spawner("camp", "goblin", "world", 0, 0, 0, 5, 30, 3, 32).tag()));
+        assertNull(Spawner.idOfTag("bettermob_helper"));
+    }
+
+    @Test
+    void reloadedSpawnerKeepsTheTrackedMobs() {
+        Spawner old = new Spawner("camp", "goblin", "world", 0, 0, 0, 5, 30, 3, 32);
+        UUID mob = UUID.randomUUID();
+        old.alive.add(mob);
+        old.nextSpawnAt = 1234;
+        Spawner reloaded = new Spawner("camp", "goblin", "world", 0, 0, 0, 5, 30, 3, 32);
+        reloaded.adopt(old);
+        assertTrue(reloaded.alive.contains(mob));
+        assertEquals(1234, reloaded.nextSpawnAt);
     }
 
     @Test
