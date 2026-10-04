@@ -6,7 +6,7 @@ Alias: `/bmob`. Every subcommand has its own permission node, all default to op:
 |---|---|
 | `bettermob.admin` | Everything below (it is the parent of all the others) |
 | `bettermob.spawn` | `/bettermob spawn` |
-| `bettermob.list` | `/bettermob list` and `/bettermob packs` |
+| `bettermob.list` | `/bettermob list`, `/bettermob packs` and `/bettermob info` |
 | `bettermob.reload` | `/bettermob reload` and `/bettermob validate` |
 | `bettermob.skill` | `/bettermob skill` |
 | `bettermob.give` | `/bettermob give` |
@@ -23,6 +23,7 @@ Without a node the subcommand is refused and left out of the help and out of tab
 | `/bettermob skill <id> [player]` | Run a skill by hand, with you (or the player) as caster |
 | `/bettermob list` | List all registered mob IDs |
 | `/bettermob packs` | List packs in `packs/` and whether they are enabled |
+| `/bettermob info <mob>` | Show a mob's type, health, damage, faction, model, equipment, drop entries, skills by trigger and how many are alive |
 | `/bettermob debug [off\|info\|verbose\|filter <id>\|filter clear\|chat]` | Show or change the debug output. Permission `bettermob.debug` (included in `bettermob.admin`) |
 | `/bettermob stats [on\|off\|reset]` | Show living mobs per type, running timers, loaded skills and packs; `on`/`off` switch the skill timing, `reset` clears it. Permission `bettermob.debug` |
 | `/bettermob killall [mob\|*] [world]` | Remove all living BetterMob mobs, or only one type and/or one world, and report how many |
