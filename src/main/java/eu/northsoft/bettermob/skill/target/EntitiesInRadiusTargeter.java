@@ -33,29 +33,33 @@ public final class EntitiesInRadiusTargeter implements Targeter {
         this.nearOrigin = nearOrigin;
     }
 
+    private record Hit(LivingEntity entity, double distance) {}
+
     @Override
     public List<Target> resolve(Map<String, String> params, SkillContext context) {
         Location center = nearOrigin && context.origin() != null ? context.origin() : context.caster().getLocation();
         double radius = parseFloat(firstParam(params, "r", "radius"), playersOnly ? 10f : 5f);
         List<String> conditions = params.containsKey("conditions") ? SkillEngine.splitInline(params.get("conditions")) : List.of();
-        List<LivingEntity> hits = new ArrayList<>();
+        double radiusSquared = radius * radius;
+        List<Hit> hits = new ArrayList<>();
         for (Entity entity : center.getWorld().getNearbyEntities(center, radius, radius, radius)) {
             if (!(entity instanceof LivingEntity living) || entity instanceof ArmorStand || living.isDead()) continue;
             if (playersOnly && !(entity instanceof Player)) continue;
-            if (living.getLocation().distanceSquared(center) > radius * radius) continue;
-            if (filters.matches(living, conditions, context)) hits.add(living);
+            double distance = living.getLocation().distanceSquared(center);
+            if (distance > radiusSquared) continue;
+            if (filters.matches(living, conditions, context)) hits.add(new Hit(living, distance));
         }
         String sort = params.getOrDefault("sort", "nearest").toLowerCase(Locale.ROOT);
         switch (sort) {
             case "random" -> Collections.shuffle(hits);
-            case "farthest" -> hits.sort(Comparator.comparingDouble((LivingEntity entity) -> entity.getLocation().distanceSquared(center)).reversed());
-            default -> hits.sort(Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(center)));
+            case "farthest" -> hits.sort(Comparator.comparingDouble(Hit::distance).reversed());
+            default -> hits.sort(Comparator.comparingDouble(Hit::distance));
         }
         int limit = parseInt(params.get("limit"), defaultLimit);
         List<Target> targets = new ArrayList<>();
-        for (LivingEntity hit : hits) {
+        for (Hit hit : hits) {
             if (targets.size() >= limit) break;
-            targets.add(Target.ofEntity(hit));
+            targets.add(Target.ofEntity(hit.entity()));
         }
         return targets;
     }
