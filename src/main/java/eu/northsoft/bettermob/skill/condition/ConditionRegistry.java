@@ -32,6 +32,10 @@ public final class ConditionRegistry {
         conditions.put("time", new TimeCondition());
     }
 
+    public boolean has(String name) {
+        return conditions.containsKey(name.toLowerCase(java.util.Locale.ROOT));
+    }
+
     public boolean evaluate(Condition condition, SkillContext context, Target targetOverride) {
         SkillCondition found = conditions.get(condition.name());
         if (found == null) {

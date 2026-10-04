@@ -92,6 +92,14 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return state;
     }
 
+    public ConditionRegistry conditionRegistry() {
+        return conditionRegistry;
+    }
+
+    public MechanicRegistry mechanics() {
+        return mechanics;
+    }
+
     public TargeterRegistry targeters() {
         return targeters;
     }
