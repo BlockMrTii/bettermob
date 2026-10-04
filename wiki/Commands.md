@@ -68,4 +68,4 @@ Set `Debug: off|info|verbose` in `config.yml` (default `off`), or change it whil
 | `info` | Every trigger that fires and whether its event was cancelled, every skill run and why it stopped (conditions, target conditions, cooldown, `castinstead`), AI goals that are missing together with the goals the mob type does have |
 | `verbose` | Everything from `info`, plus every mechanic with its targeter, target count and parameters, `cancelskill`, failed conditions, BetterModel bone offsets, `shoot` and `totem` |
 
-`/bettermob debug filter <id>` limits the output to a mob id, skill id or player name (call it again to add more, `filter clear` removes them). `/bettermob debug chat` also sends the output to you in chat. While debug is off nothing is built or logged.
+`/bettermob debug filter <id>` limits the output to a mob id, skill id or player name (mob ids, skill ids and online player names tab-complete; call it again to add more, `filter clear` removes them). `/bettermob debug chat` also sends the output to you in chat. While debug is off nothing is built or logged.
