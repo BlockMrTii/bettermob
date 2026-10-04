@@ -19,6 +19,7 @@ import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillRegistry;
 import eu.northsoft.bettermob.stats.SkillStats;
 import eu.northsoft.bettermob.util.Tasks;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.ServicePriority;
