@@ -4,7 +4,6 @@ import org.bukkit.Location;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RegionEntitiesTest {
@@ -17,9 +16,10 @@ class RegionEntitiesTest {
     }
 
     @Test
-    void boxCheckUsesEveryAxis() {
+    void invalidRadiiFindNothing() {
         Location center = new Location(null, 0, 64, 0);
-        assertTrue(RegionEntities.withinBox(new Location(null, 5, 64, -5), center, 5));
-        assertFalse(RegionEntities.withinBox(new Location(null, 5, 70, 0), center, 5));
+        assertTrue(RegionEntities.near(center, Double.NaN).isEmpty());
+        assertTrue(RegionEntities.near(center, Double.POSITIVE_INFINITY).isEmpty());
+        assertTrue(RegionEntities.near(center, -1).isEmpty());
     }
 }
