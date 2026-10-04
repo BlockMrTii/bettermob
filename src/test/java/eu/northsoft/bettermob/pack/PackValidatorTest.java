@@ -67,6 +67,16 @@ class PackValidatorTest {
     }
 
     @Test
+    void dropTablesAndMobDropListsAreChecked(@TempDir Path root) throws IOException {
+        write(root, "DropTables/loot.yml", "loot:\n  Drops:\n    - diamond 1to2 0.5\n    - totally broken line here now\n");
+        write(root, "mobs/zombie.yml", "zombie:\n  Drops:\n    - loot\n    - bone 1 x\n");
+        PackValidator.Report report = validator.validatePack("drops", root.toFile());
+        assertEquals(4, report.lines());
+        assertEquals(2, report.issues().size(), report.issues().toString());
+        assertEquals(PackValidator.Reason.UNPARSEABLE, report.issues().get(0).reason());
+    }
+
+    @Test
     void foldersAreMatchedCaseInsensitivelyAndMissingOnesAreSkipped(@TempDir Path root) throws IOException {
         write(root, "SKILLS/a.yml", "a:\n  Skills:\n    - sound{s=a}\n");
         PackValidator.Report report = validator.validatePack("case", root.toFile());
