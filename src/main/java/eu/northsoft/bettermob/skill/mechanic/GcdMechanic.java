@@ -12,6 +12,11 @@ public final class GcdMechanic implements Mechanic {
     }
 
     @Override
+    public boolean runsOnTarget() {
+        return false;
+    }
+
+    @Override
     public void execute(MechanicCall call) {
         engine.state().setGcd(call.context().caster().getUniqueId(), parseInt(call.params().get("ticks"), 20));
     }

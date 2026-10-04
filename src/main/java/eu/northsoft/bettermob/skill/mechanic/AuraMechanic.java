@@ -20,6 +20,11 @@ public final class AuraMechanic implements Mechanic {
     }
 
     @Override
+    public boolean runsOnTarget() {
+        return false;
+    }
+
+    @Override
     public void execute(MechanicCall call) {
         Map<String, String> p = call.params();
         String name = firstParam(p, "auraname", "name", "aura");

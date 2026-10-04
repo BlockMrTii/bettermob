@@ -33,6 +33,11 @@ public final class TotemMechanic implements Mechanic, Listener {
     }
 
     @Override
+    public boolean runsOnTarget() {
+        return false;
+    }
+
+    @Override
     public void execute(MechanicCall call) {
         Map<String, String> p = call.params();
         SkillContext context = call.context();

@@ -265,7 +265,8 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         else {
             MechanicCall call = new MechanicCall(mechanic, context, target, p);
             Runnable run = () -> handler.execute(call);
-            if (target.entity() != null) Tasks.runOwned(plugin, target.entity(), run);
+            if (!handler.runsOnTarget()) run.run();
+            else if (target.entity() != null) Tasks.runOwned(plugin, target.entity(), run);
             else if (target.location() != null) Tasks.runOwnedAt(plugin, target.location(), run);
             else run.run();
         }

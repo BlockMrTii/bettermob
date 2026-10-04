@@ -14,6 +14,11 @@ public final class SkillMechanic implements Mechanic {
     }
 
     @Override
+    public boolean runsOnTarget() {
+        return false;
+    }
+
+    @Override
     public void execute(MechanicCall call) {
         String id = firstParam(call.params(), "s", "skill", "skills");
         if (id == null) return;

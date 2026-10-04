@@ -14,6 +14,11 @@ public final class RandomSkillMechanic implements Mechanic {
     }
 
     @Override
+    public boolean runsOnTarget() {
+        return false;
+    }
+
+    @Override
     public void execute(MechanicCall call) {
         String list = firstParam(call.params(), "s", "skills", "skill");
         if (list == null) return;

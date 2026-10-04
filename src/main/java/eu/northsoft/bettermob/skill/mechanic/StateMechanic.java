@@ -12,6 +12,11 @@ public final class StateMechanic implements Mechanic {
     }
 
     @Override
+    public boolean runsOnTarget() {
+        return false;
+    }
+
+    @Override
     public void execute(MechanicCall call) {
         String stateName = firstParam(call.params(), "state", "s");
         if (stateName == null) return;

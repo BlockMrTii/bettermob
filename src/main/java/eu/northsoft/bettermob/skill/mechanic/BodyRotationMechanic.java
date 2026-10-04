@@ -15,6 +15,11 @@ public final class BodyRotationMechanic implements Mechanic {
     }
 
     @Override
+    public boolean runsOnTarget() {
+        return false;
+    }
+
+    @Override
     public void execute(MechanicCall call) {
         Map<String, String> p = call.params();
         UUID id = call.context().caster().getUniqueId();

@@ -10,6 +10,11 @@ import static eu.northsoft.bettermob.skill.Params.parseFloat;
 
 public final class LungeMechanic implements Mechanic {
     @Override
+    public boolean runsOnTarget() {
+        return false;
+    }
+
+    @Override
     public void execute(MechanicCall call) {
         Map<String, String> p = call.params();
         LivingEntity caster = call.context().caster();
