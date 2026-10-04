@@ -92,14 +92,16 @@ final class BossBarManager {
         double range = definition.bossBar.range();
         Location location = entity.getLocation();
         for (Player player : Bukkit.getOnlinePlayers()) {
-            Tasks.runOwned(plugin, player, () -> updateViewer(bar, player, location, range));
+            Tasks.runOwned(plugin, player, () -> updateViewer(entity.getUniqueId(), bar, player, location, range));
         }
     }
 
-    private static void updateViewer(BossBar bar, Player player, Location barLocation, double range) {
+    private void updateViewer(UUID entityId, BossBar bar, Player player, Location barLocation, double range) {
         boolean inRange = player.getWorld().equals(barLocation.getWorld())
                 && player.getLocation().distanceSquared(barLocation) <= range * range;
         synchronized (bar) {
+            Active current = active.get(entityId);
+            if (current == null || current.bar() != bar) return;
             if (inRange) bar.addPlayer(player);
             else bar.removePlayer(player);
         }
