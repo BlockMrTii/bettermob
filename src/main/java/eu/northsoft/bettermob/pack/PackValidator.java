@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.pack;
 
+import eu.northsoft.bettermob.drop.DropEntry;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.skill.Condition;
 import eu.northsoft.bettermob.skill.SkillEngine;
@@ -43,7 +44,7 @@ public final class PackValidator {
         }
     }
 
-    private static final List<String> FOLDERS = List.of("mobs", "skills", "items");
+    private static final List<String> FOLDERS = List.of("mobs", "skills", "items", "droptables");
 
     private final Knowledge known;
 
@@ -68,6 +69,7 @@ public final class PackValidator {
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
                 String label = sub.toPath().getParent().relativize(file.toPath()).toString().replace('\\', '/');
                 if (name.equals("skills")) validateSkillFile(config, label, report);
+                else if (name.equals("droptables")) validateDropFile(config, label, report);
                 else walkTriggerLists(config, label, report);
             }
         }
@@ -78,10 +80,25 @@ public final class PackValidator {
         for (String key : section.getKeys(false)) {
             if (key.equalsIgnoreCase("Skills") && section.isList(key)) {
                 for (String line : section.getStringList(key)) validateTriggerLine(line, file, report);
+            } else if (key.equalsIgnoreCase("Drops") && section.isList(key)) {
+                for (String line : section.getStringList(key)) validateDropLine(line, file, report);
             } else if (section.isConfigurationSection(key)) {
                 walkTriggerLists(section.getConfigurationSection(key), file, report);
             }
         }
+    }
+
+    void validateDropFile(ConfigurationSection root, String file, Report report) {
+        for (String id : root.getKeys(false)) {
+            ConfigurationSection table = root.getConfigurationSection(id);
+            if (table == null || !table.isList("Drops")) continue;
+            for (String line : table.getStringList("Drops")) validateDropLine(line, file, report);
+        }
+    }
+
+    void validateDropLine(String line, String file, Report report) {
+        report.lines++;
+        if (DropEntry.parse(line) == null) report.issues.add(new Issue(file, line, Reason.UNPARSEABLE, ""));
     }
 
     void validateSkillFile(ConfigurationSection root, String file, Report report) {
