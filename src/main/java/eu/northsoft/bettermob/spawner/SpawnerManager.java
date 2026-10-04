@@ -16,6 +16,7 @@ import org.bukkit.entity.Player;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,16 +39,23 @@ public final class SpawnerManager {
         this.file = new File(plugin.getDataFolder(), "spawners.yml");
     }
 
-    public void load() {
-        spawners.clear();
-        if (!file.exists()) return;
-        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
-        for (String id : yaml.getKeys(false)) {
-            ConfigurationSection section = yaml.getConfigurationSection(id);
-            Spawner spawner = section == null ? null : Spawner.read(id, section);
-            if (spawner == null) plugin.messages().warn("spawner.invalid", "id", id);
-            else spawners.put(key(id), spawner);
+    public synchronized void load() {
+        Map<String, Spawner> loaded = new HashMap<>();
+        if (file.exists()) {
+            YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
+            for (String id : yaml.getKeys(false)) {
+                ConfigurationSection section = yaml.getConfigurationSection(id);
+                Spawner spawner = section == null ? null : Spawner.read(id, section);
+                if (spawner == null) plugin.messages().warn("spawner.invalid", "id", id);
+                else loaded.put(key(id), spawner);
+            }
         }
+        loaded.forEach((key, spawner) -> {
+            Spawner previous = spawners.get(key);
+            if (previous != null) spawner.adopt(previous);
+        });
+        spawners.keySet().retainAll(loaded.keySet());
+        spawners.putAll(loaded);
     }
 
     public void start() {

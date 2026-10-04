@@ -26,6 +26,8 @@ public final class Spawner {
     public final int playerRange;
     final Set<UUID> alive = ConcurrentHashMap.newKeySet();
     volatile long nextSpawnAt;
+    volatile boolean reconciled;
+    volatile long playerNearAt;
 
     public Spawner(String id, String mob, String world, double x, double y, double z, int radius, int intervalSeconds, int max, int playerRange) {
         if (id.isEmpty() || id.indexOf('.') >= 0) throw new IllegalArgumentException("Invalid spawner id: " + id);
@@ -68,6 +70,13 @@ public final class Spawner {
 
     public static String idOfTag(String tag) {
         return tag.startsWith(TAG_PREFIX) ? tag.substring(TAG_PREFIX.length()) : null;
+    }
+
+    void adopt(Spawner previous) {
+        alive.addAll(previous.alive);
+        nextSpawnAt = previous.nextSpawnAt;
+        reconciled = previous.reconciled;
+        playerNearAt = previous.playerNearAt;
     }
 
     boolean ready(long now, int alive) {
