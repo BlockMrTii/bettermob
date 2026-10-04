@@ -9,6 +9,7 @@ import eu.northsoft.bettermob.lang.Messages;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.pack.PackScanner;
+import eu.northsoft.bettermob.pack.PackValidator;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillRegistry;
@@ -41,6 +42,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         nodes.put("list", "bettermob.list");
         nodes.put("packs", "bettermob.list");
         nodes.put("reload", "bettermob.reload");
+        nodes.put("validate", "bettermob.reload");
         nodes.put("skill", "bettermob.skill");
         nodes.put("give", "bettermob.give");
         nodes.put("killall", "bettermob.killall");
@@ -80,6 +82,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             shown |= help(sender, "list", "command.help.list");
             shown |= help(sender, "packs", "command.help.packs");
             shown |= help(sender, "reload", "command.help.reload");
+            shown |= help(sender, "validate", "command.help.validate");
             shown |= help(sender, "skill", "command.help.skill");
             shown |= help(sender, "give", "command.help.give");
             shown |= help(sender, "killall", "command.help.killall");
@@ -109,6 +112,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
                 if (packs.isEmpty()) messages.send(sender, "command.packsNone");
                 else packs.forEach(line -> messages.send(sender, "command.packEntry", "pack", line));
             }
+            case "validate" -> handleValidate(sender, args);
             case "spawn" -> handleSpawn(sender, args);
             case "skill" -> handleSkill(sender, args);
             case "give" -> handleGive(sender, args);
@@ -119,6 +123,63 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             default -> messages.send(sender, "command.unknown");
         }
         return true;
+    }
+
+    private static final int MAX_ISSUES_PER_PACK = 20;
+    private static final int MAX_LINE_LENGTH = 70;
+
+    private void handleValidate(CommandSender sender, String[] args) {
+        Map<String, java.io.File> sources = packScanner.sources();
+        Map<String, java.io.File> chosen = new LinkedHashMap<>();
+        if (args.length >= 2) {
+            for (Map.Entry<String, java.io.File> entry : sources.entrySet()) {
+                if (entry.getKey().equalsIgnoreCase(args[1])) chosen.put(entry.getKey(), entry.getValue());
+            }
+            if (chosen.isEmpty()) {
+                messages.send(sender, "command.validate.unknownPack", "pack", args[1]);
+                return;
+            }
+        } else {
+            chosen.putAll(sources);
+        }
+
+        PackValidator validator = new PackValidator(PackValidator.knowledgeOf(skillEngine, id -> skillRegistry.get(id) != null));
+        List<PackValidator.Report> reports = new ArrayList<>();
+        for (Map.Entry<String, java.io.File> entry : chosen.entrySet()) {
+            String name = entry.getKey().isEmpty() ? messages.get("command.validate.mainName") : entry.getKey();
+            PackValidator.Report report = validator.validatePack(name, entry.getValue());
+            if (report.lines() > 0) reports.add(report);
+        }
+
+        int lines = reports.stream().mapToInt(PackValidator.Report::lines).sum();
+        messages.send(sender, "command.validate.header", "lines", lines, "sources", reports.size());
+        boolean anyProblem = false;
+        for (PackValidator.Report report : reports) {
+            messages.send(sender, "command.validate.pack", "pack", report.pack(), "lines", report.lines(), "problems", report.issues().size());
+            int shown = 0;
+            for (PackValidator.Issue issue : report.issues()) {
+                anyProblem = true;
+                if (shown++ >= MAX_ISSUES_PER_PACK) break;
+                String line = issue.line().length() > MAX_LINE_LENGTH ? issue.line().substring(0, MAX_LINE_LENGTH) + "..." : issue.line();
+                String reason = messages.get(reasonKey(issue.reason()), "name", issue.name());
+                messages.send(sender, "command.validate.issue", "file", issue.file(), "line", line, "reason", reason);
+            }
+            if (report.issues().size() > MAX_ISSUES_PER_PACK) {
+                messages.send(sender, "command.validate.more", "count", report.issues().size() - MAX_ISSUES_PER_PACK);
+            }
+        }
+        if (!anyProblem) messages.send(sender, "command.validate.allGood");
+    }
+
+    private static String reasonKey(PackValidator.Reason reason) {
+        return switch (reason) {
+            case UNPARSEABLE -> "command.validate.reason.unparseable";
+            case MECHANIC -> "command.validate.reason.mechanic";
+            case TARGETER -> "command.validate.reason.targeter";
+            case CONDITION -> "command.validate.reason.condition";
+            case TARGETER_CONDITION -> "command.validate.reason.targeterCondition";
+            case SKILL -> "command.validate.reason.skill";
+        };
     }
 
     private void handleStats(CommandSender sender, String[] args) {
@@ -381,6 +442,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         }
         String node = PERMISSIONS.get(args[0].toLowerCase(Locale.ROOT));
         if (node == null || !sender.hasPermission(node)) return List.of();
+        if (args.length == 2 && args[0].equalsIgnoreCase("validate")) return new ArrayList<>(packScanner.sources().keySet().stream().filter(name -> !name.isEmpty()).toList());
         if (args.length == 2 && args[0].equalsIgnoreCase("debug")) return List.of("off", "info", "verbose", "filter", "chat");
         if (args.length == 2 && args[0].equalsIgnoreCase("stats")) return List.of("on", "off", "reset");
         if (args.length == 2 && args[0].equalsIgnoreCase("spawn")) return new ArrayList<>(manager.registry().all().keySet());

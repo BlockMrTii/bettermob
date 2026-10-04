@@ -42,6 +42,10 @@ public final class TargeterRegistry {
         for (String name : names) targeters.put(name, targeter);
     }
 
+    public boolean has(String name) {
+        return targeters.containsKey(name.toLowerCase(Locale.ROOT));
+    }
+
     public List<Target> resolveAll(String targeter, Map<String, String> params, SkillContext context) {
         Targeter found = targeters.get(targeter.toLowerCase(Locale.ROOT));
         if (found != null) return found.resolve(params, context);

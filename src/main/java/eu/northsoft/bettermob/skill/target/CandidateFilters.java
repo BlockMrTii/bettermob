@@ -13,6 +13,8 @@ import static eu.northsoft.bettermob.skill.Params.conditionParam;
 import static eu.northsoft.bettermob.skill.SkillTags.TAG_PREFIX;
 
 public final class CandidateFilters {
+    public static final java.util.Set<String> KNOWN = java.util.Set.of("isplayer", "iscaster", "ismob", "hastag", "faction");
+
     private final SkillEngine engine;
 
     public CandidateFilters(SkillEngine engine) {
