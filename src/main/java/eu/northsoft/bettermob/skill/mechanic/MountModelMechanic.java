@@ -18,11 +18,18 @@ public final class MountModelMechanic implements Mechanic {
     @Override
     public void execute(MechanicCall call) {
         if (!(call.target().entity() instanceof LivingEntity rider)) return;
-        Object tracker = engine.mobManager().trackerFor(call.context().caster().getUniqueId());
-        if (tracker == null) {
+        java.util.UUID id = call.context().caster().getUniqueId();
+        String seat = call.params().getOrDefault("seat", "mount");
+        Object tracker = engine.mobManager().trackerFor(id);
+        if (tracker != null) {
+            engine.betterModel().mount(tracker, seat, rider);
+            return;
+        }
+        Object engineTracker = engine.mobManager().modelEngineTrackerFor(id);
+        if (engineTracker == null) {
             engine.plugin().messages().warn("skill.mountNoTracker");
             return;
         }
-        engine.betterModel().mount(tracker, call.params().getOrDefault("seat", "mount"), rider);
+        engine.modelEngine().mount(engineTracker, seat, rider, call.params().get("controller"));
     }
 }

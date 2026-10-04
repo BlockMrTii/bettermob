@@ -54,16 +54,17 @@ independent: each uses its own model IDs, and a model must exist in the engine y
 |---|---|---|
 | Attach a model with `model{mid=...}` | Yes | - |
 | Attach a model with `modelengine{mid=...}` | - | Yes |
-| `Model:` field in the mob file (automatic attach on spawn/load) | Yes | No, use a `modelengine{}` line |
+| `Model:` field in the mob file (automatic attach on spawn, load and reload) | Yes | Yes, used when BetterModel has no model with that id |
 | Hide the vanilla body while a model is attached | Yes | Yes |
-| Model reattached after restart/chunk load (`~onLoad`) | Yes | Yes, with a `modelengine{}` line on `~onLoad` |
-| `state{s=...}` plays a model animation | Yes | No |
-| `mountmodel{seat=...}` (rideable seats with WASD control) | Yes | No |
-| `@ModelPart{p=<bone>}` targeter (bone position) | Yes | No, falls back to chest height |
-| `bodyrotation{...}` head/body turn limits | Yes | No, ignored |
+| Model reattached after restart/chunk load | Yes | Yes (through `Model:` or a `modelengine{}` line on `~onLoad`) |
+| `state{s=...}` plays a model animation | Yes (once) | Yes (`lerpIn`, `lerpOut`, `speed`, `force`) |
+| `mountmodel{seat=...}` (rideable seats) | Yes | Yes (`controller=walking\|flying\|walking_force\|flying_force`) |
+| `@ModelPart{p=<bone>}` targeter (bone position) | Yes | Yes |
+| `bodyrotation{...}` head/body turn limits | Yes | Yes |
 
-Mechanics that need BetterModel simply do nothing on a ModelEngine mob (`mountmodel` logs a
-warning) instead of failing. Using both engines for different mobs on one server works.
+Both engines are reached through reflection, so BetterMob has no compile dependency on either; the ModelEngine
+calls are checked against ModelEngine R4.0.9 and R4.1.0. If a model id exists in both engines the `Model:` field
+uses BetterModel. Using both engines for different mobs on one server works.
 
 ## Building
 
@@ -490,7 +491,7 @@ in `pom.xml` and push.
 <dependency>
     <groupId>com.github.HyperGaming99</groupId>
     <artifactId>bettermob</artifactId>
-    <version>v1.1.7</version> <!-- a tag -->
+    <version>v1.1.7.1</version> <!-- a tag -->
     <scope>provided</scope>
 </dependency>
 ```
@@ -506,7 +507,7 @@ in `pom.xml` and push.
 <dependency>
     <groupId>eu.northsoft</groupId>
     <artifactId>bettermob</artifactId>
-    <version>1.1.7</version>
+    <version>1.1.7.1</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -564,7 +565,7 @@ skill lines or trigger a command. `caster` and `target` are reserved namespaces.
 mvn -f examples/api-example/pom.xml package
 ```
 
-This resolves `com.github.HyperGaming99:bettermob:v1.1.7` from JitPack, the same coordinates as above. To compile it against your own checkout instead:
+This resolves `com.github.HyperGaming99:bettermob:v1.1.7.1` from JitPack, the same coordinates as above. To compile it against your own checkout instead:
 
 ```bash
 mvn install -DskipTests

@@ -23,13 +23,18 @@ public final class BodyRotationMechanic implements Mechanic {
     public void execute(MechanicCall call) {
         Map<String, String> p = call.params();
         UUID id = call.context().caster().getUniqueId();
-        if (engine.betterModel().bodyRotation(engine.mobManager().trackerFor(id), p)) return;
+        if (apply(id, p)) return;
         AtomicBoolean applied = new AtomicBoolean();
         for (int attempt = 1; attempt <= 5; attempt++) {
             Tasks.runLater(engine.plugin(), call.context().caster(), attempt * 2L, () -> {
-                Object tracker = engine.mobManager().trackerFor(id);
-                if (tracker != null && !applied.get() && engine.betterModel().bodyRotation(tracker, p)) applied.set(true);
+                if (!applied.get() && apply(id, p)) applied.set(true);
             });
         }
+    }
+
+    private boolean apply(UUID id, Map<String, String> params) {
+        Object tracker = engine.mobManager().trackerFor(id);
+        if (tracker != null) return engine.betterModel().bodyRotation(tracker, params);
+        return engine.modelEngine().bodyRotation(engine.mobManager().modelEngineTrackerFor(id), params);
     }
 }
