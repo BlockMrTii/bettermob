@@ -66,14 +66,27 @@ public final class Tasks {
         else task.run();
     }
 
-    public static void runOwned(Plugin plugin, Entity entity, Runnable task) {
-        if (!FOLIA || Bukkit.isOwnedByCurrentRegion(entity)) task.run();
-        else entity.getScheduler().run(plugin, scheduled -> task.run(), null);
+    public static boolean runOwned(Plugin plugin, Entity entity, Runnable task) {
+        return runOwned(plugin, entity, task, null);
     }
 
-    public static void runOwnedAt(Plugin plugin, Location location, Runnable task) {
-        if (!FOLIA || Bukkit.isOwnedByCurrentRegion(location)) task.run();
-        else Bukkit.getRegionScheduler().run(plugin, location, scheduled -> task.run());
+    public static boolean runOwned(Plugin plugin, Entity entity, Runnable task, Runnable retired) {
+        if (!FOLIA || Bukkit.isOwnedByCurrentRegion(entity)) {
+            task.run();
+            return true;
+        }
+        var scheduled = entity.getScheduler().run(plugin, current -> task.run(), retired);
+        if (scheduled == null && retired != null) retired.run();
+        return false;
+    }
+
+    public static boolean runOwnedAt(Plugin plugin, Location location, Runnable task) {
+        if (!FOLIA || Bukkit.isOwnedByCurrentRegion(location)) {
+            task.run();
+            return true;
+        }
+        Bukkit.getRegionScheduler().run(plugin, location, scheduled -> task.run());
+        return false;
     }
 
     public static void runGlobal(Plugin plugin, Runnable task) {

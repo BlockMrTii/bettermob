@@ -213,14 +213,19 @@ public final class SkillEngine implements org.bukkit.event.Listener {
                 Tasks.runLater(plugin, context.caster(), delay.ticks(), plugin.stats().trackPending(() -> executeSteps(steps, next, context)));
                 return;
             }
-            if (step instanceof SkillStep.Mechanic mechanic && runMechanic(mechanic, context)) {
-                if (debug.verbose()) debug.verbose("cancelskill reached", subject(context.caster()));
-                return;
+            if (step instanceof SkillStep.Mechanic mechanic) {
+                Deferral deferral = new Deferral();
+                if (runMechanic(mechanic, context, deferral)) {
+                    if (debug.verbose()) debug.verbose("cancelskill reached", subject(context.caster()));
+                    return;
+                }
+                int next = i + 1;
+                if (deferral.await(() -> Tasks.runOwned(plugin, context.caster(), () -> executeSteps(steps, next, context)))) return;
             }
         }
     }
 
-    private boolean runMechanic(SkillStep.Mechanic mechanic, SkillContext context) {
+    private boolean runMechanic(SkillStep.Mechanic mechanic, SkillContext context, Deferral deferral) {
         Map<String, String> p = mechanic.params();
 
         if (mechanic.inlineCondition() != null) {
@@ -237,7 +242,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
             SkillStep.Mechanic withoutDelay = new SkillStep.Mechanic(mechanic.name(),
                     without(without(p, "delay"), "cd"), mechanic.targeter(), mechanic.targeterParams(), null, false);
-            Tasks.runLater(plugin, context.caster(), ticks, plugin.stats().trackPending(() -> runMechanic(withoutDelay, context)));
+            Tasks.runLater(plugin, context.caster(), ticks, plugin.stats().trackPending(() -> runMechanic(withoutDelay, context, new Deferral())));
             return false;
         }
 
@@ -255,14 +260,31 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             debug.verbose("mechanic '" + mechanic.name() + "' @" + (mechanic.targeter().isEmpty() ? "(inherited)" : mechanic.targeter())
                     + " -> " + targets.size() + " target(s), params " + params, subject(context.caster()));
         }
-        for (Target target : targets) dispatch(mechanic, context, target, params);
+        for (Target target : targets) dispatch(mechanic, context, target, params, deferral);
         return false;
     }
 
-    private void dispatch(SkillStep.Mechanic mechanic, SkillContext context, Target target, Map<String, String> p) {
+    private void dispatch(SkillStep.Mechanic mechanic, SkillContext context, Target target, Map<String, String> p, Deferral deferral) {
         Mechanic handler = mechanics.get(mechanic.name());
         if (handler == null) plugin.messages().warn("skill.mechanicUnsupported", "mechanic", mechanic.name());
-        else handler.execute(new MechanicCall(mechanic, context, target, p));
+        else {
+            MechanicCall call = new MechanicCall(mechanic, context, target, p);
+            if (!handler.runsOnTarget()) {
+                handler.execute(call);
+                return;
+            }
+            deferral.add();
+            Runnable run = () -> {
+                try {
+                    handler.execute(call);
+                } finally {
+                    deferral.complete();
+                }
+            };
+            if (target.entity() != null) Tasks.runOwned(plugin, target.entity(), run, deferral::complete);
+            else if (target.location() != null) Tasks.runOwnedAt(plugin, target.location(), run);
+            else run.run();
+        }
     }
 
     private boolean conditionPasses(String raw, SkillContext context, Target targetOverride) {

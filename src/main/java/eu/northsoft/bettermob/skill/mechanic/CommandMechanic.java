@@ -17,6 +17,11 @@ public final class CommandMechanic implements Mechanic {
     }
 
     @Override
+    public boolean runsOnTarget() {
+        return false;
+    }
+
+    @Override
     public void execute(MechanicCall call) {
         SkillContext context = call.context();
         String raw = call.params().get("c");
