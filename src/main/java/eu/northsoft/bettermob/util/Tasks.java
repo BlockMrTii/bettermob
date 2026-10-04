@@ -75,7 +75,8 @@ public final class Tasks {
             task.run();
             return true;
         }
-        entity.getScheduler().run(plugin, scheduled -> task.run(), retired);
+        var scheduled = entity.getScheduler().run(plugin, current -> task.run(), retired);
+        if (scheduled == null && retired != null) retired.run();
         return false;
     }
 
