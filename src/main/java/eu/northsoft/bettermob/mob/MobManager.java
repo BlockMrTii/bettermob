@@ -228,15 +228,27 @@ public final class MobManager {
     public void replaceTracker(Entity entity, Object newTracker) {
         Object old = trackers.remove(entity.getUniqueId());
         if (old != null) betterModel.close(old);
-        if (newTracker != null) trackers.put(entity.getUniqueId(), newTracker);
-        entity.setInvisible(newTracker != null || staysInvisible(entity));
+        if (newTracker != null) {
+            trackers.put(entity.getUniqueId(), newTracker);
+            Object engineOld = modelEngineTrackers.remove(entity.getUniqueId());
+            if (engineOld != null) modelEngine.close(engineOld);
+        }
+        entity.setInvisible(hasModel(entity) || staysInvisible(entity));
+    }
+
+    private boolean hasModel(Entity entity) {
+        return trackers.containsKey(entity.getUniqueId()) || modelEngineTrackers.containsKey(entity.getUniqueId());
     }
 
     public void replaceModelEngineTracker(Entity entity, Object newTracker) {
         Object old = modelEngineTrackers.remove(entity.getUniqueId());
         if (old != null) modelEngine.close(old);
-        if (newTracker != null) modelEngineTrackers.put(entity.getUniqueId(), newTracker);
-        entity.setInvisible(newTracker != null || staysInvisible(entity));
+        if (newTracker != null) {
+            modelEngineTrackers.put(entity.getUniqueId(), newTracker);
+            Object betterOld = trackers.remove(entity.getUniqueId());
+            if (betterOld != null) betterModel.close(betterOld);
+        }
+        entity.setInvisible(hasModel(entity) || staysInvisible(entity));
     }
 
     public void fireTrigger(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
