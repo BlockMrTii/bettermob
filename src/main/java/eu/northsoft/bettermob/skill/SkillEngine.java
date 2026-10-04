@@ -385,9 +385,14 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return result;
     }
 
+    private static boolean isInlineSkill(String value) {
+        String trimmed = value.stripLeading();
+        return trimmed.startsWith("[") && trimmed.indexOf('{') > 0;
+    }
+
     static String withCasterValues(String value, String damage, String name, boolean escapesItself) {
         String replaced = value.replace("<caster.damage>", damage);
-        if (escapesItself || value.indexOf('{') >= 0) return replaced;
+        if (escapesItself || isInlineSkill(value)) return replaced;
         return replaced.replace("<caster.name>", name);
     }
 }
