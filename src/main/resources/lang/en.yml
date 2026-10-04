@@ -126,6 +126,8 @@ skill:
   inlineLineInvalid: "Inline skill: line '{line}' could not be parsed."
   mechanicUnsupported: "Skill mechanic '{mechanic}' is not supported."
   customMechanicFailed: "Custom mechanic '{mechanic}' from {plugin} failed: {error}"
+  customConditionFailed: "Custom condition '{condition}' of plugin {plugin} failed: {error}"
+  customTargeterFailed: "Custom targeter '@{targeter}' of plugin {plugin} failed: {error}"
   conditionUnsupported: "Skill condition '{condition}' is not supported - ignored."
   targeterConditionUnsupported: "Targeter condition '{condition}' is not supported - ignored."
   targeterUnknown: "Unknown targeter '@{targeter}', the line targets the default target instead."
