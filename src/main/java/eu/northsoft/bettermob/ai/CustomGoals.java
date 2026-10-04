@@ -3,6 +3,7 @@ package eu.northsoft.bettermob.ai;
 import com.destroystokyo.paper.entity.ai.Goal;
 import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.destroystokyo.paper.entity.ai.GoalType;
+import eu.northsoft.bettermob.util.RegionEntities;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
@@ -60,8 +61,8 @@ final class CustomGoals {
                 double radius = follow == null ? 16 : follow.getValue();
                 found = null;
                 double best = Double.MAX_VALUE;
-                for (Entity entity : mob.getNearbyEntities(radius, radius, radius)) {
-                    if (!(entity instanceof Monster monster) || monster.isDead() || managed.test(monster)) continue;
+                for (Entity entity : RegionEntities.near(mob.getLocation(), radius)) {
+                    if (entity == mob || !(entity instanceof Monster monster) || monster.isDead() || managed.test(monster)) continue;
                     double distance = monster.getLocation().distanceSquared(mob.getLocation());
                     if (distance < best) {
                         best = distance;
