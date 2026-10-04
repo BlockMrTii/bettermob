@@ -48,6 +48,8 @@ public final class BetterMobPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        int pluginId = 34490;
+        new Metrics(this, pluginId);
         saveDefaultConfig();
         messages = new Messages(this);
         debug = new DebugManager(this);
