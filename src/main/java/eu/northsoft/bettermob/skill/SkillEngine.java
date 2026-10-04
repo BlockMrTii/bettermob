@@ -45,7 +45,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private final TargeterRegistry targeters;
     private final ConditionRegistry conditionRegistry;
     private final MechanicRegistry mechanics;
-    private final CustomPlaceholders placeholders = new CustomPlaceholders();
+    private final CustomPlaceholders placeholders;
 
     public SkillEngine(BetterMobPlugin plugin, SkillRegistry registry, MobManager mobManager, BetterModelHook betterModel, ModelEngineHook modelEngine, ItemRegistry items) {
         this.plugin = plugin;
@@ -55,6 +55,8 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         this.modelEngine = modelEngine;
         this.items = items;
         this.debug = plugin.debug();
+        this.placeholders = new CustomPlaceholders((namespace, owner, exception) -> plugin.messages().warn("skill.customPlaceholderFailed",
+                "namespace", namespace, "plugin", owner == null ? "?" : owner.getName(), "error", exception));
         this.targeters = new TargeterRegistry(this);
         this.conditionRegistry = new ConditionRegistry(this);
         this.mechanics = new MechanicRegistry(plugin);

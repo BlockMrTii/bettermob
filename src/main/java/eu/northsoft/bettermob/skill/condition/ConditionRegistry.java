@@ -60,7 +60,7 @@ public final class ConditionRegistry {
         SkillCondition found = conditions.get(condition.name());
         if (found == null) {
             CustomEntry custom = customs.get(condition.name());
-            if (custom != null) return testCustom(custom, condition, context);
+            if (custom != null) return testCustom(custom, condition, context, targetOverride);
 
             engine.plugin().messages().warn("skill.conditionUnsupported", "condition", condition.name());
             return true;
@@ -68,10 +68,12 @@ public final class ConditionRegistry {
         return found.test(context, condition.params(), targetOverride);
     }
 
-    private boolean testCustom(CustomEntry custom, Condition condition, SkillContext context) {
+    private boolean testCustom(CustomEntry custom, Condition condition, SkillContext context, Target targetOverride) {
         try {
             return custom.condition().test(new eu.northsoft.bettermob.api.ConditionContext(
-                    context.caster(), context.trigger(), eu.northsoft.bettermob.skill.Params.parsedParams(condition.params())));
+                    context.caster(), context.trigger(),
+                    targetOverride == null ? null : targetOverride.entity(), targetOverride == null ? null : targetOverride.location(),
+                    eu.northsoft.bettermob.skill.Params.parsedParams(condition.params())));
         } catch (RuntimeException exception) {
             engine.plugin().messages().warn("skill.customConditionFailed", "condition", condition.name(),
                     "plugin", custom.owner() == null ? "?" : custom.owner().getName(), "error", exception);

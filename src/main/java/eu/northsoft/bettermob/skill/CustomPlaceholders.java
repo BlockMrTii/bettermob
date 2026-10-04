@@ -12,11 +12,25 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class CustomPlaceholders {
-    private static final Pattern PLACEHOLDER = Pattern.compile("<([a-z0-9_]+)\\.([A-Za-z0-9_.]+)>");
+    private static final Pattern PLACEHOLDER = Pattern.compile("<([A-Za-z0-9_]+)\\.([A-Za-z0-9_.]+)>");
 
     private record Entry(Plugin owner, CustomPlaceholder placeholder) {}
 
+    @FunctionalInterface
+    public interface FailureHandler {
+        void failed(String namespace, Plugin owner, RuntimeException exception);
+    }
+
     private final Map<String, Entry> entries = new ConcurrentHashMap<>();
+    private final FailureHandler onFailure;
+
+    public CustomPlaceholders() {
+        this((namespace, owner, exception) -> { });
+    }
+
+    public CustomPlaceholders(FailureHandler onFailure) {
+        this.onFailure = onFailure;
+    }
 
     public boolean isEmpty() {
         return entries.isEmpty();
@@ -41,7 +55,7 @@ public final class CustomPlaceholders {
         Matcher matcher = PLACEHOLDER.matcher(value);
         StringBuilder result = new StringBuilder();
         while (matcher.find()) {
-            Entry entry = entries.get(matcher.group(1));
+            Entry entry = entries.get(matcher.group(1).toLowerCase(Locale.ROOT));
             String replacement = matcher.group(0);
             if (entry != null) {
                 try {
@@ -49,6 +63,7 @@ public final class CustomPlaceholders {
                     if (resolved != null) replacement = Params.stripPlaceholderValue(resolved);
                 } catch (RuntimeException exception) {
                     replacement = matcher.group(0);
+                    onFailure.failed(matcher.group(1).toLowerCase(Locale.ROOT), entry.owner(), exception);
                 }
             }
             matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
