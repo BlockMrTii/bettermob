@@ -82,6 +82,8 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `bodyrotation` | `headUneven`, `bodyUneven`, `minHead`, `maxHead`, `minBody`, `maxBody`, `stable`, `duration`, `delay` | Set how far the model's head and body may turn apart (BetterModel only; ModelEngine models ignore it) |
 | `message` | `m` | Send a message to the target player. `&` colors, `<caster.name>`, `<target.name>` and PlaceholderAPI placeholders work |
 | `ignite` | `t` | Set the target on fire for `t` ticks |
+| `setvariable` (`variableset`) | `var`, `value`, `type` | Store a value: `var=hits` for the current skill run, `var=caster.hits` for the caster. `type` is `INTEGER`, `FLOAT` or `STRING` (default), numbers are checked. See [Variables](#variables) |
+| `addvariable` (`variableadd`) | `var`, `value` | Add a number to a variable (a missing one counts as 0) |
 | `heal` | `a` | Heal the target by `a` health, capped at its max health |
 | `teleport` | - | Move the caster to the targeted location or entity (for example `@Target`, `@Location{...}`, `@Forward{...}`); the caster keeps its facing |
 | `explosion` | `yield`, `bd`, `fire` | Explosion at the target. `yield` is the power (default 2), `bd=true` breaks blocks, `fire=true` sets fires. Off by default |
@@ -125,6 +127,21 @@ A line of its own, `delay 20`, pauses the rest of the skill for 20 ticks.
 
 All multi-target targeters (`@EntitiesNearOrigin`, `@EntitiesInRadius`, `@PlayersInRadius`, `@PIR`) also take `limit=<n>` and `sort=nearest|farthest|random`, and run the mechanic once per target. An unknown targeter is logged once and the line targets the default target.
 
+## Variables
+
+| | `var=name` | `var=caster.name` |
+|---|---|---|
+| Lives | for the current skill run, including the skills and inline skills it starts and across `delay` | as long as the mob, cleared when it is removed and on `/bettermob reload`, not saved over restarts |
+| Read in a parameter | `<skill.name>` | `<var.name>` |
+
+Names are letters, digits and `_` (up to 32 characters, case-insensitive), a scope holds at most 64 variables. Values are inserted as plain text; braces, brackets, `;`, `=`, quotes, `%` and control characters are removed so a variable can never add skill lines or trigger a command. An unset variable is inserted as `0`.
+
+```yaml
+Skills:
+  - addvariable{var=caster.hits;value=1} @self ~onDamaged
+  - skill{s=enrage} @self ~onDamaged ?variable{var=caster.hits;value=>=5}
+```
+
 ## Conditions
 
 | Condition | True when |
@@ -135,6 +152,7 @@ All multi-target targeters (`@EntitiesNearOrigin`, `@EntitiesInRadius`, `@Player
 | `lineofsight` (`los`) | The caster can see the trigger/target (or its own target) |
 | `world{w=world,world_nether}` | The caster is in one of these worlds |
 | `biome{b=DESERT,PLAINS}` | The caster stands in one of these biomes (names without `minecraft:` are fine) |
+| `variable{var=hits;value=>=3}` | The variable matches: a number test (`>3`, `<=5`, `2-4`, `7`) when it holds a number, otherwise text equality. A missing variable counts as 0 for number tests |
 | `time{t=day}` | `day` or `night` of the caster's world; also a tick or range, e.g. `time{t=0-6000}` |
 | `chance{chance=0.75}` | A random roll succeeds (0 to 1) |
 | `hastag{t=pet}` | The caster has the tag set by `addtag` |
