@@ -39,6 +39,8 @@ What to expect:
 - Things the pack gets from other plugins (for example a command like `/nstc givecard`)
   need those plugins on the server.
 
+See [Pack compatibility](Pack-Compatibility) for the packs we have tried.
+
 ## Checking a pack
 
 `/bettermob validate [pack]` reads every mob, skill and item file of the pack (or of all packs and the main folder) and reports what BetterMob cannot run, without spawning anything:
