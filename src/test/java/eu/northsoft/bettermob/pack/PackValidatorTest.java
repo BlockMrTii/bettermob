@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.pack;
 
+import eu.northsoft.bettermob.skill.target.CandidateFilters;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -18,7 +19,8 @@ class PackValidatorTest {
     private static final Set<String> SKILLS = Set.of("known_skill");
 
     private final PackValidator validator = new PackValidator(new PackValidator.Knowledge(
-            MECHANICS::contains, CONDITIONS::contains, TARGETERS::contains, SKILLS::contains));
+            MECHANICS::contains, CONDITIONS::contains, TARGETERS::contains, SKILLS::contains,
+            name -> CandidateFilters.knows(name, CONDITIONS::contains)));
 
     private static void write(Path root, String file, String content) throws IOException {
         Path path = root.resolve(file);
@@ -74,6 +76,14 @@ class PackValidatorTest {
         assertEquals(4, report.lines());
         assertEquals(2, report.issues().size(), report.issues().toString());
         assertEquals(PackValidator.Reason.UNPARSEABLE, report.issues().get(0).reason());
+    }
+
+    @Test
+    void targeterConditionsAcceptSkillConditionsAndTheEntityOnes(@TempDir Path root) throws IOException {
+        write(root, "skills/ring.yml", "ring:\n  Skills:\n"
+                + "    - damage{a=1} @EntitiesNearOrigin{r=4;Conditions=[ - isPlayer{} true - chance{chance=0.5} true - ismob{} false ]}\n");
+        PackValidator.Report report = validator.validatePack("ring", root.toFile());
+        assertTrue(report.issues().isEmpty(), report.issues().toString());
     }
 
     @Test
