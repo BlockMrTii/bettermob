@@ -12,10 +12,8 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -59,7 +57,9 @@ final class BossBarManager {
         Active removed = active.remove(entityId);
         if (removed == null) return;
         removed.cancel().run();
-        removed.bar().removeAll();
+        synchronized (removed.bar()) {
+            removed.bar().removeAll();
+        }
     }
 
     void clear() {
@@ -74,25 +74,34 @@ final class BossBarManager {
         double health = entity.getHealth();
         double max = maxHealth(entity);
         double progress = max <= 0 ? 0 : Math.max(0, Math.min(1, health / max));
-        if (progress != shown.progress) {
-            bar.setProgress(progress);
-            shown.progress = progress;
-        }
         String title = title(definition, health, max);
-        if (!title.equals(shown.title)) {
-            bar.setTitle(title);
-            shown.title = title;
+        synchronized (bar) {
+            if (progress != shown.progress) {
+                bar.setProgress(progress);
+                shown.progress = progress;
+            }
+            if (!title.equals(shown.title)) {
+                bar.setTitle(title);
+                shown.title = title;
+            }
+            for (Player viewer : bar.getPlayers()) {
+                if (!viewer.isOnline()) bar.removePlayer(viewer);
+            }
         }
 
         double range = definition.bossBar.range();
         Location location = entity.getLocation();
-        Set<Player> inRange = new HashSet<>();
-        for (Player player : entity.getWorld().getNearbyPlayers(location, range)) {
-            if (player.getLocation().distanceSquared(location) <= range * range) inRange.add(player);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            Tasks.runOwned(plugin, player, () -> updateViewer(bar, player, location, range));
         }
-        for (Player player : inRange) bar.addPlayer(player);
-        for (Player viewer : new ArrayList<>(bar.getPlayers())) {
-            if (!inRange.contains(viewer)) bar.removePlayer(viewer);
+    }
+
+    private static void updateViewer(BossBar bar, Player player, Location barLocation, double range) {
+        boolean inRange = player.getWorld().equals(barLocation.getWorld())
+                && player.getLocation().distanceSquared(barLocation) <= range * range;
+        synchronized (bar) {
+            if (inRange) bar.addPlayer(player);
+            else bar.removePlayer(player);
         }
     }
 

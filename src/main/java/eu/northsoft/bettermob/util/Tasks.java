@@ -2,6 +2,7 @@ package eu.northsoft.bettermob.util;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.plugin.Plugin;
@@ -58,6 +59,16 @@ public final class Tasks {
     public static void runAt(Plugin plugin, Location location, Runnable task) {
         if (FOLIA) Bukkit.getRegionScheduler().run(plugin, location, scheduled -> task.run());
         else task.run();
+    }
+
+    public static void runOwned(Plugin plugin, Entity entity, Runnable task) {
+        if (!FOLIA || Bukkit.isOwnedByCurrentRegion(entity)) task.run();
+        else entity.getScheduler().run(plugin, scheduled -> task.run(), null);
+    }
+
+    public static void runOwnedAt(Plugin plugin, Location location, Runnable task) {
+        if (!FOLIA || Bukkit.isOwnedByCurrentRegion(location)) task.run();
+        else Bukkit.getRegionScheduler().run(plugin, location, scheduled -> task.run());
     }
 
     public static void runGlobal(Plugin plugin, Runnable task) {
