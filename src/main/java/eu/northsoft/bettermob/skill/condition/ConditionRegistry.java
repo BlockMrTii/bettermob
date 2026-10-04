@@ -24,6 +24,12 @@ public final class ConditionRegistry {
         conditions.put("distance", new DistanceCondition());
         conditions.put("onblock", new OnBlockCondition());
         conditions.put("blocktype", new BlockTypeCondition());
+        conditions.put("health", new HealthCondition());
+        conditions.put("lineofsight", new LineOfSightCondition());
+        conditions.put("los", new LineOfSightCondition());
+        conditions.put("world", new WorldCondition());
+        conditions.put("biome", new BiomeCondition());
+        conditions.put("time", new TimeCondition());
     }
 
     public boolean evaluate(Condition condition, SkillContext context, Target targetOverride) {
