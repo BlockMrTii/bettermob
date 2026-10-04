@@ -27,6 +27,7 @@ public final class MobDefinition {
     public final boolean threatTable;
     public final Map<DamageCause, Double> damageModifiers;
     public final List<SkillTrigger> skillTriggers;
+    private final Map<SkillTrigger.Trigger, List<SkillTrigger>> triggersByType;
 
     public final DropTable drops;
     public final String faction;
@@ -51,9 +52,17 @@ public final class MobDefinition {
         this.threatTable = threatTable;
         this.damageModifiers = damageModifiers;
         this.skillTriggers = skillTriggers;
+        Map<SkillTrigger.Trigger, List<SkillTrigger>> byType = new java.util.EnumMap<>(SkillTrigger.Trigger.class);
+        for (SkillTrigger trigger : skillTriggers) byType.computeIfAbsent(trigger.trigger(), key -> new java.util.ArrayList<>()).add(trigger);
+        byType.replaceAll((key, list) -> List.copyOf(list));
+        this.triggersByType = byType;
         this.drops = drops;
         this.faction = faction;
         this.bossBar = bossBar;
+    }
+
+    public List<SkillTrigger> triggersOf(SkillTrigger.Trigger type) {
+        return triggersByType.getOrDefault(type, List.of());
     }
 
     public MobInfo toInfo() {
