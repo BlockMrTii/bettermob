@@ -17,6 +17,7 @@ import eu.northsoft.bettermob.pack.PackScanner;
 import eu.northsoft.bettermob.service.BetterMobApiImpl;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillRegistry;
+import eu.northsoft.bettermob.spawner.SpawnerManager;
 import eu.northsoft.bettermob.stats.SkillStats;
 import eu.northsoft.bettermob.util.Tasks;
 import org.bstats.bukkit.Metrics;
@@ -34,6 +35,7 @@ public final class BetterMobPlugin extends JavaPlugin {
     private SkillRegistry skillRegistry;
     private ItemRegistry itemRegistry;
     private DropRegistry dropRegistry;
+    private SpawnerManager spawners;
 
     public DebugManager debug() {
         return debug;
@@ -84,7 +86,11 @@ public final class BetterMobPlugin extends JavaPlugin {
                     .forEach(world -> manager.removeLeftoverHelpers(world.getEntitiesByClass(ArmorStand.class))));
         }
 
-        BetterMobCommand commandHandler = new BetterMobCommand(this, manager, skillRegistry, packScanner, skillEngine, itemRegistry, dropRegistry);
+        spawners = new SpawnerManager(this, manager);
+        spawners.load();
+        spawners.start();
+
+        BetterMobCommand commandHandler = new BetterMobCommand(this, manager, skillRegistry, packScanner, skillEngine, itemRegistry, dropRegistry, spawners);
         PluginCommand command = getCommand("bettermob");
         if (command == null) {
             messages.severe("plugin.commandMissing");
@@ -113,11 +119,13 @@ public final class BetterMobPlugin extends JavaPlugin {
         itemRegistry.load();
         dropRegistry.load();
         manager.registry().load();
+        spawners.load();
         return manager.reloadLiving();
     }
 
     @Override
     public void onDisable() {
+        if (spawners != null) spawners.stop();
         if (expansion != null) expansion.unregister();
         if (manager != null) manager.shutdown();
     }

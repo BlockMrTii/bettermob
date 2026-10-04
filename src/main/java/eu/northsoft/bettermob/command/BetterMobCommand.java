@@ -12,6 +12,8 @@ import eu.northsoft.bettermob.pack.PackScanner;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillRegistry;
+import eu.northsoft.bettermob.spawner.Spawner;
+import eu.northsoft.bettermob.spawner.SpawnerManager;
 import eu.northsoft.bettermob.stats.SkillStats;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -42,6 +44,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         nodes.put("skill", "bettermob.skill");
         nodes.put("give", "bettermob.give");
         nodes.put("killall", "bettermob.killall");
+        nodes.put("spawner", "bettermob.spawner");
         nodes.put("debug", "bettermob.debug");
         nodes.put("stats", "bettermob.debug");
         return nodes;
@@ -55,8 +58,9 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
     private final SkillEngine skillEngine;
     private final ItemRegistry itemRegistry;
     private final DropRegistry dropRegistry;
+    private final SpawnerManager spawners;
 
-    public BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry, DropRegistry dropRegistry) {
+    public BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry, DropRegistry dropRegistry, SpawnerManager spawners) {
         this.plugin = plugin;
         this.messages = plugin.messages();
         this.manager = manager;
@@ -65,6 +69,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         this.skillEngine = skillEngine;
         this.itemRegistry = itemRegistry;
         this.dropRegistry = dropRegistry;
+        this.spawners = spawners;
     }
 
     @Override
@@ -78,6 +83,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             shown |= help(sender, "skill", "command.help.skill");
             shown |= help(sender, "give", "command.help.give");
             shown |= help(sender, "killall", "command.help.killall");
+            shown |= help(sender, "spawner", "command.help.spawner");
             shown |= help(sender, "debug", "command.help.debug");
             shown |= help(sender, "stats", "command.help.stats");
             if (!shown) messages.send(sender, "command.noPermission");
@@ -107,6 +113,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             case "skill" -> handleSkill(sender, args);
             case "give" -> handleGive(sender, args);
             case "killall" -> handleKillAll(sender, args);
+            case "spawner" -> handleSpawner(sender, args);
             case "debug" -> handleDebug(sender, args);
             case "stats" -> handleStats(sender, args);
             default -> messages.send(sender, "command.unknown");
@@ -258,6 +265,57 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         messages.send(sender, "command.skill.done", "skill", skillId, "player", caster.getName());
     }
 
+    private void handleSpawner(CommandSender sender, String[] args) {
+        String action = args.length < 2 ? "" : args[1].toLowerCase(Locale.ROOT);
+        switch (action) {
+            case "list" -> {
+                if (spawners.all().isEmpty()) messages.send(sender, "command.spawner.none");
+                for (Spawner spawner : spawners.all()) {
+                    messages.send(sender, "command.spawner.entry", "id", spawner.id, "mob", spawner.mob, "world", spawner.world,
+                            "x", (int) spawner.x, "y", (int) spawner.y, "z", (int) spawner.z,
+                            "max", spawner.max, "interval", spawner.intervalSeconds);
+                }
+            }
+            case "remove" -> {
+                if (args.length < 3) messages.send(sender, "command.spawner.usage");
+                else messages.send(sender, spawners.remove(args[2]) ? "command.spawner.removed" : "command.spawner.missing", "id", args[2]);
+            }
+            case "create" -> createSpawner(sender, args);
+            default -> messages.send(sender, "command.spawner.usage");
+        }
+    }
+
+    private void createSpawner(CommandSender sender, String[] args) {
+        if (args.length < 4) {
+            messages.send(sender, "command.spawner.usage");
+            return;
+        }
+        if (!(sender instanceof Player player)) {
+            messages.send(sender, "command.playersOnly");
+            return;
+        }
+        MobDefinition definition = manager.registry().get(args[3]);
+        if (definition == null) {
+            messages.send(sender, "command.spawn.notRegistered", "mob", args[3]);
+            return;
+        }
+        Spawner spawner;
+        try {
+            spawner = new Spawner(args[2], definition.id, player.getWorld().getName(),
+                    player.getLocation().getBlockX() + 0.5, player.getLocation().getBlockY(), player.getLocation().getBlockZ() + 0.5,
+                    optionalInt(args, 4, Spawner.DEFAULT_RADIUS), optionalInt(args, 5, Spawner.DEFAULT_INTERVAL_SECONDS),
+                    optionalInt(args, 6, Spawner.DEFAULT_MAX), Spawner.DEFAULT_PLAYER_RANGE);
+        } catch (NumberFormatException exception) {
+            messages.send(sender, "command.spawner.usage");
+            return;
+        }
+        messages.send(sender, spawners.add(spawner) ? "command.spawner.created" : "command.spawner.exists", "id", spawner.id, "mob", spawner.mob);
+    }
+
+    private static int optionalInt(String[] args, int index, int fallback) {
+        return args.length > index ? Integer.parseInt(args[index]) : fallback;
+    }
+
     private void handleKillAll(CommandSender sender, String[] args) {
         String mobId = args.length >= 2 && !args[1].equals("*") ? args[1] : null;
         World world = null;
@@ -325,6 +383,12 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         if (args.length == 2 && args[0].equalsIgnoreCase("spawn")) return new ArrayList<>(manager.registry().all().keySet());
         if (args.length == 2 && args[0].equalsIgnoreCase("skill")) return new ArrayList<>(skillRegistry.ids());
         if (args.length == 2 && args[0].equalsIgnoreCase("give")) return new ArrayList<>(itemRegistry.ids());
+        if (args[0].equalsIgnoreCase("spawner")) {
+            if (args.length == 2) return List.of("create", "remove", "list");
+            if (args.length == 3 && args[1].equalsIgnoreCase("remove")) return spawners.all().stream().map(spawner -> spawner.id).toList();
+            if (args.length == 4 && args[1].equalsIgnoreCase("create")) return new ArrayList<>(manager.registry().all().keySet());
+            return List.of();
+        }
         if (args.length == 2 && args[0].equalsIgnoreCase("killall")) {
             List<String> ids = new ArrayList<>(manager.registry().all().keySet());
             ids.add("*");

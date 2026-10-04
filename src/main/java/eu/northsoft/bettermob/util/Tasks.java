@@ -1,6 +1,7 @@
 package eu.northsoft.bettermob.util;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.plugin.Plugin;
@@ -43,6 +44,20 @@ public final class Tasks {
         }
         BukkitTask bukkitTask = Bukkit.getScheduler().runTaskTimer(plugin, task, delay, period);
         return bukkitTask::cancel;
+    }
+
+    public static Runnable runGlobalTimer(Plugin plugin, long period, Runnable task) {
+        if (FOLIA) {
+            var scheduled = Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, t -> task.run(), period, period);
+            return scheduled::cancel;
+        }
+        BukkitTask bukkitTask = Bukkit.getScheduler().runTaskTimer(plugin, task, period, period);
+        return bukkitTask::cancel;
+    }
+
+    public static void runAt(Plugin plugin, Location location, Runnable task) {
+        if (FOLIA) Bukkit.getRegionScheduler().run(plugin, location, scheduled -> task.run());
+        else task.run();
     }
 
     public static void runGlobal(Plugin plugin, Runnable task) {
