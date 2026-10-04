@@ -268,7 +268,7 @@ public final class MobManager {
         Set<String> removed = new HashSet<>();
         for (Map.Entry<UUID, MobDefinition> entry : List.copyOf(definitions.entrySet())) {
             Entity entity = Bukkit.getEntity(entry.getKey());
-            if (!(entity instanceof LivingEntity living) || !living.isValid()) continue;
+            if (!(entity instanceof LivingEntity living)) continue;
             MobDefinition old = entry.getValue();
             MobDefinition fresh = registry.get(old.id);
             if (fresh == null) {
