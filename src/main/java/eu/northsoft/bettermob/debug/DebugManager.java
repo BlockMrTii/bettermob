@@ -12,6 +12,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class DebugManager {
     public enum Level { OFF, INFO, VERBOSE }
 
+    private static final String WATCH_PERMISSION = "bettermob.debug";
+
     private final BetterMobPlugin plugin;
     private final Set<String> filters = ConcurrentHashMap.newKeySet();
     private final Set<UUID> watchers = ConcurrentHashMap.newKeySet();
@@ -77,7 +79,7 @@ public final class DebugManager {
         plugin.getLogger().info("[debug] " + message);
         for (UUID id : watchers) {
             Player player = Bukkit.getPlayer(id);
-            if (player == null) watchers.remove(id);
+            if (player == null || !player.hasPermission(WATCH_PERMISSION)) watchers.remove(id);
             else player.sendMessage("§8[§7debug§8] §7" + message);
         }
     }
