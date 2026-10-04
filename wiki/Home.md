@@ -16,6 +16,7 @@ unsupported is logged as a warning and skipped, it never breaks the rest of a sk
 | [Skills](Skills) | Triggers, mechanics, conditions and targeters |
 | [Drop tables](Drop-Tables) | What mobs drop, `Drops:` and `droptables/` |
 | [Items](Items) | Custom items, `~onUse` skills, `/bettermob give` |
+| [Pack compatibility](Pack-Compatibility) | Which MythicMobs packs were tried and how far they run |
 | [Packs](Packs) | Content packs, importing MythicMobs packs |
 | [Developer API](Developer-API) | Events, custom mechanics, Maven dependency |
 | [Development](Development) | Building, tests, code layout, how to add a mechanic |
