@@ -460,7 +460,7 @@ public final class MobManager {
 
     private boolean hasModelSkill(MobDefinition definition, MobDefinition.SkillTrigger.Trigger trigger) {
         for (MobDefinition.SkillTrigger skillTrigger : definition.triggersOf(trigger)) {
-            if (skillTrigger.step() instanceof SkillStep.Mechanic mechanic && mechanic.name().equals("model")) {
+            if (skillTrigger.step() instanceof SkillStep.Mechanic mechanic && (mechanic.name().equals("model") || mechanic.name().equals("modelengine"))) {
                 return true;
             }
         }
