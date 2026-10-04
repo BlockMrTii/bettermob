@@ -55,6 +55,11 @@ public final class Tasks {
         return bukkitTask::cancel;
     }
 
+    public static void runOn(Plugin plugin, Entity entity, Runnable task) {
+        if (FOLIA) entity.getScheduler().run(plugin, scheduled -> task.run(), null);
+        else task.run();
+    }
+
     public static void runAt(Plugin plugin, Location location, Runnable task) {
         if (FOLIA) Bukkit.getRegionScheduler().run(plugin, location, scheduled -> task.run());
         else task.run();

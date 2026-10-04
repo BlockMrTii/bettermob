@@ -26,6 +26,7 @@ public final class SpawnerManager {
     private static final long TICK_PERIOD = 20L;
     private static final long RETRY_MILLIS = 1000L;
     private static final int CHUNK_SIZE = 16;
+    private static final long PLAYER_FRESH_MILLIS = 3000L;
     private static final int GROUND_SEARCH_DEPTH = 3;
 
     private final BetterMobPlugin plugin;
@@ -100,6 +101,7 @@ public final class SpawnerManager {
     }
 
     private void tick() {
+        for (Player player : plugin.getServer().getOnlinePlayers()) Tasks.runOn(plugin, player, () -> markNearby(player));
         for (Spawner spawner : spawners.values()) {
             World world = plugin.getServer().getWorld(spawner.world);
             if (world == null) continue;
@@ -112,7 +114,7 @@ public final class SpawnerManager {
         long now = System.currentTimeMillis();
         if (now < spawner.nextSpawnAt || !center.getWorld().isChunkLoaded(center.getBlockX() >> 4, center.getBlockZ() >> 4)) return;
         if (!spawner.reconciled && !reconcile(spawner, center)) return;
-        if (!playerNear(center, spawner.playerRange)) return;
+        if (now - spawner.playerNearAt > PLAYER_FRESH_MILLIS) return;
         MobDefinition definition = manager.registry().get(spawner.mob);
         if (definition == null) return;
         if (!spawner.ready(now, spawner.alive.size())) return;
@@ -170,12 +172,17 @@ public final class SpawnerManager {
         return null;
     }
 
-    private static boolean playerNear(Location center, int range) {
-        double squared = (double) range * range;
-        for (Player player : center.getWorld().getPlayers()) {
-            if (player.getLocation().distanceSquared(center) <= squared) return true;
+    private void markNearby(Player player) {
+        Location at = player.getLocation();
+        String world = at.getWorld().getName();
+        long now = System.currentTimeMillis();
+        for (Spawner spawner : spawners.values()) {
+            if (!spawner.world.equals(world)) continue;
+            double dx = at.getX() - spawner.x;
+            double dy = at.getY() - spawner.y;
+            double dz = at.getZ() - spawner.z;
+            if (dx * dx + dy * dy + dz * dz <= (double) spawner.playerRange * spawner.playerRange) spawner.playerNearAt = now;
         }
-        return false;
     }
 
     private static Location randomPoint(Location center, int radius) {
