@@ -223,9 +223,8 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             }
         }
 
-        if (p.containsKey("cd") && !acquireCooldown(context, mechanic)) return false;
-
         if (p.containsKey("delay")) {
+            if (p.containsKey("cd") && !acquireCooldown(context, mechanic)) return false;
             int ticks = parseInt(p.get("delay"), 0);
 
             SkillStep.Mechanic withoutDelay = new SkillStep.Mechanic(mechanic.name(),
@@ -242,6 +241,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             if (debug.verbose()) debug.verbose("mechanic '" + mechanic.name() + "' skipped: no target for @" + mechanic.targeter(), subject(context.caster()));
             return false;
         }
+        if (p.containsKey("cd") && !acquireCooldown(context, mechanic)) return false;
         Map<String, String> params = substitute(p, context);
         if (debug.verbose()) {
             debug.verbose("mechanic '" + mechanic.name() + "' @" + (mechanic.targeter().isEmpty() ? "(inherited)" : mechanic.targeter())
