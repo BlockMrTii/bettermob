@@ -10,11 +10,6 @@ public final class ModelMechanic implements Mechanic {
     }
 
     @Override
-    public boolean runsOnTarget() {
-        return false;
-    }
-
-    @Override
     public void execute(MechanicCall call) {
         String modelId = call.params().get("mid");
         if (modelId == null || call.target().entity() == null) return;
