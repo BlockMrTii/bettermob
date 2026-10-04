@@ -120,19 +120,43 @@ public final class BetterModelHook {
         return animateMethod;
     }
 
+    private final Map<Class<?>, Map<String, Method>> methodCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<Class<?>, Map<String, java.lang.reflect.Field>> fieldCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private Method cachedMethod(Class<?> type, String name, Class<?>... parameters) throws NoSuchMethodException {
+        Map<String, Method> methods = methodCache.computeIfAbsent(type, key -> new java.util.concurrent.ConcurrentHashMap<>());
+        String key = name + "/" + parameters.length;
+        Method method = methods.get(key);
+        if (method == null) {
+            method = type.getMethod(name, parameters);
+            methods.put(key, method);
+        }
+        return method;
+    }
+
+    private java.lang.reflect.Field cachedField(Class<?> type, String name) throws NoSuchFieldException {
+        Map<String, java.lang.reflect.Field> fields = fieldCache.computeIfAbsent(type, key -> new java.util.concurrent.ConcurrentHashMap<>());
+        java.lang.reflect.Field field = fields.get(name);
+        if (field == null) {
+            field = type.getField(name);
+            fields.put(name, field);
+        }
+        return field;
+    }
+
     public org.bukkit.Location bonePosition(Object tracker, String boneName, org.bukkit.Location origin) {
         if (tracker == null) return null;
         try {
-            Object bone = tracker.getClass().getMethod("bone", String.class).invoke(tracker, boneName);
+            Object bone = cachedMethod(tracker.getClass(), "bone", String.class).invoke(tracker, boneName);
             if (bone == null) {
                 plugin.messages().warn("betterModel.boneMissing", "bone", boneName);
                 return null;
             }
-            Object offset = bone.getClass().getMethod("worldPosition").invoke(bone);
+            Object offset = cachedMethod(bone.getClass(), "worldPosition").invoke(bone);
             Class<?> vector = offset.getClass();
-            double x = ((Number) vector.getField("x").get(offset)).doubleValue();
-            double y = ((Number) vector.getField("y").get(offset)).doubleValue();
-            double z = ((Number) vector.getField("z").get(offset)).doubleValue();
+            double x = ((Number) cachedField(vector, "x").get(offset)).doubleValue();
+            double y = ((Number) cachedField(vector, "y").get(offset)).doubleValue();
+            double z = ((Number) cachedField(vector, "z").get(offset)).doubleValue();
             if (plugin.debug().verbose()) plugin.debug().verbose("bone '" + boneName + "' offset " + String.format("%.2f %.2f %.2f", x, y, z));
             return origin.clone().add(x, y, z);
         } catch (ReflectiveOperationException | RuntimeException exception) {
@@ -149,8 +173,8 @@ public final class BetterModelHook {
     public boolean bodyRotation(Object tracker, Map<String, String> params) {
         if (tracker == null) return false;
         try {
-            Object rotator = tracker.getClass().getMethod("bodyRotator").invoke(tracker);
-            Method setValue = rotator.getClass().getMethod("setValue", java.util.function.Consumer.class);
+            Object rotator = cachedMethod(tracker.getClass(), "bodyRotator").invoke(tracker);
+            Method setValue = cachedMethod(rotator.getClass(), "setValue", java.util.function.Consumer.class);
             setValue.invoke(rotator, (java.util.function.Consumer<Object>) data -> {
                 for (Map.Entry<String, String> entry : params.entrySet()) {
                     String setter = ROTATION_SETTERS.get(entry.getKey());
@@ -164,31 +188,40 @@ public final class BetterModelHook {
         }
     }
 
-    private void applySetter(Object data, String name, String value) {
-        for (Method method : data.getClass().getMethods()) {
-            if (!method.getName().equals(name) || method.getParameterCount() != 1) continue;
-            Class<?> type = method.getParameterTypes()[0];
-            try {
-                Object parsed = type == boolean.class ? Boolean.parseBoolean(value)
-                        : type == int.class ? (Object) Integer.parseInt(value.trim())
-                        : (Object) Float.parseFloat(value.trim());
-                method.invoke(data, parsed);
-            } catch (ReflectiveOperationException | NumberFormatException exception) {
-                plugin.messages().warn("betterModel.bodyRotationInvalid", "value", value, "name", name);
+    private final Map<Class<?>, Map<String, Method>> setterCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private Method setterOf(Class<?> type, String name) {
+        return setterCache.computeIfAbsent(type, key -> new java.util.concurrent.ConcurrentHashMap<>()).computeIfAbsent(name, key -> {
+            for (Method method : type.getMethods()) {
+                if (method.getName().equals(name) && method.getParameterCount() == 1) return method;
             }
-            return;
+            return null;
+        });
+    }
+
+    private void applySetter(Object data, String name, String value) {
+        Method method = setterOf(data.getClass(), name);
+        if (method == null) return;
+        Class<?> type = method.getParameterTypes()[0];
+        try {
+            Object parsed = type == boolean.class ? Boolean.parseBoolean(value)
+                    : type == int.class ? (Object) Integer.parseInt(value.trim())
+                    : (Object) Float.parseFloat(value.trim());
+            method.invoke(data, parsed);
+        } catch (ReflectiveOperationException | NumberFormatException exception) {
+            plugin.messages().warn("betterModel.bodyRotationInvalid", "value", value, "name", name);
         }
     }
 
     public boolean mount(Object tracker, String seat, Entity rider) {
         if (tracker == null) return false;
         try {
-            Object bone = tracker.getClass().getMethod("bone", String.class).invoke(tracker, seat);
+            Object bone = cachedMethod(tracker.getClass(), "bone", String.class).invoke(tracker, seat);
             if (bone == null) {
                 plugin.messages().warn("betterModel.mount.seatMissing", "seat", seat);
                 return false;
             }
-            Object hitBox = bone.getClass().getMethod("getHitBox").invoke(bone);
+            Object hitBox = cachedMethod(bone.getClass(), "getHitBox").invoke(bone);
             if (hitBox == null) {
                 plugin.messages().warn("betterModel.mount.noHitbox", "seat", seat);
                 return false;

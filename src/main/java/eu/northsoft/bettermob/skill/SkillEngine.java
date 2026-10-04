@@ -133,7 +133,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             return;
         }
         if (!skill.targetConditions.isEmpty()) {
-            Target obstructing = targeters.resolveAll("obstructingblock", Map.of(), context).get(0);
+            Target obstructing = needsBlock(skill.targetConditions) ? targeters.resolveAll("obstructingblock", Map.of(), context).get(0) : null;
             Check targetConditions = check(skill.targetConditions, context, obstructing);
             if (targetConditions != Check.PASS) {
                 if (debug.info()) debug.info("skill '" + skill.id + "' stopped: target conditions " + targetConditions.name().toLowerCase(Locale.ROOT), skill.id, caster);
@@ -161,6 +161,14 @@ public final class SkillEngine implements org.bukkit.event.Listener {
                         "millis", String.format(Locale.ROOT, "%.1f", millis), "threshold", stats.warnMillis());
             }
         }
+    }
+
+    private static boolean needsBlock(List<String> conditions) {
+        for (String raw : conditions) {
+            Condition condition = Condition.parse(raw);
+            if (condition != null && condition.name().equals("blocktype")) return true;
+        }
+        return false;
     }
 
     public String subject(LivingEntity entity) {
@@ -223,9 +231,8 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             }
         }
 
-        if (p.containsKey("cd") && !acquireCooldown(context, mechanic)) return false;
-
         if (p.containsKey("delay")) {
+            if (p.containsKey("cd") && !acquireCooldown(context, mechanic)) return false;
             int ticks = parseInt(p.get("delay"), 0);
 
             SkillStep.Mechanic withoutDelay = new SkillStep.Mechanic(mechanic.name(),
@@ -242,6 +249,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             if (debug.verbose()) debug.verbose("mechanic '" + mechanic.name() + "' skipped: no target for @" + mechanic.targeter(), subject(context.caster()));
             return false;
         }
+        if (p.containsKey("cd") && !acquireCooldown(context, mechanic)) return false;
         Map<String, String> params = substitute(p, context);
         if (debug.verbose()) {
             debug.verbose("mechanic '" + mechanic.name() + "' @" + (mechanic.targeter().isEmpty() ? "(inherited)" : mechanic.targeter())
@@ -346,10 +354,11 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         if (!placeholders) return p;
         var attackDamage = context.caster().getAttribute(Attribute.ATTACK_DAMAGE);
         String damage = String.valueOf(attackDamage == null ? 1.0 : attackDamage.getValue());
+        String name = stripSkillSyntax(context.caster().getName());
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : p.entrySet()) {
             result.put(entry.getKey(), entry.getValue()
-                    .replace("<caster.damage>", damage).replace("<caster.name>", context.caster().getName()));
+                    .replace("<caster.damage>", damage).replace("<caster.name>", name));
         }
         return result;
     }
