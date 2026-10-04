@@ -346,10 +346,11 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         if (!placeholders) return p;
         var attackDamage = context.caster().getAttribute(Attribute.ATTACK_DAMAGE);
         String damage = String.valueOf(attackDamage == null ? 1.0 : attackDamage.getValue());
+        String name = stripSkillSyntax(context.caster().getName());
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : p.entrySet()) {
             result.put(entry.getKey(), entry.getValue()
-                    .replace("<caster.damage>", damage).replace("<caster.name>", context.caster().getName()));
+                    .replace("<caster.damage>", damage).replace("<caster.name>", name));
         }
         return result;
     }
