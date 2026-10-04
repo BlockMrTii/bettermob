@@ -489,7 +489,7 @@ in `pom.xml` and push.
 <dependency>
     <groupId>com.github.HyperGaming99</groupId>
     <artifactId>bettermob</artifactId>
-    <version>v1.1.6.2</version> <!-- a tag -->
+    <version>v1.1.7</version> <!-- a tag -->
     <scope>provided</scope>
 </dependency>
 ```
@@ -505,7 +505,7 @@ in `pom.xml` and push.
 <dependency>
     <groupId>eu.northsoft</groupId>
     <artifactId>bettermob</artifactId>
-    <version>1.1.6.2</version>
+    <version>1.1.7</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -563,7 +563,7 @@ skill lines or trigger a command. `caster` and `target` are reserved namespaces.
 mvn -f examples/api-example/pom.xml package
 ```
 
-This resolves `com.github.HyperGaming99:bettermob:v1.1.6.2` from JitPack, the same coordinates as above. To compile it against your own checkout instead:
+This resolves `com.github.HyperGaming99:bettermob:v1.1.7` from JitPack, the same coordinates as above. To compile it against your own checkout instead:
 
 ```bash
 mvn install -DskipTests
