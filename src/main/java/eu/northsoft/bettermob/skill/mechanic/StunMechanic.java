@@ -32,11 +32,15 @@ public final class StunMechanic implements Mechanic {
         boolean hadGravity = mob.hasGravity();
         if (ai) mob.setAware(false);
         if (gravity) mob.setGravity(false);
-        Runnable cancelFreeze = freeze
-                ? Tasks.runTimer(engine.plugin(), mob, 1L, 1L, () -> mob.setVelocity(new Vector()))
-                : () -> { };
+        Runnable[] cancelFreeze = {() -> { }};
+        if (freeze) {
+            cancelFreeze[0] = Tasks.runTimer(engine.plugin(), mob, 1L, 1L, () -> {
+                if (!mob.isValid()) cancelFreeze[0].run();
+                else mob.setVelocity(new Vector());
+            });
+        }
         Tasks.runLater(engine.plugin(), mob, ticks, () -> {
-            cancelFreeze.run();
+            cancelFreeze[0].run();
             if (ai) mob.setAware(true);
             if (gravity) mob.setGravity(hadGravity);
         });
