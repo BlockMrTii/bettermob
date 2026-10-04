@@ -51,7 +51,8 @@ class ModelEngineApiTest {
     @Test
     void everyModelEngineCallTheHookMakesExistsInTheInstalledJar() throws Exception {
         String path = System.getProperty("modelengine.jar");
-        assumeTrue(path != null && new File(path).isFile(), "set -Dmodelengine.jar=<ModelEngine jar> to run this check");
+        assumeTrue(path != null, "set -Dmodelengine.jar=<ModelEngine jar> to run this check");
+        assertTrue(new File(path).isFile(), () -> "modelengine.jar does not name a file: " + path);
         List<String> missing = new ArrayList<>();
         try (URLClassLoader loader = new URLClassLoader(new URL[]{new File(path).toURI().toURL()}, getClass().getClassLoader())) {
             for (Call call : CALLS) {
