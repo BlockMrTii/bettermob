@@ -55,7 +55,7 @@ public final class PackScanner {
         return sources;
     }
 
-    public File subfolder(File parent, String name) {
+    public static File subfolder(File parent, String name) {
         File[] children = parent.listFiles(File::isDirectory);
         if (children == null) return null;
         for (File child : children) if (child.getName().equalsIgnoreCase(name)) return child;

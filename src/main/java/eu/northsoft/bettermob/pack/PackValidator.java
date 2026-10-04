@@ -46,11 +46,9 @@ public final class PackValidator {
     private static final List<String> FOLDERS = List.of("mobs", "skills", "items");
 
     private final Knowledge known;
-    private final PackScanner scanner;
 
-    public PackValidator(Knowledge known, PackScanner scanner) {
+    public PackValidator(Knowledge known) {
         this.known = known;
-        this.scanner = scanner;
     }
 
     public static Knowledge knowledgeOf(SkillEngine engine, java.util.function.Predicate<String> skill) {
@@ -64,7 +62,7 @@ public final class PackValidator {
     public Report validatePack(String pack, File folder) {
         Report report = new Report(pack);
         for (String name : FOLDERS) {
-            File sub = scanner.subfolder(folder, name);
+            File sub = PackScanner.subfolder(folder, name);
             if (sub == null) continue;
             for (File file : YamlFiles.collect(sub)) {
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
