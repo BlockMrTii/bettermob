@@ -13,6 +13,7 @@ import eu.northsoft.bettermob.pack.PackValidator;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillRegistry;
+import eu.northsoft.bettermob.skill.SkillStep;
 import eu.northsoft.bettermob.spawner.Spawner;
 import eu.northsoft.bettermob.spawner.SpawnerManager;
 import eu.northsoft.bettermob.stats.SkillStats;
@@ -41,6 +42,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         nodes.put("spawn", "bettermob.spawn");
         nodes.put("list", "bettermob.list");
         nodes.put("packs", "bettermob.list");
+        nodes.put("info", "bettermob.list");
         nodes.put("reload", "bettermob.reload");
         nodes.put("validate", "bettermob.reload");
         nodes.put("skill", "bettermob.skill");
@@ -81,6 +83,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             shown |= help(sender, "spawn", "command.help.spawn");
             shown |= help(sender, "list", "command.help.list");
             shown |= help(sender, "packs", "command.help.packs");
+            shown |= help(sender, "info", "command.help.info");
             shown |= help(sender, "reload", "command.help.reload");
             shown |= help(sender, "validate", "command.help.validate");
             shown |= help(sender, "skill", "command.help.skill");
@@ -112,6 +115,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
                 if (packs.isEmpty()) messages.send(sender, "command.packsNone");
                 else packs.forEach(line -> messages.send(sender, "command.packEntry", "pack", line));
             }
+            case "info" -> handleInfo(sender, args);
             case "validate" -> handleValidate(sender, args);
             case "spawn" -> handleSpawn(sender, args);
             case "skill" -> handleSkill(sender, args);
@@ -123,6 +127,47 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             default -> messages.send(sender, "command.unknown");
         }
         return true;
+    }
+
+    private void handleInfo(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            messages.send(sender, "command.info.usage");
+            return;
+        }
+        MobDefinition mob = manager.registry().get(args[1]);
+        if (mob == null) {
+            messages.send(sender, "command.spawn.notRegistered", "mob", args[1]);
+            return;
+        }
+        String none = messages.get("command.info.none");
+        messages.send(sender, "command.info.header", "mob", mob.id, "alive", manager.aliveCounts().getOrDefault(mob.id, 0));
+        messages.send(sender, "command.info.stats", "type", mob.type.name().toLowerCase(Locale.ROOT), "health", mob.health, "damage", mob.damage);
+        messages.send(sender, "command.info.faction", "faction", mob.faction == null || mob.faction.isEmpty() ? none : mob.faction);
+        messages.send(sender, "command.info.model", "model", mob.modelId == null || mob.modelId.isEmpty() ? none : mob.modelId);
+        messages.send(sender, "command.info.equipment", "equipment", mob.equipment == null || mob.equipment.isEmpty() ? none : String.join(", ", mob.equipment));
+        messages.send(sender, "command.info.drops", "count", mob.drops == null ? 0 : mob.drops.entries().size());
+        for (MobDefinition.SkillTrigger.Trigger trigger : MobDefinition.SkillTrigger.Trigger.values()) {
+            List<String> names = mob.triggersOf(trigger).stream().map(entry -> stepName(entry.step())).toList();
+            if (!names.isEmpty()) messages.send(sender, "command.info.skills", "trigger", messages.get(triggerKey(trigger)), "skills", String.join(", ", names));
+        }
+    }
+
+    private static String triggerKey(MobDefinition.SkillTrigger.Trigger trigger) {
+        return switch (trigger) {
+            case SPAWN -> "command.info.trigger.spawn";
+            case LOAD -> "command.info.trigger.load";
+            case INTERACT -> "command.info.trigger.interact";
+            case DAMAGED -> "command.info.trigger.damaged";
+            case ATTACK -> "command.info.trigger.attack";
+            case DEATH -> "command.info.trigger.death";
+            case TIMER -> "command.info.trigger.timer";
+            case USE -> "command.info.trigger.use";
+            case SHOOT -> "command.info.trigger.shoot";
+        };
+    }
+
+    private String stepName(SkillStep step) {
+        return step instanceof SkillStep.Mechanic mechanic ? mechanic.name() : messages.get("command.info.delay");
     }
 
     private static final int MAX_ISSUES_PER_PACK = 20;
@@ -452,7 +497,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             return ids;
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("stats")) return List.of("on", "off", "reset");
-        if (args.length == 2 && args[0].equalsIgnoreCase("spawn")) return new ArrayList<>(manager.registry().all().keySet());
+        if (args.length == 2 && (args[0].equalsIgnoreCase("spawn") || args[0].equalsIgnoreCase("info"))) return new ArrayList<>(manager.registry().all().keySet());
         if (args.length == 2 && args[0].equalsIgnoreCase("skill")) return new ArrayList<>(skillRegistry.ids());
         if (args.length == 2 && args[0].equalsIgnoreCase("give")) return new ArrayList<>(itemRegistry.ids());
         if (args[0].equalsIgnoreCase("spawner")) {

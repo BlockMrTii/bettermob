@@ -115,7 +115,7 @@ A line of its own, `delay 20`, pauses the rest of the skill for 20 ticks.
 | `@Forward{f=1.5;uel=true;yoffset=-1;rotate=-22}` | A point in front of the caster. `f` distance, `uel` start at eye height, `yoffset` vertical shift, `rotate` degrees sideways (positive = right) |
 | `@SelfLocation{x=0;y=-1;z=0}` | The caster's position, optionally shifted |
 | `@ObstructingBlock` | The block the caster is looking at (up to 2.5 blocks) |
-| `@EntitiesNearOrigin{r=4;Conditions=[ - isPlayer{} true - isCaster{} false]}` (`@ENO`) | Every entity within `r` of a totem's location, closest first. Conditions: `isPlayer`, `isCaster`, `isMob`, `hasTag{t=...}`, `faction{faction=...}` |
+| `@EntitiesNearOrigin{r=4;Conditions=[ - isPlayer{} true - isCaster{} false]}` (`@ENO`) | Every entity within `r` of a totem's location, closest first. Conditions: `isPlayer`, `isCaster`, `isMob`, `hasTag{t=...}`, `faction{faction=...}` and every skill condition (see below). Skill conditions test the candidate, not the caster: `health{h=<50%}` is the candidate's health, `distance{d=<3}` and `lineofsight` measure between the candidate and the caster |
 | `@EntitiesInRadius{r=4}` (`@EIR`, `@LivingEntitiesInRadius`, `@LEIR`) | Same, around the caster |
 | `@PlayersInRadius{r=10}` | Every player within `r` of the caster |
 | `@ModelPart{p=tnt2}` | The position of that BetterModel bone (falls back to chest height) |

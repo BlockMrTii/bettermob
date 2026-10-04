@@ -13,7 +13,11 @@ import static eu.northsoft.bettermob.skill.Params.conditionParam;
 import static eu.northsoft.bettermob.skill.SkillTags.TAG_PREFIX;
 
 public final class CandidateFilters {
-    public static final java.util.Set<String> KNOWN = java.util.Set.of("isplayer", "iscaster", "ismob", "hastag", "faction");
+    public static final java.util.Set<String> SPECIAL = java.util.Set.of("isplayer", "iscaster", "ismob", "hastag", "faction");
+
+    public static boolean knows(String name, java.util.function.Predicate<String> registryHas) {
+        return SPECIAL.contains(name) || registryHas.test(name);
+    }
 
     private final SkillEngine engine;
 
@@ -32,8 +36,12 @@ public final class CandidateFilters {
                 case "hastag" -> candidate.getScoreboardTags().contains(TAG_PREFIX + conditionParam(condition.params(), "t", "tag", "n"));
                 case "faction" -> Factions.has(engine.mobManager(), candidate, conditionParam(condition.params(), "faction", "f", "name"));
                 default -> {
-                    engine.plugin().messages().warn("skill.targeterConditionUnsupported", "condition", condition.name());
-                    yield true;
+                    if (!engine.conditionRegistry().has(condition.name())) {
+                        engine.plugin().messages().warn("skill.targeterConditionUnsupported", "condition", condition.name());
+                        yield true;
+                    }
+                    SkillContext asCandidate = new SkillContext(candidate, context.caster(), null, context.origin(), false);
+                    yield engine.conditionRegistry().evaluate(condition, asCandidate, null);
                 }
             };
             if (actual != (condition.expected() == null || condition.expected())) return false;

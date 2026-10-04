@@ -28,7 +28,7 @@ permissions:
     description: Allows /bettermob spawn
     default: op
   bettermob.list:
-    description: Allows /bettermob list and /bettermob packs
+    description: Allows /bettermob list, /bettermob packs and /bettermob info
     default: op
   bettermob.reload:
     description: Allows /bettermob reload

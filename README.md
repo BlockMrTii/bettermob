@@ -124,6 +124,7 @@ tagged releases above are the stable ones.
 | `/bettermob spawn <id> [amount]` | Spawn a registered mob at your location |
 | `/bettermob list` | List all registered mob IDs |
 | `/bettermob packs` | List discovered packs and whether they're enabled |
+| `/bettermob info <mob>` | Show a mob's type, health, damage, faction, model, equipment, number of drop entries, skills by trigger and how many are alive |
 | `/bettermob reload` | Reload config, mobs, skills, and packs |
 | `/bettermob validate [pack]` | Check a pack (or all of them) for unsupported mechanics, conditions, targeters, undefined skills and unparsable lines (including drop lines) without spawning anything |
 | `/bettermob skill <id> [player]` | Manually run a registered skill, bypassing its normal triggers |
@@ -139,7 +140,7 @@ Alias: `/bmob`.
 |---|---|---|
 | `bettermob.admin` | everything below | op |
 | `bettermob.spawn` | `/bettermob spawn` | op |
-| `bettermob.list` | `/bettermob list` and `/bettermob packs` | op |
+| `bettermob.list` | `/bettermob list`, `/bettermob packs` and `/bettermob info` | op |
 | `bettermob.reload` | `/bettermob reload` and `/bettermob validate` | op |
 | `bettermob.skill` | `/bettermob skill` | op |
 | `bettermob.give` | `/bettermob give` | op |
@@ -422,7 +423,7 @@ are logged and treated as passing, so the line still runs.
 
 **Targeters:** `@self`, `@trigger`/`@target`, `@ObstructingBlock`, `@Forward{f=1.5;
 uel=true;yoffset=-1;rotate=-22}` (point in front of the caster, `rotate` swings it sideways,
-positive = right), `@SelfLocation{x;y;z}` (caster position, optionally shifted), `@Caster`/`@Mob` (the caster), `@Origin` (a totem's location), `@Location{x;y;z;w}`, `@TargetLocation`, `@Owner`/`@Parent` (the entity whose `summon` created the caster), `@PIR{r=2}` (nearest player within `r`), `@PlayersInRadius{r}`, `@EntitiesNearOrigin{r=4;Conditions=[ - isPlayer{} true - isCaster{} false]}` (alias `@ENO`, around a totem's location) and `@EntitiesInRadius` (`@EIR`/`@LEIR`, around the caster) hit every matching entity; all of them take `limit=<n>` and `sort=nearest|farthest|random` and conditions `isPlayer`, `isCaster`, `isMob`, `hasTag`, `faction`, `@ModelPart{p=<bone>}` (position of a BetterModel bone, falls back to chest height). A skill line without a targeter inherits the target of the line that called it.
+positive = right), `@SelfLocation{x;y;z}` (caster position, optionally shifted), `@Caster`/`@Mob` (the caster), `@Origin` (a totem's location), `@Location{x;y;z;w}`, `@TargetLocation`, `@Owner`/`@Parent` (the entity whose `summon` created the caster), `@PIR{r=2}` (nearest player within `r`), `@PlayersInRadius{r}`, `@EntitiesNearOrigin{r=4;Conditions=[ - isPlayer{} true - isCaster{} false]}` (alias `@ENO`, around a totem's location) and `@EntitiesInRadius` (`@EIR`/`@LEIR`, around the caster) hit every matching entity; all of them take `limit=<n>` and `sort=nearest|farthest|random` and `Conditions=[ ... ]` with `isPlayer`, `isCaster`, `isMob`, `hasTag`, `faction` and every skill condition (`health`, `world`, `biome`, `time`, `lineofsight`, `distance`, `onground`, `hasaura`, `chance`, ...), which then test the candidate instead of the caster (`distance` and `lineofsight` measure to the caster), `@ModelPart{p=<bone>}` (position of a BetterModel bone, falls back to chest height). A skill line without a targeter inherits the target of the line that called it.
 
 Unknown mechanics/conditions/targeters are logged with a clear warning and skipped
 rather than crashing the skill or the server.

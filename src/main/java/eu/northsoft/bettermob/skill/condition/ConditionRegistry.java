@@ -31,6 +31,7 @@ public final class ConditionRegistry {
         conditions.put("biome", new BiomeCondition());
         conditions.put("time", new TimeCondition());
         conditions.put("variable", new VariableCondition(engine));
+        conditions.put("sneaking", new SneakingCondition());
     }
 
     public boolean has(String name) {
