@@ -4,6 +4,7 @@ import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.integration.PlaceholderHook;
 import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BossBar;
@@ -11,15 +12,22 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 final class BossBarManager {
     private static final long UPDATE_TICKS = 10L;
 
-    private record Active(BossBar bar, Runnable cancel) {}
+    private static final class Shown {
+        double progress = -1;
+        String title;
+    }
+
+    private record Active(BossBar bar, Runnable cancel, Shown shown) {}
 
     private final BetterMobPlugin plugin;
     private final Map<UUID, Active> active = new ConcurrentHashMap<>();
@@ -42,8 +50,9 @@ final class BossBarManager {
         BossBarSettings settings = definition.bossBar;
         if (settings == null) return;
         BossBar bar = Bukkit.createBossBar(title(definition, entity.getHealth(), maxHealth(entity)), settings.color(), settings.style(), flags(settings));
-        Runnable cancel = Tasks.runTimer(plugin, entity, 1L, UPDATE_TICKS, () -> update(entity, definition, bar));
-        active.put(entity.getUniqueId(), new Active(bar, cancel));
+        Shown shown = new Shown();
+        Runnable cancel = Tasks.runTimer(plugin, entity, 1L, UPDATE_TICKS, () -> update(entity, definition, bar, shown));
+        active.put(entity.getUniqueId(), new Active(bar, cancel, shown));
     }
 
     void detach(UUID entityId) {
@@ -57,23 +66,33 @@ final class BossBarManager {
         for (UUID id : List.copyOf(active.keySet())) detach(id);
     }
 
-    private void update(LivingEntity entity, MobDefinition definition, BossBar bar) {
+    private void update(LivingEntity entity, MobDefinition definition, BossBar bar, Shown shown) {
         if (!entity.isValid()) {
             detach(entity.getUniqueId());
             return;
         }
         double health = entity.getHealth();
         double max = maxHealth(entity);
-        bar.setProgress(max <= 0 ? 0 : Math.max(0, Math.min(1, health / max)));
-        bar.setTitle(title(definition, health, max));
-
-        double rangeSquared = definition.bossBar.range() * definition.bossBar.range();
-        for (Player player : entity.getWorld().getPlayers()) {
-            if (player.getLocation().distanceSquared(entity.getLocation()) <= rangeSquared) bar.addPlayer(player);
-            else bar.removePlayer(player);
+        double progress = max <= 0 ? 0 : Math.max(0, Math.min(1, health / max));
+        if (progress != shown.progress) {
+            bar.setProgress(progress);
+            shown.progress = progress;
         }
+        String title = title(definition, health, max);
+        if (!title.equals(shown.title)) {
+            bar.setTitle(title);
+            shown.title = title;
+        }
+
+        double range = definition.bossBar.range();
+        Location location = entity.getLocation();
+        Set<Player> inRange = new HashSet<>();
+        for (Player player : entity.getWorld().getNearbyPlayers(location, range)) {
+            if (player.getLocation().distanceSquared(location) <= range * range) inRange.add(player);
+        }
+        for (Player player : inRange) bar.addPlayer(player);
         for (Player viewer : new ArrayList<>(bar.getPlayers())) {
-            if (!viewer.isOnline() || !viewer.getWorld().equals(entity.getWorld())) bar.removePlayer(viewer);
+            if (!inRange.contains(viewer)) bar.removePlayer(viewer);
         }
     }
 
