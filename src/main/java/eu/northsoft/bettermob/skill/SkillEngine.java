@@ -393,6 +393,37 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return result;
     }
 
+    private Map<String, String> withVariables(Map<String, String> params, SkillContext context) {
+        boolean needed = false;
+        for (String value : params.values()) {
+            if (value.indexOf("<skill.") >= 0 || value.indexOf("<var.") >= 0) {
+                needed = true;
+                break;
+            }
+        }
+        if (!needed) return params;
+        Map<String, String> casterScope = state.existingVariablesOf(context.caster().getUniqueId());
+        Map<String, String> result = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            result.put(entry.getKey(), replaceVariables(entry.getValue(), context.variables(), casterScope));
+        }
+        return result;
+    }
+
+    static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope) {
+        java.util.regex.Matcher matcher = VARIABLE_PLACEHOLDER.matcher(value);
+        StringBuilder result = new StringBuilder();
+        while (matcher.find()) {
+            Map<String, String> scope = matcher.group(1).equals("skill") ? skillScope : casterScope;
+            String found = scope == null ? null : scope.get(matcher.group(2).toLowerCase(Locale.ROOT));
+            matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(found == null ? "0" : Variables.sanitize(found)));
+        }
+        matcher.appendTail(result);
+        return result.toString();
+    }
+
+    private static final java.util.regex.Pattern VARIABLE_PLACEHOLDER = java.util.regex.Pattern.compile("<(skill|var)\\.([A-Za-z0-9_]{1,32})>");
+
     private static boolean isInlineSkill(String value) {
         String trimmed = value.stripLeading();
         return trimmed.startsWith("[") && trimmed.indexOf('{') > 0;
