@@ -95,6 +95,11 @@ maintainer edits enabled; without them the check fails with the list of files).
 The wiki pages are in [`wiki/`](wiki). Edit them in a pull request, a workflow publishes them to the
 [GitHub wiki](https://github.com/HyperGaming99/bettermob/wiki) once the change is on `dev`. Do not edit the wiki on GitHub directly.
 
+## Pack compatibility
+
+Which MythicMobs packs were tried and how far they run is on the wiki page
+[Pack compatibility](https://github.com/HyperGaming99/bettermob/wiki/Pack-Compatibility); check your own pack with `/bettermob validate <pack>`.
+
 ## Code layout
 
 Everything lives under `eu.northsoft.bettermob`: `api`/`api.event` (public API), `command`, `mob`,
@@ -416,7 +421,7 @@ so a model has to exist in whichever engine you point at it.
 
 **Factions:** players can belong to a faction too: give them the permission `bettermob.faction.<name>` (lower case) or list them under `factions:` in `config.yml` (player name or UUID). Mobs of that faction then ignore them, and they can't hurt those mobs. Without either, players are in no faction (ops included).
 
-**Conditions:** `offgcd`, `onground`, `health{h=<50%}` (caster health; absolute value or percent, also `>10`, `<=5`, `20-40`), `lineofsight` (alias `los`, the caster sees the trigger/target), `world{w=world,world_nether}`, `biome{b=DESERT,PLAINS}`, `time{t=day|night|<ticks or range>}`, `variable{var=caster.phase;value=>=2}`, `chance{chance=0.75}`, `hastag{t=...}`, `hasaura{n=...}`, `faction{faction=Elite,Other}` (the caster's, or each candidate's inside a multi-target targeter), `onblock{b=...}` (block under the caster), `blocktype{type=...}`, `skillOnCooldown{skill=...}`, `distance{d=0-6}` (also `>3`, `<=5`) to the trigger/target. A skill's `Conditions`/`TargetConditions` entry may end in `castinstead <skill>` to cast that skill instead when it holds. Any mechanic line can
+**Conditions:** `offgcd`, `onground`, `health{h=<50%}` (caster health; absolute value or percent, also `>10`, `<=5`, `20-40`), `lineofsight` (alias `los`, the caster sees the trigger/target), `world{w=world,world_nether}`, `biome{b=DESERT,PLAINS}`, `time{t=day|night|<ticks or range>}`, `variable{var=caster.phase;value=>=2}`, `sneaking` (the caster is a sneaking player), `chance{chance=0.75}`, `hastag{t=...}`, `hasaura{n=...}`, `faction{faction=Elite,Other}` (the caster's, or each candidate's inside a multi-target targeter), `onblock{b=...}` (block under the caster), `blocktype{type=...}`, `skillOnCooldown{skill=...}`, `distance{d=0-6}` (also `>3`, `<=5`) to the trigger/target. A skill's `Conditions`/`TargetConditions` entry may end in `castinstead <skill>` to cast that skill instead when it holds. Any mechanic line can
 end with `?condition{...}` (or `?!condition{...}` to negate) to run only when that
 check passes; unsupported conditions
 are logged and treated as passing, so the line still runs.
