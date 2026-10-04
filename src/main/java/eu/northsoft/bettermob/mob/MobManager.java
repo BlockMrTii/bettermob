@@ -221,8 +221,8 @@ public final class MobManager {
         };
         if (auraKind != null) skillEngine.fireAuras(entity, auraKind, trigger, event);
         SkillContext context = new SkillContext(entity, trigger, event);
-        for (MobDefinition.SkillTrigger skillTrigger : definition.skillTriggers) {
-            if (skillTrigger.trigger() == type) skillEngine.runStep(skillTrigger.step(), context);
+        for (MobDefinition.SkillTrigger skillTrigger : definition.triggersOf(type)) {
+            skillEngine.runStep(skillTrigger.step(), context);
         }
         if (event != null && event.isCancelled()) plugin.debug().info("trigger " + type + " on " + definition.id + ": event cancelled", definition.id);
     }
@@ -232,8 +232,7 @@ public final class MobManager {
             timers.computeIfAbsent(mob.getUniqueId(), key -> new ArrayList<>())
                     .add(Tasks.runTimer(plugin, mob, 20L, 20L, () -> retarget(mob)));
         }
-        for (MobDefinition.SkillTrigger trigger : definition.skillTriggers) {
-            if (trigger.trigger() != MobDefinition.SkillTrigger.Trigger.TIMER) continue;
+        for (MobDefinition.SkillTrigger trigger : definition.triggersOf(MobDefinition.SkillTrigger.Trigger.TIMER)) {
             Runnable cancel = Tasks.runTimer(plugin, entity, trigger.timerTicks(), trigger.timerTicks(), () -> {
                 if (!entity.isValid()) return;
                 skillEngine.runStep(trigger.step(), SkillContext.of(entity));
@@ -415,9 +414,8 @@ public final class MobManager {
     }
 
     private boolean hasModelSkill(MobDefinition definition, MobDefinition.SkillTrigger.Trigger trigger) {
-        for (MobDefinition.SkillTrigger skillTrigger : definition.skillTriggers) {
-            if (skillTrigger.trigger() == trigger && skillTrigger.step() instanceof SkillStep.Mechanic mechanic
-                    && mechanic.name().equals("model")) {
+        for (MobDefinition.SkillTrigger skillTrigger : definition.triggersOf(trigger)) {
+            if (skillTrigger.step() instanceof SkillStep.Mechanic mechanic && mechanic.name().equals("model")) {
                 return true;
             }
         }
