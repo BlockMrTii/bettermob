@@ -148,6 +148,7 @@ Skills:
 |---|---|
 | `offgcd` | The global cooldown set with `gcd` has run out |
 | `onground` | The caster stands on the ground |
+| `sneaking` | The caster is a player who is sneaking |
 | `health{h=<50%}` | The caster's health matches: a number, a comparison (`>10`, `<=5`), a range (`20-40`), each optionally with `%` for a share of max health |
 | `lineofsight` (`los`) | The caster can see the trigger/target (or its own target) |
 | `world{w=world,world_nether}` | The caster is in one of these worlds |
