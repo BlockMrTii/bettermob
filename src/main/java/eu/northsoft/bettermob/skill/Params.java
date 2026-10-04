@@ -2,9 +2,16 @@ package eu.northsoft.bettermob.skill;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public final class Params {
+    private static final Pattern SKILL_SYNTAX = Pattern.compile("[{}\\[\\];=\"'\\\\\\p{Cntrl}-]");
+
     private Params() {}
+
+    public static String stripSkillSyntax(String value) {
+        return SKILL_SYNTAX.matcher(value).replaceAll("");
+    }
 
     public static float parseFloat(String value, float fallback) {
         try {
