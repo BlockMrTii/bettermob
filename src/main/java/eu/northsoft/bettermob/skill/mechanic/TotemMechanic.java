@@ -11,6 +11,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
 
 import java.util.Map;
 import java.util.UUID;
@@ -32,6 +33,11 @@ public final class TotemMechanic implements Mechanic, Listener {
     }
 
     @Override
+    public boolean runsOnTarget() {
+        return false;
+    }
+
+    @Override
     public void execute(MechanicCall call) {
         Map<String, String> p = call.params();
         SkillContext context = call.context();
@@ -44,7 +50,7 @@ public final class TotemMechanic implements Mechanic, Listener {
         String onTick = firstParam(p, "ot", "ontick");
         String onEnd = firstParam(p, "oe", "onend");
         String onHit = firstParam(p, "oh", "onhit");
-        if (onHit != null) spawnBody(context, at, onHit, duration > 0 ? duration : 100);
+        if (onHit != null) Tasks.runOwnedAt(engine.plugin(), origin, () -> spawnBody(context, at, onHit, duration > 0 ? duration : 100));
         if (duration <= 0 || (onTick == null && onEnd == null)) return;
 
         long interval = Math.max(1, parseInt(firstParam(p, "i", "interval"), 20));
@@ -79,6 +85,11 @@ public final class TotemMechanic implements Mechanic, Listener {
             totemBodies.remove(body.getUniqueId());
             body.remove();
         });
+    }
+
+    @EventHandler
+    public void onBodyRemove(EntityRemoveEvent event) {
+        totemBodies.remove(event.getEntity().getUniqueId());
     }
 
     @EventHandler(ignoreCancelled = true)

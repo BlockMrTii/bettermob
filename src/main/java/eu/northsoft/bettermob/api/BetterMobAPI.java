@@ -36,5 +36,17 @@ public interface BetterMobAPI {
 
     void unregisterMechanic(String name);
 
+    boolean registerCondition(Plugin owner, String name, CustomCondition condition);
+
+    void unregisterCondition(String name);
+
+    boolean registerTargeter(Plugin owner, String name, CustomTargeter targeter);
+
+    void unregisterTargeter(String name);
+
+    boolean registerPlaceholder(Plugin owner, String namespace, CustomPlaceholder placeholder);
+
+    void unregisterPlaceholder(String namespace);
+
     void reload();
 }

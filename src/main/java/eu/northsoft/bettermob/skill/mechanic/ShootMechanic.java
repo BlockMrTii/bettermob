@@ -18,6 +18,7 @@ import org.bukkit.entity.SpectralArrow;
 import org.bukkit.entity.Trident;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.util.Vector;
 
@@ -52,6 +53,12 @@ public final class ShootMechanic implements Mechanic, Listener {
     }
 
     @EventHandler
+    public void onProjectileRemove(EntityRemoveEvent event) {
+        PendingShot shot = shots.remove(event.getEntity().getUniqueId());
+        if (shot != null) shot.stopTicker().run();
+    }
+
+    @EventHandler
     public void onProjectileHit(ProjectileHitEvent event) {
         PendingShot shot = shots.remove(event.getEntity().getUniqueId());
         if (shot == null) return;
@@ -61,6 +68,11 @@ public final class ShootMechanic implements Mechanic, Listener {
             if (shot.onHit() != null) engine.runSteps(shot.onHit(), new SkillContext(shot.shooter(), hit, null).withTrigger(hit));
         }
         if (shot.onEnd() != null) engine.runSteps(shot.onEnd(), SkillContext.of(shot.shooter()).withOrigin(event.getEntity().getLocation()));
+    }
+
+    @Override
+    public boolean runsOnTarget() {
+        return false;
     }
 
     @Override
@@ -78,7 +90,9 @@ public final class ShootMechanic implements Mechanic, Listener {
             type = Arrow.class;
         }
 
-        double speed = Math.max(0.1, parseFloat(p.get("velocity"), 1f) * 2);
+        float speedScale = parseFloat(firstParam(p, "speedscale", "ss"), 2f);
+        if (!Float.isFinite(speedScale)) speedScale = 2f;
+        double speed = Math.max(0.1, parseFloat(p.get("velocity"), 1f) * speedScale);
         double damage = parseFloat(p.get("damage"), 2f);
         if (engine.debug().verbose()) engine.debug().verbose("shoot " + typeName + " at " + aim.getName() + ", speed " + speed + ", damage " + damage, engine.subject(caster));
         double spread = Math.toRadians(parseFloat(p.get("spread"), 0f));

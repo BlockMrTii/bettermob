@@ -88,9 +88,42 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
         skillEngine.unregisterMechanic(name);
     }
 
+    @Override
+    public boolean registerCondition(Plugin owner, String name, eu.northsoft.bettermob.api.CustomCondition condition) {
+        return skillEngine.conditionRegistry().registerCustom(owner, name, condition);
+    }
+
+    @Override
+    public void unregisterCondition(String name) {
+        skillEngine.conditionRegistry().unregisterCustom(name);
+    }
+
+    @Override
+    public boolean registerTargeter(Plugin owner, String name, eu.northsoft.bettermob.api.CustomTargeter targeter) {
+        return skillEngine.targeters().registerCustom(owner, name, targeter);
+    }
+
+    @Override
+    public void unregisterTargeter(String name) {
+        skillEngine.targeters().unregisterCustom(name);
+    }
+
+    @Override
+    public boolean registerPlaceholder(Plugin owner, String namespace, eu.northsoft.bettermob.api.CustomPlaceholder placeholder) {
+        return skillEngine.placeholders().register(owner, namespace, placeholder);
+    }
+
+    @Override
+    public void unregisterPlaceholder(String namespace) {
+        skillEngine.placeholders().unregister(namespace);
+    }
+
     @EventHandler
     public void onPluginDisable(PluginDisableEvent event) {
         skillEngine.unregisterMechanics(event.getPlugin());
+        skillEngine.conditionRegistry().unregisterCustom(event.getPlugin());
+        skillEngine.targeters().unregisterCustom(event.getPlugin());
+        skillEngine.placeholders().unregister(event.getPlugin());
     }
 
     @Override

@@ -1,6 +1,8 @@
 package eu.northsoft.bettermob.util;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.plugin.Plugin;
@@ -43,6 +45,48 @@ public final class Tasks {
         }
         BukkitTask bukkitTask = Bukkit.getScheduler().runTaskTimer(plugin, task, delay, period);
         return bukkitTask::cancel;
+    }
+
+    public static Runnable runGlobalTimer(Plugin plugin, long period, Runnable task) {
+        if (FOLIA) {
+            var scheduled = Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, t -> task.run(), period, period);
+            return scheduled::cancel;
+        }
+        BukkitTask bukkitTask = Bukkit.getScheduler().runTaskTimer(plugin, task, period, period);
+        return bukkitTask::cancel;
+    }
+
+    public static void runOn(Plugin plugin, Entity entity, Runnable task) {
+        if (FOLIA) entity.getScheduler().run(plugin, scheduled -> task.run(), null);
+        else task.run();
+    }
+
+    public static void runAt(Plugin plugin, Location location, Runnable task) {
+        if (FOLIA) Bukkit.getRegionScheduler().run(plugin, location, scheduled -> task.run());
+        else task.run();
+    }
+
+    public static boolean runOwned(Plugin plugin, Entity entity, Runnable task) {
+        return runOwned(plugin, entity, task, null);
+    }
+
+    public static boolean runOwned(Plugin plugin, Entity entity, Runnable task, Runnable retired) {
+        if (!FOLIA || Bukkit.isOwnedByCurrentRegion(entity)) {
+            task.run();
+            return true;
+        }
+        var scheduled = entity.getScheduler().run(plugin, current -> task.run(), retired);
+        if (scheduled == null && retired != null) retired.run();
+        return false;
+    }
+
+    public static boolean runOwnedAt(Plugin plugin, Location location, Runnable task) {
+        if (!FOLIA || Bukkit.isOwnedByCurrentRegion(location)) {
+            task.run();
+            return true;
+        }
+        Bukkit.getRegionScheduler().run(plugin, location, scheduled -> task.run());
+        return false;
     }
 
     public static void runGlobal(Plugin plugin, Runnable task) {

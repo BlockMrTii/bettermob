@@ -1,6 +1,7 @@
 package eu.northsoft.bettermob.skill.mechanic;
 
 import eu.northsoft.bettermob.integration.PlaceholderHook;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.entity.Player;
 
@@ -12,9 +13,11 @@ public final class MessageMechanic implements Mechanic {
     public void execute(MechanicCall call) {
         String raw = firstParam(call.params(), "m", "message", "msg");
         if (raw == null || !(call.target().entity() instanceof Player receiver)) return;
-        String text = PlaceholderHook.apply(receiver, stripQuotes(raw)
-                .replace("<caster.name>", call.context().caster().getName())
-                .replace("<target.name>", receiver.getName()));
-        receiver.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(text));
+        Component template = LegacyComponentSerializer.legacyAmpersand().deserialize(PlaceholderHook.apply(receiver, stripQuotes(raw)));
+        receiver.sendMessage(withName(withName(template, "<caster.name>", call.context().caster().getName()), "<target.name>", receiver.getName()));
+    }
+
+    static Component withName(Component template, String token, String name) {
+        return template.replaceText(builder -> builder.matchLiteral(token).replacement(Component.text(name)));
     }
 }

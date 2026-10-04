@@ -45,6 +45,23 @@ public final class PackScanner {
         return null;
     }
 
+    public java.util.Map<String, File> sources() {
+        java.util.Map<String, File> sources = new java.util.LinkedHashMap<>();
+        sources.put("", plugin.getDataFolder());
+        File[] packDirs = packsFolder.listFiles(File::isDirectory);
+        if (packDirs == null) return sources;
+        java.util.Arrays.sort(packDirs);
+        for (File packDir : packDirs) sources.put(packDir.getName(), packDir);
+        return sources;
+    }
+
+    public static File subfolder(File parent, String name) {
+        File[] children = parent.listFiles(File::isDirectory);
+        if (children == null) return null;
+        for (File child : children) if (child.getName().equalsIgnoreCase(name)) return child;
+        return null;
+    }
+
     public List<String> listPacks() {
         List<String> result = new ArrayList<>();
         File[] packDirs = packsFolder.listFiles(File::isDirectory);

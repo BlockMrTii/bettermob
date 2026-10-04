@@ -1,0 +1,90 @@
+name: Strip code comments
+
+on:
+  pull_request_target:
+    branches: [main, dev]
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: strip-comments-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  strip:
+    runs-on: ubuntu-latest
+    env:
+      HAS_PAT: ${{ secrets.PR_PUSH_TOKEN != '' }}
+    steps:
+      - name: Checkout the base branch for the script
+        uses: actions/checkout@v4
+        with:
+          path: base
+
+      - name: Test the script
+        run: python -m unittest discover -s base/.github/scripts
+
+      - name: Checkout the pull request branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: false
+          path: pr
+          fetch-depth: 0
+
+      - name: Strip comments from the changed Java files
+        id: strip
+        working-directory: pr
+        run: |
+          git fetch origin "${{ github.event.pull_request.base.sha }}" --depth=1 2>/dev/null || git fetch https://github.com/${{ github.repository }} "${{ github.event.pull_request.base.sha }}"
+          git diff --name-only --diff-filter=AM "${{ github.event.pull_request.base.sha }}" HEAD -- '*.java' > "$RUNNER_TEMP/changed.txt"
+          xargs -d '\n' -r python ../base/.github/scripts/strip_comments.py < "$RUNNER_TEMP/changed.txt" | sed '/^$/d' > "$RUNNER_TEMP/stripped.txt"
+          echo "count=$(wc -l < "$RUNNER_TEMP/stripped.txt")" >> "$GITHUB_OUTPUT"
+
+      - name: Push the cleanup commit
+        id: push
+        if: steps.strip.outputs.count != '0'
+        working-directory: pr
+        continue-on-error: true
+        env:
+          PUSH_TOKEN: ${{ secrets.PR_PUSH_TOKEN || github.token }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Remove code comments"
+          auth=$(printf 'x-access-token:%s' "$PUSH_TOKEN" | base64 -w0)
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin "HEAD:$HEAD_REF"
+
+      - name: Run the build check on the new commit
+        if: steps.push.outcome == 'success' && github.event.pull_request.head.repo.full_name == github.repository && env.HAS_PAT != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: gh workflow run release.yml --repo "${{ github.repository }}" --ref "$HEAD_REF"
+
+      - name: Comment the removed comments
+        if: steps.strip.outputs.count != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUSHED: ${{ steps.push.outcome }}
+        run: |
+          files=$(sed 's/^/- `/; s/$/`/' "$RUNNER_TEMP/stripped.txt")
+          if [ "$PUSHED" = success ]; then
+            body=$(printf 'Removed code comments (the project keeps its Java code comment-free) in:\n\n%s' "$files")
+          else
+            body=$(printf 'This pull request adds code comments, which the project does not allow, and the branch could not be pushed to. Remove the comments in:\n\n%s' "$files")
+          fi
+          gh pr comment "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --body "$body"
+
+      - name: Fail when the comments could not be removed
+        if: steps.strip.outputs.count != '0' && steps.push.outcome != 'success'
+        run: |
+          echo "Code comments found in:"
+          cat "$RUNNER_TEMP/stripped.txt"
+          exit 1

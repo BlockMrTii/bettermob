@@ -23,6 +23,9 @@ class MechanicRegistryTest {
             "bodyrotation", "addtag", "removetag", "ignite", "totem", "velocity", "freeze", "shoot", "stun",
             "setnodamageticks");
 
+    private static final List<String> ADDED_NAMES = List.of("heal", "teleport", "explosion", "lightning", "setspeed", "setai",
+            "setvariable", "variableset", "addvariable", "variableadd");
+
     private static final Set<String> HANDLED_BY_ENGINE = Set.of("cancelskill", "delay");
 
     private static final CustomMechanic NOTHING = context -> { };
@@ -48,6 +51,11 @@ class MechanicRegistryTest {
             if (HANDLED_BY_ENGINE.contains(name)) assertNull(registry.get(name), name);
             else assertNotNull(registry.get(name), name);
         }
+    }
+
+    @Test
+    void addedMechanicsAreRegistered() {
+        for (String name : ADDED_NAMES) assertNotNull(registry.get(name), name);
     }
 
     @Test

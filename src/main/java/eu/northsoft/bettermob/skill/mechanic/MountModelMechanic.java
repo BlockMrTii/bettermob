@@ -11,6 +11,11 @@ public final class MountModelMechanic implements Mechanic {
     }
 
     @Override
+    public boolean runsOnTarget() {
+        return false;
+    }
+
+    @Override
     public void execute(MechanicCall call) {
         if (!(call.target().entity() instanceof LivingEntity rider)) return;
         Object tracker = engine.mobManager().trackerFor(call.context().caster().getUniqueId());

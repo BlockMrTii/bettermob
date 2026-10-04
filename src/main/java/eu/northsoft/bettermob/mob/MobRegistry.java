@@ -158,8 +158,15 @@ public final class MobRegistry {
                 parseSkillTriggers(id, section.getStringList("Skills")),
                 parseDrops(id, section.getStringList("Drops")),
                 section.getString("Faction"),
-                parseBossBar(id, modulesSection)
+                parseBossBar(id, modulesSection),
+                List.copyOf(section.getStringList("Equipment")),
+                parseSpawnRule(id, section.getConfigurationSection("Spawn"))
         );
+    }
+
+    private SpawnRule parseSpawnRule(String id, ConfigurationSection spawn) {
+        if (spawn == null) return null;
+        return SpawnRule.parse(spawn, option -> plugin.messages().warn("mob.spawnRuleInvalid", "mob", id, "option", option));
     }
 
     private BossBarSettings parseBossBar(String id, ConfigurationSection modules) {

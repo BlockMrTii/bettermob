@@ -4,6 +4,7 @@ import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.ai.AiGoalApplier;
 import eu.northsoft.bettermob.api.event.BetterMobSpawnEvent;
 import eu.northsoft.bettermob.integration.PlaceholderHook;
+import eu.northsoft.bettermob.item.EquipmentSupport;
 import eu.northsoft.bettermob.item.ItemDefinition;
 import eu.northsoft.bettermob.item.ItemRegistry;
 import eu.northsoft.bettermob.model.BetterModelHook;
@@ -28,6 +29,7 @@ import org.bukkit.entity.Zombie;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.lang.ref.WeakReference;
@@ -117,6 +119,26 @@ public final class MobManager {
         if (definition.removeAi) entity.setAI(false);
 
         preventSunburn(entity, definition);
+        applyEquipment(entity, definition);
+    }
+
+    private void applyEquipment(LivingEntity entity, MobDefinition definition) {
+        if (definition.equipment.isEmpty() || entity.getEquipment() == null) return;
+        for (String line : definition.equipment) {
+            String[] parts = line.trim().split(":", 2);
+            ItemStack stack = EquipmentSupport.itemFor(items, parts[0]);
+            if (stack == null) {
+                plugin.messages().warn("mob.equipmentUnknownItem", "mob", definition.id, "value", parts[0]);
+                continue;
+            }
+            String slotName = parts.length > 1 ? parts[1] : "hand";
+            if (!EquipmentSupport.isKnownSlot(slotName)) {
+                plugin.messages().warn("mob.equipmentUnknownSlot", "mob", definition.id, "value", slotName);
+                continue;
+            }
+            EquipmentSupport.equip(entity, EquipmentSupport.slotFor(slotName), stack);
+        }
+        if (entity instanceof Mob mob && !definition.aiGoalSelectors.isEmpty()) AiGoalApplier.promoteRanged(mob);
     }
 
     private static void preventSunburn(LivingEntity entity, MobDefinition definition) {
@@ -246,7 +268,7 @@ public final class MobManager {
         Set<String> removed = new HashSet<>();
         for (Map.Entry<UUID, MobDefinition> entry : List.copyOf(definitions.entrySet())) {
             Entity entity = Bukkit.getEntity(entry.getKey());
-            if (!(entity instanceof LivingEntity living) || !living.isValid()) continue;
+            if (!(entity instanceof LivingEntity living)) continue;
             MobDefinition old = entry.getValue();
             MobDefinition fresh = registry.get(old.id);
             if (fresh == null) {

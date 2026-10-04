@@ -86,6 +86,21 @@ and of any pack placed under `src/test/resources/packs/` - use the usual `Mobs/`
 `Skills/` and `DropTables/` folder names. The workflow runs `mvn test` on every push and pull
 request, and a failing test stops the build and the release.
 
+The Java code is kept free of comments. The `Strip code comments` workflow runs
+`.github/scripts/strip_comments.py` on the Java files a pull request changes and commits
+`Remove code comments` to the branch (pull requests from forks need the `PR_PUSH_TOKEN` secret and
+maintainer edits enabled; without them the check fails with the list of files).
+
+## Wiki
+
+The wiki pages are in [`wiki/`](wiki). Edit them in a pull request, a workflow publishes them to the
+[GitHub wiki](https://github.com/HyperGaming99/bettermob/wiki) once the change is on `dev`. Do not edit the wiki on GitHub directly.
+
+## Pack compatibility
+
+Which MythicMobs packs were tried and how far they run is on the wiki page
+[Pack compatibility](https://github.com/HyperGaming99/bettermob/wiki/Pack-Compatibility); check your own pack with `/bettermob validate <pack>`.
+
 ## Code layout
 
 Everything lives under `eu.northsoft.bettermob`: `api`/`api.event` (public API), `command`, `mob`,
@@ -115,10 +130,13 @@ tagged releases above are the stable ones.
 | `/bettermob spawn <id> [amount]` | Spawn a registered mob at your location |
 | `/bettermob list` | List all registered mob IDs |
 | `/bettermob packs` | List discovered packs and whether they're enabled |
+| `/bettermob info <mob>` | Show a mob's type, health, damage, faction, model, equipment, number of drop entries, skills by trigger and how many are alive |
 | `/bettermob reload` | Reload config, mobs, skills, and packs |
+| `/bettermob validate [pack]` | Check a pack (or all of them) for unsupported mechanics, conditions, targeters, undefined skills and unparsable lines (including drop lines) without spawning anything |
 | `/bettermob skill <id> [player]` | Manually run a registered skill, bypassing its normal triggers |
 | `/bettermob give <item> [player] [amount]` | Give a registered item (see [Items](#items)) |
 | `/bettermob killall [mob\|*] [world]` | Remove all living BetterMob mobs, or only one type and/or one world, and report how many |
+| `/bettermob spawner create <id> <mob> [radius] [interval] [max]` | Create a spawner at your position; `remove <id>` and `list` manage them |
 | `/bettermob stats [on\|off\|reset]` | Show living mobs per type, running timers, loaded skills and packs; `on`/`off` switch the skill timing, `reset` clears it (permission `bettermob.debug`) |
 | `/bettermob debug [off\|info\|verbose\|filter <id>\|filter clear\|chat]` | Show or change the debug output (permission `bettermob.debug`, part of `bettermob.admin`) |
 
@@ -128,11 +146,12 @@ Alias: `/bmob`.
 |---|---|---|
 | `bettermob.admin` | everything below | op |
 | `bettermob.spawn` | `/bettermob spawn` | op |
-| `bettermob.list` | `/bettermob list` and `/bettermob packs` | op |
-| `bettermob.reload` | `/bettermob reload` | op |
+| `bettermob.list` | `/bettermob list`, `/bettermob packs` and `/bettermob info` | op |
+| `bettermob.reload` | `/bettermob reload` and `/bettermob validate` | op |
 | `bettermob.skill` | `/bettermob skill` | op |
 | `bettermob.give` | `/bettermob give` | op |
 | `bettermob.killall` | `/bettermob killall` | op |
+| `bettermob.spawner` | `/bettermob spawner` | op |
 | `bettermob.debug` | `/bettermob debug` | op |
 
 `bettermob.admin` is the parent of all the others. Without a node the subcommand is refused, left out of the help and left out of tab completion. `bettermob.faction.<name>` (see `factions` in `config.yml`) is unrelated to the commands.
@@ -140,6 +159,8 @@ Alias: `/bmob`.
 **Reload:** `/bettermob reload` also updates mobs that are already alive. Each one is bound to the new definition of the same id: name, health cap, attack, speed and the options are applied again, its timers are restarted (the old ones are cancelled, so nothing runs twice), its auras and global cooldown are cleared, the model is attached again and the `~onLoad` skills run again. AI goals are applied again only when `AIGoalSelectors` or `AITargetSelectors` changed and the new list starts with `clear`; goals an earlier `clear` removed cannot come back until the mob is respawned. A mob whose definition was removed keeps the old one and a warning is logged. Totem bodies that are already in the world run out on their own.
 
 **Killall:** `/bettermob killall` removes every loaded living BetterMob mob; `<mob>` limits it to one id (`*` means all) and `<world>` to one world. Mobs in unloaded chunks are not touched. Without a mob id it also removes helper armor stands (the hit bodies of `totem` skills). Those carry the scoreboard tag `bettermob_helper`, and only entities with that tag are ever removed. Leftover helpers are also removed on startup and whenever a chunk loads.
+
+**Spawners:** `/bettermob spawner create camp goblin 6 20 4` makes a spawner at your position that spawns `goblin` at a random ground spot within 6 blocks every 20 seconds (defaults: radius 5, 30 s, max 3) while a player is within 32 blocks, and never lets more than 4 of its loaded mobs live at once. They are stored in `plugins/BetterMob/spawners.yml` (`mob`, `world`, `x`, `y`, `z`, `radius`, `interval`, `max`, `player-range`) and reloaded with `/bettermob reload`. Spawned mobs carry the scoreboard tag `bettermob_spawner:<id>`, which is how its mobs are counted again after a restart or when their chunk loads.
 
 **Stats:** `/bettermob stats` shows the living BetterMob mobs per type, the running mob timers and the loaded skills and packs. With `Stats: on` in `config.yml` (or `/bettermob stats on`) it also measures every skill run and lists the 10 skills with the most total time (calls, average, maximum), plus the delayed steps that are still waiting. A run is measured up to its first `delay` and includes the skills it starts in the same tick. `StatsWarnMillis` (default 50, 0 turns it off) logs a console warning when a single run takes longer. While stats are off nothing is measured or counted. Delayed steps whose mob disappears before they run are not subtracted, so `reset` now and then. Uses the permission `bettermob.debug`.
 
@@ -207,6 +228,14 @@ Health: 60
 Damage: 8
 RemoveAi: false
 Faction: Elite              # mobs of one faction never target or hurt each other
+Equipment:                  # item or material : slot (HAND, OFFHAND, HEAD, CHEST, LEGS, FEET)
+  - BOW:HAND
+  - my_helmet:HEAD
+Spawn:                      # replaces natural spawns of the mob's Type (here SKELETON) that match
+  Worlds: [world]           # optional, empty = every world
+  Biomes: [desert, plains]  # optional, empty = every biome
+  Time: night               # day | night | any (default)
+  Chance: 0.3               # 0-1, rolled per natural spawn, default 1
 
 AIGoalSelectors:
   - clear
@@ -250,6 +279,8 @@ Skills:
   - skill{s=my_skill_id} ~onInteract
   - sound{s=entity.skeleton.ambient;p=1.0;v=1} @self ~onTimer:200
 ```
+
+**Spawn rules:** a `Spawn` block turns the mob into a natural spawn. Whenever the server spawns a vanilla mob of the same `Type` naturally (not from spawners, eggs or commands) and the world, biome, time of day and `Chance` all fit, that spawn is replaced by this mob. `Worlds` and `Biomes` take lists (biome ids with or without `minecraft:`), `Time` is `day`, `night` or `any`. Without a `Spawn` block nothing is replaced; if several mobs match, the first one that passes its chance wins. A `Worlds` or `Biomes` that is not a list, a `Chance` that is not a number or an unknown `Time` logs a warning and the whole `Spawn` block is ignored, so a typo never widens the spawn.
 
 `Modules: BossBar:` shows a boss bar with the mob's health to every player within `Range` blocks (same world). `BossBar: true` uses the defaults.
 
@@ -373,8 +404,8 @@ control), `potion`, `look`, `breakblock`, `state` (plays a BetterModel animation
 `setblock` (`m`), `effect:particles` (`p`, `amount`, `hS`, `vS`, `speed`, `y` offset, `repeat`, `repeatInterval`; alias `e:p`),
 `effect:particlering` (`particle`, `radius`, `points`, ...), `spin` (`duration` ticks,
 `velocity` degrees/tick), `takeitem` (`i=<item>;a=<amount>`, removes a registered item
-from the target player), `ignite` (`t` ticks), `stun` (`d` ticks; `ai` default true disables the AI, `g=true` also turns gravity off, `f=true` holds the mob still, `state=<animation>` plays that BetterModel animation), `velocity` (`m=SET|ADD|MULTIPLY|DIVIDE`, `x`, `y`, `z`, `repeat`, `repeatInterval`), `freeze` (`ticks`, powder-snow effect),
-`message` (`m`, to the target player, `&` colors, `<caster.name>`, `<target.name>`), `setNoDamageTicks` (`ticks`), `onDamaged`/`onAttack`/`onDeath`/`onShoot`/`aura` (`auraName`, `time`, `cE`, `oS`, `oE`, `oT`, `i`, `oH`: a timed aura that runs `oS` at start, `oE` at end, `oT` every `i` ticks and `oH` on its event, `cE=true` cancels that event meanwhile), `bodyrotation` (`headUneven`, `bodyUneven`, `minHead`, `maxHead`, `minBody`, `maxBody`, `delay`; BetterModel only), `shoot` (`type=arrow|spectral_arrow|trident|snowball|egg|fireball|smallfireball`, `velocity`, `damage`, `spread` degrees, `gravity=false`; `oh=[ ... ]` runs on a hit with the hit entity as target, `oe=[ ... ]` when it lands anywhere, `ot=[ ... ]` every `i` ticks (default 5) in flight), `totem` (`os=[ ... ]`
+from the target player), `ignite` (`t` ticks), `setvariable` / `addvariable` (`var`, `value`, `type=INTEGER|FLOAT|STRING`, see Skill variables below), `heal` (`a`, capped at max health), `teleport` (the caster goes to the targeted location or entity, e.g. `@Target`), `explosion` (`yield`, `bd=true` block damage, `fire=true`), `lightning` (`damage=true` for a real strike), `setspeed` (`s`, movement speed attribute), `setai` (`ai=false` switches the AI off), `stun` (`d` ticks; `ai` default true disables the AI, `g=true` also turns gravity off, `f=true` holds the mob still, `state=<animation>` plays that BetterModel animation), `velocity` (`m=SET|ADD|MULTIPLY|DIVIDE`, `x`, `y`, `z`, `repeat`, `repeatInterval`), `freeze` (`ticks`, powder-snow effect),
+`message` (`m`, to the target player, `&` colors, `<caster.name>`, `<target.name>`), `setNoDamageTicks` (`ticks`), `onDamaged`/`onAttack`/`onDeath`/`onShoot`/`aura` (`auraName`, `time`, `cE`, `oS`, `oE`, `oT`, `i`, `oH`: a timed aura that runs `oS` at start, `oE` at end, `oT` every `i` ticks and `oH` on its event, `cE=true` cancels that event meanwhile), `bodyrotation` (`headUneven`, `bodyUneven`, `minHead`, `maxHead`, `minBody`, `maxBody`, `delay`; BetterModel only), `shoot` (`type=arrow|spectral_arrow|trident|snowball|egg|fireball|smallfireball`, `velocity`, `speedscale` (`ss`, multiplier on `velocity`, default 2), `damage`, `spread` degrees, `gravity=false`; `oh=[ ... ]` runs on a hit with the hit entity as target, `oe=[ ... ]` when it lands anywhere, `ot=[ ... ]` every `i` ticks (default 5) in flight), `totem` (`os=[ ... ]`
 runs once at the targeter's location, `yo` shifts it up; with `md` ticks, `ot=[ ... ]` repeats every `i` ticks
 (default 20) and `oe=[ ... ]` runs at the end; stops early if the caster dies; with `oh=[ ... ]` an invisible, unbreakable body is placed at the totem for `md` ticks (default 100) and the lines run whenever someone hits it, with the attacker as target).
 
@@ -391,17 +422,35 @@ so a model has to exist in whichever engine you point at it.
 
 **Factions:** players can belong to a faction too: give them the permission `bettermob.faction.<name>` (lower case) or list them under `factions:` in `config.yml` (player name or UUID). Mobs of that faction then ignore them, and they can't hurt those mobs. Without either, players are in no faction (ops included).
 
-**Conditions:** `offgcd`, `onground`, `chance{chance=0.75}`, `hastag{t=...}`, `hasaura{n=...}`, `faction{faction=Elite,Other}` (the caster's, or each candidate's inside a multi-target targeter), `onblock{b=...}` (block under the caster), `blocktype{type=...}`, `skillOnCooldown{skill=...}`, `distance{d=0-6}` (also `>3`, `<=5`) to the trigger/target. A skill's `Conditions`/`TargetConditions` entry may end in `castinstead <skill>` to cast that skill instead when it holds. Any mechanic line can
+**Conditions:** `offgcd`, `onground`, `health{h=<50%}` (caster health; absolute value or percent, also `>10`, `<=5`, `20-40`), `lineofsight` (alias `los`, the caster sees the trigger/target), `world{w=world,world_nether}`, `biome{b=DESERT,PLAINS}`, `time{t=day|night|<ticks or range>}`, `variable{var=caster.phase;value=>=2}`, `sneaking` (the caster is a sneaking player), `chance{chance=0.75}`, `hastag{t=...}`, `hasaura{n=...}`, `faction{faction=Elite,Other}` (the caster's, or each candidate's inside a multi-target targeter), `onblock{b=...}` (block under the caster), `blocktype{type=...}`, `skillOnCooldown{skill=...}`, `distance{d=0-6}` (also `>3`, `<=5`) to the trigger/target. A skill's `Conditions`/`TargetConditions` entry may end in `castinstead <skill>` to cast that skill instead when it holds. Any mechanic line can
 end with `?condition{...}` (or `?!condition{...}` to negate) to run only when that
-check passes; unsupported conditions (this plugin has no variable/faction system)
+check passes; unsupported conditions
 are logged and treated as passing, so the line still runs.
 
 **Targeters:** `@self`, `@trigger`/`@target`, `@ObstructingBlock`, `@Forward{f=1.5;
 uel=true;yoffset=-1;rotate=-22}` (point in front of the caster, `rotate` swings it sideways,
-positive = right), `@SelfLocation{x;y;z}` (caster position, optionally shifted), `@Caster`/`@Mob` (the caster), `@Origin` (a totem's location), `@Location{x;y;z;w}`, `@TargetLocation`, `@Owner`/`@Parent` (the entity whose `summon` created the caster), `@PIR{r=2}` (nearest player within `r`), `@PlayersInRadius{r}`, `@EntitiesNearOrigin{r=4;Conditions=[ - isPlayer{} true - isCaster{} false]}` (alias `@ENO`, around a totem's location) and `@EntitiesInRadius` (`@EIR`/`@LEIR`, around the caster) hit every matching entity; all of them take `limit=<n>` and `sort=nearest|farthest|random` and conditions `isPlayer`, `isCaster`, `isMob`, `hasTag`, `faction`, `@ModelPart{p=<bone>}` (position of a BetterModel bone, falls back to chest height). A skill line without a targeter inherits the target of the line that called it.
+positive = right), `@SelfLocation{x;y;z}` (caster position, optionally shifted), `@Caster`/`@Mob` (the caster), `@Origin` (a totem's location), `@Location{x;y;z;w}`, `@TargetLocation`, `@Owner`/`@Parent` (the entity whose `summon` created the caster), `@PIR{r=2}` (nearest player within `r`), `@PlayersInRadius{r}`, `@EntitiesNearOrigin{r=4;Conditions=[ - isPlayer{} true - isCaster{} false]}` (alias `@ENO`, around a totem's location) and `@EntitiesInRadius` (`@EIR`/`@LEIR`, around the caster) hit every matching entity; all of them take `limit=<n>` and `sort=nearest|farthest|random` and `Conditions=[ ... ]` with `isPlayer`, `isCaster`, `isMob`, `hasTag`, `faction` and every skill condition (`health`, `world`, `biome`, `time`, `lineofsight`, `distance`, `onground`, `hasaura`, `chance`, ...), which then test the candidate instead of the caster (`distance` and `lineofsight` measure to the caster), `@ModelPart{p=<bone>}` (position of a BetterModel bone, falls back to chest height). A skill line without a targeter inherits the target of the line that called it.
 
 Unknown mechanics/conditions/targeters are logged with a clear warning and skipped
 rather than crashing the skill or the server.
+
+## Skill variables
+
+`setvariable{var=hits;value=1;type=INTEGER}` stores a value, `addvariable{var=hits;value=1}` adds to a number
+(a missing variable counts as 0), `?variable{var=hits;value=>=3}` tests it and `<skill.hits>` /
+`<var.hits>` insert it into mechanic parameters.
+
+- `var=name` lives for the current skill run (shared with the skills and inline skills it starts, kept across `delay`). Read it with `<skill.name>`.
+- `var=caster.name` belongs to the caster and lives as long as the mob (cleared when it is removed and on `/bettermob reload`, not saved over restarts). Read it with `<var.name>`.
+- Names are letters, digits and `_`, up to 32 characters, case-insensitive; a scope holds at most 64 variables.
+- The condition compares numbers (`>3`, `<=5`, `2-4`, `7`) when the stored value is a number, otherwise text (case-insensitive). A missing variable counts as 0 for number tests and never equals a text.
+- Values are inserted as plain text: braces, brackets, `;`, `=`, quotes, `%` and control characters are removed, so a variable can never add skill lines or trigger a command. An unset variable is inserted as `0`.
+
+```yaml
+Skills:
+  - addvariable{var=caster.hits;value=1} @self ~onDamaged
+  - skill{s=enrage} @self ~onDamaged ?variable{var=caster.hits;value=>=5}
+```
 
 ## PlaceholderAPI
 
@@ -441,7 +490,7 @@ in `pom.xml` and push.
 <dependency>
     <groupId>com.github.HyperGaming99</groupId>
     <artifactId>bettermob</artifactId>
-    <version>v1.1.6.2</version> <!-- a tag -->
+    <version>v1.1.7</version> <!-- a tag -->
     <scope>provided</scope>
 </dependency>
 ```
@@ -457,7 +506,7 @@ in `pom.xml` and push.
 <dependency>
     <groupId>eu.northsoft</groupId>
     <artifactId>bettermob</artifactId>
-    <version>1.1.6.2</version>
+    <version>1.1.7</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -487,6 +536,26 @@ api.registerMechanic(this, "heal", ctx -> {
 });
 ```
 
+**Custom conditions, targeters and placeholders** (BetterMob 1.1.7 or newer; the published 1.1.6.x builds don't have these methods, use the dev build until 1.1.7 is released): the same registration works for the other
+building blocks of a skill line, which is what a plugin that adds its own mobs or pets needs.
+Built-in names can't be taken, entries are removed when your plugin is disabled, and a
+`RuntimeException` is caught and logged.
+
+```java
+api.registerCondition(this, "petlevel", ctx -> level(ctx.caster()) >= Integer.parseInt(ctx.params().getOrDefault("min", "1")));
+api.registerTargeter(this, "petowner", ctx -> List.of(ownerOf(ctx.caster())));
+api.registerPlaceholder(this, "pet", (key, ctx) -> key.equals("health") ? String.valueOf(ctx.caster().getHealth()) : null);
+```
+
+```yaml
+Skills:
+  - heal{amount=<pet.health>} @PetOwner ~onTimer:100 ?petlevel{min=3}
+```
+
+A placeholder `<namespace.key>` is resolved in every mechanic parameter. Its value is inserted as plain
+text: braces, brackets, `;`, `=`, quotes, `%` and control characters are removed so a value can never add
+skill lines or trigger a command. `caster` and `target` are reserved namespaces.
+
 ### Example plugin
 
 [`examples/api-example`](examples/api-example) is a small plugin built on this API: it registers a `heal{amount=4}` mechanic, listens to `BetterMobSpawnEvent` and `BetterMobDeathEvent` and has a `/apiexample <mob>` command that spawns a mob.
@@ -495,7 +564,7 @@ api.registerMechanic(this, "heal", ctx -> {
 mvn -f examples/api-example/pom.xml package
 ```
 
-This resolves `com.github.HyperGaming99:bettermob:v1.1.6.2` from JitPack, the same coordinates as above. To compile it against your own checkout instead:
+This resolves `com.github.HyperGaming99:bettermob:v1.1.7` from JitPack, the same coordinates as above. To compile it against your own checkout instead:
 
 ```bash
 mvn install -DskipTests

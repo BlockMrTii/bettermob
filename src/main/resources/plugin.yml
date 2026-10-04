@@ -1,5 +1,5 @@
 name: BetterMob
-version: '1.1.6.2'
+version: '1.1.7'
 main: eu.northsoft.bettermob.BetterMobPlugin
 api-version: '1.21'
 folia-supported: true
@@ -22,12 +22,13 @@ permissions:
       bettermob.skill: true
       bettermob.give: true
       bettermob.killall: true
+      bettermob.spawner: true
       bettermob.debug: true
   bettermob.spawn:
     description: Allows /bettermob spawn
     default: op
   bettermob.list:
-    description: Allows /bettermob list and /bettermob packs
+    description: Allows /bettermob list, /bettermob packs and /bettermob info
     default: op
   bettermob.reload:
     description: Allows /bettermob reload
@@ -40,6 +41,9 @@ permissions:
     default: op
   bettermob.killall:
     description: Allows /bettermob killall
+    default: op
+  bettermob.spawner:
+    description: Allows /bettermob spawner
     default: op
   bettermob.debug:
     description: Allows /bettermob debug

@@ -45,6 +45,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private final TargeterRegistry targeters;
     private final ConditionRegistry conditionRegistry;
     private final MechanicRegistry mechanics;
+    private final CustomPlaceholders placeholders;
 
     public SkillEngine(BetterMobPlugin plugin, SkillRegistry registry, MobManager mobManager, BetterModelHook betterModel, ModelEngineHook modelEngine, ItemRegistry items) {
         this.plugin = plugin;
@@ -54,6 +55,8 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         this.modelEngine = modelEngine;
         this.items = items;
         this.debug = plugin.debug();
+        this.placeholders = new CustomPlaceholders((namespace, owner, exception) -> plugin.messages().warn("skill.customPlaceholderFailed",
+                "namespace", namespace, "plugin", owner == null ? "?" : owner.getName(), "error", exception));
         this.targeters = new TargeterRegistry(this);
         this.conditionRegistry = new ConditionRegistry(this);
         this.mechanics = new MechanicRegistry(plugin);
@@ -90,6 +93,18 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
     public SkillState state() {
         return state;
+    }
+
+    public ConditionRegistry conditionRegistry() {
+        return conditionRegistry;
+    }
+
+    public CustomPlaceholders placeholders() {
+        return placeholders;
+    }
+
+    public MechanicRegistry mechanics() {
+        return mechanics;
     }
 
     public TargeterRegistry targeters() {
@@ -213,14 +228,19 @@ public final class SkillEngine implements org.bukkit.event.Listener {
                 Tasks.runLater(plugin, context.caster(), delay.ticks(), plugin.stats().trackPending(() -> executeSteps(steps, next, context)));
                 return;
             }
-            if (step instanceof SkillStep.Mechanic mechanic && runMechanic(mechanic, context)) {
-                if (debug.verbose()) debug.verbose("cancelskill reached", subject(context.caster()));
-                return;
+            if (step instanceof SkillStep.Mechanic mechanic) {
+                Deferral deferral = new Deferral();
+                if (runMechanic(mechanic, context, deferral)) {
+                    if (debug.verbose()) debug.verbose("cancelskill reached", subject(context.caster()));
+                    return;
+                }
+                int next = i + 1;
+                if (deferral.await(() -> Tasks.runOwned(plugin, context.caster(), () -> executeSteps(steps, next, context)))) return;
             }
         }
     }
 
-    private boolean runMechanic(SkillStep.Mechanic mechanic, SkillContext context) {
+    private boolean runMechanic(SkillStep.Mechanic mechanic, SkillContext context, Deferral deferral) {
         Map<String, String> p = mechanic.params();
 
         if (mechanic.inlineCondition() != null) {
@@ -237,7 +257,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
             SkillStep.Mechanic withoutDelay = new SkillStep.Mechanic(mechanic.name(),
                     without(without(p, "delay"), "cd"), mechanic.targeter(), mechanic.targeterParams(), null, false);
-            Tasks.runLater(plugin, context.caster(), ticks, plugin.stats().trackPending(() -> runMechanic(withoutDelay, context)));
+            Tasks.runLater(plugin, context.caster(), ticks, plugin.stats().trackPending(() -> runMechanic(withoutDelay, context, new Deferral())));
             return false;
         }
 
@@ -250,19 +270,36 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             return false;
         }
         if (p.containsKey("cd") && !acquireCooldown(context, mechanic)) return false;
-        Map<String, String> params = substitute(p, context);
+        Map<String, String> params = substitute(mechanic.name(), p, context);
         if (debug.verbose()) {
             debug.verbose("mechanic '" + mechanic.name() + "' @" + (mechanic.targeter().isEmpty() ? "(inherited)" : mechanic.targeter())
                     + " -> " + targets.size() + " target(s), params " + params, subject(context.caster()));
         }
-        for (Target target : targets) dispatch(mechanic, context, target, params);
+        for (Target target : targets) dispatch(mechanic, context, target, params, deferral);
         return false;
     }
 
-    private void dispatch(SkillStep.Mechanic mechanic, SkillContext context, Target target, Map<String, String> p) {
+    private void dispatch(SkillStep.Mechanic mechanic, SkillContext context, Target target, Map<String, String> p, Deferral deferral) {
         Mechanic handler = mechanics.get(mechanic.name());
         if (handler == null) plugin.messages().warn("skill.mechanicUnsupported", "mechanic", mechanic.name());
-        else handler.execute(new MechanicCall(mechanic, context, target, p));
+        else {
+            MechanicCall call = new MechanicCall(mechanic, context, target, p);
+            if (!handler.runsOnTarget()) {
+                handler.execute(call);
+                return;
+            }
+            deferral.add();
+            Runnable run = () -> {
+                try {
+                    handler.execute(call);
+                } finally {
+                    deferral.complete();
+                }
+            };
+            if (target.entity() != null) Tasks.runOwned(plugin, target.entity(), run, deferral::complete);
+            else if (target.location() != null) Tasks.runOwnedAt(plugin, target.location(), run);
+            else run.run();
+        }
     }
 
     private boolean conditionPasses(String raw, SkillContext context, Target targetOverride) {
@@ -343,23 +380,74 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return lines;
     }
 
-    private Map<String, String> substitute(Map<String, String> p, SkillContext context) {
-        boolean placeholders = false;
+    private Map<String, String> substitute(String mechanicName, Map<String, String> params, SkillContext context) {
+        Map<String, String> p = withVariables(params, context);
+        if (!placeholders.isEmpty()) {
+            Map<String, String> applied = new LinkedHashMap<>();
+            for (Map.Entry<String, String> entry : p.entrySet()) applied.put(entry.getKey(), placeholders.apply(entry.getValue(), context));
+            p = applied;
+        }
+        boolean casterPlaceholders = false;
         for (String value : p.values()) {
             if (value.indexOf("<caster.") >= 0) {
-                placeholders = true;
+                casterPlaceholders = true;
                 break;
             }
         }
-        if (!placeholders) return p;
+        if (!casterPlaceholders) return p;
         var attackDamage = context.caster().getAttribute(Attribute.ATTACK_DAMAGE);
         String damage = String.valueOf(attackDamage == null ? 1.0 : attackDamage.getValue());
         String name = stripSkillSyntax(context.caster().getName());
+        boolean escapesItself = mechanicName.equals("command") || mechanicName.equals("message");
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : p.entrySet()) {
-            result.put(entry.getKey(), entry.getValue()
-                    .replace("<caster.damage>", damage).replace("<caster.name>", name));
+            result.put(entry.getKey(), withCasterValues(entry.getValue(), damage, name, escapesItself));
         }
         return result;
+    }
+
+    private Map<String, String> withVariables(Map<String, String> params, SkillContext context) {
+        return resolveVariables(params, context.variables(), state.existingVariablesOf(context.caster().getUniqueId()));
+    }
+
+    static Map<String, String> resolveVariables(Map<String, String> params, Map<String, String> skillScope, Map<String, String> casterScope) {
+        boolean needed = false;
+        for (String value : params.values()) {
+            if (value.indexOf("<skill.") >= 0 || value.indexOf("<var.") >= 0) {
+                needed = true;
+                break;
+            }
+        }
+        if (!needed) return params;
+        Map<String, String> result = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            result.put(entry.getKey(), replaceVariables(entry.getValue(), skillScope, casterScope));
+        }
+        return result;
+    }
+
+    static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope) {
+        java.util.regex.Matcher matcher = VARIABLE_PLACEHOLDER.matcher(value);
+        StringBuilder result = new StringBuilder();
+        while (matcher.find()) {
+            Map<String, String> scope = matcher.group(1).equals("skill") ? skillScope : casterScope;
+            String found = scope == null ? null : scope.get(matcher.group(2).toLowerCase(Locale.ROOT));
+            matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(found == null ? "0" : Params.stripPlaceholderValue(found)));
+        }
+        matcher.appendTail(result);
+        return result.toString();
+    }
+
+    private static final java.util.regex.Pattern VARIABLE_PLACEHOLDER = java.util.regex.Pattern.compile("<(skill|var)\\.([A-Za-z0-9_]{1,32})>");
+
+    private static boolean isInlineSkill(String value) {
+        String trimmed = value.stripLeading();
+        return trimmed.startsWith("[") && trimmed.indexOf('{') > 0;
+    }
+
+    static String withCasterValues(String value, String damage, String name, boolean escapesItself) {
+        String replaced = value.replace("<caster.damage>", damage);
+        if (escapesItself || isInlineSkill(value)) return replaced;
+        return replaced.replace("<caster.name>", name);
     }
 }

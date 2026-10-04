@@ -42,9 +42,49 @@ public final class TargeterRegistry {
         for (String name : names) targeters.put(name, targeter);
     }
 
+    private final Map<String, CustomEntry> customs = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private record CustomEntry(org.bukkit.plugin.Plugin owner, eu.northsoft.bettermob.api.CustomTargeter targeter) {}
+
+    public boolean has(String name) {
+        String key = name.toLowerCase(Locale.ROOT);
+        return targeters.containsKey(key) || customs.containsKey(key);
+    }
+
+    public boolean registerCustom(org.bukkit.plugin.Plugin owner, String name, eu.northsoft.bettermob.api.CustomTargeter targeter) {
+        String key = name.toLowerCase(Locale.ROOT);
+        if (targeters.containsKey(key)) return false;
+        return customs.putIfAbsent(key, new CustomEntry(owner, targeter)) == null;
+    }
+
+    public void unregisterCustom(String name) {
+        customs.remove(name.toLowerCase(Locale.ROOT));
+    }
+
+    public void unregisterCustom(org.bukkit.plugin.Plugin owner) {
+        customs.values().removeIf(entry -> java.util.Objects.equals(entry.owner(), owner));
+    }
+
+    private List<Target> resolveCustom(String name, CustomEntry custom, Map<String, String> params, SkillContext context) {
+        try {
+            List<Target> targets = new java.util.ArrayList<>();
+            for (org.bukkit.entity.Entity entity : custom.targeter().resolve(new eu.northsoft.bettermob.api.TargeterContext(
+                    context.caster(), context.trigger(), context.origin(), params))) {
+                if (entity != null) targets.add(Target.ofEntity(entity));
+            }
+            return targets;
+        } catch (RuntimeException exception) {
+            engine.plugin().messages().warn("skill.customTargeterFailed", "targeter", name,
+                    "plugin", custom.owner() == null ? "?" : custom.owner().getName(), "error", exception);
+            return List.of();
+        }
+    }
+
     public List<Target> resolveAll(String targeter, Map<String, String> params, SkillContext context) {
         Targeter found = targeters.get(targeter.toLowerCase(Locale.ROOT));
         if (found != null) return found.resolve(params, context);
+        CustomEntry custom = customs.get(targeter.toLowerCase(Locale.ROOT));
+        if (custom != null) return resolveCustom(targeter, custom, params, context);
         if (!targeter.isEmpty()) warnUnknown(targeter);
         return List.of(context.targetIsTrigger() && context.trigger() != null
                 ? Target.ofEntity(context.trigger()) : Target.ofEntity(context.caster()));
