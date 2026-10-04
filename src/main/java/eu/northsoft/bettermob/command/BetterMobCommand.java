@@ -308,6 +308,9 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         } catch (NumberFormatException exception) {
             messages.send(sender, "command.spawner.usage");
             return;
+        } catch (IllegalArgumentException exception) {
+            messages.send(sender, "command.spawner.invalidId", "id", args[2]);
+            return;
         }
         messages.send(sender, spawners.add(spawner) ? "command.spawner.created" : "command.spawner.exists", "id", spawner.id, "mob", spawner.mob);
     }

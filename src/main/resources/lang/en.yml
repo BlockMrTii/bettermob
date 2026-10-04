@@ -52,6 +52,7 @@ command:
   spawner:
     usage: "&cUsage: /bettermob spawner create <id> <mob> [radius] [interval seconds] [max] | remove <id> | list"
     created: "&aSpawner '{id}' for '{mob}' created at your position."
+    invalidId: "&cThe spawner id '{id}' must not be empty or contain a dot."
     exists: "&cA spawner named '{id}' already exists."
     removed: "&aSpawner '{id}' removed."
     missing: "&cNo spawner named '{id}'."

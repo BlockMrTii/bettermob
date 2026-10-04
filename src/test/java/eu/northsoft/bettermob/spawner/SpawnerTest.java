@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SpawnerTest {
@@ -40,6 +41,12 @@ class SpawnerTest {
         YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("camp.mob", "goblin");
         assertNull(Spawner.read("camp", yaml.getConfigurationSection("camp")));
+    }
+
+    @Test
+    void idsThatBreakTheYamlPathAreRejected() {
+        assertThrows(IllegalArgumentException.class, () -> new Spawner("a.b", "goblin", "world", 0, 0, 0, 5, 30, 3, 32));
+        assertThrows(IllegalArgumentException.class, () -> new Spawner("", "goblin", "world", 0, 0, 0, 5, 30, 3, 32));
     }
 
     @Test
