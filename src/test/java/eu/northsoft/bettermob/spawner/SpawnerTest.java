@@ -50,6 +50,12 @@ class SpawnerTest {
     }
 
     @Test
+    void tagRoundTripsTheId() {
+        assertEquals("camp", Spawner.idOfTag(new Spawner("camp", "goblin", "world", 0, 0, 0, 5, 30, 3, 32).tag()));
+        assertNull(Spawner.idOfTag("bettermob_helper"));
+    }
+
+    @Test
     void spawnsOnlyWhenTheIntervalPassedAndBelowTheMax() {
         Spawner spawner = new Spawner("camp", "goblin", "world", 0, 0, 0, 5, 30, 3, 32);
         assertTrue(spawner.ready(0, 2));

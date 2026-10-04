@@ -17,6 +17,7 @@ import eu.northsoft.bettermob.pack.PackScanner;
 import eu.northsoft.bettermob.service.BetterMobApiImpl;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillRegistry;
+import eu.northsoft.bettermob.spawner.SpawnerListener;
 import eu.northsoft.bettermob.spawner.SpawnerManager;
 import eu.northsoft.bettermob.stats.SkillStats;
 import eu.northsoft.bettermob.util.Tasks;
@@ -88,6 +89,7 @@ public final class BetterMobPlugin extends JavaPlugin {
 
         spawners = new SpawnerManager(this, manager);
         spawners.load();
+        getServer().getPluginManager().registerEvents(new SpawnerListener(spawners), this);
         spawners.start();
 
         BetterMobCommand commandHandler = new BetterMobCommand(this, manager, skillRegistry, packScanner, skillEngine, itemRegistry, dropRegistry, spawners);
