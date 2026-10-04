@@ -51,17 +51,20 @@ jobs:
         if: steps.strip.outputs.count != '0'
         working-directory: pr
         continue-on-error: true
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -am "Remove code comments"
-          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+          git push origin "HEAD:$HEAD_REF"
 
       - name: Run the build check on the new commit
         if: steps.push.outcome == 'success' && github.event.pull_request.head.repo.full_name == github.repository && env.HAS_PAT != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run release.yml --repo "${{ github.repository }}" --ref "${{ github.event.pull_request.head.ref }}"
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: gh workflow run release.yml --repo "${{ github.repository }}" --ref "$HEAD_REF"
 
       - name: Comment the removed comments
         if: steps.strip.outputs.count != '0'
