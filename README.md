@@ -490,7 +490,7 @@ in `pom.xml` and push.
 <dependency>
     <groupId>com.github.HyperGaming99</groupId>
     <artifactId>bettermob</artifactId>
-    <version>v1.1.7</version> <!-- a tag -->
+    <version>v1.1.7.1</version> <!-- a tag -->
     <scope>provided</scope>
 </dependency>
 ```
@@ -506,7 +506,7 @@ in `pom.xml` and push.
 <dependency>
     <groupId>eu.northsoft</groupId>
     <artifactId>bettermob</artifactId>
-    <version>1.1.7</version>
+    <version>1.1.7.1</version>
     <scope>provided</scope>
 </dependency>
 ```
