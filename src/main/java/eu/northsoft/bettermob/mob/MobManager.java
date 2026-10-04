@@ -357,10 +357,29 @@ public final class MobManager {
         if (own != null) return own.equals(faction);
         if (!(entity instanceof org.bukkit.entity.Player player)) return false;
         if (player.hasPermission(factionPermission(faction))) return true;
-        for (String entry : plugin.getConfig().getStringList("factions." + faction)) {
-            if (entry.equalsIgnoreCase(player.getName()) || entry.equalsIgnoreCase(player.getUniqueId().toString())) return true;
+        Set<String> members = factionMembers().get(faction);
+        return members != null && (members.contains(player.getName().toLowerCase(java.util.Locale.ROOT)) || members.contains(player.getUniqueId().toString()));
+    }
+
+    private org.bukkit.configuration.file.FileConfiguration membersSource;
+    private Map<String, Set<String>> members = Map.of();
+
+    private Map<String, Set<String>> factionMembers() {
+        org.bukkit.configuration.file.FileConfiguration config = plugin.getConfig();
+        if (config != membersSource) {
+            Map<String, Set<String>> loaded = new java.util.HashMap<>();
+            var section = config.getConfigurationSection("factions");
+            if (section != null) {
+                for (String name : section.getKeys(false)) {
+                    Set<String> names = new HashSet<>();
+                    for (String entry : section.getStringList(name)) names.add(entry.toLowerCase(java.util.Locale.ROOT));
+                    loaded.put(name.toLowerCase(java.util.Locale.ROOT), names);
+                }
+            }
+            members = loaded;
+            membersSource = config;
         }
-        return false;
+        return members;
     }
 
     private final java.util.Set<String> registeredFactionPermissions = ConcurrentHashMap.newKeySet();

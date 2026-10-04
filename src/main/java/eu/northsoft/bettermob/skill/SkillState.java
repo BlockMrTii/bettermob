@@ -9,7 +9,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class SkillState {
     private final Map<UUID, Long> gcdUntilMillis = new ConcurrentHashMap<>();
-    private final Map<String, Long> cooldowns = new ConcurrentHashMap<>();
+    private record SkillKey(UUID caster, String skill) {}
+
+    private record StepKey(UUID caster, int step) {}
+
+    private final Map<Object, Long> cooldowns = new ConcurrentHashMap<>();
     private final Map<UUID, Map<String, Aura>> auras = new ConcurrentHashMap<>();
     private static final int MIN_PURGE_SIZE = 2048;
 
@@ -30,7 +34,7 @@ public final class SkillState {
     }
 
     boolean acquireStepCooldown(LivingEntity caster, Object step, float seconds) {
-        return acquire(caster.getUniqueId() + "#" + System.identityHashCode(step), (long) (seconds * 1000));
+        return acquire(new StepKey(caster.getUniqueId(), System.identityHashCode(step)), (long) (seconds * 1000));
     }
 
     public boolean skillOnCooldown(LivingEntity caster, String skillId) {
@@ -38,7 +42,7 @@ public final class SkillState {
         return until != null && until > System.currentTimeMillis();
     }
 
-    boolean acquire(String key, long millis) {
+    boolean acquire(Object key, long millis) {
         long now = System.currentTimeMillis();
         Long until = cooldowns.get(key);
         if (until != null && until > now) return false;
@@ -50,8 +54,8 @@ public final class SkillState {
         return true;
     }
 
-    private static String skillCooldownKey(LivingEntity caster, String skillId) {
-        return caster.getUniqueId() + "@" + skillId.toLowerCase(Locale.ROOT);
+    private static SkillKey skillCooldownKey(LivingEntity caster, String skillId) {
+        return new SkillKey(caster.getUniqueId(), skillId.toLowerCase(Locale.ROOT));
     }
 
     int cooldownCount() {
