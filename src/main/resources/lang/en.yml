@@ -23,7 +23,7 @@ command:
     spawner: "&7/bettermob spawner <create|remove|list> &8- &7Manage mob spawners"
     stats: "&7/bettermob stats [on|off|reset] &8- &7Show mob, timer and skill statistics"
   reloaded: "&aBetterMob reloaded."
-  reloadedLiving: "&7{count} living mobs updated to their new definition."
+  reloadedLiving: "&7{count} living mobs queued to update to their new definition."
   mobList: "&7Mobs: &f{mobs}"
   packsNone: "&7No packs found in packs/."
   packEntry: "&7- &f{pack}"
