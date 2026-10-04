@@ -69,11 +69,12 @@ public final class SkillState {
     }
 
     public void applyDamage(LivingEntity victim, double amount, LivingEntity source) {
+        boolean previous = applyingDamage.get();
         applyingDamage.set(true);
         try {
             victim.damage(amount, source);
         } finally {
-            applyingDamage.set(false);
+            applyingDamage.set(previous);
         }
     }
 
