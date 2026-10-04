@@ -2,6 +2,7 @@ package eu.northsoft.bettermob.skill;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 public final class Params {
@@ -43,9 +44,18 @@ public final class Params {
         return copy;
     }
 
+    private static final int PARAMS_CACHE_LIMIT = 4096;
+    private static final Map<String, Map<String, String>> PARSED_PARAMS = new ConcurrentHashMap<>();
+
     public static String conditionParam(String paramsRaw, String... keys) {
         if (paramsRaw == null) return "";
-        String value = firstParam(SkillStep.parseParams(paramsRaw), keys);
+        Map<String, String> parsed = PARSED_PARAMS.get(paramsRaw);
+        if (parsed == null) {
+            parsed = SkillStep.parseParams(paramsRaw);
+            if (PARSED_PARAMS.size() >= PARAMS_CACHE_LIMIT) PARSED_PARAMS.clear();
+            PARSED_PARAMS.put(paramsRaw, parsed);
+        }
+        String value = firstParam(parsed, keys);
         return value == null ? "" : value.trim();
     }
 
