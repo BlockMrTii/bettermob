@@ -11,6 +11,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
 
 import java.util.Map;
 import java.util.UUID;
@@ -79,6 +80,11 @@ public final class TotemMechanic implements Mechanic, Listener {
             totemBodies.remove(body.getUniqueId());
             body.remove();
         });
+    }
+
+    @EventHandler
+    public void onBodyRemove(EntityRemoveEvent event) {
+        totemBodies.remove(event.getEntity().getUniqueId());
     }
 
     @EventHandler(ignoreCancelled = true)
