@@ -373,7 +373,8 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return lines;
     }
 
-    private Map<String, String> substitute(String mechanicName, Map<String, String> p, SkillContext context) {
+    private Map<String, String> substitute(String mechanicName, Map<String, String> params, SkillContext context) {
+        Map<String, String> p = withVariables(params, context);
         boolean placeholders = false;
         for (String value : p.values()) {
             if (value.indexOf("<caster.") >= 0) {
@@ -394,6 +395,10 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private Map<String, String> withVariables(Map<String, String> params, SkillContext context) {
+        return resolveVariables(params, context.variables(), state.existingVariablesOf(context.caster().getUniqueId()));
+    }
+
+    static Map<String, String> resolveVariables(Map<String, String> params, Map<String, String> skillScope, Map<String, String> casterScope) {
         boolean needed = false;
         for (String value : params.values()) {
             if (value.indexOf("<skill.") >= 0 || value.indexOf("<var.") >= 0) {
@@ -402,10 +407,9 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             }
         }
         if (!needed) return params;
-        Map<String, String> casterScope = state.existingVariablesOf(context.caster().getUniqueId());
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : params.entrySet()) {
-            result.put(entry.getKey(), replaceVariables(entry.getValue(), context.variables(), casterScope));
+            result.put(entry.getKey(), replaceVariables(entry.getValue(), skillScope, casterScope));
         }
         return result;
     }

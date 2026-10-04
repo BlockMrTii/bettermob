@@ -69,6 +69,34 @@ class VariablesTest {
     }
 
     @Test
+    void nonFiniteNumbersAreRejected() {
+        assertNull(Variables.normalise("NaN", Variables.Type.INTEGER));
+        assertNull(Variables.normalise("Infinity", Variables.Type.INTEGER));
+        assertNull(Variables.normalise("NaN", Variables.Type.FLOAT));
+        assertNull(Variables.normalise("-Infinity", Variables.Type.FLOAT));
+        assertNull(Variables.add("1", "NaN"));
+        assertNull(Variables.add("1e308", "1e308"));
+    }
+
+    @Test
+    void mechanicParametersGetTheirVariablesResolved() {
+        Map<String, String> params = new java.util.LinkedHashMap<>();
+        params.put("value", "<skill.hits>");
+        params.put("var", "caster.total");
+        params.put("m", "phase <var.phase> of <skill.hits>");
+        Map<String, String> resolved = SkillEngine.resolveVariables(params, Map.of("hits", "3"), Map.of("phase", "2"));
+        assertEquals("3", resolved.get("value"));
+        assertEquals("caster.total", resolved.get("var"));
+        assertEquals("phase 2 of 3", resolved.get("m"));
+    }
+
+    @Test
+    void parametersWithoutVariablePlaceholdersAreReturnedAsTheyAre() {
+        Map<String, String> params = Map.of("a", "<caster.damage>");
+        assertTrue(params == SkillEngine.resolveVariables(params, Map.of(), Map.of()));
+    }
+
+    @Test
     void placeholdersReadTheRightScopeAndDefaultToZero() {
         Map<String, String> skillScope = Map.of("hits", "3");
         Map<String, String> casterScope = Map.of("phase", "2");
