@@ -14,6 +14,7 @@ public final class SkillState {
     private record StepKey(UUID caster, int step) {}
 
     private final Map<Object, Long> cooldowns = new ConcurrentHashMap<>();
+    private final Map<UUID, Map<String, String>> casterVariables = new ConcurrentHashMap<>();
     private final Map<UUID, Map<String, Aura>> auras = new ConcurrentHashMap<>();
     private static final int MIN_PURGE_SIZE = 2048;
 
@@ -96,7 +97,16 @@ public final class SkillState {
         return applyingDamage.get();
     }
 
+    public Map<String, String> variablesOf(UUID entityId) {
+        return casterVariables.computeIfAbsent(entityId, id -> new ConcurrentHashMap<>());
+    }
+
+    public Map<String, String> existingVariablesOf(UUID entityId) {
+        return casterVariables.get(entityId);
+    }
+
     public void forget(UUID entityId) {
+        casterVariables.remove(entityId);
         Map<String, Aura> removed = auras.remove(entityId);
         if (removed != null) removed.values().forEach(Aura::stop);
         gcdUntilMillis.remove(entityId);

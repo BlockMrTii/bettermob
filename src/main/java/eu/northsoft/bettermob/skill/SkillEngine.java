@@ -381,10 +381,11 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private Map<String, String> substitute(String mechanicName, Map<String, String> params, SkillContext context) {
-        Map<String, String> p = params;
+        Map<String, String> p = withVariables(params, context);
         if (!placeholders.isEmpty()) {
-            p = new LinkedHashMap<>();
-            for (Map.Entry<String, String> entry : params.entrySet()) p.put(entry.getKey(), placeholders.apply(entry.getValue(), context));
+            Map<String, String> applied = new LinkedHashMap<>();
+            for (Map.Entry<String, String> entry : p.entrySet()) applied.put(entry.getKey(), placeholders.apply(entry.getValue(), context));
+            p = applied;
         }
         boolean casterPlaceholders = false;
         for (String value : p.values()) {
@@ -404,6 +405,40 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         }
         return result;
     }
+
+    private Map<String, String> withVariables(Map<String, String> params, SkillContext context) {
+        return resolveVariables(params, context.variables(), state.existingVariablesOf(context.caster().getUniqueId()));
+    }
+
+    static Map<String, String> resolveVariables(Map<String, String> params, Map<String, String> skillScope, Map<String, String> casterScope) {
+        boolean needed = false;
+        for (String value : params.values()) {
+            if (value.indexOf("<skill.") >= 0 || value.indexOf("<var.") >= 0) {
+                needed = true;
+                break;
+            }
+        }
+        if (!needed) return params;
+        Map<String, String> result = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            result.put(entry.getKey(), replaceVariables(entry.getValue(), skillScope, casterScope));
+        }
+        return result;
+    }
+
+    static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope) {
+        java.util.regex.Matcher matcher = VARIABLE_PLACEHOLDER.matcher(value);
+        StringBuilder result = new StringBuilder();
+        while (matcher.find()) {
+            Map<String, String> scope = matcher.group(1).equals("skill") ? skillScope : casterScope;
+            String found = scope == null ? null : scope.get(matcher.group(2).toLowerCase(Locale.ROOT));
+            matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(found == null ? "0" : Params.stripPlaceholderValue(found)));
+        }
+        matcher.appendTail(result);
+        return result.toString();
+    }
+
+    private static final java.util.regex.Pattern VARIABLE_PLACEHOLDER = java.util.regex.Pattern.compile("<(skill|var)\\.([A-Za-z0-9_]{1,32})>");
 
     private static boolean isInlineSkill(String value) {
         String trimmed = value.stripLeading();

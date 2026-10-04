@@ -43,6 +43,8 @@ public final class BuiltinMechanics {
         registry.register(new FreezeMechanic(), "freeze");
         registry.register(new SetNoDamageTicksMechanic(), "setnodamageticks");
         registry.register(new TotemMechanic(engine), "totem");
+        registry.register(new VariableMechanic(engine, false), "setvariable", "variableset");
+        registry.register(new VariableMechanic(engine, true), "addvariable", "variableadd");
         registry.register(new HealMechanic(), "heal");
         registry.register(new TeleportMechanic(), "teleport");
         registry.register(new ExplosionMechanic(), "explosion");

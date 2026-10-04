@@ -398,7 +398,7 @@ control), `potion`, `look`, `breakblock`, `state` (plays a BetterModel animation
 `setblock` (`m`), `effect:particles` (`p`, `amount`, `hS`, `vS`, `speed`, `y` offset, `repeat`, `repeatInterval`; alias `e:p`),
 `effect:particlering` (`particle`, `radius`, `points`, ...), `spin` (`duration` ticks,
 `velocity` degrees/tick), `takeitem` (`i=<item>;a=<amount>`, removes a registered item
-from the target player), `ignite` (`t` ticks), `heal` (`a`, capped at max health), `teleport` (the caster goes to the targeted location or entity, e.g. `@Target`), `explosion` (`yield`, `bd=true` block damage, `fire=true`), `lightning` (`damage=true` for a real strike), `setspeed` (`s`, movement speed attribute), `setai` (`ai=false` switches the AI off), `stun` (`d` ticks; `ai` default true disables the AI, `g=true` also turns gravity off, `f=true` holds the mob still, `state=<animation>` plays that BetterModel animation), `velocity` (`m=SET|ADD|MULTIPLY|DIVIDE`, `x`, `y`, `z`, `repeat`, `repeatInterval`), `freeze` (`ticks`, powder-snow effect),
+from the target player), `ignite` (`t` ticks), `setvariable` / `addvariable` (`var`, `value`, `type=INTEGER|FLOAT|STRING`, see Skill variables below), `heal` (`a`, capped at max health), `teleport` (the caster goes to the targeted location or entity, e.g. `@Target`), `explosion` (`yield`, `bd=true` block damage, `fire=true`), `lightning` (`damage=true` for a real strike), `setspeed` (`s`, movement speed attribute), `setai` (`ai=false` switches the AI off), `stun` (`d` ticks; `ai` default true disables the AI, `g=true` also turns gravity off, `f=true` holds the mob still, `state=<animation>` plays that BetterModel animation), `velocity` (`m=SET|ADD|MULTIPLY|DIVIDE`, `x`, `y`, `z`, `repeat`, `repeatInterval`), `freeze` (`ticks`, powder-snow effect),
 `message` (`m`, to the target player, `&` colors, `<caster.name>`, `<target.name>`), `setNoDamageTicks` (`ticks`), `onDamaged`/`onAttack`/`onDeath`/`onShoot`/`aura` (`auraName`, `time`, `cE`, `oS`, `oE`, `oT`, `i`, `oH`: a timed aura that runs `oS` at start, `oE` at end, `oT` every `i` ticks and `oH` on its event, `cE=true` cancels that event meanwhile), `bodyrotation` (`headUneven`, `bodyUneven`, `minHead`, `maxHead`, `minBody`, `maxBody`, `delay`; BetterModel only), `shoot` (`type=arrow|spectral_arrow|trident|snowball|egg|fireball|smallfireball`, `velocity`, `speedscale` (`ss`, multiplier on `velocity`, default 2), `damage`, `spread` degrees, `gravity=false`; `oh=[ ... ]` runs on a hit with the hit entity as target, `oe=[ ... ]` when it lands anywhere, `ot=[ ... ]` every `i` ticks (default 5) in flight), `totem` (`os=[ ... ]`
 runs once at the targeter's location, `yo` shifts it up; with `md` ticks, `ot=[ ... ]` repeats every `i` ticks
 (default 20) and `oe=[ ... ]` runs at the end; stops early if the caster dies; with `oh=[ ... ]` an invisible, unbreakable body is placed at the totem for `md` ticks (default 100) and the lines run whenever someone hits it, with the attacker as target).
@@ -416,9 +416,9 @@ so a model has to exist in whichever engine you point at it.
 
 **Factions:** players can belong to a faction too: give them the permission `bettermob.faction.<name>` (lower case) or list them under `factions:` in `config.yml` (player name or UUID). Mobs of that faction then ignore them, and they can't hurt those mobs. Without either, players are in no faction (ops included).
 
-**Conditions:** `offgcd`, `onground`, `health{h=<50%}` (caster health; absolute value or percent, also `>10`, `<=5`, `20-40`), `lineofsight` (alias `los`, the caster sees the trigger/target), `world{w=world,world_nether}`, `biome{b=DESERT,PLAINS}`, `time{t=day|night|<ticks or range>}`, `chance{chance=0.75}`, `hastag{t=...}`, `hasaura{n=...}`, `faction{faction=Elite,Other}` (the caster's, or each candidate's inside a multi-target targeter), `onblock{b=...}` (block under the caster), `blocktype{type=...}`, `skillOnCooldown{skill=...}`, `distance{d=0-6}` (also `>3`, `<=5`) to the trigger/target. A skill's `Conditions`/`TargetConditions` entry may end in `castinstead <skill>` to cast that skill instead when it holds. Any mechanic line can
+**Conditions:** `offgcd`, `onground`, `health{h=<50%}` (caster health; absolute value or percent, also `>10`, `<=5`, `20-40`), `lineofsight` (alias `los`, the caster sees the trigger/target), `world{w=world,world_nether}`, `biome{b=DESERT,PLAINS}`, `time{t=day|night|<ticks or range>}`, `variable{var=caster.phase;value=>=2}`, `chance{chance=0.75}`, `hastag{t=...}`, `hasaura{n=...}`, `faction{faction=Elite,Other}` (the caster's, or each candidate's inside a multi-target targeter), `onblock{b=...}` (block under the caster), `blocktype{type=...}`, `skillOnCooldown{skill=...}`, `distance{d=0-6}` (also `>3`, `<=5`) to the trigger/target. A skill's `Conditions`/`TargetConditions` entry may end in `castinstead <skill>` to cast that skill instead when it holds. Any mechanic line can
 end with `?condition{...}` (or `?!condition{...}` to negate) to run only when that
-check passes; unsupported conditions (this plugin has no variable/faction system)
+check passes; unsupported conditions
 are logged and treated as passing, so the line still runs.
 
 **Targeters:** `@self`, `@trigger`/`@target`, `@ObstructingBlock`, `@Forward{f=1.5;
@@ -427,6 +427,24 @@ positive = right), `@SelfLocation{x;y;z}` (caster position, optionally shifted),
 
 Unknown mechanics/conditions/targeters are logged with a clear warning and skipped
 rather than crashing the skill or the server.
+
+## Skill variables
+
+`setvariable{var=hits;value=1;type=INTEGER}` stores a value, `addvariable{var=hits;value=1}` adds to a number
+(a missing variable counts as 0), `?variable{var=hits;value=>=3}` tests it and `<skill.hits>` /
+`<var.hits>` insert it into mechanic parameters.
+
+- `var=name` lives for the current skill run (shared with the skills and inline skills it starts, kept across `delay`). Read it with `<skill.name>`.
+- `var=caster.name` belongs to the caster and lives as long as the mob (cleared when it is removed and on `/bettermob reload`, not saved over restarts). Read it with `<var.name>`.
+- Names are letters, digits and `_`, up to 32 characters, case-insensitive; a scope holds at most 64 variables.
+- The condition compares numbers (`>3`, `<=5`, `2-4`, `7`) when the stored value is a number, otherwise text (case-insensitive). A missing variable counts as 0 for number tests and never equals a text.
+- Values are inserted as plain text: braces, brackets, `;`, `=`, quotes, `%` and control characters are removed, so a variable can never add skill lines or trigger a command. An unset variable is inserted as `0`.
+
+```yaml
+Skills:
+  - addvariable{var=caster.hits;value=1} @self ~onDamaged
+  - skill{s=enrage} @self ~onDamaged ?variable{var=caster.hits;value=>=5}
+```
 
 ## PlaceholderAPI
 
