@@ -440,7 +440,7 @@ in `pom.xml` and push.
 <dependency>
     <groupId>com.github.HyperGaming99</groupId>
     <artifactId>bettermob</artifactId>
-    <version>v1.1.6</version> <!-- a tag -->
+    <version>v1.1.6.1</version> <!-- a tag -->
     <scope>provided</scope>
 </dependency>
 ```
@@ -456,7 +456,7 @@ in `pom.xml` and push.
 <dependency>
     <groupId>eu.northsoft</groupId>
     <artifactId>bettermob</artifactId>
-    <version>1.1.6</version>
+    <version>1.1.6.1</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -494,7 +494,7 @@ api.registerMechanic(this, "heal", ctx -> {
 mvn -f examples/api-example/pom.xml package
 ```
 
-This resolves `com.github.HyperGaming99:bettermob:v1.1.6` from JitPack, the same coordinates as above. To compile it against your own checkout instead:
+This resolves `com.github.HyperGaming99:bettermob:v1.1.6.1` from JitPack, the same coordinates as above. To compile it against your own checkout instead:
 
 ```bash
 mvn install -DskipTests
