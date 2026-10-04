@@ -25,6 +25,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class SpawnerManager {
     private static final long TICK_PERIOD = 20L;
     private static final long RETRY_MILLIS = 1000L;
+    private static final int CHUNK_SIZE = 16;
     private static final int GROUND_SEARCH_DEPTH = 3;
 
     private final BetterMobPlugin plugin;
@@ -72,6 +73,7 @@ public final class SpawnerManager {
     }
 
     public synchronized boolean add(Spawner spawner) {
+        spawner.reconciled = true;
         if (spawners.putIfAbsent(key(spawner.id), spawner) != null) return false;
         save();
         return true;
@@ -109,6 +111,7 @@ public final class SpawnerManager {
     private void tick(Spawner spawner, Location center) {
         long now = System.currentTimeMillis();
         if (now < spawner.nextSpawnAt || !center.getWorld().isChunkLoaded(center.getBlockX() >> 4, center.getBlockZ() >> 4)) return;
+        if (!spawner.reconciled && !reconcile(spawner, center)) return;
         if (!playerNear(center, spawner.playerRange)) return;
         MobDefinition definition = manager.registry().get(spawner.mob);
         if (definition == null) return;
@@ -129,6 +132,24 @@ public final class SpawnerManager {
         } catch (RuntimeException exception) {
             plugin.messages().warn("spawner.spawnFailed", "id", spawner.id, "mob", spawner.mob, "error", exception.getMessage());
         }
+    }
+
+    private boolean reconcile(Spawner spawner, Location center) {
+        int chunkRadius = spawner.radius / CHUNK_SIZE + 1;
+        if (!plugin.getServer().isOwnedByCurrentRegion(center, chunkRadius)) return false;
+        World world = center.getWorld();
+        int centerX = center.getBlockX() >> 4;
+        int centerZ = center.getBlockZ() >> 4;
+        for (int x = centerX - chunkRadius; x <= centerX + chunkRadius; x++) {
+            for (int z = centerZ - chunkRadius; z <= centerZ + chunkRadius; z++) {
+                if (!world.isChunkLoaded(x, z)) continue;
+                for (Entity entity : world.getChunkAt(x, z, false).getEntities()) {
+                    if (entity.getScoreboardTags().contains(spawner.tag())) spawner.alive.add(entity.getUniqueId());
+                }
+            }
+        }
+        spawner.reconciled = true;
+        return true;
     }
 
     void track(Entity entity) {
