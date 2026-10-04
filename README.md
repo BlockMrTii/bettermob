@@ -85,6 +85,11 @@ and of any pack placed under `src/test/resources/packs/` - use the usual `Mobs/`
 `Skills/` and `DropTables/` folder names. The workflow runs `mvn test` on every push and pull
 request, and a failing test stops the build and the release.
 
+The Java code is kept free of comments. The `Strip code comments` workflow runs
+`.github/scripts/strip_comments.py` on the Java files a pull request changes and commits
+`Remove code comments` to the branch (pull requests from forks need the `PR_PUSH_TOKEN` secret and
+maintainer edits enabled; without them the check fails with the list of files).
+
 ## Code layout
 
 Everything lives under `eu.northsoft.bettermob`: `api`/`api.event` (public API), `command`, `mob`,
