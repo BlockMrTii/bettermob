@@ -90,6 +90,11 @@ The Java code is kept free of comments. The `Strip code comments` workflow runs
 `Remove code comments` to the branch (pull requests from forks need the `PR_PUSH_TOKEN` secret and
 maintainer edits enabled; without them the check fails with the list of files).
 
+## Wiki
+
+The wiki pages are in [`wiki/`](wiki). Edit them in a pull request, a workflow publishes them to the
+[GitHub wiki](https://github.com/HyperGaming99/bettermob/wiki) once the change is on `dev`. Do not edit the wiki on GitHub directly.
+
 ## Code layout
 
 Everything lives under `eu.northsoft.bettermob`: `api`/`api.event` (public API), `command`, `mob`,
