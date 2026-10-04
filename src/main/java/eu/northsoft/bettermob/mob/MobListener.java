@@ -121,7 +121,6 @@ public final class MobListener implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEntityEvent event) {
-        if (event.getHand() != EquipmentSlot.HAND) return;
         MobDefinition definition = manager.definitionOf(event.getRightClicked().getUniqueId());
         if (definition == null) return;
 
@@ -129,10 +128,10 @@ public final class MobListener implements Listener {
             event.setCancelled(true);
             return;
         }
-        if (event.getRightClicked() instanceof LivingEntity living) {
+        if (event.getHand() == EquipmentSlot.HAND && event.getRightClicked() instanceof LivingEntity living) {
             manager.fireTrigger(living, definition, MobDefinition.SkillTrigger.Trigger.INTERACT, event.getPlayer(), event);
         }
-        if (definition.options.preventRenaming() && event.getPlayer().getInventory().getItemInMainHand().getType() == Material.NAME_TAG) {
+        if (definition.options.preventRenaming() && event.getPlayer().getInventory().getItem(event.getHand()).getType() == Material.NAME_TAG) {
             event.setCancelled(true);
         }
     }
