@@ -280,6 +280,7 @@ public final class MobManager {
             entity.setGravity(true);
         }
         applyDefinition(entity, fresh, false);
+        entity.setInvisible(trackers.containsKey(id) || modelEngineTrackers.containsKey(id) || fresh.options.invisible());
         if (entity instanceof Mob mob) {
             AiGoalApplier.apply(mob, changedSelectors(old.aiGoalSelectors, fresh.aiGoalSelectors),
                     changedSelectors(old.aiTargetSelectors, fresh.aiTargetSelectors), plugin, other -> definitions.containsKey(other.getUniqueId()));
