@@ -34,6 +34,17 @@ command:
     equipment: "&7Ausruestung: &f{equipment}"
     drops: "&7Drop-Eintraege: &f{count}"
     skills: "&7Bei {trigger}: &f{skills}"
+    delay: "Verzoegerung"
+    trigger:
+      spawn: "Spawn"
+      load: "Laden"
+      interact: "Interaktion"
+      damaged: "Schaden erhalten"
+      attack: "Angriff"
+      death: "Tod"
+      timer: "Timer"
+      use: "Benutzung"
+      shoot: "Schuss"
   validate:
     unknownPack: "&cPack '{pack}' wurde in packs/ nicht gefunden."
     header: "&7{lines} Zeilen in &f{sources} &7Ordner(n) geprueft:"

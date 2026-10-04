@@ -148,12 +148,26 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         messages.send(sender, "command.info.drops", "count", mob.drops == null ? 0 : mob.drops.entries().size());
         for (MobDefinition.SkillTrigger.Trigger trigger : MobDefinition.SkillTrigger.Trigger.values()) {
             List<String> names = mob.triggersOf(trigger).stream().map(entry -> stepName(entry.step())).toList();
-            if (!names.isEmpty()) messages.send(sender, "command.info.skills", "trigger", trigger.name().toLowerCase(Locale.ROOT), "skills", String.join(", ", names));
+            if (!names.isEmpty()) messages.send(sender, "command.info.skills", "trigger", messages.get(triggerKey(trigger)), "skills", String.join(", ", names));
         }
     }
 
-    private static String stepName(SkillStep step) {
-        return step instanceof SkillStep.Mechanic mechanic ? mechanic.name() : "delay";
+    private static String triggerKey(MobDefinition.SkillTrigger.Trigger trigger) {
+        return switch (trigger) {
+            case SPAWN -> "command.info.trigger.spawn";
+            case LOAD -> "command.info.trigger.load";
+            case INTERACT -> "command.info.trigger.interact";
+            case DAMAGED -> "command.info.trigger.damaged";
+            case ATTACK -> "command.info.trigger.attack";
+            case DEATH -> "command.info.trigger.death";
+            case TIMER -> "command.info.trigger.timer";
+            case USE -> "command.info.trigger.use";
+            case SHOOT -> "command.info.trigger.shoot";
+        };
+    }
+
+    private String stepName(SkillStep step) {
+        return step instanceof SkillStep.Mechanic mechanic ? mechanic.name() : messages.get("command.info.delay");
     }
 
     private static final int MAX_ISSUES_PER_PACK = 20;
