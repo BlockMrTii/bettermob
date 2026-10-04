@@ -18,6 +18,7 @@ import org.bukkit.entity.SpectralArrow;
 import org.bukkit.entity.Trident;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.util.Vector;
 
@@ -49,6 +50,12 @@ public final class ShootMechanic implements Mechanic, Listener {
 
     public ShootMechanic(SkillEngine engine) {
         this.engine = engine;
+    }
+
+    @EventHandler
+    public void onProjectileRemove(EntityRemoveEvent event) {
+        PendingShot shot = shots.remove(event.getEntity().getUniqueId());
+        if (shot != null) shot.stopTicker().run();
     }
 
     @EventHandler
