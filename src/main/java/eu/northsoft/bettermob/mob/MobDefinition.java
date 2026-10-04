@@ -2,6 +2,7 @@ package eu.northsoft.bettermob.mob;
 
 import eu.northsoft.bettermob.api.MobInfo;
 import eu.northsoft.bettermob.drop.DropTable;
+import eu.northsoft.bettermob.skill.Params;
 import eu.northsoft.bettermob.skill.SkillStep;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
@@ -78,7 +79,7 @@ public final class MobDefinition {
             if (trigger == null) return null;
             SkillStep step = SkillStep.parse(matcher.group(4) == null ? matcher.group(1) : matcher.group(1) + " " + matcher.group(4));
             if (step == null) return null;
-            int ticks = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 20;
+            int ticks = Params.parseInt(matcher.group(3), 20);
             return new SkillTrigger(step, trigger, ticks);
         }
 
