@@ -444,6 +444,13 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         if (node == null || !sender.hasPermission(node)) return List.of();
         if (args.length == 2 && args[0].equalsIgnoreCase("validate")) return new ArrayList<>(packScanner.sources().keySet().stream().filter(name -> !name.isEmpty()).toList());
         if (args.length == 2 && args[0].equalsIgnoreCase("debug")) return List.of("off", "info", "verbose", "filter", "chat");
+        if (args.length == 3 && args[0].equalsIgnoreCase("debug") && args[1].equalsIgnoreCase("filter")) {
+            List<String> ids = new ArrayList<>(manager.registry().all().keySet());
+            ids.addAll(skillRegistry.ids());
+            for (Player player : Bukkit.getOnlinePlayers()) ids.add(player.getName());
+            ids.add("clear");
+            return ids;
+        }
         if (args.length == 2 && args[0].equalsIgnoreCase("stats")) return List.of("on", "off", "reset");
         if (args.length == 2 && args[0].equalsIgnoreCase("spawn")) return new ArrayList<>(manager.registry().all().keySet());
         if (args.length == 2 && args[0].equalsIgnoreCase("skill")) return new ArrayList<>(skillRegistry.ids());
