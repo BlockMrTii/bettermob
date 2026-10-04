@@ -15,6 +15,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static eu.northsoft.bettermob.skill.Params.firstParam;
 import static eu.northsoft.bettermob.skill.Params.parseFloat;
@@ -33,13 +34,15 @@ public final class EntitiesInRadiusTargeter implements Targeter {
         this.nearOrigin = nearOrigin;
     }
 
+    private final Map<String, List<String>> conditionLines = new ConcurrentHashMap<>();
+
     private record Hit(LivingEntity entity, double distance) {}
 
     @Override
     public List<Target> resolve(Map<String, String> params, SkillContext context) {
         Location center = nearOrigin && context.origin() != null ? context.origin() : context.caster().getLocation();
         double radius = parseFloat(firstParam(params, "r", "radius"), playersOnly ? 10f : 5f);
-        List<String> conditions = params.containsKey("conditions") ? SkillEngine.splitInline(params.get("conditions")) : List.of();
+        List<String> conditions = params.containsKey("conditions") ? conditionLines.computeIfAbsent(params.get("conditions"), SkillEngine::splitInline) : List.of();
         double radiusSquared = radius * radius;
         List<Hit> hits = new ArrayList<>();
         for (Entity entity : center.getWorld().getNearbyEntities(center, radius, radius, radius)) {
