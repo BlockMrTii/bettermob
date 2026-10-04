@@ -17,7 +17,7 @@ Everything public is in `eu.northsoft.bettermob.api`.
 <dependency>
     <groupId>com.github.HyperGaming99</groupId>
     <artifactId>bettermob</artifactId>
-    <version>v1.1.6</version> <!-- a release tag -->
+    <version>v1.1.7</version> <!-- a release tag -->
     <scope>provided</scope>
 </dependency>
 ```
@@ -33,7 +33,7 @@ Everything public is in `eu.northsoft.bettermob.api`.
 <dependency>
     <groupId>eu.northsoft</groupId>
     <artifactId>bettermob</artifactId>
-    <version>1.1.6</version>
+    <version>1.1.7</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -86,7 +86,7 @@ Skills:
 
 ## Custom conditions, targeters and placeholders
 
-Plugins that bring their own mobs or pets can register the other building blocks of a skill line too. This needs **BetterMob 1.1.7 or newer**: the published 1.1.6.x builds (and the Maven/JitPack coordinates pinned to them above) do not have these methods, so use the `dev-build` jar until 1.1.7 is released.
+Plugins that bring their own mobs or pets can register the other building blocks of a skill line too. This needs **BetterMob 1.1.7 or newer**: the published 1.1.7.x builds (and the Maven/JitPack coordinates pinned to them above) do not have these methods, so use the `dev-build` jar until 1.1.7 is released.
 
 ```java
 api.registerCondition(this, "petlevel", ctx -> level(ctx.caster()) >= Integer.parseInt(ctx.params().getOrDefault("min", "1")));
@@ -117,7 +117,7 @@ Skills:
 mvn -f examples/api-example/pom.xml package
 ```
 
-This resolves `com.github.HyperGaming99:bettermob:v1.1.6` from JitPack. To compile it against your own checkout instead:
+This resolves `com.github.HyperGaming99:bettermob:v1.1.7` from JitPack. To compile it against your own checkout instead:
 
 ```bash
 mvn install -DskipTests
