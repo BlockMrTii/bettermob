@@ -158,7 +158,8 @@ public final class MobRegistry {
                 parseSkillTriggers(id, section.getStringList("Skills")),
                 parseDrops(id, section.getStringList("Drops")),
                 section.getString("Faction"),
-                parseBossBar(id, modulesSection)
+                parseBossBar(id, modulesSection),
+                List.copyOf(section.getStringList("Equipment"))
         );
     }
 

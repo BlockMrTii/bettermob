@@ -206,6 +206,9 @@ Health: 60
 Damage: 8
 RemoveAi: false
 Faction: Elite              # mobs of one faction never target or hurt each other
+Equipment:                  # item or material : slot (HAND, OFFHAND, HEAD, CHEST, LEGS, FEET)
+  - BOW:HAND
+  - my_helmet:HEAD
 
 AIGoalSelectors:
   - clear
