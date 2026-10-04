@@ -10,6 +10,24 @@ public final class Params {
 
     private Params() {}
 
+    private static final Pattern PLACEHOLDER_SYNTAX = Pattern.compile("[{}\\[\\];=\"'\\\\%\\p{Cntrl}]");
+    private static final Pattern LONE_HYPHEN = Pattern.compile("(?<=\\s)-(?=\\s)");
+
+    public static String stripPlaceholderValue(String value) {
+        return LONE_HYPHEN.matcher(PLACEHOLDER_SYNTAX.matcher(value).replaceAll("")).replaceAll("");
+    }
+
+    public static Map<String, String> parsedParams(String paramsRaw) {
+        if (paramsRaw == null) return Map.of();
+        Map<String, String> parsed = PARSED_PARAMS.get(paramsRaw);
+        if (parsed == null) {
+            parsed = SkillStep.parseParams(paramsRaw);
+            if (PARSED_PARAMS.size() >= PARAMS_CACHE_LIMIT) PARSED_PARAMS.clear();
+            PARSED_PARAMS.put(paramsRaw, parsed);
+        }
+        return parsed;
+    }
+
     public static String stripSkillSyntax(String value) {
         return SKILL_SYNTAX.matcher(value).replaceAll("");
     }
@@ -49,12 +67,7 @@ public final class Params {
 
     public static String conditionParam(String paramsRaw, String... keys) {
         if (paramsRaw == null) return "";
-        Map<String, String> parsed = PARSED_PARAMS.get(paramsRaw);
-        if (parsed == null) {
-            parsed = SkillStep.parseParams(paramsRaw);
-            if (PARSED_PARAMS.size() >= PARAMS_CACHE_LIMIT) PARSED_PARAMS.clear();
-            PARSED_PARAMS.put(paramsRaw, parsed);
-        }
+        Map<String, String> parsed = parsedParams(paramsRaw);
         String value = firstParam(parsed, keys);
         return value == null ? "" : value.trim();
     }

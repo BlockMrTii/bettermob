@@ -530,6 +530,26 @@ api.registerMechanic(this, "heal", ctx -> {
 });
 ```
 
+**Custom conditions, targeters and placeholders** (BetterMob 1.1.7 or newer; the published 1.1.6.x builds don't have these methods, use the dev build until 1.1.7 is released): the same registration works for the other
+building blocks of a skill line, which is what a plugin that adds its own mobs or pets needs.
+Built-in names can't be taken, entries are removed when your plugin is disabled, and a
+`RuntimeException` is caught and logged.
+
+```java
+api.registerCondition(this, "petlevel", ctx -> level(ctx.caster()) >= Integer.parseInt(ctx.params().getOrDefault("min", "1")));
+api.registerTargeter(this, "petowner", ctx -> List.of(ownerOf(ctx.caster())));
+api.registerPlaceholder(this, "pet", (key, ctx) -> key.equals("health") ? String.valueOf(ctx.caster().getHealth()) : null);
+```
+
+```yaml
+Skills:
+  - heal{amount=<pet.health>} @PetOwner ~onTimer:100 ?petlevel{min=3}
+```
+
+A placeholder `<namespace.key>` is resolved in every mechanic parameter. Its value is inserted as plain
+text: braces, brackets, `;`, `=`, quotes, `%` and control characters are removed so a value can never add
+skill lines or trigger a command. `caster` and `target` are reserved namespaces.
+
 ### Example plugin
 
 [`examples/api-example`](examples/api-example) is a small plugin built on this API: it registers a `heal{amount=4}` mechanic, listens to `BetterMobSpawnEvent` and `BetterMobDeathEvent` and has a `/apiexample <mob>` command that spawns a mob.
