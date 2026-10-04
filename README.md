@@ -120,7 +120,7 @@ tagged releases above are the stable ones.
 | `/bettermob list` | List all registered mob IDs |
 | `/bettermob packs` | List discovered packs and whether they're enabled |
 | `/bettermob reload` | Reload config, mobs, skills, and packs |
-| `/bettermob validate [pack]` | Check a pack (or all of them) for unsupported mechanics, conditions, targeters, undefined skills and unparsable lines without spawning anything |
+| `/bettermob validate [pack]` | Check a pack (or all of them) for unsupported mechanics, conditions, targeters, undefined skills and unparsable lines (including drop lines) without spawning anything |
 | `/bettermob skill <id> [player]` | Manually run a registered skill, bypassing its normal triggers |
 | `/bettermob give <item> [player] [amount]` | Give a registered item (see [Items](#items)) |
 | `/bettermob killall [mob\|*] [world]` | Remove all living BetterMob mobs, or only one type and/or one world, and report how many |
