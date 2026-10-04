@@ -90,7 +90,7 @@ public final class ShootMechanic implements Mechanic, Listener {
             type = Arrow.class;
         }
 
-        double speed = Math.max(0.1, parseFloat(p.get("velocity"), 1f) * 2);
+        double speed = Math.max(0.1, parseFloat(p.get("velocity"), 1f) * parseFloat(firstParam(p, "speedscale", "ss"), 2f));
         double damage = parseFloat(p.get("damage"), 2f);
         if (engine.debug().verbose()) engine.debug().verbose("shoot " + typeName + " at " + aim.getName() + ", speed " + speed + ", damage " + damage, engine.subject(caster));
         double spread = Math.toRadians(parseFloat(p.get("spread"), 0f));
