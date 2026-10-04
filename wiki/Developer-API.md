@@ -86,7 +86,7 @@ Skills:
 
 ## Custom conditions, targeters and placeholders
 
-Plugins that bring their own mobs or pets can register the other building blocks of a skill line too:
+Plugins that bring their own mobs or pets can register the other building blocks of a skill line too. This needs **BetterMob 1.1.7 or newer**: the published 1.1.6.x builds (and the Maven/JitPack coordinates pinned to them above) do not have these methods, so use the `dev-build` jar until 1.1.7 is released.
 
 ```java
 api.registerCondition(this, "petlevel", ctx -> level(ctx.caster()) >= Integer.parseInt(ctx.params().getOrDefault("min", "1")));
@@ -96,17 +96,17 @@ api.registerPlaceholder(this, "pet", (key, ctx) -> key.equals("health") ? String
 
 ```yaml
 Skills:
-  - heal{a=<pet.health>} @PetOwner ~onTimer:100 ?petlevel{min=3}
+  - heal{amount=<pet.health>} @PetOwner ~onTimer:100 ?petlevel{min=3}
 ```
 
 | Registration | Interface and context | Notes |
 |---|---|---|
-| `registerCondition(owner, name, condition)` | `CustomCondition#test(ConditionContext)` with `caster`, `trigger` and the line's `params` (lower-case keys) | Usable in `Conditions`, `TargetConditions`, after `?` on a line and inside targeter `Conditions=[ ... ]` (there the candidate is the `caster`) |
+| `registerCondition(owner, name, condition)` | `CustomCondition#test(ConditionContext)` with `caster`, `trigger`, the optional `target` entity and `location` (set when the condition is tested against a target, e.g. a radius targeter candidate or `TargetConditions`) and the line's `params` (lower-case keys) | Usable in `Conditions`, `TargetConditions`, after `?` on a line and inside targeter `Conditions=[ ... ]` (there the candidate is the `caster`) |
 | `registerTargeter(owner, name, targeter)` | `CustomTargeter#resolve(TargeterContext)` returns the entities, with `caster`, `trigger`, `origin` and `params` | The mechanic runs once per returned entity; return an empty list to skip the line |
 | `registerPlaceholder(owner, namespace, placeholder)` | `CustomPlaceholder#resolve(key, PlaceholderContext)` returns the text, or `null` to leave `<namespace.key>` as it is | `caster` and `target` are reserved. Values are inserted as plain text: `{ } [ ] ; = " ' \ %` and control characters are removed, so a value can't add skill lines or trigger a command |
 
 - Each `register...` returns `false` when the name is a built-in or already taken; `unregisterCondition`, `unregisterTargeter` and `unregisterPlaceholder` remove one. Everything you registered is removed when your plugin is disabled.
-- An exception thrown by your code is caught and logged. A failing condition counts as not met, a failing targeter as no target, a failing placeholder keeps its text.
+- An exception thrown by your code is caught and logged. A failing condition counts as not met, a failing targeter as no target, a failing placeholder keeps its text and is logged with the namespace and your plugin.
 - `/bettermob validate` knows registered names once your plugin is enabled.
 
 ## Example plugin
