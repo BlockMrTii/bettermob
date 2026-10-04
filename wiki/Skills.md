@@ -59,8 +59,8 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `sound` | `s` sound key, `p` pitch, `v` volume | Play a sound at the target |
 | `model` | `mid` | Attach a BetterModel model |
 | `modelengine` | `mid` | Attach a ModelEngine model |
-| `state` | `state` | Play a BetterModel animation once |
-| `mountmodel` | `seat` (default `mount`) | Seat the target on a model's seat, BetterModel handles steering |
+| `state` | `state` (`s`) | Play a model animation: once for BetterModel; for ModelEngine also `lerpIn`, `lerpOut` (default 0.1), `speed` (1) and `force` (true) |
+| `mountmodel` | `seat` (default `mount`), `controller` | Seat the target on a model's seat. BetterModel handles steering; with ModelEngine `controller` is `walking` (default), `flying`, `walking_force` or `flying_force`, and the driver seat is used when `seat` is not a passenger seat |
 | `potion` | `type`, `duration` (ticks), `level` | Apply an effect |
 | `look` | - | Turn the caster toward the target |
 | `summon` | `type` (also `t`, `mob`) | Spawn another registered mob at the target |
@@ -79,7 +79,7 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `equip` | `item=<item>:<slot>` | Put a registered item or material into a slot: `HAND` (default), `OFFHAND`, `HEAD`, `CHEST`, `LEGS`, `FEET`. The slot's drop chance is set to 0 |
 | `addtag` / `removetag` | `t` | Mark the target, check it with `hastag` |
 | `onDamaged`, `onAttack`, `onDeath`, `onShoot`, `aura` | `auraName`, `time`, `cE`, `oS`, `oE`, `oT`, `i`, `oH` | Put a named aura on the target for `time` ticks (forever without it). `hasaura` sees it. `oS=[ ... ]` runs at the start, `oE` at the end, `oT` every `i` ticks (default 20), `oH` each time the matching event happens to that entity (`onDamaged` = it is hit, `onAttack` = it hits, ...). `cE=true` cancels that event while the aura is active |
-| `bodyrotation` | `headUneven`, `bodyUneven`, `minHead`, `maxHead`, `minBody`, `maxBody`, `stable`, `duration`, `delay` | Set how far the model's head and body may turn apart (BetterModel only; ModelEngine models ignore it) |
+| `bodyrotation` | `headUneven`, `bodyUneven`, `minHead`, `maxHead`, `minBody`, `maxBody`, `stable`, `duration`, `delay` | Set how far the model's head and body may turn apart (BetterModel and ModelEngine) |
 | `message` | `m` | Send a message to the target player. `&` colors, `<caster.name>`, `<target.name>` and PlaceholderAPI placeholders work |
 | `ignite` | `t` | Set the target on fire for `t` ticks |
 | `setvariable` (`variableset`) | `var`, `value`, `type` | Store a value: `var=hits` for the current skill run, `var=caster.hits` for the caster. `type` is `INTEGER`, `FLOAT` or `STRING` (default), numbers are checked. See [Variables](#variables) |
@@ -118,7 +118,7 @@ A line of its own, `delay 20`, pauses the rest of the skill for 20 ticks.
 | `@EntitiesNearOrigin{r=4;Conditions=[ - isPlayer{} true - isCaster{} false]}` (`@ENO`) | Every entity within `r` of a totem's location, closest first. Conditions: `isPlayer`, `isCaster`, `isMob`, `hasTag{t=...}`, `faction{faction=...}` and every skill condition (see below). Skill conditions test the candidate, not the caster: `health{h=<50%}` is the candidate's health, `distance{d=<3}` and `lineofsight` measure between the candidate and the caster |
 | `@EntitiesInRadius{r=4}` (`@EIR`, `@LivingEntitiesInRadius`, `@LEIR`) | Same, around the caster |
 | `@PlayersInRadius{r=10}` | Every player within `r` of the caster |
-| `@ModelPart{p=tnt2}` | The position of that BetterModel bone (falls back to chest height) |
+| `@ModelPart{p=tnt2}` | The position of that bone of the mob's BetterModel or ModelEngine model (falls back to chest height) |
 | `@PIR{r=2}` | The nearest player within `r` blocks (`limit` defaults to 1). If nobody is there, the line is skipped |
 | `@Origin` | A totem's location, or the caster's location outside a totem |
 | `@Location{x=0;y=64;z=0;w=world}` | A fixed location; `w` (or `world`) is the world, default the caster's |
