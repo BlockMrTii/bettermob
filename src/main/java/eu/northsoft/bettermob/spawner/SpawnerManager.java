@@ -21,7 +21,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public final class SpawnerManager {
     private static final long TICK_PERIOD = 20L;
-    private static final int PLACEMENT_ATTEMPTS = 8;
+    private static final long RETRY_MILLIS = 1000L;
     private static final int GROUND_SEARCH_DEPTH = 3;
 
     private final BetterMobPlugin plugin;
@@ -107,23 +107,34 @@ public final class SpawnerManager {
             if (entity.getScoreboardTags().contains(spawner.tag())) alive++;
         }
         if (!spawner.ready(now, alive)) return;
-        Location spot = findSpot(center, spawner.radius);
-        if (spot == null) return;
-        spawner.nextSpawnAt = now + spawner.intervalSeconds * 1000L;
-        manager.spawn(definition, spot).addScoreboardTag(spawner.tag());
+        Location candidate = randomPoint(center, spawner.radius);
+        spawner.nextSpawnAt = now + RETRY_MILLIS;
+        Tasks.runAt(plugin, candidate, () -> spawnAt(spawner, definition, candidate));
     }
 
-    private static Location findSpot(Location center, int radius) {
+    private void spawnAt(Spawner spawner, MobDefinition definition, Location candidate) {
+        Location spot = groundBelow(candidate);
+        if (spot == null) return;
+        spawner.nextSpawnAt = System.currentTimeMillis() + spawner.intervalSeconds * 1000L;
+        try {
+            manager.spawn(definition, spot).addScoreboardTag(spawner.tag());
+        } catch (RuntimeException exception) {
+            plugin.messages().warn("spawner.spawnFailed", "id", spawner.id, "mob", spawner.mob, "error", exception.getMessage());
+        }
+    }
+
+    private static Location randomPoint(Location center, int radius) {
         ThreadLocalRandom random = ThreadLocalRandom.current();
-        for (int attempt = 0; attempt < PLACEMENT_ATTEMPTS; attempt++) {
-            double angle = random.nextDouble(Math.PI * 2);
-            double distance = radius * Math.sqrt(random.nextDouble());
-            Location candidate = center.clone().add(Math.cos(angle) * distance, 0, Math.sin(angle) * distance);
-            for (int drop = 0; drop <= GROUND_SEARCH_DEPTH; drop++) {
-                Block feet = candidate.getBlock().getRelative(0, -drop, 0);
-                if (feet.isPassable() && feet.getRelative(0, 1, 0).isPassable() && !feet.getRelative(0, -1, 0).isPassable()) {
-                    return feet.getLocation().add(0.5, 0, 0.5);
-                }
+        double angle = random.nextDouble(Math.PI * 2);
+        double distance = radius * Math.sqrt(random.nextDouble());
+        return center.clone().add(Math.cos(angle) * distance, 0, Math.sin(angle) * distance);
+    }
+
+    private static Location groundBelow(Location candidate) {
+        for (int drop = 0; drop <= GROUND_SEARCH_DEPTH; drop++) {
+            Block feet = candidate.getBlock().getRelative(0, -drop, 0);
+            if (feet.isPassable() && feet.getRelative(0, 1, 0).isPassable() && !feet.getRelative(0, -1, 0).isPassable()) {
+                return feet.getLocation().add(0.5, 0, 0.5);
             }
         }
         return null;

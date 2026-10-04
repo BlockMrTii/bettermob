@@ -8,6 +8,7 @@ plugin:
 spawner:
   invalid: "Spawner '{id}' in spawners.yml needs a mob and a world - skipped."
   saveFailed: "Could not save spawners.yml: {error}"
+  spawnFailed: "Spawner '{id}' could not spawn '{mob}': {error}"
 
 command:
   help:

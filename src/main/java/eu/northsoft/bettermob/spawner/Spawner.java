@@ -18,7 +18,7 @@ public final class Spawner {
     public final int intervalSeconds;
     public final int max;
     public final int playerRange;
-    long nextSpawnAt;
+    volatile long nextSpawnAt;
 
     public Spawner(String id, String mob, String world, double x, double y, double z, int radius, int intervalSeconds, int max, int playerRange) {
         if (id.isEmpty() || id.indexOf('.') >= 0) throw new IllegalArgumentException("Invalid spawner id: " + id);
