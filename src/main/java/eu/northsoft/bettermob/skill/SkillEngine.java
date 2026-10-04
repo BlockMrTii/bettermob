@@ -255,7 +255,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             return false;
         }
         if (p.containsKey("cd") && !acquireCooldown(context, mechanic)) return false;
-        Map<String, String> params = substitute(p, context);
+        Map<String, String> params = substitute(mechanic.name(), p, context);
         if (debug.verbose()) {
             debug.verbose("mechanic '" + mechanic.name() + "' @" + (mechanic.targeter().isEmpty() ? "(inherited)" : mechanic.targeter())
                     + " -> " + targets.size() + " target(s), params " + params, subject(context.caster()));
@@ -365,7 +365,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return lines;
     }
 
-    private Map<String, String> substitute(Map<String, String> p, SkillContext context) {
+    private Map<String, String> substitute(String mechanicName, Map<String, String> p, SkillContext context) {
         boolean placeholders = false;
         for (String value : p.values()) {
             if (value.indexOf("<caster.") >= 0) {
@@ -377,11 +377,22 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         var attackDamage = context.caster().getAttribute(Attribute.ATTACK_DAMAGE);
         String damage = String.valueOf(attackDamage == null ? 1.0 : attackDamage.getValue());
         String name = stripSkillSyntax(context.caster().getName());
+        boolean escapesItself = mechanicName.equals("command") || mechanicName.equals("message");
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : p.entrySet()) {
-            result.put(entry.getKey(), entry.getValue()
-                    .replace("<caster.damage>", damage).replace("<caster.name>", name));
+            result.put(entry.getKey(), withCasterValues(entry.getValue(), damage, name, escapesItself));
         }
         return result;
+    }
+
+    private static boolean isInlineSkill(String value) {
+        String trimmed = value.stripLeading();
+        return trimmed.startsWith("[") && trimmed.indexOf('{') > 0;
+    }
+
+    static String withCasterValues(String value, String damage, String name, boolean escapesItself) {
+        String replaced = value.replace("<caster.damage>", damage);
+        if (escapesItself || isInlineSkill(value)) return replaced;
+        return replaced.replace("<caster.name>", name);
     }
 }
