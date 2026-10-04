@@ -432,7 +432,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         while (matcher.find()) {
             Map<String, String> scope = matcher.group(1).equals("skill") ? skillScope : casterScope;
             String found = scope == null ? null : scope.get(matcher.group(2).toLowerCase(Locale.ROOT));
-            matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(found == null ? "0" : Variables.sanitize(found)));
+            matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(found == null ? "0" : Params.stripPlaceholderValue(found)));
         }
         matcher.appendTail(result);
         return result.toString();

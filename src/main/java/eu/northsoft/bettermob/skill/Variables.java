@@ -10,14 +10,7 @@ public final class Variables {
 
     private static final Pattern NAME = Pattern.compile("[A-Za-z0-9_]{1,32}");
 
-    private static final Pattern UNSAFE = Pattern.compile("[{}\\[\\];=\"'\\\\%\\p{Cntrl}]");
-    private static final Pattern LONE_HYPHEN = Pattern.compile("(?<=\\s)-(?=\\s)");
-
     private Variables() {}
-
-    public static String sanitize(String value) {
-        return LONE_HYPHEN.matcher(UNSAFE.matcher(value).replaceAll("")).replaceAll("");
-    }
 
     public enum Type { INTEGER, FLOAT, STRING }
 

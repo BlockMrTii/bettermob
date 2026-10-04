@@ -63,9 +63,9 @@ class VariablesTest {
 
     @Test
     void sanitizeRemovesSkillSyntaxButKeepsNegativeNumbers() {
-        assertEquals("-5", Variables.sanitize("-5"));
-        assertEquals("Rex  commandc", Variables.sanitize("Rex} - command{c"));
-        assertFalse(Variables.sanitize("a%b;c=d").matches(".*[%;=].*"));
+        assertEquals("-5", Params.stripPlaceholderValue("-5"));
+        assertEquals("Rex  commandc", Params.stripPlaceholderValue("Rex} - command{c"));
+        assertFalse(Params.stripPlaceholderValue("a%b;c=d").matches(".*[%;=].*"));
     }
 
     @Test
