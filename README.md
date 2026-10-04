@@ -218,6 +218,11 @@ Faction: Elite              # mobs of one faction never target or hurt each othe
 Equipment:                  # item or material : slot (HAND, OFFHAND, HEAD, CHEST, LEGS, FEET)
   - BOW:HAND
   - my_helmet:HEAD
+Spawn:                      # replaces natural spawns of the mob's Type (here SKELETON) that match
+  Worlds: [world]           # optional, empty = every world
+  Biomes: [desert, plains]  # optional, empty = every biome
+  Time: night               # day | night | any (default)
+  Chance: 0.3               # 0-1, rolled per natural spawn, default 1
 
 AIGoalSelectors:
   - clear
@@ -261,6 +266,8 @@ Skills:
   - skill{s=my_skill_id} ~onInteract
   - sound{s=entity.skeleton.ambient;p=1.0;v=1} @self ~onTimer:200
 ```
+
+**Spawn rules:** a `Spawn` block turns the mob into a natural spawn. Whenever the server spawns a vanilla mob of the same `Type` naturally (not from spawners, eggs or commands) and the world, biome, time of day and `Chance` all fit, that spawn is replaced by this mob. `Worlds` and `Biomes` take lists (biome ids with or without `minecraft:`), `Time` is `day`, `night` or `any`. Without a `Spawn` block nothing is replaced; if several mobs match, the first one that passes its chance wins. An unknown `Time` logs a warning and means `any`.
 
 `Modules: BossBar:` shows a boss bar with the mob's health to every player within `Range` blocks (same world). `BossBar: true` uses the defaults.
 

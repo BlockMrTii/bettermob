@@ -3,6 +3,7 @@ package eu.northsoft.bettermob.mob;
 import eu.northsoft.bettermob.api.event.BetterMobDeathEvent;
 import eu.northsoft.bettermob.drop.DropRegistry;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -11,6 +12,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -24,6 +26,8 @@ import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.projectiles.ProjectileSource;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 public final class MobListener implements Listener {
     private final MobManager manager;
     private final DropRegistry drops;
@@ -31,6 +35,23 @@ public final class MobListener implements Listener {
     public MobListener(MobManager manager, DropRegistry drops) {
         this.manager = manager;
         this.drops = drops;
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onNaturalSpawn(CreatureSpawnEvent event) {
+        if (event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.NATURAL) return;
+        LivingEntity entity = event.getEntity();
+        if (manager.definitionOf(entity.getUniqueId()) != null) return;
+        Location at = entity.getLocation();
+        String biome = at.getWorld().getBiome(at).getKey().getKey();
+        for (MobDefinition definition : manager.registry().all().values()) {
+            SpawnRule rule = definition.spawnRule;
+            if (rule == null || definition.type != entity.getType()) continue;
+            if (!rule.matches(at.getWorld().getName(), biome, at.getWorld().getTime(), ThreadLocalRandom.current().nextDouble())) continue;
+            event.setCancelled(true);
+            manager.spawn(definition, at);
+            return;
+        }
     }
 
     @EventHandler

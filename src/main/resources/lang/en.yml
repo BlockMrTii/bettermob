@@ -95,6 +95,7 @@ mob:
   reloadRemoved: "Mob '{mob}' no longer has a definition - living ones keep the old definition."
   bossBarColorInvalid: "Mob '{mob}': unknown BossBar Color '{value}', using RED."
   bossBarStyleInvalid: "Mob '{mob}': unknown BossBar Style '{value}', using SOLID."
+  spawnTimeInvalid: "Mob '{mob}': unknown Spawn Time '{value}', using any."
   itemHeadMissing: "Mob '{mob}': ItemHead item '{item}' is not registered."
   equipmentUnknownItem: "Mob '{mob}': Equipment item '{value}' is neither a registered item nor a material."
   equipmentUnknownSlot: "Mob '{mob}': Equipment slot '{value}' is unknown (use HAND, OFFHAND, HEAD, CHEST, LEGS or FEET)."

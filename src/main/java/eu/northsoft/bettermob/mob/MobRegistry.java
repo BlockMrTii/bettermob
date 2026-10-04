@@ -159,8 +159,20 @@ public final class MobRegistry {
                 parseDrops(id, section.getStringList("Drops")),
                 section.getString("Faction"),
                 parseBossBar(id, modulesSection),
-                List.copyOf(section.getStringList("Equipment"))
+                List.copyOf(section.getStringList("Equipment")),
+                parseSpawnRule(id, section.getConfigurationSection("Spawn"))
         );
+    }
+
+    private SpawnRule parseSpawnRule(String id, ConfigurationSection spawn) {
+        if (spawn == null) return null;
+        String timeName = spawn.getString("Time", "any");
+        SpawnRule.Time time = enumOrNull(SpawnRule.Time.class, timeName);
+        if (time == null) {
+            plugin.messages().warn("mob.spawnTimeInvalid", "mob", id, "value", timeName);
+            time = SpawnRule.Time.ANY;
+        }
+        return new SpawnRule(spawn.getStringList("Worlds"), spawn.getStringList("Biomes"), time, spawn.getDouble("Chance", 1));
     }
 
     private BossBarSettings parseBossBar(String id, ConfigurationSection modules) {

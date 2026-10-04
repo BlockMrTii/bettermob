@@ -33,13 +33,14 @@ public final class MobDefinition {
     public final String faction;
     public final BossBarSettings bossBar;
     public final List<String> equipment;
+    public final SpawnRule spawnRule;
 
     public MobDefinition(String id, EntityType type, String displayName, String modelId,
                   double health, double damage, boolean removeAi,
                   List<String> aiGoalSelectors, List<String> aiTargetSelectors,
                   Options options, boolean threatTable, Map<DamageCause, Double> damageModifiers,
                   List<SkillTrigger> skillTriggers, DropTable drops, String faction,
-                  BossBarSettings bossBar, List<String> equipment) {
+                  BossBarSettings bossBar, List<String> equipment, SpawnRule spawnRule) {
         this.id = id;
         this.type = type;
         this.displayName = displayName;
@@ -61,6 +62,7 @@ public final class MobDefinition {
         this.faction = faction;
         this.bossBar = bossBar;
         this.equipment = equipment;
+        this.spawnRule = spawnRule;
     }
 
     public List<SkillTrigger> triggersOf(SkillTrigger.Trigger type) {
