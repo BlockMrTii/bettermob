@@ -23,7 +23,7 @@ public final class AuraMechanic implements Mechanic {
     public void execute(MechanicCall call) {
         Map<String, String> p = call.params();
         String name = firstParam(p, "auraname", "name", "aura");
-        if (name == null || !(call.target().entity() instanceof LivingEntity entity)) return;
+        if (name == null || !(call.target().entity() instanceof LivingEntity entity) || !entity.isValid()) return;
         String key = name.toLowerCase(Locale.ROOT);
         int ticks = parseInt(firstParam(p, "time", "ticks", "duration"), 0);
         long until = ticks > 0 ? System.currentTimeMillis() + ticks * 50L : Long.MAX_VALUE;
