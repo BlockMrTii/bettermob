@@ -2,6 +2,7 @@ package eu.northsoft.bettermob.pack;
 
 import eu.northsoft.bettermob.skill.condition.ConditionRegistry;
 import eu.northsoft.bettermob.skill.mechanic.BuiltinMechanics;
+import eu.northsoft.bettermob.skill.target.CandidateFilters;
 import eu.northsoft.bettermob.skill.mechanic.MechanicRegistry;
 import eu.northsoft.bettermob.skill.target.TargeterRegistry;
 import org.bukkit.configuration.ConfigurationSection;
@@ -40,7 +41,8 @@ class SamplePacksTest {
         Set<String> skillIds = skillIdsOf(packs);
         PackValidator validator = new PackValidator(new PackValidator.Knowledge(
                 name -> mechanics.get(name) != null || name.equals("cancelskill") || name.equals("delay"),
-                conditions::has, targeters::has, id -> skillIds.contains(id.toLowerCase(Locale.ROOT))));
+                conditions::has, targeters::has, id -> skillIds.contains(id.toLowerCase(Locale.ROOT)),
+                name -> CandidateFilters.knows(name, conditions::has)));
 
         StringBuilder problems = new StringBuilder();
         int lines = 0;
