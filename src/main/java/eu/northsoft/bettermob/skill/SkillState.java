@@ -62,14 +62,6 @@ public final class SkillState {
         return cooldowns.size();
     }
 
-    int auraOwnerCount() {
-        return auras.size();
-    }
-
-    int gcdCount() {
-        return gcdUntilMillis.size();
-    }
-
     public Map<String, Aura> aurasOf(UUID entityId) {
         return auras.computeIfAbsent(entityId, id -> new ConcurrentHashMap<>());
     }

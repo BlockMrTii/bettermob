@@ -4,7 +4,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -23,11 +24,13 @@ class SkillStateTest {
         UUID kept = UUID.randomUUID();
         state.aurasOf(gone);
         state.aurasOf(kept);
-        state.setGcd(gone, 20);
-        state.setGcd(kept, 20);
+        state.setGcd(gone, 1200);
+        state.setGcd(kept, 1200);
         state.forget(gone);
-        assertEquals(1, state.auraOwnerCount());
-        assertEquals(1, state.gcdCount());
+        assertNull(state.activeAuras(gone));
+        assertNotNull(state.activeAuras(kept));
+        assertFalse(state.hasActiveGcd(gone));
+        assertTrue(state.hasActiveGcd(kept));
     }
 
     @Test
