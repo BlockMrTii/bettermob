@@ -94,7 +94,7 @@ mob:
   multiplierInvalid: "Mob '{mob}': ungültiger Multiplikator '{value}'."
   reloadRemoved: "Mob '{mob}' hat keine Definition mehr - lebende behalten die alte Definition."
   bossBarColorInvalid: "Mob '{mob}': unbekannte BossBar-Color '{value}', es wird RED verwendet."
-  spawnTimeInvalid: "Mob '{mob}': unbekannte Spawn-Time '{value}', es wird any verwendet."
+  spawnRuleInvalid: "Mob '{mob}': Spawn-Option '{option}' hat einen ungueltigen Wert (Worlds und Biomes brauchen eine Liste, Chance eine Zahl, Time day, night oder any) - der Spawn-Block wird ignoriert."
   bossBarStyleInvalid: "Mob '{mob}': unbekannter BossBar-Style '{value}', es wird SOLID verwendet."
   itemHeadMissing: "Mob '{mob}': ItemHead-Item '{item}' ist nicht registriert."
   equipmentUnknownItem: "Mob '{mob}': Equipment-Item '{value}' ist weder ein registriertes Item noch ein Material."

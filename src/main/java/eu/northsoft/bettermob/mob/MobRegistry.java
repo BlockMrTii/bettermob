@@ -166,13 +166,7 @@ public final class MobRegistry {
 
     private SpawnRule parseSpawnRule(String id, ConfigurationSection spawn) {
         if (spawn == null) return null;
-        String timeName = spawn.getString("Time", "any");
-        SpawnRule.Time time = enumOrNull(SpawnRule.Time.class, timeName);
-        if (time == null) {
-            plugin.messages().warn("mob.spawnTimeInvalid", "mob", id, "value", timeName);
-            time = SpawnRule.Time.ANY;
-        }
-        return new SpawnRule(spawn.getStringList("Worlds"), spawn.getStringList("Biomes"), time, spawn.getDouble("Chance", 1));
+        return SpawnRule.parse(spawn, option -> plugin.messages().warn("mob.spawnRuleInvalid", "mob", id, "option", option));
     }
 
     private BossBarSettings parseBossBar(String id, ConfigurationSection modules) {

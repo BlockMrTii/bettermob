@@ -267,7 +267,7 @@ Skills:
   - sound{s=entity.skeleton.ambient;p=1.0;v=1} @self ~onTimer:200
 ```
 
-**Spawn rules:** a `Spawn` block turns the mob into a natural spawn. Whenever the server spawns a vanilla mob of the same `Type` naturally (not from spawners, eggs or commands) and the world, biome, time of day and `Chance` all fit, that spawn is replaced by this mob. `Worlds` and `Biomes` take lists (biome ids with or without `minecraft:`), `Time` is `day`, `night` or `any`. Without a `Spawn` block nothing is replaced; if several mobs match, the first one that passes its chance wins. An unknown `Time` logs a warning and means `any`.
+**Spawn rules:** a `Spawn` block turns the mob into a natural spawn. Whenever the server spawns a vanilla mob of the same `Type` naturally (not from spawners, eggs or commands) and the world, biome, time of day and `Chance` all fit, that spawn is replaced by this mob. `Worlds` and `Biomes` take lists (biome ids with or without `minecraft:`), `Time` is `day`, `night` or `any`. Without a `Spawn` block nothing is replaced; if several mobs match, the first one that passes its chance wins. A `Worlds` or `Biomes` that is not a list, a `Chance` that is not a number or an unknown `Time` logs a warning and the whole `Spawn` block is ignored, so a typo never widens the spawn.
 
 `Modules: BossBar:` shows a boss bar with the mob's health to every player within `Range` blocks (same world). `BossBar: true` uses the defaults.
 
