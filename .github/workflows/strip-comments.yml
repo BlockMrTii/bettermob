@@ -33,7 +33,7 @@ jobs:
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
-          token: ${{ secrets.PR_PUSH_TOKEN || github.token }}
+          persist-credentials: false
           path: pr
           fetch-depth: 0
 
@@ -45,6 +45,13 @@ jobs:
           git diff --name-only --diff-filter=AM "${{ github.event.pull_request.base.sha }}" HEAD -- '*.java' > "$RUNNER_TEMP/changed.txt"
           xargs -d '\n' -r python ../base/.github/scripts/strip_comments.py < "$RUNNER_TEMP/changed.txt" | sed '/^$/d' > "$RUNNER_TEMP/stripped.txt"
           echo "count=$(wc -l < "$RUNNER_TEMP/stripped.txt")" >> "$GITHUB_OUTPUT"
+
+      - name: Authenticate the push
+        if: steps.strip.outputs.count != '0'
+        working-directory: pr
+        env:
+          PUSH_TOKEN: ${{ secrets.PR_PUSH_TOKEN || github.token }}
+        run: git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$PUSH_TOKEN" | base64 -w0)"
 
       - name: Push the cleanup commit
         id: push
