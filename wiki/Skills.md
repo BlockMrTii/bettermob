@@ -94,7 +94,7 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `velocity` | `m`, `x`, `y`, `z`, `repeat`, `repeatInterval` | Change the target's velocity. `m` is `SET` (default), `ADD`, `MULTIPLY` or `DIVIDE`; `repeat` applies it that many more times, every `repeatInterval` ticks |
 | `freeze` | `ticks` | Freeze the target (powder-snow overlay) for `ticks` ticks, default 140 |
 | `setNoDamageTicks` | `ticks` | Set the target's invulnerability ticks (0 = can be hit again at once) |
-| `shoot` | `type`, `velocity`, `damage`, `spread`, `gravity`, `oh`, `oe`, `ot`, `i` | Fire a projectile at the target. `type` is `arrow` (default), `spectral_arrow`, `trident`, `snowball`, `egg`, `fireball` or `smallfireball` (fireballs don't explode or burn; they deal `damage`). `spread` is a random cone in degrees, `gravity=false` makes it fly straight. `oh=[ ... ]` runs on a hit with the hit entity as target, `oe=[ ... ]` when it ends anywhere (at its location), `ot=[ ... ]` every `i` ticks (default 5) while it flies |
+| `shoot` | `type`, `velocity`, `speedscale`, `damage`, `spread`, `gravity`, `oh`, `oe`, `ot`, `i` | Fire a projectile at the target. `type` is `arrow` (default), `spectral_arrow`, `trident`, `snowball`, `egg`, `fireball` or `smallfireball` (fireballs don't explode or burn; they deal `damage`). `spread` is a random cone in degrees, `gravity=false` makes it fly straight. `speedscale` (`ss`, default 2) multiplies `velocity`; a value that is not a number falls back to 2. `oh=[ ... ]` runs on a hit with the hit entity as target, `oe=[ ... ]` when it ends anywhere (at its location), `ot=[ ... ]` every `i` ticks (default 5) while it flies |
 | `totem` | `os`, `ot`, `oe`, `md`, `i`, `oh`, `yo` | Run `os=[ ... ]` once at the targeter's location (shifted up by `yo`); `@EntitiesNearOrigin` inside is centred there. With `md` (ticks) `ot=[ ... ]` repeats every `i` ticks (default 20) and `oe=[ ... ]` runs at the end. Stops early if the caster dies. With `oh=[ ... ]` an invisible, unbreakable body is placed at the totem for `md` ticks (default 100); the lines run whenever someone hits it, with the attacker as target |
 | `cancelevent` | - | Cancel the event that triggered the skill. For `~onAttack`/`~onDamaged` that is the damage event, so the vanilla hit is suppressed |
 | `cancelskill` | - | Stop the rest of the skill |
@@ -153,6 +153,7 @@ Skills:
 | `world{w=world,world_nether}` | The caster is in one of these worlds |
 | `biome{b=DESERT,PLAINS}` | The caster stands in one of these biomes (names without `minecraft:` are fine) |
 | `variable{var=hits;value=>=3}` | The variable matches: a number test (`>3`, `<=5`, `2-4`, `7`) when it holds a number, otherwise text equality. A missing variable counts as 0 for number tests |
+| `sneaking` | The caster is a player and is sneaking |
 | `time{t=day}` | `day` or `night` of the caster's world; also a tick or range, e.g. `time{t=0-6000}` |
 | `chance{chance=0.75}` | A random roll succeeds (0 to 1) |
 | `hastag{t=pet}` | The caster has the tag set by `addtag` |
