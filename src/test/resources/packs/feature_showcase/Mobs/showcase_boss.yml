@@ -1,0 +1,30 @@
+showcase_boss:
+  Type: skeleton
+  Display: '&cShowcase Boss'
+  Health: 80
+  Damage: 10
+  Faction: Showcase
+  Equipment:
+    - BOW:HAND
+  Options:
+    Silent: true
+    PreventSunburn: true
+    KnockbackResistance: 1
+  AIGoalSelectors:
+    - clear
+    - rangedAttack{speed=1;smax=10;amin=10;radius=15}
+    - lookAtTarget{r=15;h=true}
+    - randomstroll
+  AITargetSelectors:
+    - 0 clear
+    - 1 player
+    - 2 attacker
+  Drops:
+    - showcase_loot
+  Skills:
+    - CancelEvent{sync=true} ~onShoot
+    - skill{s=showcase_attack;sync=true} @target ~onShoot
+    - onDamaged{auraName=spawn;cE=true;time=50;oS=[ - stun{d=50;ai=true;g=true;f=true} @self - velocity{m=SET;x=0;y=0;z=0;repeat=50;repeatInterval=1} @self ]} @self ~onSpawn
+    - skill{s=showcase_enrage} @self ~onDamaged ?!hasaura{n=spawn}
+    - sound{s=entity.pillager.hurt;p=0.9;v=1.0} @self ~onDamaged
+    - skill{s=[ - sound{s=entity.pillager.ambient;p=0.9;v=1.0} ];sync=true} @self ~onTimer:60 ?chance{chance=0.75}
