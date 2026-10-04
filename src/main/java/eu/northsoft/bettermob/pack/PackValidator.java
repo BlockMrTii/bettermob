@@ -16,7 +16,8 @@ import java.util.Locale;
 import java.util.function.Predicate;
 
 public final class PackValidator {
-    public record Knowledge(Predicate<String> mechanic, Predicate<String> condition, Predicate<String> targeter, Predicate<String> skill) {}
+    public record Knowledge(Predicate<String> mechanic, Predicate<String> condition, Predicate<String> targeter, Predicate<String> skill,
+                            Predicate<String> targeterCondition) {}
 
     public enum Reason { UNPARSEABLE, MECHANIC, TARGETER, CONDITION, TARGETER_CONDITION, SKILL }
 
@@ -57,7 +58,8 @@ public final class PackValidator {
                 name -> engine.mechanics().get(name) != null || name.equals("cancelskill") || name.equals("delay"),
                 name -> engine.conditionRegistry().has(name),
                 name -> engine.targeters().has(name),
-                skill);
+                skill,
+                name -> CandidateFilters.knows(name, engine.conditionRegistry()::has));
     }
 
     public Report validatePack(String pack, File folder) {
@@ -161,7 +163,7 @@ public final class PackValidator {
             for (String raw : SkillEngine.splitInline(conditions)) {
                 Condition condition = Condition.parse(raw);
                 if (condition == null) report.issues.add(new Issue(file, line, Reason.UNPARSEABLE, ""));
-                else if (!CandidateFilters.KNOWN.contains(condition.name())) {
+                else if (!known.targeterCondition().test(condition.name())) {
                     report.issues.add(new Issue(file, line, Reason.TARGETER_CONDITION, condition.name()));
                 }
             }
