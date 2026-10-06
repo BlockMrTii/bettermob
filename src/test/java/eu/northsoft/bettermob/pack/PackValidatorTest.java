@@ -124,6 +124,14 @@ class PackValidatorTest {
     }
 
     @Test
+    void patrolPointsAreChecked(@TempDir Path root) throws IOException {
+        write(root, "mobs/m.yml", "a:\n  Patrol:\n    - 1 64 1\n    - broken\nb:\n  Patrol:\n    Points:\n      - w 1 2 3\n      - 1 2\n");
+        PackValidator.Report report = validator.validatePack("patrol", root.toFile());
+        assertEquals(4, report.lines());
+        assertEquals(List.of("Patrol: broken", "Patrol: 1 2"), report.issues().stream().map(PackValidator.Issue::line).toList());
+    }
+
+    @Test
     void foldersAreMatchedCaseInsensitivelyAndMissingOnesAreSkipped(@TempDir Path root) throws IOException {
         write(root, "SKILLS/a.yml", "a:\n  Skills:\n    - sound{s=a}\n");
         PackValidator.Report report = validator.validatePack("case", root.toFile());

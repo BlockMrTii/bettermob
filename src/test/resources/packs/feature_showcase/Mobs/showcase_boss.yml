@@ -4,6 +4,15 @@ showcase_boss:
   Health: 80
   Damage: 10
   Faction: Showcase
+  Patrol:
+    Points:
+      - 10 64 10
+      - world 14 64 10
+    Loop: true
+    Wait: 3
+  Guard:
+    Radius: 20
+  MaxHomeDistance: 60
   Equipment:
     - BOW:HAND
   Options:

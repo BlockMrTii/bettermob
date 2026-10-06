@@ -1,6 +1,7 @@
 package eu.northsoft.bettermob.pack;
 
 import eu.northsoft.bettermob.drop.DropEntry;
+import eu.northsoft.bettermob.mob.Behaviour;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.skill.Condition;
 import eu.northsoft.bettermob.skill.SkillEngine;
@@ -93,7 +94,20 @@ public final class PackValidator {
 
     void walkTriggerLists(ConfigurationSection section, String file, Report report) {
         for (String key : section.getKeys(false)) {
-            if (key.equalsIgnoreCase("Model") && section.isString(key)) {
+            if (key.equalsIgnoreCase("Patrol")) {
+                List<String> points = section.isList(key) ? section.getStringList(key)
+                        : section.isConfigurationSection(key) ? section.getConfigurationSection(key).getStringList("Points") : List.of();
+                Object shape = section.get(key);
+                boolean wrongShape = shape instanceof ConfigurationSection nested ? nested.contains("Points") && !nested.isList("Points") : !(shape instanceof List<?>);
+                if (wrongShape) {
+                    report.lines++;
+                    report.issues.add(new Issue(file, "Patrol: " + shape, Reason.UNPARSEABLE, ""));
+                }
+                for (String point : points) {
+                    report.lines++;
+                    if (Behaviour.parsePoint(point) == null) report.issues.add(new Issue(file, "Patrol: " + point, Reason.UNPARSEABLE, ""));
+                }
+            } else if (key.equalsIgnoreCase("Model") && section.isString(key)) {
                 report.lines++;
                 checkModel(section.getString(key), Engine.ANY, "Model: " + section.getString(key), file, report);
             } else if (key.equalsIgnoreCase("Skills") && section.isList(key)) {

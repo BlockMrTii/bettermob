@@ -142,6 +142,7 @@ ai:
   goalUnavailable: "AI-Goal '{goal}' ist für Mob-Typ '{type}' nicht verfügbar."
 
 mob:
+  behaviourInvalid: "Mob '{mob}': ungueltige Bewegungsoption '{option}'."
   eggMaterialInvalid: "Mob '{mob}': Egg-Material '{value}' ist kein Material, es wird das Ei des Mob-Typs verwendet."
   loaded: "{count} Mobs geladen."
   duplicate: "Mob '{mob}' aus {folder} überschreibt eine bereits geladene Definition - ignoriert."

@@ -33,6 +33,7 @@ public final class MobDefinition {
     public final String faction;
     public final BossBarSettings bossBar;
     public final EggSettings egg;
+    public final Behaviour behaviour;
     public final List<String> equipment;
     public final SpawnRule spawnRule;
 
@@ -41,7 +42,7 @@ public final class MobDefinition {
                   List<String> aiGoalSelectors, List<String> aiTargetSelectors,
                   Options options, boolean threatTable, Map<DamageCause, Double> damageModifiers,
                   List<SkillTrigger> skillTriggers, DropTable drops, String faction,
-                  BossBarSettings bossBar, List<String> equipment, SpawnRule spawnRule, EggSettings egg) {
+                  BossBarSettings bossBar, List<String> equipment, SpawnRule spawnRule, EggSettings egg, Behaviour behaviour) {
         this.id = id;
         this.type = type;
         this.displayName = displayName;
@@ -63,6 +64,7 @@ public final class MobDefinition {
         this.faction = faction;
         this.bossBar = bossBar;
         this.egg = egg;
+        this.behaviour = behaviour;
         this.equipment = equipment;
         this.spawnRule = spawnRule;
     }

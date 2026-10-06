@@ -2,6 +2,7 @@ package eu.northsoft.bettermob.mob;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.ai.AiGoalApplier;
+import eu.northsoft.bettermob.ai.BehaviourGoals;
 import eu.northsoft.bettermob.api.event.BetterMobSpawnEvent;
 import eu.northsoft.bettermob.integration.PlaceholderHook;
 import eu.northsoft.bettermob.item.EquipmentSupport;
@@ -59,6 +60,8 @@ public final class MobManager {
     private final BossBarManager bossBars;
     private SkillEngine skillEngine;
 
+    private static final long HOME_CHECK_TICKS = 40L;
+
     public final NamespacedKey mobIdKey;
 
     public MobManager(BetterMobPlugin plugin, MobRegistry registry, BetterModelHook betterModel, ModelEngineHook modelEngine, ItemRegistry items) {
@@ -76,6 +79,7 @@ public final class MobManager {
         applyDefinition(entity, definition, true);
 
         if (entity instanceof Mob mob) AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
+        applyBehaviour(entity, definition);
         if (definition.threatTable) threatTables.put(entity.getUniqueId(), new ConcurrentHashMap<>());
         if (!definition.damageModifiers.isEmpty()) damageModifiers.put(entity.getUniqueId(), definition.damageModifiers);
 
@@ -115,6 +119,34 @@ public final class MobManager {
 
         preventSunburn(entity, definition);
         applyEquipment(entity, definition);
+    }
+
+    private NamespacedKey homeKey() {
+        return new NamespacedKey(plugin, "home");
+    }
+
+    public Location homeOf(Entity entity) {
+        String stored = entity.getPersistentDataContainer().get(homeKey(), PersistentDataType.STRING);
+        if (stored == null) return null;
+        String[] parts = stored.split(";");
+        if (parts.length != 3 && parts.length != 4) return null;
+        try {
+            int offset = parts.length - 3;
+            World world = offset == 0 ? entity.getWorld() : Bukkit.getWorld(UUID.fromString(parts[0]));
+            if (world == null) return null;
+            return new Location(world, Double.parseDouble(parts[offset]), Double.parseDouble(parts[offset + 1]), Double.parseDouble(parts[offset + 2]));
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
+    }
+
+    private void applyBehaviour(LivingEntity entity, MobDefinition definition) {
+        Behaviour behaviour = definition.behaviour;
+        if (behaviour != null && behaviour.needsHome() && homeOf(entity) == null) {
+            Location at = entity.getLocation();
+            entity.getPersistentDataContainer().set(homeKey(), PersistentDataType.STRING, at.getWorld().getUID() + ";" + at.getX() + ";" + at.getY() + ";" + at.getZ());
+        }
+        if (entity instanceof Mob mob) BehaviourGoals.apply(plugin, mob, behaviour, () -> homeOf(entity));
     }
 
     private void applyEquipment(LivingEntity entity, MobDefinition definition) {
@@ -328,6 +360,15 @@ public final class MobManager {
             timers.computeIfAbsent(mob.getUniqueId(), key -> new ArrayList<>())
                     .add(Tasks.runTimer(plugin, mob, 20L, 20L, () -> retarget(mob)));
         }
+        if (definition.behaviour != null && definition.behaviour.hasHomeLimit()) {
+            double limit = definition.behaviour.maxHomeDistance();
+            timers.computeIfAbsent(entity.getUniqueId(), key -> new ArrayList<>()).add(Tasks.runTimer(plugin, entity, HOME_CHECK_TICKS, HOME_CHECK_TICKS, () -> {
+                Location home = homeOf(entity);
+                if (home == null || !home.getWorld().equals(entity.getWorld()) || entity.getLocation().distanceSquared(home) <= limit * limit) return;
+                if (plugin.debug().info()) plugin.debug().info("mob " + definition.id + " is further than " + limit + " blocks from home, teleporting it back", definition.id);
+                entity.teleportAsync(home);
+            }));
+        }
         for (MobDefinition.SkillTrigger trigger : definition.triggersOf(MobDefinition.SkillTrigger.Trigger.TIMER)) {
             Runnable cancel = Tasks.runTimer(plugin, entity, trigger.timerTicks(), trigger.timerTicks(), () -> {
                 if (!entity.isValid()) return;
@@ -382,6 +423,7 @@ public final class MobManager {
             AiGoalApplier.apply(mob, changedSelectors(old.aiGoalSelectors, fresh.aiGoalSelectors),
                     changedSelectors(old.aiTargetSelectors, fresh.aiTargetSelectors), plugin, other -> definitions.containsKey(other.getUniqueId()));
         }
+        applyBehaviour(entity, fresh);
 
         if (!hasModelSkill(fresh, MobDefinition.SkillTrigger.Trigger.LOAD)) {
             attachModelField(entity, fresh.modelId);
@@ -516,6 +558,7 @@ public final class MobManager {
         if (entity instanceof Mob mob) {
             AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
         }
+        applyBehaviour(entity, definition);
         preventSunburn(entity, definition);
 
         if (!hasModelSkill(definition, MobDefinition.SkillTrigger.Trigger.LOAD)) {

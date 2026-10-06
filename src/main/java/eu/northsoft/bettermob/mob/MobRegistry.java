@@ -162,7 +162,8 @@ public final class MobRegistry {
                 parseBossBar(id, modulesSection),
                 List.copyOf(section.getStringList("Equipment")),
                 parseSpawnRule(id, section.getConfigurationSection("Spawn")),
-                parseEgg(id, section.getConfigurationSection("Egg"))
+                parseEgg(id, section.getConfigurationSection("Egg")),
+                Behaviour.parse(section, option -> plugin.messages().warn("mob.behaviourInvalid", "mob", id, "option", option))
         );
     }
 
