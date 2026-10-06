@@ -118,6 +118,7 @@ public final class BetterMobPlugin extends JavaPlugin {
 
         manager = new MobManager(this, registry, betterModel, modelEngine, itemRegistry);
         SkillEngine skillEngine = new SkillEngine(this, skillRegistry, manager, betterModel, modelEngine, itemRegistry);
+        skillEngine.setDrops(dropRegistry);
         manager.setSkillEngine(skillEngine);
         getServer().getPluginManager().registerEvents(new MobListener(manager, dropRegistry, kills), this);
         getServer().getPluginManager().registerEvents(new ItemListener(itemRegistry, skillEngine), this);

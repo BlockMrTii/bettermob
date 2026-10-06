@@ -85,6 +85,16 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return modelEngine;
     }
 
+    private eu.northsoft.bettermob.drop.DropRegistry drops;
+
+    public void setDrops(eu.northsoft.bettermob.drop.DropRegistry drops) {
+        this.drops = drops;
+    }
+
+    public eu.northsoft.bettermob.drop.DropRegistry drops() {
+        return drops;
+    }
+
     public ItemRegistry items() {
         return items;
     }
