@@ -181,6 +181,8 @@ skill:
   targeterConditionUnsupported: "Targeter condition '{condition}' is not supported - ignored."
   targeterUnknown: "Unknown targeter '@{targeter}', the line targets the default target instead."
   shootUnknownProjectile: "shoot: unknown projectile type '{type}', using arrow."
+  lootUnknownTable: "loot: unknown drop table '{table}'."
+  lootUnknownVanilla: "loot: unknown vanilla loot table '{table}'."
   potionUnknown: "Unknown potion type '{type}'."
   particleNeedsData: "Particle '{particle}' needs extra data (e.g. a color) and is not supported."
   particleUnknown: "Unknown particle '{particle}'."
