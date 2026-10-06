@@ -484,9 +484,12 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             } catch (NumberFormatException ignored) {
             }
         }
-        receiver.getInventory().addItem(eggItems.create(definition, amount)).values()
-                .forEach(rest -> receiver.getWorld().dropItemNaturally(receiver.getLocation(), rest));
-        messages.send(sender, "command.egg.done", "amount", amount, "mob", definition.id, "player", receiver.getName());
+        int given = amount;
+        Tasks.runOwned(plugin, receiver, () -> {
+            receiver.getInventory().addItem(eggItems.create(definition, given)).values()
+                    .forEach(rest -> receiver.getWorld().dropItemNaturally(receiver.getLocation(), rest));
+            messages.send(sender, "command.egg.done", "amount", given, "mob", definition.id, "player", receiver.getName());
+        }, () -> messages.send(sender, "command.playerOffline", "player", receiver.getName()));
     }
 
     private void handleGive(CommandSender sender, String[] args) {
