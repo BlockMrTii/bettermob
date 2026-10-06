@@ -21,6 +21,7 @@ import org.bukkit.plugin.Plugin;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public final class BetterMobApiImpl implements BetterMobAPI, Listener {
     private final BetterMobPlugin plugin;
@@ -61,6 +62,19 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
         MobDefinition definition = id == null ? null : manager.registry().get(id);
         if (definition == null) return Optional.empty();
         return Optional.of(manager.spawn(definition, location));
+    }
+
+    @Override
+    public CompletableFuture<Optional<LivingEntity>> spawnAsync(String id, Location location) {
+        CompletableFuture<Optional<LivingEntity>> result = new CompletableFuture<>();
+        Tasks.runOwnedAt(plugin, location, () -> {
+            try {
+                result.complete(spawn(id, location));
+            } catch (RuntimeException exception) {
+                result.completeExceptionally(exception);
+            }
+        });
+        return result;
     }
 
     @Override
