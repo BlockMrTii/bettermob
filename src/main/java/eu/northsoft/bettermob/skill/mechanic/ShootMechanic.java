@@ -4,6 +4,8 @@ import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillStep;
 import eu.northsoft.bettermob.util.Tasks;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Egg;
@@ -65,9 +67,12 @@ public final class ShootMechanic implements Mechanic, Listener {
         shot.stopTicker().run();
         if (event.getHitEntity() instanceof LivingEntity hit && !hit.equals(shot.shooter())) {
             if (shot.damage() > 0) engine.state().applyDamage(hit, shot.damage(), shot.shooter());
-            if (shot.onHit() != null) engine.runSteps(shot.onHit(), new SkillContext(shot.shooter(), hit, null).withTrigger(hit));
+            if (shot.onHit() != null) Tasks.runOwned(engine.plugin(), shot.shooter(), () -> engine.runSteps(shot.onHit(), new SkillContext(shot.shooter(), hit, null).withTrigger(hit)));
         }
-        if (shot.onEnd() != null) engine.runSteps(shot.onEnd(), SkillContext.of(shot.shooter()).withOrigin(event.getEntity().getLocation()));
+        if (shot.onEnd() != null) {
+            Location end = event.getEntity().getLocation();
+            Tasks.runOwned(engine.plugin(), shot.shooter(), () -> engine.runSteps(shot.onEnd(), SkillContext.of(shot.shooter()).withOrigin(end)));
+        }
     }
 
     @Override
@@ -81,7 +86,7 @@ public final class ShootMechanic implements Mechanic, Listener {
         LivingEntity caster = call.context().caster();
         LivingEntity aim = call.context().trigger();
         if (aim == null && caster instanceof Mob mob) aim = mob.getTarget();
-        if (aim == null) return;
+        if (aim == null || !Bukkit.isOwnedByCurrentRegion(aim)) return;
 
         String typeName = p.getOrDefault("type", "arrow").toLowerCase(Locale.ROOT).replace("_", "");
         Class<? extends Projectile> type = PROJECTILES.get(typeName);
@@ -125,8 +130,10 @@ public final class ShootMechanic implements Mechanic, Listener {
             Runnable[] stop = {() -> { }};
             if (onTick != null) {
                 List<SkillStep> tickSteps = engine.inline(onTick);
-                stop[0] = Tasks.runTimer(engine.plugin(), projectile, interval, interval,
-                        () -> engine.runSteps(tickSteps, SkillContext.of(caster).withOrigin(projectile.getLocation())));
+                stop[0] = Tasks.runTimer(engine.plugin(), projectile, interval, interval, () -> {
+                    Location at = projectile.getLocation();
+                    Tasks.runOwned(engine.plugin(), caster, () -> engine.runSteps(tickSteps, SkillContext.of(caster).withOrigin(at)));
+                });
             }
             if (onHit != null || onEnd != null || extraDamage > 0 || onTick != null) {
                 shots.put(projectile.getUniqueId(), new PendingShot(caster,
