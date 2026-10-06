@@ -16,6 +16,7 @@ import eu.northsoft.bettermob.skill.SkillRegistry;
 import eu.northsoft.bettermob.skill.SkillStep;
 import eu.northsoft.bettermob.spawner.Spawner;
 import eu.northsoft.bettermob.spawner.SpawnerManager;
+import eu.northsoft.bettermob.util.Tasks;
 import eu.northsoft.bettermob.stats.SkillStats;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -367,7 +368,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        skillEngine.runById(skillId, SkillContext.of(caster));
+        Tasks.runOwned(plugin, caster, () -> skillEngine.runById(skillId, SkillContext.of(caster)));
         messages.send(sender, "command.skill.done", "skill", skillId, "player", caster.getName());
     }
 
