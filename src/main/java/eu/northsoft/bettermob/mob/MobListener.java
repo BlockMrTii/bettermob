@@ -89,13 +89,14 @@ public final class MobListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW)
     public void onDamageModifier(EntityDamageEvent event) {
-        if (!(event.getEntity() instanceof LivingEntity victim)) return;
-        double modifier = manager.modifierFor(victim.getUniqueId(), event.getCause());
-        if (modifier != 1.0) event.setDamage(event.getDamage() * modifier);
+        if (event.getEntity() instanceof LivingEntity victim) {
+            double modifier = manager.modifierFor(victim.getUniqueId(), event.getCause());
+            if (modifier != 1.0) event.setDamage(event.getDamage() * modifier);
+        }
+        if (event instanceof EntityDamageByEntityEvent byEntity && !byEntity.isCancelled()) fireDamageApi(byEntity);
     }
 
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    public void onDamageApi(EntityDamageByEntityEvent event) {
+    private void fireDamageApi(EntityDamageByEntityEvent event) {
         if (BetterMobDamageEvent.getHandlerList().getRegisteredListeners().length == 0) return;
         Entity source = event.getDamager();
         if (source instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter) source = shooter;
