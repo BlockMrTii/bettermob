@@ -20,7 +20,7 @@ class MechanicRegistryTest {
             "gcd", "model", "modelengine", "randomskill", "remove", "command", "summon", "mountmodel", "delay",
             "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "sudoskill", "damage",
             "throw", "lunge", "setblock", "equip", "aura", "ondamaged", "onattack", "ontick", "ondeath", "onshoot",
-            "bodyrotation", "addtag", "removetag", "ignite", "totem", "velocity", "freeze", "shoot", "stun",
+            "bodyrotation", "addtag", "removetag", "ignite", "totem", "velocity", "freeze", "shoot", "projectile", "stun",
             "setnodamageticks");
 
     private static final List<String> ADDED_NAMES = List.of("heal", "teleport", "explosion", "lightning", "setspeed", "setai",
