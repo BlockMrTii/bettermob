@@ -57,7 +57,7 @@ class KillStatsTest {
         stats.record(bob, "Bob", "orc");
         assertTrue(stats.dirty());
         File file = new File(folder, "kills.yml");
-        stats.save(file, stats.markSaved());
+        stats.flush(file);
         assertFalse(stats.dirty());
 
         KillStats loaded = new KillStats();
@@ -79,5 +79,16 @@ class KillStatsTest {
         assertEquals(0, stats.total(alice));
         assertEquals(2, stats.total(bob));
         assertEquals(1, stats.top(null, 10).size());
+    }
+
+    @Test
+    void aProtectedStoreNeverOverwritesTheFile(@TempDir File folder) throws IOException {
+        KillStats stats = new KillStats();
+        File file = new File(folder, "kills.yml");
+        java.nio.file.Files.writeString(file.toPath(), "keep: me\n");
+        stats.protect();
+        stats.record(alice, "Alice", "goblin");
+        stats.flush(file);
+        assertEquals("keep: me\n", java.nio.file.Files.readString(file.toPath()));
     }
 }

@@ -57,10 +57,9 @@ public final class BetterMobPlugin extends JavaPlugin {
 
     public void saveKills(boolean async) {
         if (kills == null || !kills.dirty()) return;
-        var snapshot = kills.markSaved();
         Runnable write = () -> {
             try {
-                kills.save(killsFile, snapshot);
+                kills.flush(killsFile);
             } catch (java.io.IOException exception) {
                 messages.warn("kills.saveFailed", "error", exception);
             }
@@ -88,7 +87,16 @@ public final class BetterMobPlugin extends JavaPlugin {
         stats.reload(getConfig());
         kills = new KillStats();
         killsFile = new File(getDataFolder(), "kills.yml");
-        if (killsFile.isFile()) kills.load(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(killsFile));
+        if (killsFile.isFile()) {
+            try {
+                var loaded = new org.bukkit.configuration.file.YamlConfiguration();
+                loaded.load(killsFile);
+                kills.load(loaded);
+            } catch (java.io.IOException | org.bukkit.configuration.InvalidConfigurationException exception) {
+                kills.protect();
+                messages.warn("kills.loadFailed", "error", exception);
+            }
+        }
         Tasks.runGlobalTimer(this, KILLS_SAVE_TICKS, () -> saveKills(true));
         PackScanner packScanner = new PackScanner(this);
 

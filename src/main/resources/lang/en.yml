@@ -231,3 +231,4 @@ egg:
 
 kills:
   saveFailed: "Could not save kills.yml: {error}"
+  loadFailed: "Could not read kills.yml, kill counts are not saved until it is fixed: {error}"

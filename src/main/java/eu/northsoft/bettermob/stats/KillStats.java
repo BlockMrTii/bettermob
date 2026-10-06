@@ -5,6 +5,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -19,6 +22,7 @@ public final class KillStats {
     private final Map<UUID, Map<String, Integer>> kills = new ConcurrentHashMap<>();
     private final Map<UUID, String> names = new ConcurrentHashMap<>();
     private volatile boolean dirty;
+    private volatile boolean readOnly;
 
     public void record(UUID player, String name, String mobId) {
         kills.computeIfAbsent(player, id -> new ConcurrentHashMap<>()).merge(mobId.toLowerCase(Locale.ROOT), 1, Integer::sum);
@@ -60,15 +64,28 @@ public final class KillStats {
         return config;
     }
 
-    public void save(File file, YamlConfiguration snapshot) throws IOException {
-        File parent = file.getParentFile();
-        if (parent != null) parent.mkdirs();
-        snapshot.save(file);
+    public synchronized void flush(File file) throws IOException {
+        if (!dirty || readOnly) return;
+        dirty = false;
+        try {
+            YamlConfiguration snapshot = snapshot();
+            File parent = file.getAbsoluteFile().getParentFile();
+            if (parent != null) parent.mkdirs();
+            File temp = new File(parent, file.getName() + ".tmp");
+            snapshot.save(temp);
+            try {
+                Files.move(temp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException exception) {
+                Files.move(temp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException | RuntimeException exception) {
+            dirty = true;
+            throw exception;
+        }
     }
 
-    public YamlConfiguration markSaved() {
-        dirty = false;
-        return snapshot();
+    public void protect() {
+        readOnly = true;
     }
 
     public void load(YamlConfiguration config) {

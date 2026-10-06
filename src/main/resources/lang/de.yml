@@ -231,3 +231,4 @@ egg:
 
 kills:
   saveFailed: "kills.yml konnte nicht gespeichert werden: {error}"
+  loadFailed: "kills.yml konnte nicht gelesen werden, Kill-Zaehler werden erst wieder gespeichert, wenn sie repariert ist: {error}"
