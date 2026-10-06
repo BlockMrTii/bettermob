@@ -46,8 +46,11 @@ public final class EggListener implements Listener {
         }
         Block clicked = event.getClickedBlock();
         Location at = clicked.getRelative(event.getBlockFace()).getLocation().add(0.5, 0, 0.5);
-        Tasks.runOwnedAt(plugin, at, () -> manager.spawn(definition, at));
-        if (player.getGameMode() != GameMode.CREATIVE) consume(player, event.getHand());
+        EquipmentSlot hand = event.getHand();
+        Tasks.runOwnedAt(plugin, at, () -> {
+            manager.spawn(definition, at);
+            if (player.getGameMode() != GameMode.CREATIVE) Tasks.runOwned(plugin, player, () -> consume(player, hand));
+        });
     }
 
     @EventHandler
@@ -61,9 +64,9 @@ public final class EggListener implements Listener {
         if (eggs.mobIdOf(event.getItem()) != null) event.setCancelled(true);
     }
 
-    private static void consume(Player player, EquipmentSlot hand) {
+    private void consume(Player player, EquipmentSlot hand) {
         ItemStack stack = player.getInventory().getItem(hand);
-        if (stack == null) return;
+        if (stack == null || eggs.mobIdOf(stack) == null) return;
         stack.setAmount(stack.getAmount() - 1);
         player.getInventory().setItem(hand, stack.getAmount() <= 0 ? null : stack);
     }
