@@ -30,7 +30,7 @@ public final class DropRegistry {
     private final PackScanner packScanner;
     private final ItemRegistry items;
     private final File folder;
-    private final Map<String, DropTable> tables = new LinkedHashMap<>();
+    private volatile Map<String, DropTable> tables = Map.of();
     private final Set<String> warned = Collections.synchronizedSet(new HashSet<>());
 
     public DropRegistry(BetterMobPlugin plugin, PackScanner packScanner, ItemRegistry items) {
@@ -42,7 +42,7 @@ public final class DropRegistry {
 
     public void load() {
         folder.mkdirs();
-        tables.clear();
+        Map<String, DropTable> loaded = new LinkedHashMap<>();
         warned.clear();
         for (File sourceFolder : packScanner.foldersFor("droptables")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
@@ -50,18 +50,19 @@ public final class DropRegistry {
                 for (String id : config.getKeys(false)) {
                     ConfigurationSection section = config.getConfigurationSection(id);
                     if (section == null || !section.isList("Drops")) continue;
-                    if (tables.containsKey(id.toLowerCase(Locale.ROOT))) {
+                    if (loaded.containsKey(id.toLowerCase(Locale.ROOT))) {
                         plugin.messages().warn("drop.duplicate", "table", id, "folder", sourceFolder.getPath());
                         continue;
                     }
-                    tables.put(id.toLowerCase(Locale.ROOT), new DropTable(id,
+                    loaded.put(id.toLowerCase(Locale.ROOT), new DropTable(id,
                             Math.max(0, section.getInt("MinItems", 0)),
                             section.getInt("MaxItems", Integer.MAX_VALUE),
                             parseLines(id, section.getStringList("Drops"))));
                 }
             }
         }
-        plugin.messages().info("drop.loaded", "count", tables.size());
+        tables = loaded;
+        plugin.messages().info("drop.loaded", "count", loaded.size());
     }
 
     private List<DropEntry> parseLines(String owner, List<String> lines) {
