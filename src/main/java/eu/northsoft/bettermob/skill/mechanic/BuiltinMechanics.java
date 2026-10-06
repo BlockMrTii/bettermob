@@ -41,6 +41,7 @@ public final class BuiltinMechanics {
         registry.register(new BodyRotationMechanic(engine), "bodyrotation");
         registry.register(new IgniteMechanic(), "ignite");
         registry.register(new ShootMechanic(engine), "shoot");
+        registry.register(new ProjectileMechanic(engine), "projectile");
         registry.register(new StunMechanic(engine), "stun");
         registry.register(new VelocityMechanic(engine), "velocity");
         registry.register(new FreezeMechanic(), "freeze");
