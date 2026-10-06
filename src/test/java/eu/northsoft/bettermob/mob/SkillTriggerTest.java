@@ -56,4 +56,42 @@ class SkillTriggerTest {
         assertNull(SkillTrigger.parse("remove @self"));
         assertNull(SkillTrigger.parse("~onSpawn"));
     }
+
+    @Test
+    void parsesTheHealthTriggerWithItsThreshold() {
+        SkillTrigger percent = SkillTrigger.parse("skill{s=enrage} @self ~onHealth<50%");
+        assertEquals(Trigger.HEALTH, percent.trigger());
+        assertEquals(new HealthSpec("<", 50, true), percent.health());
+        SkillTrigger absolute = SkillTrigger.parse("message{m=low} ~onHealth<=10.5 ?chance{chance=0.5}");
+        assertEquals(new HealthSpec("<=", 10.5, false), absolute.health());
+        assertEquals("chance{chance=0.5}", ((SkillStep.Mechanic) absolute.step()).inlineCondition());
+        assertEquals(new HealthSpec(">=", 80, true), SkillTrigger.parse("skill{s=calm} @self ~onHealth>=80%").health());
+    }
+
+    @Test
+    void theHealthTriggerNeedsAThresholdAndOthersMustNotHaveOne() {
+        assertNull(SkillTrigger.parse("skill{s=x} @self ~onHealth"));
+        assertNull(SkillTrigger.parse("skill{s=x} @self ~onDamaged<5"));
+    }
+
+    @Test
+    void parsesTheTargetAndCombatTriggers() {
+        assertEquals(Trigger.TARGET, SkillTrigger.parse("skill{s=x} @self ~onTarget").trigger());
+        assertEquals(Trigger.LOSETARGET, SkillTrigger.parse("skill{s=x} @self ~onLoseTarget").trigger());
+        assertEquals(Trigger.ENTERCOMBAT, SkillTrigger.parse("skill{s=x} @self ~onEnterCombat").trigger());
+        assertEquals(Trigger.EXITCOMBAT, SkillTrigger.parse("skill{s=x} @self ~onExitCombat").trigger());
+        assertEquals(Trigger.KILL, SkillTrigger.parse("skill{s=x} @self ~onKill").trigger());
+    }
+
+    @Test
+    void healthSpecsCompareAbsoluteValuesAndPercentages() {
+        HealthSpec half = new HealthSpec("<", 50, true);
+        assertTrue(half.matches(9, 20));
+        assertTrue(!half.matches(10, 20));
+        HealthSpec low = new HealthSpec("<=", 4, false);
+        assertTrue(low.matches(4, 20));
+        assertTrue(!low.matches(4.5, 20));
+        assertTrue(new HealthSpec(">=", 80, true).matches(16, 20));
+        assertTrue(new HealthSpec(">", 0, false).matches(1, 20));
+    }
 }

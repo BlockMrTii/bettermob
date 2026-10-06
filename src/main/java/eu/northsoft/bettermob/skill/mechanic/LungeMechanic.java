@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.skill.mechanic;
 
+import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
@@ -18,7 +19,9 @@ public final class LungeMechanic implements Mechanic {
     public void execute(MechanicCall call) {
         Map<String, String> p = call.params();
         LivingEntity caster = call.context().caster();
-        Vector toward = call.target().location().toVector().subtract(caster.getLocation().toVector()).setY(0);
+        Location to = call.target().ownedLocation();
+        if (to == null) return;
+        Vector toward = to.toVector().subtract(caster.getLocation().toVector()).setY(0);
         if (toward.lengthSquared() < 1e-6) return;
         caster.setVelocity(toward.normalize().multiply(parseFloat(p.get("velocity"), 1f))
                 .setY(parseFloat(firstParam(p, "velocityy", "vy"), 0f)));

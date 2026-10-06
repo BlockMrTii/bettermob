@@ -49,6 +49,7 @@ See [Pack compatibility](Pack-Compatibility) for the packs we have tried.
 - unknown mechanics, targeters and conditions
 - targeter conditions that are not supported (inside `Conditions=[ ... ]`)
 - `skill`, `randomskill` and `sudoskill` lines that point to a skill that is not defined
+- model ids that do not exist: the `Model:` field of a mob (the id must exist in BetterModel or in ModelEngine), `model{mid=...}` lines (BetterModel) and `modelengine{mid=...}` lines (ModelEngine). Only the installed plugins are asked, and the check is skipped with a note when neither is installed. A mob without a `Model:` field is not checked, because its own id is only tried as a model when it exists
 
 It also looks into inline skills (`skill{s=[ ... ]}`, `totem{os=[ ... ]}`, `oh=[ ... ]` and so on). The result shows how many lines were checked, then per pack the problems with the file name and the line (the first 20 per pack). Mechanics that other plugins register are only known once those plugins are enabled, so run the command after the server has started. AI goals are not checked, they depend on the mob type.
 

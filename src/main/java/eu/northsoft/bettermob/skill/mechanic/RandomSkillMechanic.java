@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.skill.mechanic;
 
+import eu.northsoft.bettermob.skill.Arguments;
 import eu.northsoft.bettermob.skill.SkillEngine;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -24,6 +25,6 @@ public final class RandomSkillMechanic implements Mechanic {
         if (list == null) return;
         String[] ids = list.split(",");
         if (ids.length == 0) return;
-        engine.runById(ids[ThreadLocalRandom.current().nextInt(ids.length)].trim(), call.context());
+        engine.runById(ids[ThreadLocalRandom.current().nextInt(ids.length)].trim(), call.context().withArguments(Arguments.from(call.params())));
     }
 }

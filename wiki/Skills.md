@@ -45,6 +45,12 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `~onDamaged` | The mob is hit. `@trigger` is the attacker |
 | `~onAttack` | The mob hits something in melee (projectiles don't count). `@trigger` is the victim |
 | `~onShoot` | The mob shoots with a bow or crossbow. `@trigger` is its target. `CancelEvent` stops the vanilla arrow |
+| `~onHealth<50%` | The mob's health crosses the threshold. Operators `<`, `<=`, `>`, `>=`, a number is absolute health, with `%` a share of max health. Fires once when it crosses and is armed again after the health has moved back across (healing). A missing threshold makes the line invalid |
+| `~onTarget` | The mob acquires a target. `@trigger` is the target |
+| `~onLoseTarget` | The mob loses its target |
+| `~onEnterCombat` | The mob gets a target after having none (and was not in combat). `@trigger` is the target |
+| `~onExitCombat` | The mob has had no target for 5 seconds after being in combat |
+| `~onKill` | The mob killed a living entity (melee or projectile). `@trigger` is the victim |
 | `~onDeath` | The mob dies (the body still exists, so sounds and effects work) |
 | `~onTimer:<ticks>` | Repeatedly, default every 20 ticks |
 | `~onUse` | Items only: right-click with the item in the main hand |
@@ -67,6 +73,7 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `remove` | - | Remove the target |
 | `command` | `c`: command | Run a console command. `<caster.name>` and `<target.name>` are replaced |
 | `takeitem` | `i` item ID, `a` amount | Take items from the target player |
+| `loot` | `table`, `vanilla`, `lootingmodifier`, `mode` | Roll a BetterMob drop table (`table=<id>`) or a vanilla loot table (`vanilla=minecraft:entities/zombie`, with the caster as the looted entity and `lootingmodifier` as looting level, default 0) and give the result to the target player; what doesn't fit is dropped at their feet. Drop-table exp goes to the player. With `mode=drop` (also `target=drop`) the items and exp drop at the target's location instead, and the target doesn't have to be a player. An unknown table is logged once and reported by `/bettermob validate`. Use it from an item's `~onUse` after `takeitem` |
 | `breakblock` | `usetool` | Break the target block |
 | `setblock` | `m` material | Replace the block at the target |
 | `damage` | `amount` | Damage the target with the caster as attacker. Does not fire `~onAttack` again |
@@ -76,11 +83,19 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `spin` | `duration` ticks, `velocity` degrees per tick | Spin the target |
 | `effect:particles` (`e:p`) | `p`, `amount`, `hS`, `vS`, `speed`, `y`, `repeat`, `repeatInterval` | Spawn particles. `y` shifts them up; `repeat` spawns them that many more times every `repeatInterval` ticks, following a moving target (entity, `@ModelPart`, `@Forward`) |
 | `effect:particlering` | `particle`, `radius`, `points`, `amount`, `hS`, `vS` | Ring of particles |
+| `effect:particleline` (`particleline`) | `particle`, `points` or `density`, `fy`, `y` | Particles on a line from the caster (chest height, `fy` shifts it) to the target (`y` shifts its end). `density` is points per block (default 2), `points` fixes the count; at most 500 points. Particle options are the same as for `effect:particles`, except `repeat` and `repeatInterval`, which the line, beam, sphere and helix ignore |
+| `effect:particlebeam` (`particlebeam`) | as `effect:particleline`, plus `d` | The same line, drawn from the caster towards the target over `d` ticks (default 10, at most 100). The end points are taken when the mechanic starts |
+| `effect:particlesphere` (`particlesphere`) | `particle`, `radius`, `points`, `y` | Evenly spread particles on a sphere around the target (radius 1.5, 40 points by default) |
+| `effect:particlehelix` (`particlehelix`) | `particle`, `radius`, `height`, `turns`, `points`, `y` | A spiral rising from the target's location (radius 1, height 2, 3 turns, 60 points by default) |
+| `glow` | `d` | Make the target glow for `d` ticks (default 40), then restore its previous glow state |
 | `equip` | `item=<item>:<slot>` | Put a registered item or material into a slot: `HAND` (default), `OFFHAND`, `HEAD`, `CHEST`, `LEGS`, `FEET`. The slot's drop chance is set to 0 |
 | `addtag` / `removetag` | `t` | Mark the target, check it with `hastag` |
 | `onDamaged`, `onAttack`, `onDeath`, `onShoot`, `aura` | `auraName`, `time`, `cE`, `oS`, `oE`, `oT`, `i`, `oH` | Put a named aura on the target for `time` ticks (forever without it). `hasaura` sees it. `oS=[ ... ]` runs at the start, `oE` at the end, `oT` every `i` ticks (default 20), `oH` each time the matching event happens to that entity (`onDamaged` = it is hit, `onAttack` = it hits, ...). `cE=true` cancels that event while the aura is active |
 | `bodyrotation` | `headUneven`, `bodyUneven`, `minHead`, `maxHead`, `minBody`, `maxBody`, `stable`, `duration`, `delay` | Set how far the model's head and body may turn apart (BetterModel and ModelEngine) |
-| `message` | `m` | Send a message to the target player. `&` colors, `<caster.name>`, `<target.name>` and PlaceholderAPI placeholders work |
+| `actionbar` (`actionmessage`) | `m`, `d` | Show text above the hotbar of the target player. It stays about 2 seconds; with `d` (ticks) it is repeated until `d` has passed |
+| `title` (`sendtitle`) | `t`, `st`, `fi`, `d`, `fo` | Show a title (`t`) and subtitle (`st`) with fade in `fi` (default 10 ticks), stay `d` (70) and fade out `fo` (20) |
+| `bossbar` | `m`, `color`, `style`, `p`, `d`, `countdown` | Show a boss bar with the text `m` to the target player for `d` ticks (default 100), then remove it. `color` is `PINK`, `BLUE`, `RED`, `GREEN`, `YELLOW`, `PURPLE` (default) or `WHITE`; `style` is `SOLID` (default), `SEGMENTED_6`, `SEGMENTED_10`, `SEGMENTED_12` or `SEGMENTED_20`; `p` is the start progress 0 to 1; `countdown=true` makes it shrink to empty over `d` |
+| `message` | `m` | Send a message to the target player. The text rules below apply to `message`, `actionbar`, `title` and `bossbar`: `&` colors, `<caster.name>`, `<target.name>` and PlaceholderAPI placeholders work |
 | `ignite` | `t` | Set the target on fire for `t` ticks |
 | `setvariable` (`variableset`) | `var`, `value`, `type` | Store a value: `var=hits` for the current skill run, `var=caster.hits` for the caster. `type` is `INTEGER`, `FLOAT` or `STRING` (default), numbers are checked. See [Variables](#variables) |
 | `addvariable` (`variableadd`) | `var`, `value` | Add a number to a variable (a missing one counts as 0) |
@@ -95,6 +110,7 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `freeze` | `ticks` | Freeze the target (powder-snow overlay) for `ticks` ticks, default 140 |
 | `setNoDamageTicks` | `ticks` | Set the target's invulnerability ticks (0 = can be hit again at once) |
 | `shoot` | `type`, `velocity`, `speedscale`, `damage`, `spread`, `gravity`, `oh`, `oe`, `ot`, `i` | Fire a projectile at the target. `type` is `arrow` (default), `spectral_arrow`, `trident`, `snowball`, `egg`, `fireball` or `smallfireball` (fireballs don't explode or burn; they deal `damage`). `spread` is a random cone in degrees, `gravity=false` makes it fly straight. `speedscale` (`ss`, default 2) multiplies `velocity`; a value that is not a number falls back to 2. `oh=[ ... ]` runs on a hit with the hit entity as target, `oe=[ ... ]` when it ends anywhere (at its location), `ot=[ ... ]` every `i` ticks (default 5) while it flies |
+| `projectile` | `model`, `speed`, `range`, `radius`, `damage`, `homing`, `bounce`, `oh`, `oe`, `ot`, `i` | Fly an invisible body carrying a BetterModel or ModelEngine model (`model=<id>`, optional) toward the target, or where the caster looks. `speed` is blocks per second (default 20), `range` the distance in blocks (default 30, max 200), `radius` the hit size (default 1). The first living entity inside `radius` (not the caster) takes `damage` and ends the flight; `oh=[ ... ]` runs with it as target. `homing=true` steers towards the target (8° per tick). `bounce=2` reflects off that many blocks, the next block ends it. `oe=[ ... ]` runs where it ends (hit, block or range), `ot=[ ... ]` every `i` ticks (default 5). It is removed when the caster dies, without `oe` |
 | `totem` | `os`, `ot`, `oe`, `md`, `i`, `oh`, `yo` | Run `os=[ ... ]` once at the targeter's location (shifted up by `yo`); `@EntitiesNearOrigin` inside is centred there. With `md` (ticks) `ot=[ ... ]` repeats every `i` ticks (default 20) and `oe=[ ... ]` runs at the end. Stops early if the caster dies. With `oh=[ ... ]` an invisible, unbreakable body is placed at the totem for `md` ticks (default 100); the lines run whenever someone hits it, with the attacker as target |
 | `cancelevent` | - | Cancel the event that triggered the skill. For `~onAttack`/`~onDamaged` that is the damage event, so the vanilla hit is suppressed |
 | `cancelskill` | - | Stop the rest of the skill |
@@ -126,6 +142,25 @@ A line of its own, `delay 20`, pauses the rest of the skill for 20 ticks.
 | `@Owner`, `@Parent` | The entity whose `summon` created the caster. If there is none, the line is skipped |
 
 All multi-target targeters (`@EntitiesNearOrigin`, `@EntitiesInRadius`, `@PlayersInRadius`, `@PIR`) also take `limit=<n>` and `sort=nearest|farthest|random`, and run the mechanic once per target. An unknown targeter is logged once and the line targets the default target.
+
+## Arguments
+
+A skill can take values. Every parameter of `skill{s=name;...}`, `sudoskill{...}` and `randomskill{...}` other than `s`, `skill`, `skills`, `sync`, `delay` and `cd` is passed to the called skill; `<arg.name>` in its mechanic parameters (also in its inline skills) is replaced by the value. Defaults go into an `Arguments:` section of the skill.
+
+```yaml
+heal_pulse:
+  Arguments:
+    amount: 2
+  Skills:
+    - heal{amount=<arg.amount>} @self
+```
+
+`skill{s=heal_pulse;amount=6} @self` heals 6, without `amount` it heals 2.
+
+- Arguments are not handed on to the skills that skill calls; repeat them explicitly, for example `skill{s=other;amount=<arg.amount>}`.
+- An argument that was not passed and has no default stays as `<arg.name>` and is logged once.
+- Names are case-insensitive. Values are inserted as plain text: `{ } [ ] ; = " ' \ %` and control characters are removed, so an argument can never add skill lines or trigger a command.
+- The variables of the calling skill run are shared with the called skill, see [Variables](#variables).
 
 ## Variables
 

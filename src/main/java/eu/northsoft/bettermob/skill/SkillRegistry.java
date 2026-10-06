@@ -18,7 +18,7 @@ public final class SkillRegistry {
     private final BetterMobPlugin plugin;
     private final File folder;
     private final PackScanner packScanner;
-    private final Map<String, SkillDefinition> skills = new LinkedHashMap<>();
+    private volatile Map<String, SkillDefinition> skills = Map.of();
 
     public SkillRegistry(BetterMobPlugin plugin, PackScanner packScanner) {
         this.plugin = plugin;
@@ -33,22 +33,23 @@ public final class SkillRegistry {
             plugin.saveResource("skills/wumpus_wave.yml", false);
         }
 
-        skills.clear();
+        Map<String, SkillDefinition> loaded = new LinkedHashMap<>();
         for (File sourceFolder : packScanner.foldersFor("skills")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
                 for (String id : config.getKeys(false)) {
                     ConfigurationSection section = config.getConfigurationSection(id);
                     if (section == null) continue;
-                    if (skills.containsKey(id.toLowerCase(Locale.ROOT))) {
+                    if (loaded.containsKey(id.toLowerCase(Locale.ROOT))) {
                         plugin.messages().warn("skill.duplicate", "skill", id, "folder", sourceFolder.getPath());
                         continue;
                     }
-                    skills.put(id.toLowerCase(Locale.ROOT), parse(id, section));
+                    loaded.put(id.toLowerCase(Locale.ROOT), parse(id, section));
                 }
             }
         }
-        plugin.messages().info("skill.loaded", "count", skills.size());
+        skills = loaded;
+        plugin.messages().info("skill.loaded", "count", loaded.size());
     }
 
     public SkillDefinition get(String id) {
@@ -68,7 +69,17 @@ public final class SkillRegistry {
             if (step != null) steps.add(step);
             else plugin.messages().warn("skill.lineInvalid", "skill", id, "line", line);
         }
-        return new SkillDefinition(id, conditions, targetConditions, steps, section.getDouble("Cooldown", 0));
+        return new SkillDefinition(id, conditions, targetConditions, steps, section.getDouble("Cooldown", 0), parseArguments(section.getConfigurationSection("Arguments")));
+    }
+
+    private static Map<String, String> parseArguments(ConfigurationSection section) {
+        if (section == null) return Map.of();
+        Map<String, String> arguments = new LinkedHashMap<>();
+        for (String key : section.getKeys(false)) {
+            Object value = section.get(key);
+            if (value != null && !(value instanceof ConfigurationSection)) arguments.put(key.toLowerCase(Locale.ROOT), String.valueOf(value));
+        }
+        return Map.copyOf(arguments);
     }
 
     private static List<String> stringList(ConfigurationSection section, String pluralKey, String singularKey) {

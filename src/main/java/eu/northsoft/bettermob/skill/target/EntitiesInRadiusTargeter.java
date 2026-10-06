@@ -37,13 +37,22 @@ public final class EntitiesInRadiusTargeter implements Targeter {
 
     private final Map<String, List<String>> conditionLines = new ConcurrentHashMap<>();
 
+    private List<String> conditionLinesOf(String raw) {
+        List<String> cached = conditionLines.get(raw);
+        if (cached != null) return cached;
+        if (conditionLines.size() >= 1024) conditionLines.clear();
+        List<String> parsed = SkillEngine.splitInline(raw);
+        conditionLines.put(raw, parsed);
+        return parsed;
+    }
+
     private record Hit(LivingEntity entity, double distance) {}
 
     @Override
     public List<Target> resolve(Map<String, String> params, SkillContext context) {
         Location center = nearOrigin && context.origin() != null ? context.origin() : context.caster().getLocation();
         double radius = parseFloat(firstParam(params, "r", "radius"), playersOnly ? 10f : 5f);
-        List<String> conditions = params.containsKey("conditions") ? conditionLines.computeIfAbsent(params.get("conditions"), SkillEngine::splitInline) : List.of();
+        List<String> conditions = params.containsKey("conditions") ? conditionLinesOf(params.get("conditions")) : List.of();
         double radiusSquared = radius * radius;
         List<Hit> hits = new ArrayList<>();
         for (Entity entity : RegionEntities.near(center, radius)) {

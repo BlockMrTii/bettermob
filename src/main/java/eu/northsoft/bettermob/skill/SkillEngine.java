@@ -4,6 +4,7 @@ import static eu.northsoft.bettermob.skill.Params.*;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.api.CustomMechanic;
+import eu.northsoft.bettermob.api.event.BetterMobSkillEvent;
 import eu.northsoft.bettermob.debug.DebugManager;
 import eu.northsoft.bettermob.item.ItemRegistry;
 import eu.northsoft.bettermob.mob.MobDefinition;
@@ -18,6 +19,7 @@ import eu.northsoft.bettermob.skill.mechanic.MechanicRegistry;
 import eu.northsoft.bettermob.skill.target.TargeterRegistry;
 import eu.northsoft.bettermob.stats.SkillStats;
 import eu.northsoft.bettermob.util.Tasks;
+import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -41,6 +43,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private final ItemRegistry items;
     private final DebugManager debug;
     private final SkillState state = new SkillState();
+    private static final int INLINE_CACHE_LIMIT = 4096;
     private final Map<String, List<SkillStep>> inlineSkills = new ConcurrentHashMap<>();
     private final TargeterRegistry targeters;
     private final ConditionRegistry conditionRegistry;
@@ -81,6 +84,16 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
     public ModelEngineHook modelEngine() {
         return modelEngine;
+    }
+
+    private eu.northsoft.bettermob.drop.DropRegistry drops;
+
+    public void setDrops(eu.northsoft.bettermob.drop.DropRegistry drops) {
+        this.drops = drops;
+    }
+
+    public eu.northsoft.bettermob.drop.DropRegistry drops() {
+        return drops;
     }
 
     public ItemRegistry items() {
@@ -139,7 +152,8 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         run(skill, context);
     }
 
-    public void run(SkillDefinition skill, SkillContext context) {
+    public void run(SkillDefinition skill, SkillContext source) {
+        SkillContext context = source.ownedHere().withArguments(Arguments.withDefaults(source.arguments(), skill.arguments));
         String caster = debug.info() ? subject(context.caster()) : null;
         if (debug.info()) debug.info("skill '" + skill.id + "' started by " + caster, skill.id, caster);
         Check conditions = check(skill.conditions, context, null);
@@ -152,6 +166,15 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             Check targetConditions = check(skill.targetConditions, context, obstructing);
             if (targetConditions != Check.PASS) {
                 if (debug.info()) debug.info("skill '" + skill.id + "' stopped: target conditions " + targetConditions.name().toLowerCase(Locale.ROOT), skill.id, caster);
+                return;
+            }
+        }
+        if (BetterMobSkillEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            MobDefinition definition = mobManager.definitionOf(context.caster().getUniqueId());
+            BetterMobSkillEvent api = new BetterMobSkillEvent(skill.id, context.caster(), context.trigger(), definition == null ? null : definition.toInfo());
+            Bukkit.getPluginManager().callEvent(api);
+            if (api.isCancelled()) {
+                if (debug.info()) debug.info("skill '" + skill.id + "' stopped: cancelled by a plugin", skill.id, caster);
                 return;
             }
         }
@@ -220,7 +243,8 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         executeSteps(steps, 0, context);
     }
 
-    private void executeSteps(List<SkillStep> steps, int index, SkillContext context) {
+    private void executeSteps(List<SkillStep> steps, int index, SkillContext source) {
+        SkillContext context = source.ownedHere();
         for (int i = index; i < steps.size(); i++) {
             SkillStep step = steps.get(i);
             if (step instanceof SkillStep.Delay delay) {
@@ -253,11 +277,11 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
         if (p.containsKey("delay")) {
             if (p.containsKey("cd") && !acquireCooldown(context, mechanic)) return false;
-            int ticks = parseInt(p.get("delay"), 0);
+            int ticks = parseInt(argumentValue(p.get("delay"), context), 0);
 
             SkillStep.Mechanic withoutDelay = new SkillStep.Mechanic(mechanic.name(),
                     without(without(p, "delay"), "cd"), mechanic.targeter(), mechanic.targeterParams(), null, false);
-            Tasks.runLater(plugin, context.caster(), ticks, plugin.stats().trackPending(() -> runMechanic(withoutDelay, context, new Deferral())));
+            Tasks.runLater(plugin, context.caster(), ticks, plugin.stats().trackPending(() -> runMechanic(withoutDelay, context.ownedHere(), new Deferral())));
             return false;
         }
 
@@ -291,7 +315,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             deferral.add();
             Runnable run = () -> {
                 try {
-                    handler.execute(call);
+                    handler.execute(new MechanicCall(call.step(), call.context().ownedHere(), call.target(), call.params()));
                 } finally {
                     deferral.complete();
                 }
@@ -309,7 +333,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private boolean acquireCooldown(SkillContext context, SkillStep.Mechanic mechanic) {
-        float seconds = parseFloat(mechanic.params().get("cd"), 0f);
+        float seconds = parseFloat(argumentValue(mechanic.params().get("cd"), context), 0f);
         if (seconds <= 0) return true;
         return state.acquireStepCooldown(context.caster(), mechanic, seconds);
     }
@@ -341,6 +365,9 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     public List<SkillStep> inline(String raw) {
+        List<SkillStep> cached = inlineSkills.get(raw);
+        if (cached != null) return cached;
+        if (inlineSkills.size() >= INLINE_CACHE_LIMIT) inlineSkills.clear();
         return inlineSkills.computeIfAbsent(raw, this::parseInline);
     }
 
@@ -381,7 +408,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private Map<String, String> substitute(String mechanicName, Map<String, String> params, SkillContext context) {
-        Map<String, String> p = withVariables(params, context);
+        Map<String, String> p = withArguments(withVariables(params, context), context);
         if (!placeholders.isEmpty()) {
             Map<String, String> applied = new LinkedHashMap<>();
             for (Map.Entry<String, String> entry : p.entrySet()) applied.put(entry.getKey(), placeholders.apply(entry.getValue(), context));
@@ -402,6 +429,24 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : p.entrySet()) {
             result.put(entry.getKey(), withCasterValues(entry.getValue(), damage, name, escapesItself));
+        }
+        return result;
+    }
+
+    private final java.util.Set<String> missingArguments = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    private String argumentValue(String value, SkillContext context) {
+        if (value == null || value.indexOf("<arg.") < 0) return value;
+        return Arguments.resolve(value, context.arguments(), name -> {
+            if (missingArguments.add(name)) plugin.messages().warn("skill.argumentMissing", "argument", name);
+        });
+    }
+
+    private Map<String, String> withArguments(Map<String, String> params, SkillContext context) {
+        if (!Arguments.mentions(params)) return params;
+        Map<String, String> result = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            result.put(entry.getKey(), argumentValue(entry.getValue(), context));
         }
         return result;
     }

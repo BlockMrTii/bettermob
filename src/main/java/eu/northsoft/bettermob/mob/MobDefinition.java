@@ -32,6 +32,8 @@ public final class MobDefinition {
     public final DropTable drops;
     public final String faction;
     public final BossBarSettings bossBar;
+    public final EggSettings egg;
+    public final Behaviour behaviour;
     public final List<String> equipment;
     public final SpawnRule spawnRule;
 
@@ -40,7 +42,7 @@ public final class MobDefinition {
                   List<String> aiGoalSelectors, List<String> aiTargetSelectors,
                   Options options, boolean threatTable, Map<DamageCause, Double> damageModifiers,
                   List<SkillTrigger> skillTriggers, DropTable drops, String faction,
-                  BossBarSettings bossBar, List<String> equipment, SpawnRule spawnRule) {
+                  BossBarSettings bossBar, List<String> equipment, SpawnRule spawnRule, EggSettings egg, Behaviour behaviour) {
         this.id = id;
         this.type = type;
         this.displayName = displayName;
@@ -61,6 +63,8 @@ public final class MobDefinition {
         this.drops = drops;
         this.faction = faction;
         this.bossBar = bossBar;
+        this.egg = egg;
+        this.behaviour = behaviour;
         this.equipment = equipment;
         this.spawnRule = spawnRule;
     }
@@ -68,6 +72,8 @@ public final class MobDefinition {
     public List<SkillTrigger> triggersOf(SkillTrigger.Trigger type) {
         return triggersByType.getOrDefault(type, List.of());
     }
+
+    public record EggSettings(String material, String name) {}
 
     public MobInfo toInfo() {
         return new MobInfo(id, type, displayName, modelId, health, damage);
@@ -82,22 +88,29 @@ public final class MobDefinition {
                 false, true, true, false, null, -1, -1, false, -1);
     }
 
-    public record SkillTrigger(SkillStep step, Trigger trigger, int timerTicks) {
-        private static final Pattern PATTERN = Pattern.compile("^(.*\\S)\\s+~on(\\w+?)(?::(\\d+))?(?:\\s+(\\?!?\\w+(?:\\{.*})?))?\\s*$", Pattern.CASE_INSENSITIVE);
+    public record SkillTrigger(SkillStep step, Trigger trigger, int timerTicks, HealthSpec health) {
+        public SkillTrigger(SkillStep step, Trigger trigger, int timerTicks) {
+            this(step, trigger, timerTicks, null);
+        }
+
+        private static final Pattern PATTERN = Pattern.compile("^(.*\\S)\\s+~on(\\w+?)(?::(\\d+))?(?:(<=|>=|<|>)(\\d+(?:\\.\\d+)?)(%)?)?(?:\\s+(\\?!?\\w+(?:\\{.*})?))?\\s*$", Pattern.CASE_INSENSITIVE);
 
         public static SkillTrigger parse(String line) {
             Matcher matcher = PATTERN.matcher(line.trim());
             if (!matcher.matches()) return null;
             Trigger trigger = Trigger.parse(matcher.group(2));
             if (trigger == null) return null;
-            SkillStep step = SkillStep.parse(matcher.group(4) == null ? matcher.group(1) : matcher.group(1) + " " + matcher.group(4));
+            HealthSpec health = HealthSpec.parse(matcher.group(4), matcher.group(5), matcher.group(6));
+            if (trigger == Trigger.HEALTH && health == null) return null;
+            if (trigger != Trigger.HEALTH && matcher.group(4) != null) return null;
+            SkillStep step = SkillStep.parse(matcher.group(7) == null ? matcher.group(1) : matcher.group(1) + " " + matcher.group(7));
             if (step == null) return null;
             int ticks = Params.parseInt(matcher.group(3), 20);
-            return new SkillTrigger(step, trigger, ticks);
+            return new SkillTrigger(step, trigger, ticks, health);
         }
 
         public enum Trigger {
-            SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT;
+            SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT, HEALTH, TARGET, LOSETARGET, ENTERCOMBAT, EXITCOMBAT, KILL;
 
             static Trigger parse(String value) {
                 return switch (value.toLowerCase(Locale.ROOT)) {
@@ -110,6 +123,12 @@ public final class MobDefinition {
                     case "timer" -> TIMER;
                     case "use" -> USE;
                     case "shoot" -> SHOOT;
+                    case "health" -> HEALTH;
+                    case "target" -> TARGET;
+                    case "losetarget" -> LOSETARGET;
+                    case "entercombat" -> ENTERCOMBAT;
+                    case "exitcombat" -> EXITCOMBAT;
+                    case "kill" -> KILL;
                     default -> null;
                 };
             }

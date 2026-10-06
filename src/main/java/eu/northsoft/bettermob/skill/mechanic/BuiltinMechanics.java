@@ -11,6 +11,9 @@ public final class BuiltinMechanics {
         registry.register(new LookMechanic(), "look");
         registry.register(new SoundMechanic(), "sound");
         registry.register(new MessageMechanic(), "message", "msg");
+        registry.register(new ActionBarMechanic(engine), "actionbar", "actionmessage");
+        registry.register(new TitleMechanic(), "title", "sendtitle");
+        registry.register(new BossBarMechanic(engine), "bossbar");
         registry.register(new StateMechanic(engine), "state");
         registry.register(new PotionMechanic(engine), "potion");
         registry.register(new BreakBlockMechanic(), "breakblock");
@@ -24,8 +27,14 @@ public final class BuiltinMechanics {
         registry.register(new MountModelMechanic(engine), "mountmodel");
         registry.register(new ParticlesMechanic(engine), "effect:particles", "e:p", "particles");
         registry.register(new ParticleRingMechanic(engine), "effect:particlering");
+        registry.register(new ParticleLineMechanic(engine, false), "effect:particleline", "particleline");
+        registry.register(new ParticleLineMechanic(engine, true), "effect:particlebeam", "particlebeam");
+        registry.register(new ParticleShapeMechanic(engine, ParticleShapeMechanic.Shape.SPHERE), "effect:particlesphere", "particlesphere");
+        registry.register(new ParticleShapeMechanic(engine, ParticleShapeMechanic.Shape.HELIX), "effect:particlehelix", "particlehelix");
+        registry.register(new GlowMechanic(engine), "glow");
         registry.register(new SpinMechanic(engine), "spin");
         registry.register(new TakeItemMechanic(engine), "takeitem");
+        registry.register(new LootMechanic(engine), "loot");
         registry.register(new SudoSkillMechanic(engine), "sudoskill");
         registry.register(new DamageMechanic(engine), "damage");
         registry.register(new ThrowMechanic(), "throw");
@@ -38,6 +47,7 @@ public final class BuiltinMechanics {
         registry.register(new BodyRotationMechanic(engine), "bodyrotation");
         registry.register(new IgniteMechanic(), "ignite");
         registry.register(new ShootMechanic(engine), "shoot");
+        registry.register(new ProjectileMechanic(engine), "projectile");
         registry.register(new StunMechanic(engine), "stun");
         registry.register(new VelocityMechanic(engine), "velocity");
         registry.register(new FreezeMechanic(), "freeze");

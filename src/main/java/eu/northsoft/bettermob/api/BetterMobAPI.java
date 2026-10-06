@@ -8,6 +8,7 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public interface BetterMobAPI {
     static BetterMobAPI get() {
@@ -25,6 +26,8 @@ public interface BetterMobAPI {
     Optional<MobInfo> getMobInfo(Entity entity);
 
     Optional<LivingEntity> spawn(String id, Location location);
+
+    CompletableFuture<Optional<LivingEntity>> spawnAsync(String id, Location location);
 
     Collection<String> getSkillIds();
 

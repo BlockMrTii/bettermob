@@ -102,6 +102,24 @@ The wiki pages are in [`wiki/`](wiki). Edit them in a pull request, a workflow p
 Which MythicMobs packs were tried and how far they run is on the wiki page
 [Pack compatibility](https://github.com/HyperGaming99/bettermob/wiki/Pack-Compatibility); check your own pack with `/bettermob validate <pack>`.
 
+## Editor support
+
+JSON schemas for mob, skill and item files live in [`schemas/`](schemas). They give auto-completion and error hints for the known fields, the entity types, the boss bar colours and styles, and the trigger suffix of `Skills:` lines; unknown fields stay allowed because BetterMob ignores them. A mob file may hold one mob (with `Type:` at the root) or several mobs, both are covered.
+
+**VS Code** (with the Red Hat "YAML" extension), in `settings.json`:
+
+```json
+"yaml.schemas": {
+  "https://raw.githubusercontent.com/HyperGaming99/bettermob/main/schemas/mob.schema.json": ["**/BetterMob/mobs/**/*.yml", "**/BetterMob/packs/*/[mM]obs/**/*.yml"],
+  "https://raw.githubusercontent.com/HyperGaming99/bettermob/main/schemas/skill.schema.json": ["**/BetterMob/skills/**/*.yml", "**/BetterMob/packs/*/[sS]kills/**/*.yml"],
+  "https://raw.githubusercontent.com/HyperGaming99/bettermob/main/schemas/item.schema.json": ["**/BetterMob/items/**/*.yml", "**/BetterMob/packs/*/[iI]tems/**/*.yml"]
+}
+```
+
+**IntelliJ IDEA**: Settings, Languages & Frameworks, Schemas and DTDs, JSON Schema Mappings. Add each schema (URL above or the downloaded file), choose "JSON Schema version 7" and map the file patterns or folders.
+
+The schemas do not check the content of the skill lines (mechanic, condition and targeter names); use `/bettermob validate` for that. A test checks that every mob, skill and item file shipped with the plugin and the sample packs matches the schemas.
+
 ## Code layout
 
 Everything lives under `eu.northsoft.bettermob`: `api`/`api.event` (public API), `command`, `mob`,
@@ -132,10 +150,12 @@ tagged releases above are the stable ones.
 | `/bettermob list` | List all registered mob IDs |
 | `/bettermob packs` | List discovered packs and whether they're enabled |
 | `/bettermob info <mob>` | Show a mob's type, health, damage, faction, model, equipment, number of drop entries, skills by trigger and how many are alive |
+| `/bettermob top [mob]` | The 10 players with the most kills, of all BetterMob mobs or of one mob (permission `bettermob.top`) |
 | `/bettermob reload` | Reload config, mobs, skills, and packs |
-| `/bettermob validate [pack]` | Check a pack (or all of them) for unsupported mechanics, conditions, targeters, undefined skills and unparsable lines (including drop lines) without spawning anything |
+| `/bettermob validate [pack]` | Check a pack (or all of them) for unsupported mechanics, conditions, targeters, undefined skills, model ids that exist in neither BetterModel nor ModelEngine, and unparsable lines (including drop lines) without spawning anything |
 | `/bettermob skill <id> [player]` | Manually run a registered skill, bypassing its normal triggers |
 | `/bettermob give <item> [player] [amount]` | Give a registered item (see [Items](#items)) |
+| `/bettermob egg <mob> [player] [amount]` | Give a spawn egg that spawns exactly that mob (see Spawn eggs below) |
 | `/bettermob killall [mob\|*] [world]` | Remove all living BetterMob mobs, or only one type and/or one world, and report how many |
 | `/bettermob spawner create <id> <mob> [radius] [interval] [max]` | Create a spawner at your position; `remove <id>` and `list` manage them |
 | `/bettermob stats [on\|off\|reset]` | Show living mobs per type, running timers, loaded skills and packs; `on`/`off` switch the skill timing, `reset` clears it (permission `bettermob.debug`) |
@@ -150,14 +170,17 @@ Alias: `/bmob`.
 | `bettermob.list` | `/bettermob list`, `/bettermob packs` and `/bettermob info` | op |
 | `bettermob.reload` | `/bettermob reload` and `/bettermob validate` | op |
 | `bettermob.skill` | `/bettermob skill` | op |
-| `bettermob.give` | `/bettermob give` | op |
+| `bettermob.give` | `/bettermob give` and `/bettermob egg` | op |
 | `bettermob.killall` | `/bettermob killall` | op |
 | `bettermob.spawner` | `/bettermob spawner` | op |
+| `bettermob.top` | `/bettermob top` | op |
 | `bettermob.debug` | `/bettermob debug` | op |
 
 `bettermob.admin` is the parent of all the others. Without a node the subcommand is refused, left out of the help and left out of tab completion. `bettermob.faction.<name>` (see `factions` in `config.yml`) is unrelated to the commands.
 
 **Reload:** `/bettermob reload` also updates mobs that are already alive. Each one is bound to the new definition of the same id: name, health cap, attack, speed and the options are applied again, its timers are restarted (the old ones are cancelled, so nothing runs twice), its auras and global cooldown are cleared, the model is attached again and the `~onLoad` skills run again. AI goals are applied again only when `AIGoalSelectors` or `AITargetSelectors` changed and the new list starts with `clear`; goals an earlier `clear` removed cannot come back until the mob is respawned. A mob whose definition was removed keeps the old one and a warning is logged. Totem bodies that are already in the world run out on their own.
+
+**Kill counters:** every kill of a BetterMob mob by a player is counted per player and mob id and saved in `plugins/BetterMob/kills.yml` (written every five minutes and when the server stops, without blocking the server). `/bettermob top` lists the best players, and PlaceholderAPI exposes the numbers (see the placeholders table). Only kills by players count; mobs that die from other causes are not counted.
 
 **Killall:** `/bettermob killall` removes every loaded living BetterMob mob; `<mob>` limits it to one id (`*` means all) and `<world>` to one world. Mobs in unloaded chunks are not touched. Without a mob id it also removes helper armor stands (the hit bodies of `totem` skills). Those carry the scoreboard tag `bettermob_helper`, and only entities with that tag are ever removed. Leftover helpers are also removed on startup and whenever a chunk loads.
 
@@ -311,6 +334,20 @@ actually has — Paper can reuse existing goals, not invent new ones. `clear` re
 the category first; named goals (matched loosely, e.g. `randomstroll` also matches
 `water_avoiding_random_stroll`) are re-added from what the mob had before clearing.
 
+### Patrol, guard and home distance
+
+```yaml
+Patrol:
+  Points: [ "100 64 200", "world 110 64 200" ]
+  Loop: true
+  Wait: 3
+Guard:
+  Radius: 20
+MaxHomeDistance: 60
+```
+
+`Patrol` walks the points while the mob has no target (`Loop`, `Wait` in seconds), `Guard` sends it back to its spawn point once it is further away than the radius, `MaxHomeDistance` teleports it back. The spawn point is saved on the mob. Details in the [wiki](https://github.com/HyperGaming99/bettermob/wiki/Mobs).
+
 ## Items
 
 `items/*.yml` (and each pack's `Items/`) define items the same way MythicMobs does -
@@ -360,6 +397,20 @@ Drops:
 A mob with a `Drops:` list loses its vanilla drops **and** vanilla experience automatically, only
 its own drops remain. `PreventOtherDrops: true` does the same for mobs without any `Drops:`.
 
+## Spawn eggs
+
+`/bettermob egg <mob> [player] [amount]` gives a spawn egg item for a registered mob (up to 64). Right-clicking
+a block with it spawns that mob on the clicked face and uses up the egg (not in creative mode). The egg is
+the vanilla spawn egg of the mob's `Type` (a zombie egg for types that have none), named after the mob's
+`Display:`, with the mob id stored on the item so it keeps working after restarts and reloads. It never spawns
+the vanilla mob: using it on an entity or a spawner and shooting it from a dispenser do nothing.
+
+```yaml
+Egg:                        # optional
+  Material: PIG_SPAWN_EGG   # any material; default is the egg of the mob's Type
+  Name: '&6Goblin Egg'      # default is the mob's Display
+```
+
 ## Skills
 
 Skill files under `skills/` hold named, reusable skills (a file may contain several,
@@ -392,7 +443,7 @@ Skills:
 
 **Triggers:** `~onSpawn`, `~onLoad` (chunk/restart rehydration), `~onInteract`,
 `~onDamaged`, `~onAttack` (melee hits only, projectiles don't count), `~onShoot` (bow/crossbow
-shot, `CancelEvent` stops the vanilla arrow), `~onDeath`, `~onTimer:<ticks>` (repeats). Triggers fire for any
+shot, `CancelEvent` stops the vanilla arrow), `~onDeath`, `~onHealth<50%` (also `<=`, `>`, `>=` and absolute values like `~onHealth<=10`; fires once when the mob's health crosses the threshold and again after it has healed back across it), `~onTarget` (a target is acquired, `@trigger` is the target), `~onLoseTarget`, `~onEnterCombat` (first target after being idle), `~onExitCombat` (no target for 5 seconds), `~onKill` (the mob killed something, `@trigger` is the victim), `~onTimer:<ticks>` (repeats). Triggers fire for any
 living entity, armor stands included. On items: `~onUse` (right click, see [Items](#items)).
 
 **Mechanics:** `sound`, `model` (attach via BetterModel), `modelengine` (attach the
@@ -403,10 +454,10 @@ control), `potion`, `look`, `breakblock`, `state` (plays a BetterModel animation
 (`s=a,b,c`), `skill`, `sudoskill` (run a skill with the target as caster), `cancelevent`,
 `cancelskill`, `equip` (`item=BOW:HAND`), `addtag`/`removetag`, `damage` (`amount`), `throw` (`velocity`, `velocityY`, both scaled by 1/10), `lunge` (`velocity`),
 `setblock` (`m`), `effect:particles` (`p`, `amount`, `hS`, `vS`, `speed`, `y` offset, `repeat`, `repeatInterval`; alias `e:p`),
-`effect:particlering` (`particle`, `radius`, `points`, ...), `spin` (`duration` ticks,
-`velocity` degrees/tick), `takeitem` (`i=<item>;a=<amount>`, removes a registered item
+`effect:particleline` (from the caster to the target, `points` or `density` per block, `fy`/`y` height offsets), `effect:particlebeam` (the same line, drawn from the caster to the target over `d` ticks), `effect:particlesphere` (`radius`, `points`), `effect:particlehelix` (`radius`, `height`, `turns`, `points`), `glow` (`d` ticks), `effect:particlering` (`particle`, `radius`, `points`, ...), `spin` (`duration` ticks,
+`velocity` degrees/tick), `loot` (`table=<drop table>` or `vanilla=<loot table>`, `lootingmodifier`, `mode=drop`: roll a table and give it to the target player or drop it), `takeitem` (`i=<item>;a=<amount>`, removes a registered item
 from the target player), `ignite` (`t` ticks), `setvariable` / `addvariable` (`var`, `value`, `type=INTEGER|FLOAT|STRING`, see Skill variables below), `heal` (`a`, capped at max health), `teleport` (the caster goes to the targeted location or entity, e.g. `@Target`), `explosion` (`yield`, `bd=true` block damage, `fire=true`), `lightning` (`damage=true` for a real strike), `setspeed` (`s`, movement speed attribute), `setai` (`ai=false` switches the AI off), `stun` (`d` ticks; `ai` default true disables the AI, `g=true` also turns gravity off, `f=true` holds the mob still, `state=<animation>` plays that BetterModel animation), `velocity` (`m=SET|ADD|MULTIPLY|DIVIDE`, `x`, `y`, `z`, `repeat`, `repeatInterval`), `freeze` (`ticks`, powder-snow effect),
-`message` (`m`, to the target player, `&` colors, `<caster.name>`, `<target.name>`), `setNoDamageTicks` (`ticks`), `onDamaged`/`onAttack`/`onDeath`/`onShoot`/`aura` (`auraName`, `time`, `cE`, `oS`, `oE`, `oT`, `i`, `oH`: a timed aura that runs `oS` at start, `oE` at end, `oT` every `i` ticks and `oH` on its event, `cE=true` cancels that event meanwhile), `bodyrotation` (`headUneven`, `bodyUneven`, `minHead`, `maxHead`, `minBody`, `maxBody`, `delay`; BetterModel only), `shoot` (`type=arrow|spectral_arrow|trident|snowball|egg|fireball|smallfireball`, `velocity`, `speedscale` (`ss`, multiplier on `velocity`, default 2), `damage`, `spread` degrees, `gravity=false`; `oh=[ ... ]` runs on a hit with the hit entity as target, `oe=[ ... ]` when it lands anywhere, `ot=[ ... ]` every `i` ticks (default 5) in flight), `totem` (`os=[ ... ]`
+`actionbar` (`m`, `d` ticks to keep it up), `title` (`t`, `st` subtitle, `fi`, `d`, `fo` in ticks), `bossbar` (`m`, `color`, `style`, `p` progress, `d` ticks, `countdown=true`; all three for the target player and with the same text rules as `message`), `message` (`m`, to the target player, `&` colors, `<caster.name>`, `<target.name>`), `setNoDamageTicks` (`ticks`), `onDamaged`/`onAttack`/`onDeath`/`onShoot`/`aura` (`auraName`, `time`, `cE`, `oS`, `oE`, `oT`, `i`, `oH`: a timed aura that runs `oS` at start, `oE` at end, `oT` every `i` ticks and `oH` on its event, `cE=true` cancels that event meanwhile), `bodyrotation` (`headUneven`, `bodyUneven`, `minHead`, `maxHead`, `minBody`, `maxBody`, `delay`; BetterModel only), `shoot` (`type=arrow|spectral_arrow|trident|snowball|egg|fireball|smallfireball`, `velocity`, `speedscale` (`ss`, multiplier on `velocity`, default 2), `damage`, `spread` degrees, `gravity=false`; `oh=[ ... ]` runs on a hit with the hit entity as target, `oe=[ ... ]` when it lands anywhere, `ot=[ ... ]` every `i` ticks (default 5) in flight), `projectile` (`model=<id>`, `speed` blocks/s, `range`, `radius`, `damage`, `homing=true`, `bounce=<n>`, `oh`, `oe`, `ot`, `i`: an invisible body with a BetterModel/ModelEngine model that flies, optionally homing and bouncing off blocks, hurts the first entity it touches), `totem` (`os=[ ... ]`
 runs once at the targeter's location, `yo` shifts it up; with `md` ticks, `ot=[ ... ]` repeats every `i` ticks
 (default 20) and `oe=[ ... ]` runs at the end; stops early if the caster dies; with `oh=[ ... ]` an invisible, unbreakable body is placed at the totem for `md` ticks (default 100) and the lines run whenever someone hits it, with the attacker as target).
 
@@ -434,6 +485,20 @@ positive = right), `@SelfLocation{x;y;z}` (caster position, optionally shifted),
 
 Unknown mechanics/conditions/targeters are logged with a clear warning and skipped
 rather than crashing the skill or the server.
+
+## Skill arguments
+
+A skill can take values: every parameter of `skill{s=name;...}`, `sudoskill{...}` and `randomskill{...}` other than `s`, `skill`, `skills`, `sync`, `delay` and `cd` is passed to the called skill, and `<arg.name>` in its mechanic parameters (also in its inline skills) is replaced by the value.
+
+```yaml
+heal_pulse:
+  Arguments:            # optional defaults
+    amount: 2
+  Skills:
+    - heal{amount=<arg.amount>} @self
+```
+
+`skill{s=heal_pulse;amount=6} @self` heals 6, `skill{s=heal_pulse} @self` heals 2. Arguments are not passed on to the skills that skill calls: repeat them explicitly (`skill{s=other;amount=<arg.amount>}`). An argument that was not passed and has no default stays as `<arg.name>` and is logged once. Values are inserted as plain text: braces, brackets, `;`, `=`, quotes, `%` and control characters are removed, so an argument can never add skill lines or trigger a command.
 
 ## Skill variables
 
@@ -464,6 +529,9 @@ Skills:
 | `%bettermob_loaded_mobs%` | Registered mob definitions |
 | `%bettermob_loaded_skills%` | Registered skills |
 | `%bettermob_loaded_items%` | Registered items |
+| `%bettermob_kills_total%` | The player's kills of BetterMob mobs |
+| `%bettermob_kills_<mob>%` | The player's kills of that mob id |
+| `%bettermob_top_<n>_name%` / `%bettermob_top_<n>_kills%` | Name and kills of place `n` in the all-mob top list (`-` and `0` when empty) |
 
 Placeholders from any expansion are also resolved in a mob's `Display:` name and in the text of `command{c=...}` and `message{m=...}`; the player used is the trigger if it is a player, otherwise the caster.
 
@@ -491,7 +559,7 @@ in `pom.xml` and push.
 <dependency>
     <groupId>com.github.HyperGaming99</groupId>
     <artifactId>bettermob</artifactId>
-    <version>v1.1.7.1</version> <!-- a tag -->
+    <version>v1.1.8</version> <!-- a tag -->
     <scope>provided</scope>
 </dependency>
 ```
@@ -507,7 +575,7 @@ in `pom.xml` and push.
 <dependency>
     <groupId>eu.northsoft</groupId>
     <artifactId>bettermob</artifactId>
-    <version>1.1.7.1</version>
+    <version>1.1.8</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -524,7 +592,11 @@ api.reload();                                    // same as /bettermob reload
 ```
 
 **Events** (`eu.northsoft.bettermob.api.event`): `BetterMobSpawnEvent` and
-`BetterMobDeathEvent`, both exposing the entity and its `MobInfo`.
+`BetterMobDeathEvent`, both exposing the entity and its `MobInfo`, and two cancellable events (1.1.8 or newer):
+`BetterMobDamageEvent` (a BetterMob mob takes or deals melee or projectile damage; `getOther()`, `isMobVictim()`,
+`getCause()`, `getDamage()`/`setDamage()`) and `BetterMobSkillEvent` (a named skill is about to run, after its
+conditions and before its cooldown starts; `getSkillId()`, `getCaster()`, `getTrigger()`, `getMob()`). Nothing is
+built when no plugin listens to them.
 
 **Custom mechanics:** register your own mechanic and use it in skill lines like any
 built-in one (`heal{amount=4} @self ~onDamaged`). Built-ins can't be overridden, and
@@ -559,13 +631,13 @@ skill lines or trigger a command. `caster` and `target` are reserved namespaces.
 
 ### Example plugin
 
-[`examples/api-example`](examples/api-example) is a small plugin built on this API: it registers a `heal{amount=4}` mechanic, listens to `BetterMobSpawnEvent` and `BetterMobDeathEvent` and has a `/apiexample <mob>` command that spawns a mob.
+[`examples/api-example`](examples/api-example) is a small plugin built on this API: it registers a `heal{amount=4}` mechanic, a `?daytime` condition, a `@NearestPlayer` targeter and an `<example.world>` placeholder, listens to `BetterMobSpawnEvent` and `BetterMobDeathEvent` and has a `/apiexample <mob>` command that spawns a mob. Its damage and skill event listener (`ModernEvents`) needs BetterMob 1.1.8 and is only built with the `local` profile.
 
 ```bash
 mvn -f examples/api-example/pom.xml package
 ```
 
-This resolves `com.github.HyperGaming99:bettermob:v1.1.7.1` from JitPack, the same coordinates as above. To compile it against your own checkout instead:
+This resolves `com.github.HyperGaming99:bettermob:v1.1.7.1` from JitPack. To compile it against your own checkout instead:
 
 ```bash
 mvn install -DskipTests

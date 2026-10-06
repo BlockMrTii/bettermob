@@ -43,6 +43,7 @@ automatically, so a MythicMobs-style `my_mob:` block pasted into its own file wo
 | `Skills` | - | Skill lines with triggers, see [Skills](Skills) |
 | `Equipment` | - | List of `<item>:<slot>` lines, for example `- BOW:HAND` and `- my_helmet:HEAD`. The item is a registered [item](Items) id or a vanilla material, the slot is `HAND` (default), `OFFHAND`, `HEAD`, `CHEST`, `LEGS` or `FEET`. Applied on spawn and on `reload`; dropping chance is 0. Unknown items and slots are logged with the mob id |
 | `Spawn` | - | Turns the mob into a natural spawn, see [Natural spawns](#natural-spawns) |
+| `Egg` | - | Options of the spawn egg given by `/bettermob egg`, see [Spawn eggs](#spawn-eggs) |
 | `Drops` | - | Drop table names and/or drop lines, see [Drop tables](Drop-Tables) |
 
 Unknown fields are ignored.
@@ -144,6 +145,27 @@ AITargetSelectors:
   - attacker
 ```
 
+## Patrol, guard and home distance
+
+Three optional fields give a mob a place to be. They work with the normal AI goals and need Paper's pathfinder.
+
+```yaml
+Patrol:
+  Points:
+    - 100 64 200
+    - world 110 64 200
+  Loop: true
+  Wait: 3
+Guard:
+  Radius: 20
+MaxHomeDistance: 60
+```
+
+- `Patrol` walks the points in order while the mob has nothing better to do. A plain list also works. `Loop` (default `true`) starts again after the last point, `false` stops there. `Wait` is the pause in seconds at each point. A point is `x y z` in the mob's world or `world x y z`.
+- `Guard` (a number or `Radius`) sends the mob back to where it spawned once it is further away than the radius, and it drops its target on the way.
+- `MaxHomeDistance` teleports a mob that got further than this many blocks from its spawn point back there (checked every 2 seconds).
+- The spawn point is stored on the mob, so it survives restarts. Invalid points are skipped with a warning, and `/bettermob validate` checks them.
+
 ## Models
 
 BetterMob attaches a model in three ways:
@@ -174,6 +196,22 @@ my_display:
 ```
 
 Triggers work for every living entity, armor stands included.
+
+## Spawn eggs
+
+`/bettermob egg <mob> [player] [amount]` gives a spawn egg item for the mob (up to 64 at a time). Right-click a block with it to spawn the mob on the clicked face; the egg is used up unless you are in creative mode.
+
+- The egg is the vanilla spawn egg of the mob's `Type` (a zombie egg for types without one), named after the mob's `Display:`, and carries the mob id so it keeps working after restarts and `/bettermob reload`.
+- It never spawns the vanilla mob: using it on an entity or a spawner, and dispensers, do nothing.
+- A removed mob makes its eggs tell the player that the mob is unknown.
+
+```yaml
+Egg:                        # optional
+  Material: PIG_SPAWN_EGG   # any material, default is the egg of the mob's Type
+  Name: '&6Goblin Egg'      # default is the mob's Display
+```
+
+An unknown `Material` is logged with the mob id and the default egg is used. Permission: `bettermob.give`.
 
 ## Natural spawns
 

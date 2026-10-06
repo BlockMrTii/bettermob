@@ -1,5 +1,5 @@
 name: BetterMob
-version: '1.1.7.1'
+version: '1.1.8'
 main: eu.northsoft.bettermob.BetterMobPlugin
 api-version: '1.21'
 folia-supported: true
@@ -24,6 +24,7 @@ permissions:
       bettermob.killall: true
       bettermob.spawner: true
       bettermob.debug: true
+      bettermob.top: true
   bettermob.spawn:
     description: Allows /bettermob spawn
     default: op
@@ -47,4 +48,7 @@ permissions:
     default: op
   bettermob.debug:
     description: Allows /bettermob debug
+    default: op
+  bettermob.top:
+    description: Allows /bettermob top
     default: op

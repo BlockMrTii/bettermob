@@ -12,10 +12,12 @@ import static eu.northsoft.bettermob.skill.Params.parseFloat;
 import static eu.northsoft.bettermob.skill.Params.parseInt;
 
 final class ParticleSupport {
+    private static final int MAX_AMOUNT = 1000;
+
     private ParticleSupport() {}
 
     static void spawn(BetterMobPlugin plugin, Location location, Particle particle, Map<String, String> p) {
-        int amount = Math.max(1, parseInt(firstParam(p, "amount", "a"), 1));
+        int amount = Math.max(1, Math.min(MAX_AMOUNT, parseInt(firstParam(p, "amount", "a"), 1)));
         double horizontal = parseFloat(p.get("hs"), 0f);
         double vertical = parseFloat(p.get("vs"), 0f);
         double speed = parseFloat(firstParam(p, "speed", "s"), 0f);

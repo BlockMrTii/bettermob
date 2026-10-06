@@ -9,6 +9,8 @@ import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillRegistry;
+import eu.northsoft.bettermob.util.Tasks;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -19,6 +21,7 @@ import org.bukkit.plugin.Plugin;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public final class BetterMobApiImpl implements BetterMobAPI, Listener {
     private final BetterMobPlugin plugin;
@@ -62,6 +65,19 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
     }
 
     @Override
+    public CompletableFuture<Optional<LivingEntity>> spawnAsync(String id, Location location) {
+        CompletableFuture<Optional<LivingEntity>> result = new CompletableFuture<>();
+        Tasks.runOwnedAt(plugin, location, () -> {
+            try {
+                result.complete(spawn(id, location));
+            } catch (RuntimeException exception) {
+                result.completeExceptionally(exception);
+            }
+        });
+        return result;
+    }
+
+    @Override
     public Collection<String> getSkillIds() {
         return java.util.List.copyOf(skillRegistry.ids());
     }
@@ -74,7 +90,10 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
     @Override
     public boolean runSkill(String skillId, LivingEntity caster, LivingEntity trigger) {
         if (skillId == null || skillRegistry.get(skillId) == null) return false;
-        skillEngine.runById(skillId, new SkillContext(caster, trigger, null));
+        Tasks.runOwned(plugin, caster, () -> {
+            if (trigger != null && !Bukkit.isOwnedByCurrentRegion(trigger)) return;
+            skillEngine.runById(skillId, new SkillContext(caster, trigger, null));
+        });
         return true;
     }
 

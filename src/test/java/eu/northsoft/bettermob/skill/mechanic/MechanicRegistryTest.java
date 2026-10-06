@@ -18,13 +18,16 @@ class MechanicRegistryTest {
     private static final List<String> FORMER_BUILTIN_NAMES = List.of(
             "cancelskill", "cancelevent", "message", "msg", "skill", "look", "sound", "state", "potion", "breakblock",
             "gcd", "model", "modelengine", "randomskill", "remove", "command", "summon", "mountmodel", "delay",
-            "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "sudoskill", "damage",
+            "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "loot", "sudoskill", "damage",
             "throw", "lunge", "setblock", "equip", "aura", "ondamaged", "onattack", "ontick", "ondeath", "onshoot",
-            "bodyrotation", "addtag", "removetag", "ignite", "totem", "velocity", "freeze", "shoot", "stun",
+            "bodyrotation", "addtag", "removetag", "ignite", "totem", "velocity", "freeze", "shoot", "projectile", "stun",
             "setnodamageticks");
 
     private static final List<String> ADDED_NAMES = List.of("heal", "teleport", "explosion", "lightning", "setspeed", "setai",
-            "setvariable", "variableset", "addvariable", "variableadd");
+            "setvariable", "variableset", "addvariable", "variableadd",
+            "actionbar", "actionmessage", "title", "sendtitle", "bossbar",
+            "particleline", "effect:particleline", "particlebeam", "effect:particlebeam", "particlesphere", "effect:particlesphere",
+            "particlehelix", "effect:particlehelix", "glow");
 
     private static final Set<String> HANDLED_BY_ENGINE = Set.of("cancelskill", "delay");
 

@@ -18,6 +18,8 @@ command:
     reload: "&7/bettermob reload &8- &7Mobs, Skills und Packs neu laden"
     skill: "&7/bettermob skill <id> [Spieler] &8- &7Skill manuell auslösen"
     give: "&7/bettermob give <item> [Spieler] [amount] &8- &7Item geben"
+    egg: "&7/bettermob egg <mob> [player] [amount] &8- &7Spawn-Ei fuer einen Mob geben"
+    top: "&7/bettermob top [mob] &8- &7Spieler mit den meisten Kills anzeigen"
     debug: "&7/bettermob debug [off|info|verbose|filter|chat] &8- &7Debug-Ausgabe steuern"
     killall: "&7/bettermob killall [mob|*] [Welt] &8- &7Lebende BetterMob-Mobs entfernen"
     spawner: "&7/bettermob spawner <create|remove|list> &8- &7Mob-Spawner verwalten"
@@ -45,6 +47,12 @@ command:
       timer: "Timer"
       use: "Benutzung"
       shoot: "Schuss"
+      health: "Gesundheit"
+      target: "Ziel"
+      losetarget: "Ziel verloren"
+      entercombat: "Kampf Beginn"
+      exitcombat: "Kampf Ende"
+      kill: "Kill"
   validate:
     unknownPack: "&cPack '{pack}' wurde in packs/ nicht gefunden."
     header: "&7{lines} Zeilen in &f{sources} &7Ordner(n) geprueft:"
@@ -52,6 +60,7 @@ command:
     mainName: "Hauptordner"
     issue: "&8  {file}: &7{line} &8- &c{reason}"
     more: "&8  ... und {count} weitere(s) Problem(e) in diesem Pack."
+    modelsSkipped: "&8Modell-IDs wurden nicht geprueft: weder BetterModel noch ModelEngine ist installiert."
     allGood: "&aKeine nicht unterstuetzten Zeilen gefunden."
     reason:
       unparseable: "Zeile konnte nicht geparst werden"
@@ -60,6 +69,8 @@ command:
       condition: "unbekannte Condition '{name}'"
       targeterCondition: "Targeter-Condition '{name}' wird nicht unterstuetzt"
       skill: "Skill '{name}' ist nicht definiert"
+      model: "Modell '{name}' wurde im installierten Modell-Plugin nicht gefunden"
+      dropTable: "Drop-Tabelle '{name}' ist nicht definiert"
   reloaded: "&aBetterMob neu geladen."
   reloadedLiving: "&7{count} lebende Mobs werden auf die neue Definition umgestellt."
   mobList: "&7Mobs: &f{mobs}"
@@ -84,6 +95,16 @@ command:
     usage: "&cNutzung: /bettermob skill <id> [Spieler]"
     notRegistered: "&cSkill '{skill}' ist nicht registriert."
     done: "&aSkill '{skill}' auf {player} ausgeführt."
+  top:
+    notRegistered: "&cMob '{mob}' ist nicht registriert."
+    none: "&7Noch niemand hat einen BetterMob-Mob getoetet."
+    header: "&6Top Kills &7({mob}):"
+    entry: "&e{place}. &f{player} &8- &7{kills}"
+    allMobs: "alle Mobs"
+  egg:
+    usage: "&cNutzung: /bettermob egg <mob> [player] [amount]"
+    notRegistered: "&cMob '{mob}' ist nicht registriert."
+    done: "&a{amount}x Spawn-Ei von '{mob}' an {player} gegeben."
   give:
     usage: "&cNutzung: /bettermob give <item> [Spieler] [amount]"
     notRegistered: "&cItem '{item}' ist nicht registriert."
@@ -122,6 +143,8 @@ ai:
   goalUnavailable: "AI-Goal '{goal}' ist für Mob-Typ '{type}' nicht verfügbar."
 
 mob:
+  behaviourInvalid: "Mob '{mob}': ungueltige Bewegungsoption '{option}'."
+  eggMaterialInvalid: "Mob '{mob}': Egg-Material '{value}' ist kein Material, es wird das Ei des Mob-Typs verwendet."
   loaded: "{count} Mobs geladen."
   duplicate: "Mob '{mob}' aus {folder} überschreibt eine bereits geladene Definition - ignoriert."
   unknownType: "Mob '{mob}': unbekannter Type '{type}'."
@@ -148,6 +171,7 @@ skill:
   inlineLineInvalid: "Inline-Skill: Zeile '{line}' konnte nicht geparst werden."
   mechanicUnsupported: "Skill-Mechanic '{mechanic}' wird nicht unterstützt."
   customMechanicFailed: "Eigene Mechanic '{mechanic}' von {plugin} ist fehlgeschlagen: {error}"
+  argumentMissing: "Argument '<arg.{argument}>' wurde diesem Skill nicht uebergeben und hat keinen Standardwert (Arguments:), der Platzhalter bleibt stehen."
   variableName: "Variablenname '{variable}' ist ungueltig (Buchstaben, Ziffern und _, bis 32 Zeichen, optional mit caster. davor)."
   variableValue: "Variable '{variable}': '{value}' ist kein gueltiger Wert fuer diese Mechanik."
   variableLimit: "Variable '{variable}' wurde nicht gesetzt: ein Bereich fasst hoechstens {limit} Variablen."
@@ -158,6 +182,8 @@ skill:
   targeterConditionUnsupported: "Targeter-Condition '{condition}' wird nicht unterstützt - wird ignoriert."
   targeterUnknown: "Unbekannter Targeter '@{targeter}', die Zeile zielt stattdessen auf das Standardziel."
   shootUnknownProjectile: "shoot: unbekannter Projektiltyp '{type}', es wird ein Pfeil verwendet."
+  lootUnknownTable: "loot: unbekannte Drop-Tabelle '{table}'."
+  lootUnknownVanilla: "loot: unbekannte Vanilla-Loot-Tabelle '{table}'."
   potionUnknown: "Unbekannter Potion-Typ '{type}'."
   particleNeedsData: "Partikel '{particle}' braucht Zusatzdaten (z.B. Farbe) und wird nicht unterstützt."
   particleUnknown: "Unbekannter Partikel '{particle}'."
@@ -210,3 +236,10 @@ modelEngine:
 
 stats:
   slowSkill: "Skill '{skill}' brauchte {millis} ms (Schwelle {threshold} ms)."
+
+egg:
+  unknownMob: "Das Spawn-Ei gehoert zum unbekannten Mob '{mob}'."
+
+kills:
+  saveFailed: "kills.yml konnte nicht gespeichert werden: {error}"
+  loadFailed: "kills.yml konnte nicht gelesen werden, Kill-Zaehler werden erst wieder gespeichert, wenn sie repariert ist: {error}"

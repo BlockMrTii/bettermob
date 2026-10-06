@@ -4,6 +4,7 @@ import com.destroystokyo.paper.entity.ai.Goal;
 import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.destroystokyo.paper.entity.ai.GoalType;
 import eu.northsoft.bettermob.util.RegionEntities;
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
@@ -24,14 +25,14 @@ final class CustomGoals {
             @Override
             public boolean shouldActivate() {
                 LivingEntity target = mob.getTarget();
-                return target != null && target.getWorld().equals(mob.getWorld())
+                return target != null && Bukkit.isOwnedByCurrentRegion(target) && target.getWorld().equals(mob.getWorld())
                         && target.getLocation().distanceSquared(mob.getLocation()) <= radius * radius;
             }
 
             @Override
             public void tick() {
                 LivingEntity target = mob.getTarget();
-                if (target != null) mob.lookAt(target);
+                if (target != null && Bukkit.isOwnedByCurrentRegion(target)) mob.lookAt(target);
             }
 
             @Override

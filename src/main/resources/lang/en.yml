@@ -18,6 +18,8 @@ command:
     reload: "&7/bettermob reload &8- &7Reload mobs, skills and packs"
     skill: "&7/bettermob skill <id> [player] &8- &7Run a skill manually"
     give: "&7/bettermob give <item> [player] [amount] &8- &7Give an item"
+    egg: "&7/bettermob egg <mob> [player] [amount] &8- &7Give a spawn egg for a mob"
+    top: "&7/bettermob top [mob] &8- &7Show the players with the most kills"
     debug: "&7/bettermob debug [off|info|verbose|filter|chat] &8- &7Control debug output"
     killall: "&7/bettermob killall [mob|*] [world] &8- &7Remove living BetterMob mobs"
     spawner: "&7/bettermob spawner <create|remove|list> &8- &7Manage mob spawners"
@@ -45,6 +47,12 @@ command:
       timer: "timer"
       use: "use"
       shoot: "shoot"
+      health: "health"
+      target: "target"
+      losetarget: "lost target"
+      entercombat: "combat enter"
+      exitcombat: "combat exit"
+      kill: "kill"
   validate:
     unknownPack: "&cPack '{pack}' was not found in packs/."
     header: "&7Checked &f{lines} &7lines in &f{sources} &7place(s):"
@@ -52,6 +60,7 @@ command:
     mainName: "main folder"
     issue: "&8  {file}: &7{line} &8- &c{reason}"
     more: "&8  ... and {count} more problem(s) in this pack."
+    modelsSkipped: "&8Model ids were not checked: neither BetterModel nor ModelEngine is installed."
     allGood: "&aNo unsupported lines found."
     reason:
       unparseable: "line could not be parsed"
@@ -60,6 +69,8 @@ command:
       condition: "unknown condition '{name}'"
       targeterCondition: "targeter condition '{name}' is not supported"
       skill: "skill '{name}' is not defined"
+      model: "model '{name}' was not found in the installed model plugin"
+      dropTable: "drop table '{name}' is not defined"
   reloaded: "&aBetterMob reloaded."
   reloadedLiving: "&7{count} living mobs queued to update to their new definition."
   mobList: "&7Mobs: &f{mobs}"
@@ -84,6 +95,16 @@ command:
     usage: "&cUsage: /bettermob skill <id> [player]"
     notRegistered: "&cSkill '{skill}' is not registered."
     done: "&aSkill '{skill}' run on {player}."
+  top:
+    notRegistered: "&cMob '{mob}' is not registered."
+    none: "&7Nobody has killed a BetterMob mob yet."
+    header: "&6Top kills &7({mob}):"
+    entry: "&e{place}. &f{player} &8- &7{kills}"
+    allMobs: "all mobs"
+  egg:
+    usage: "&cUsage: /bettermob egg <mob> [player] [amount]"
+    notRegistered: "&cMob '{mob}' is not registered."
+    done: "&a{amount}x spawn egg of '{mob}' given to {player}."
   give:
     usage: "&cUsage: /bettermob give <item> [player] [amount]"
     notRegistered: "&cItem '{item}' is not registered."
@@ -122,6 +143,8 @@ ai:
   goalUnavailable: "AI goal '{goal}' is not available for mob type '{type}'."
 
 mob:
+  behaviourInvalid: "Mob '{mob}': invalid movement option '{option}'."
+  eggMaterialInvalid: "Mob '{mob}': Egg Material '{value}' is not a material, using the egg of the mob type."
   loaded: "{count} mobs loaded."
   duplicate: "Mob '{mob}' from {folder} overrides an already loaded definition - ignored."
   unknownType: "Mob '{mob}': unknown Type '{type}'."
@@ -148,6 +171,7 @@ skill:
   inlineLineInvalid: "Inline skill: line '{line}' could not be parsed."
   mechanicUnsupported: "Skill mechanic '{mechanic}' is not supported."
   customMechanicFailed: "Custom mechanic '{mechanic}' from {plugin} failed: {error}"
+  argumentMissing: "Argument '<arg.{argument}>' was not passed to this skill and has no default (Arguments:), the placeholder stays as it is."
   variableName: "Variable name '{variable}' is invalid (letters, digits and _ , up to 32 characters, optionally prefixed with caster.)."
   variableValue: "Variable '{variable}': '{value}' is not a valid value for this mechanic."
   variableLimit: "Variable '{variable}' was not set: a scope holds at most {limit} variables."
@@ -158,6 +182,8 @@ skill:
   targeterConditionUnsupported: "Targeter condition '{condition}' is not supported - ignored."
   targeterUnknown: "Unknown targeter '@{targeter}', the line targets the default target instead."
   shootUnknownProjectile: "shoot: unknown projectile type '{type}', using arrow."
+  lootUnknownTable: "loot: unknown drop table '{table}'."
+  lootUnknownVanilla: "loot: unknown vanilla loot table '{table}'."
   potionUnknown: "Unknown potion type '{type}'."
   particleNeedsData: "Particle '{particle}' needs extra data (e.g. a color) and is not supported."
   particleUnknown: "Unknown particle '{particle}'."
@@ -210,3 +236,10 @@ modelEngine:
 
 stats:
   slowSkill: "Skill '{skill}' took {millis} ms (threshold {threshold} ms)."
+
+egg:
+  unknownMob: "The spawn egg is for the unknown mob '{mob}'."
+
+kills:
+  saveFailed: "Could not save kills.yml: {error}"
+  loadFailed: "Could not read kills.yml, kill counts are not saved until it is fixed: {error}"

@@ -4,6 +4,15 @@ showcase_boss:
   Health: 80
   Damage: 10
   Faction: Showcase
+  Patrol:
+    Points:
+      - 10 64 10
+      - world 14 64 10
+    Loop: true
+    Wait: 3
+  Guard:
+    Radius: 20
+  MaxHomeDistance: 60
   Equipment:
     - BOW:HAND
   Options:
@@ -28,3 +37,6 @@ showcase_boss:
     - skill{s=showcase_enrage} @self ~onDamaged ?!hasaura{n=spawn}
     - sound{s=entity.pillager.hurt;p=0.9;v=1.0} @self ~onDamaged
     - skill{s=[ - sound{s=entity.pillager.ambient;p=0.9;v=1.0} ];sync=true} @self ~onTimer:60 ?chance{chance=0.75}
+    - skill{s=showcase_enrage} @self ~onHealth<50%
+    - message{m=<caster.name> has noticed you} @target ~onTarget
+    - sound{s=entity.pillager.celebrate;p=1.0;v=1.0} @self ~onKill

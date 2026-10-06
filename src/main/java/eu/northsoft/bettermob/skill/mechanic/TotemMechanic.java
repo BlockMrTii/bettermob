@@ -41,7 +41,9 @@ public final class TotemMechanic implements Mechanic, Listener {
     public void execute(MechanicCall call) {
         Map<String, String> p = call.params();
         SkillContext context = call.context();
-        Location origin = call.target().location().clone().add(0, parseFloat(firstParam(p, "yo", "yoffset"), 0f), 0);
+        Location base = call.target().ownedLocation();
+        if (base == null) return;
+        Location origin = base.clone().add(0, parseFloat(firstParam(p, "yo", "yoffset"), 0f), 0);
         SkillContext at = context.withOrigin(origin);
         if (engine.debug().verbose()) engine.debug().verbose("totem at " + origin.getBlockX() + " " + origin.getBlockY() + " " + origin.getBlockZ() + ", params " + p.keySet(), engine.subject(context.caster()));
         runLines(firstParam(p, "os", "onstart"), at);
@@ -100,8 +102,9 @@ public final class TotemMechanic implements Mechanic, Listener {
         Entity damager = event.getDamager();
         if (damager instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter) damager = shooter;
         if (damager instanceof LivingEntity attacker && !attacker.equals(totem.caster())) {
-            engine.runSteps(engine.inline(totem.lines()),
-                    new SkillContext(totem.caster(), attacker, null, totem.at().origin(), true));
+            LivingEntity hitBy = attacker;
+            Tasks.runOwned(engine.plugin(), totem.caster(), () -> engine.runSteps(engine.inline(totem.lines()),
+                    new SkillContext(totem.caster(), hitBy, null, totem.at().origin(), true)));
         }
     }
 

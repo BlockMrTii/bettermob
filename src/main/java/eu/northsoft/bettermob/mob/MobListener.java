@@ -1,13 +1,16 @@
 package eu.northsoft.bettermob.mob;
 
+import eu.northsoft.bettermob.api.event.BetterMobDamageEvent;
 import eu.northsoft.bettermob.api.event.BetterMobDeathEvent;
 import eu.northsoft.bettermob.drop.DropRegistry;
+import eu.northsoft.bettermob.stats.KillStats;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -16,6 +19,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
@@ -31,10 +35,12 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class MobListener implements Listener {
     private final MobManager manager;
     private final DropRegistry drops;
+    private final KillStats kills;
 
-    public MobListener(MobManager manager, DropRegistry drops) {
+    public MobListener(MobManager manager, DropRegistry drops, KillStats kills) {
         this.manager = manager;
         this.drops = drops;
+        this.kills = kills;
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -56,8 +62,12 @@ public final class MobListener implements Listener {
 
     @EventHandler
     public void onDeath(EntityDeathEvent event) {
+        fireKill(event.getEntity());
         MobDefinition definition = manager.definitionOf(event.getEntity().getUniqueId());
         if (definition == null) return;
+
+        Player killer = event.getEntity().getKiller();
+        if (killer != null) kills.record(killer.getUniqueId(), killer.getName(), definition.id);
 
         if (definition.options.preventOtherDrops() || definition.drops != null) {
             event.getDrops().clear();
@@ -88,9 +98,67 @@ public final class MobListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW)
     public void onDamageModifier(EntityDamageEvent event) {
-        if (!(event.getEntity() instanceof LivingEntity victim)) return;
-        double modifier = manager.modifierFor(victim.getUniqueId(), event.getCause());
-        if (modifier != 1.0) event.setDamage(event.getDamage() * modifier);
+        if (event.getEntity() instanceof LivingEntity victim) {
+            double modifier = manager.modifierFor(victim.getUniqueId(), event.getCause());
+            if (modifier != 1.0) event.setDamage(event.getDamage() * modifier);
+        }
+        if (event instanceof EntityDamageByEntityEvent byEntity && !byEntity.isCancelled()) fireDamageApi(byEntity);
+    }
+
+    private void fireDamageApi(EntityDamageByEntityEvent event) {
+        if (BetterMobDamageEvent.getHandlerList().getRegisteredListeners().length == 0) return;
+        Entity source = event.getDamager();
+        if (source instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter && Bukkit.isOwnedByCurrentRegion(shooter)) source = shooter;
+        if (!Bukkit.isOwnedByCurrentRegion(source)) return;
+        if (event.getEntity() instanceof LivingEntity victim && fireDamage(victim, source, true, event)) return;
+        if (source instanceof LivingEntity attacker) fireDamage(attacker, event.getEntity(), false, event);
+    }
+
+    private boolean fireDamage(LivingEntity mob, Entity other, boolean mobIsVictim, EntityDamageByEntityEvent event) {
+        MobDefinition definition = manager.definitionOf(mob.getUniqueId());
+        if (definition == null) return false;
+        BetterMobDamageEvent api = new BetterMobDamageEvent(mob, definition.toInfo(), other, mobIsVictim, event.getCause(), event.getDamage());
+        Bukkit.getPluginManager().callEvent(api);
+        if (api.isCancelled()) {
+            event.setCancelled(true);
+            return true;
+        }
+        if (api.getDamage() != event.getDamage()) event.setDamage(api.getDamage());
+        return false;
+    }
+
+    private void fireKill(LivingEntity victim) {
+        if (!(victim.getLastDamageCause() instanceof EntityDamageByEntityEvent byEntity)) return;
+        Entity damager = byEntity.getDamager();
+        if (damager instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter) damager = shooter;
+        if (!(damager instanceof LivingEntity killer) || killer.equals(victim)) return;
+        MobDefinition definition = manager.definitionOf(killer.getUniqueId());
+        if (definition != null) manager.fireTrigger(killer, definition, MobDefinition.SkillTrigger.Trigger.KILL, victim, null);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onHealthLoss(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof LivingEntity mob)) return;
+        MobDefinition definition = manager.definitionOf(mob.getUniqueId());
+        if (definition != null && manager.hasHealthTriggers(definition)) {
+            manager.checkHealth(mob, definition, mob.getHealth(), Math.max(0, mob.getHealth() - event.getFinalDamage()));
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onHealthGain(EntityRegainHealthEvent event) {
+        if (!(event.getEntity() instanceof LivingEntity mob)) return;
+        MobDefinition definition = manager.definitionOf(mob.getUniqueId());
+        if (definition != null && manager.hasHealthTriggers(definition)) {
+            manager.checkHealth(mob, definition, mob.getHealth(), mob.getHealth() + event.getAmount());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onTargetChanged(EntityTargetLivingEntityEvent event) {
+        if (!(event.getEntity() instanceof LivingEntity mob)) return;
+        MobDefinition definition = manager.definitionOf(mob.getUniqueId());
+        if (definition != null) manager.targetChanged(mob, definition, event.getTarget());
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

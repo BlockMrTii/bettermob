@@ -2,6 +2,7 @@ package eu.northsoft.bettermob.mob;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.ai.AiGoalApplier;
+import eu.northsoft.bettermob.ai.BehaviourGoals;
 import eu.northsoft.bettermob.api.event.BetterMobSpawnEvent;
 import eu.northsoft.bettermob.integration.PlaceholderHook;
 import eu.northsoft.bettermob.item.EquipmentSupport;
@@ -59,6 +60,8 @@ public final class MobManager {
     private final BossBarManager bossBars;
     private SkillEngine skillEngine;
 
+    private static final long HOME_CHECK_TICKS = 40L;
+
     public final NamespacedKey mobIdKey;
 
     public MobManager(BetterMobPlugin plugin, MobRegistry registry, BetterModelHook betterModel, ModelEngineHook modelEngine, ItemRegistry items) {
@@ -76,6 +79,7 @@ public final class MobManager {
         applyDefinition(entity, definition, true);
 
         if (entity instanceof Mob mob) AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
+        applyBehaviour(entity, definition);
         if (definition.threatTable) threatTables.put(entity.getUniqueId(), new ConcurrentHashMap<>());
         if (!definition.damageModifiers.isEmpty()) damageModifiers.put(entity.getUniqueId(), definition.damageModifiers);
 
@@ -115,6 +119,34 @@ public final class MobManager {
 
         preventSunburn(entity, definition);
         applyEquipment(entity, definition);
+    }
+
+    private NamespacedKey homeKey() {
+        return new NamespacedKey(plugin, "home");
+    }
+
+    public Location homeOf(Entity entity) {
+        String stored = entity.getPersistentDataContainer().get(homeKey(), PersistentDataType.STRING);
+        if (stored == null) return null;
+        String[] parts = stored.split(";");
+        if (parts.length != 3 && parts.length != 4) return null;
+        try {
+            int offset = parts.length - 3;
+            World world = offset == 0 ? entity.getWorld() : Bukkit.getWorld(UUID.fromString(parts[0]));
+            if (world == null) return null;
+            return new Location(world, Double.parseDouble(parts[offset]), Double.parseDouble(parts[offset + 1]), Double.parseDouble(parts[offset + 2]));
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
+    }
+
+    private void applyBehaviour(LivingEntity entity, MobDefinition definition) {
+        Behaviour behaviour = definition.behaviour;
+        if (behaviour != null && behaviour.needsHome() && homeOf(entity) == null) {
+            Location at = entity.getLocation();
+            entity.getPersistentDataContainer().set(homeKey(), PersistentDataType.STRING, at.getWorld().getUID() + ";" + at.getX() + ";" + at.getY() + ";" + at.getZ());
+        }
+        if (entity instanceof Mob mob) BehaviourGoals.apply(plugin, mob, behaviour, () -> homeOf(entity));
     }
 
     private void applyEquipment(LivingEntity entity, MobDefinition definition) {
@@ -191,6 +223,8 @@ public final class MobManager {
         threatTables.remove(entity.getUniqueId());
         damageModifiers.remove(entity.getUniqueId());
         definitions.remove(entity.getUniqueId());
+        inCombat.remove(entity.getUniqueId());
+        exitCombatToken.remove(entity.getUniqueId());
         List<Runnable> cancellers = timers.remove(entity.getUniqueId());
         if (cancellers != null) cancellers.forEach(Runnable::run);
     }
@@ -253,7 +287,18 @@ public final class MobManager {
 
     public void fireTrigger(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
                       LivingEntity trigger, Cancellable event) {
+        fireTriggers(entity, definition, type, definition.triggersOf(type), trigger, event);
+    }
+
+    private void fireTriggers(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
+                              List<MobDefinition.SkillTrigger> triggers, LivingEntity trigger, Cancellable event) {
         if (skillEngine == null) return;
+        if (!Bukkit.isOwnedByCurrentRegion(entity)) {
+            LivingEntity original = trigger;
+            Tasks.runOwned(plugin, entity, () -> fireTriggers(entity, definition, type, triggers, original, null));
+            return;
+        }
+        if (trigger != null && !Bukkit.isOwnedByCurrentRegion(trigger)) trigger = null;
         if (plugin.debug().info()) plugin.debug().info("trigger " + type + " on " + definition.id + (trigger != null ? " (by " + trigger.getName() + ")" : ""), definition.id);
         String auraKind = switch (type) {
             case DAMAGED -> "ondamaged";
@@ -264,16 +309,65 @@ public final class MobManager {
         };
         if (auraKind != null) skillEngine.fireAuras(entity, auraKind, trigger, event);
         SkillContext context = new SkillContext(entity, trigger, event);
-        for (MobDefinition.SkillTrigger skillTrigger : definition.triggersOf(type)) {
+        for (MobDefinition.SkillTrigger skillTrigger : triggers) {
             skillEngine.runStep(skillTrigger.step(), context);
         }
         if (event != null && event.isCancelled()) plugin.debug().info("trigger " + type + " on " + definition.id + ": event cancelled", definition.id);
+    }
+
+    private final Map<UUID, Object> exitCombatToken = new ConcurrentHashMap<>();
+    private final Set<UUID> inCombat = ConcurrentHashMap.newKeySet();
+    private static final long EXIT_COMBAT_TICKS = 100L;
+
+    public boolean hasHealthTriggers(MobDefinition definition) {
+        return !definition.triggersOf(MobDefinition.SkillTrigger.Trigger.HEALTH).isEmpty();
+    }
+
+    public void checkHealth(LivingEntity mob, MobDefinition definition, double before, double health) {
+        List<MobDefinition.SkillTrigger> triggers = definition.triggersOf(MobDefinition.SkillTrigger.Trigger.HEALTH);
+        if (triggers.isEmpty() || health <= 0) return;
+        var attribute = mob.getAttribute(Attribute.MAX_HEALTH);
+        double max = attribute == null ? Math.max(before, health) : attribute.getValue();
+        for (MobDefinition.SkillTrigger trigger : triggers) {
+            if (trigger.health() == null) continue;
+            if (trigger.health().matches(health, max) && !trigger.health().matches(before, max)) {
+                fireTriggers(mob, definition, MobDefinition.SkillTrigger.Trigger.HEALTH, List.of(trigger), null, null);
+            }
+        }
+    }
+
+    public void targetChanged(LivingEntity mob, MobDefinition definition, LivingEntity target) {
+        UUID id = mob.getUniqueId();
+        if (target != null) {
+            exitCombatToken.remove(id);
+            fireTrigger(mob, definition, MobDefinition.SkillTrigger.Trigger.TARGET, target, null);
+            if (inCombat.add(id)) fireTrigger(mob, definition, MobDefinition.SkillTrigger.Trigger.ENTERCOMBAT, target, null);
+            return;
+        }
+        fireTrigger(mob, definition, MobDefinition.SkillTrigger.Trigger.LOSETARGET, null, null);
+        if (!inCombat.contains(id)) return;
+        Object token = new Object();
+        exitCombatToken.put(id, token);
+        Tasks.runLater(plugin, mob, EXIT_COMBAT_TICKS, () -> {
+            if (exitCombatToken.remove(id, token) && mob instanceof Mob living && living.getTarget() == null && inCombat.remove(id)) {
+                fireTrigger(mob, definition, MobDefinition.SkillTrigger.Trigger.EXITCOMBAT, null, null);
+            }
+        });
     }
 
     private void scheduleTimers(LivingEntity entity, MobDefinition definition) {
         if (definition.threatTable && entity instanceof Mob mob) {
             timers.computeIfAbsent(mob.getUniqueId(), key -> new ArrayList<>())
                     .add(Tasks.runTimer(plugin, mob, 20L, 20L, () -> retarget(mob)));
+        }
+        if (definition.behaviour != null && definition.behaviour.hasHomeLimit()) {
+            double limit = definition.behaviour.maxHomeDistance();
+            timers.computeIfAbsent(entity.getUniqueId(), key -> new ArrayList<>()).add(Tasks.runTimer(plugin, entity, HOME_CHECK_TICKS, HOME_CHECK_TICKS, () -> {
+                Location home = homeOf(entity);
+                if (home == null || !home.getWorld().equals(entity.getWorld()) || entity.getLocation().distanceSquared(home) <= limit * limit) return;
+                if (plugin.debug().info()) plugin.debug().info("mob " + definition.id + " is further than " + limit + " blocks from home, teleporting it back", definition.id);
+                entity.teleportAsync(home);
+            }));
         }
         for (MobDefinition.SkillTrigger trigger : definition.triggersOf(MobDefinition.SkillTrigger.Trigger.TIMER)) {
             Runnable cancel = Tasks.runTimer(plugin, entity, trigger.timerTicks(), trigger.timerTicks(), () -> {
@@ -310,6 +404,8 @@ public final class MobManager {
         List<Runnable> cancellers = timers.remove(id);
         if (cancellers != null) cancellers.forEach(Runnable::run);
         if (skillEngine != null) skillEngine.forget(id);
+        inCombat.remove(id);
+        exitCombatToken.remove(id);
 
         definitions.put(id, fresh);
         if (fresh.threatTable) threatTables.putIfAbsent(id, new ConcurrentHashMap<>());
@@ -327,6 +423,7 @@ public final class MobManager {
             AiGoalApplier.apply(mob, changedSelectors(old.aiGoalSelectors, fresh.aiGoalSelectors),
                     changedSelectors(old.aiTargetSelectors, fresh.aiTargetSelectors), plugin, other -> definitions.containsKey(other.getUniqueId()));
         }
+        applyBehaviour(entity, fresh);
 
         if (!hasModelSkill(fresh, MobDefinition.SkillTrigger.Trigger.LOAD)) {
             attachModelField(entity, fresh.modelId);
@@ -403,12 +500,14 @@ public final class MobManager {
         return members != null && (members.contains(player.getName().toLowerCase(java.util.Locale.ROOT)) || members.contains(player.getUniqueId().toString()));
     }
 
-    private org.bukkit.configuration.file.FileConfiguration membersSource;
-    private Map<String, Set<String>> members = Map.of();
+    private record FactionCache(org.bukkit.configuration.file.FileConfiguration source, Map<String, Set<String>> members) {}
+
+    private volatile FactionCache factionCache = new FactionCache(null, Map.of());
 
     private Map<String, Set<String>> factionMembers() {
         org.bukkit.configuration.file.FileConfiguration config = plugin.getConfig();
-        if (config != membersSource) {
+        FactionCache cache = factionCache;
+        if (config != cache.source()) {
             Map<String, Set<String>> loaded = new java.util.HashMap<>();
             var section = config.getConfigurationSection("factions");
             if (section != null) {
@@ -418,10 +517,10 @@ public final class MobManager {
                     loaded.put(name.toLowerCase(java.util.Locale.ROOT), names);
                 }
             }
-            members = loaded;
-            membersSource = config;
+            cache = new FactionCache(config, loaded);
+            factionCache = cache;
         }
-        return members;
+        return cache.members();
     }
 
     private final java.util.Set<String> registeredFactionPermissions = ConcurrentHashMap.newKeySet();
@@ -459,6 +558,7 @@ public final class MobManager {
         if (entity instanceof Mob mob) {
             AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
         }
+        applyBehaviour(entity, definition);
         preventSunburn(entity, definition);
 
         if (!hasModelSkill(definition, MobDefinition.SkillTrigger.Trigger.LOAD)) {
