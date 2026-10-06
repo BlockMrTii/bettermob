@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.skill;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -15,6 +16,11 @@ public record Target(Entity entity, Block block, Location rawLocation) {
 
     public static Target ofLocation(Location location) {
         return new Target(null, null, location);
+    }
+
+    public Location ownedLocation() {
+        if (entity != null && !Bukkit.isOwnedByCurrentRegion(entity)) return null;
+        return location();
     }
 
     public Location location() {

@@ -12,9 +12,11 @@ public final class LookMechanic implements Mechanic {
     @Override
     public void execute(MechanicCall call) {
         LivingEntity caster = call.context().caster();
+        Location to = call.target().ownedLocation();
+        if (to == null) return;
         Location from = caster.getLocation();
         Location facing = from.clone();
-        facing.setDirection(call.target().location().toVector().subtract(from.toVector()));
+        facing.setDirection(to.toVector().subtract(from.toVector()));
         caster.setRotation(facing.getYaw(), facing.getPitch());
     }
 }
