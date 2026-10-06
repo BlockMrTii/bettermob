@@ -141,6 +141,25 @@ A line of its own, `delay 20`, pauses the rest of the skill for 20 ticks.
 
 All multi-target targeters (`@EntitiesNearOrigin`, `@EntitiesInRadius`, `@PlayersInRadius`, `@PIR`) also take `limit=<n>` and `sort=nearest|farthest|random`, and run the mechanic once per target. An unknown targeter is logged once and the line targets the default target.
 
+## Arguments
+
+A skill can take values. Every parameter of `skill{s=name;...}`, `sudoskill{...}` and `randomskill{...}` other than `s`, `skill`, `skills`, `sync`, `delay` and `cd` is passed to the called skill; `<arg.name>` in its mechanic parameters (also in its inline skills) is replaced by the value. Defaults go into an `Arguments:` section of the skill.
+
+```yaml
+heal_pulse:
+  Arguments:
+    amount: 2
+  Skills:
+    - heal{amount=<arg.amount>} @self
+```
+
+`skill{s=heal_pulse;amount=6} @self` heals 6, without `amount` it heals 2.
+
+- Arguments are not handed on to the skills that skill calls; repeat them explicitly, for example `skill{s=other;amount=<arg.amount>}`.
+- An argument that was not passed and has no default stays as `<arg.name>` and is logged once.
+- Names are case-insensitive. Values are inserted as plain text: `{ } [ ] ; = " ' \ %` and control characters are removed, so an argument can never add skill lines or trigger a command.
+- The variables of the calling skill run are shared with the called skill, see [Variables](#variables).
+
 ## Variables
 
 | | `var=name` | `var=caster.name` |

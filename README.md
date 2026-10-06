@@ -467,6 +467,20 @@ positive = right), `@SelfLocation{x;y;z}` (caster position, optionally shifted),
 Unknown mechanics/conditions/targeters are logged with a clear warning and skipped
 rather than crashing the skill or the server.
 
+## Skill arguments
+
+A skill can take values: every parameter of `skill{s=name;...}`, `sudoskill{...}` and `randomskill{...}` other than `s`, `skill`, `skills`, `sync`, `delay` and `cd` is passed to the called skill, and `<arg.name>` in its mechanic parameters (also in its inline skills) is replaced by the value.
+
+```yaml
+heal_pulse:
+  Arguments:            # optional defaults
+    amount: 2
+  Skills:
+    - heal{amount=<arg.amount>} @self
+```
+
+`skill{s=heal_pulse;amount=6} @self` heals 6, `skill{s=heal_pulse} @self` heals 2. Arguments are not passed on to the skills that skill calls: repeat them explicitly (`skill{s=other;amount=<arg.amount>}`). An argument that was not passed and has no default stays as `<arg.name>` and is logged once. Values are inserted as plain text: braces, brackets, `;`, `=`, quotes, `%` and control characters are removed, so an argument can never add skill lines or trigger a command.
+
 ## Skill variables
 
 `setvariable{var=hits;value=1;type=INTEGER}` stores a value, `addvariable{var=hits;value=1}` adds to a number

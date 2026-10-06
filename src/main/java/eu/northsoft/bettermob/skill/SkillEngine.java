@@ -142,7 +142,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     public void run(SkillDefinition skill, SkillContext source) {
-        SkillContext context = source.ownedHere();
+        SkillContext context = source.ownedHere().withArguments(Arguments.withDefaults(source.arguments(), skill.arguments));
         String caster = debug.info() ? subject(context.caster()) : null;
         if (debug.info()) debug.info("skill '" + skill.id + "' started by " + caster, skill.id, caster);
         Check conditions = check(skill.conditions, context, null);
@@ -266,7 +266,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
         if (p.containsKey("delay")) {
             if (p.containsKey("cd") && !acquireCooldown(context, mechanic)) return false;
-            int ticks = parseInt(p.get("delay"), 0);
+            int ticks = parseInt(argumentValue(p.get("delay"), context), 0);
 
             SkillStep.Mechanic withoutDelay = new SkillStep.Mechanic(mechanic.name(),
                     without(without(p, "delay"), "cd"), mechanic.targeter(), mechanic.targeterParams(), null, false);
@@ -322,7 +322,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private boolean acquireCooldown(SkillContext context, SkillStep.Mechanic mechanic) {
-        float seconds = parseFloat(mechanic.params().get("cd"), 0f);
+        float seconds = parseFloat(argumentValue(mechanic.params().get("cd"), context), 0f);
         if (seconds <= 0) return true;
         return state.acquireStepCooldown(context.caster(), mechanic, seconds);
     }
@@ -394,7 +394,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private Map<String, String> substitute(String mechanicName, Map<String, String> params, SkillContext context) {
-        Map<String, String> p = withVariables(params, context);
+        Map<String, String> p = withArguments(withVariables(params, context), context);
         if (!placeholders.isEmpty()) {
             Map<String, String> applied = new LinkedHashMap<>();
             for (Map.Entry<String, String> entry : p.entrySet()) applied.put(entry.getKey(), placeholders.apply(entry.getValue(), context));
@@ -415,6 +415,24 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : p.entrySet()) {
             result.put(entry.getKey(), withCasterValues(entry.getValue(), damage, name, escapesItself));
+        }
+        return result;
+    }
+
+    private final java.util.Set<String> missingArguments = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    private String argumentValue(String value, SkillContext context) {
+        if (value == null || value.indexOf("<arg.") < 0) return value;
+        return Arguments.resolve(value, context.arguments(), name -> {
+            if (missingArguments.add(name)) plugin.messages().warn("skill.argumentMissing", "argument", name);
+        });
+    }
+
+    private Map<String, String> withArguments(Map<String, String> params, SkillContext context) {
+        if (!Arguments.mentions(params)) return params;
+        Map<String, String> result = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            result.put(entry.getKey(), argumentValue(entry.getValue(), context));
         }
         return result;
     }

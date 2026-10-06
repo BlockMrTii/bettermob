@@ -162,6 +162,7 @@ skill:
   inlineLineInvalid: "Inline-Skill: Zeile '{line}' konnte nicht geparst werden."
   mechanicUnsupported: "Skill-Mechanic '{mechanic}' wird nicht unterstützt."
   customMechanicFailed: "Eigene Mechanic '{mechanic}' von {plugin} ist fehlgeschlagen: {error}"
+  argumentMissing: "Argument '<arg.{argument}>' wurde diesem Skill nicht uebergeben und hat keinen Standardwert (Arguments:), der Platzhalter bleibt stehen."
   variableName: "Variablenname '{variable}' ist ungueltig (Buchstaben, Ziffern und _, bis 32 Zeichen, optional mit caster. davor)."
   variableValue: "Variable '{variable}': '{value}' ist kein gueltiger Wert fuer diese Mechanik."
   variableLimit: "Variable '{variable}' wurde nicht gesetzt: ein Bereich fasst hoechstens {limit} Variablen."

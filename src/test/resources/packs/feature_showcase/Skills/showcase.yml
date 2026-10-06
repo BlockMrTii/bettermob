@@ -40,4 +40,13 @@ showcase_enrage:
     - offgcd{} true
   Skills:
     - gcd{ticks=100}
+    - skill{s=showcase_heal;amount=6;who=Boss} @self
     - message{m=<caster.name> is enraged} @PlayersInRadius{r=20;limit=3;sort=nearest}
+
+showcase_heal:
+  Arguments:
+    amount: 2
+    who: friend
+  Skills:
+    - heal{amount=<arg.amount>} @self
+    - message{m=<arg.who> was healed} @PlayersInRadius{r=10;limit=1}

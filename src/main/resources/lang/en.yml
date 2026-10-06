@@ -162,6 +162,7 @@ skill:
   inlineLineInvalid: "Inline skill: line '{line}' could not be parsed."
   mechanicUnsupported: "Skill mechanic '{mechanic}' is not supported."
   customMechanicFailed: "Custom mechanic '{mechanic}' from {plugin} failed: {error}"
+  argumentMissing: "Argument '<arg.{argument}>' was not passed to this skill and has no default (Arguments:), the placeholder stays as it is."
   variableName: "Variable name '{variable}' is invalid (letters, digits and _ , up to 32 characters, optionally prefixed with caster.)."
   variableValue: "Variable '{variable}': '{value}' is not a valid value for this mechanic."
   variableLimit: "Variable '{variable}' was not set: a scope holds at most {limit} variables."
