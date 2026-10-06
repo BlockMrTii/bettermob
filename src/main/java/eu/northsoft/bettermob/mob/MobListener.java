@@ -3,12 +3,14 @@ package eu.northsoft.bettermob.mob;
 import eu.northsoft.bettermob.api.event.BetterMobDamageEvent;
 import eu.northsoft.bettermob.api.event.BetterMobDeathEvent;
 import eu.northsoft.bettermob.drop.DropRegistry;
+import eu.northsoft.bettermob.stats.KillStats;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -32,10 +34,12 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class MobListener implements Listener {
     private final MobManager manager;
     private final DropRegistry drops;
+    private final KillStats kills;
 
-    public MobListener(MobManager manager, DropRegistry drops) {
+    public MobListener(MobManager manager, DropRegistry drops, KillStats kills) {
         this.manager = manager;
         this.drops = drops;
+        this.kills = kills;
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -59,6 +63,9 @@ public final class MobListener implements Listener {
     public void onDeath(EntityDeathEvent event) {
         MobDefinition definition = manager.definitionOf(event.getEntity().getUniqueId());
         if (definition == null) return;
+
+        Player killer = event.getEntity().getKiller();
+        if (killer != null) kills.record(killer.getUniqueId(), killer.getName(), definition.id);
 
         if (definition.options.preventOtherDrops() || definition.drops != null) {
             event.getDrops().clear();
