@@ -29,7 +29,7 @@ public final class ItemRegistry {
     private final PackScanner packScanner;
     private final File folder;
     private final NamespacedKey itemIdKey;
-    private final Map<String, ItemDefinition> items = new LinkedHashMap<>();
+    private volatile Map<String, ItemDefinition> items = Map.of();
 
     public ItemRegistry(BetterMobPlugin plugin, PackScanner packScanner) {
         this.plugin = plugin;
@@ -40,23 +40,24 @@ public final class ItemRegistry {
 
     public void load() {
         folder.mkdirs();
-        items.clear();
+        Map<String, ItemDefinition> loaded = new LinkedHashMap<>();
         for (File sourceFolder : packScanner.foldersFor("items")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
                 for (String id : config.getKeys(false)) {
                     ConfigurationSection section = config.getConfigurationSection(id);
                     if (section == null || !section.contains("Id")) continue;
-                    if (items.containsKey(id.toLowerCase(Locale.ROOT))) {
+                    if (loaded.containsKey(id.toLowerCase(Locale.ROOT))) {
                         plugin.messages().warn("item.duplicate", "item", id, "folder", sourceFolder.getPath());
                         continue;
                     }
                     ItemDefinition definition = parse(id, section);
-                    if (definition != null) items.put(id.toLowerCase(Locale.ROOT), definition);
+                    if (definition != null) loaded.put(id.toLowerCase(Locale.ROOT), definition);
                 }
             }
         }
-        plugin.messages().info("item.loaded", "count", items.size());
+        items = loaded;
+        plugin.messages().info("item.loaded", "count", loaded.size());
     }
 
     public ItemDefinition get(String id) {
