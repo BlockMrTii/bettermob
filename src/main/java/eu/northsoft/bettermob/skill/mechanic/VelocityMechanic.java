@@ -13,6 +13,8 @@ import static eu.northsoft.bettermob.skill.Params.parseFloat;
 import static eu.northsoft.bettermob.skill.Params.parseInt;
 
 public final class VelocityMechanic implements Mechanic {
+    private static final int MAX_REPEAT = 1200;
+
     private final SkillEngine engine;
 
     public VelocityMechanic(SkillEngine engine) {
@@ -28,7 +30,7 @@ public final class VelocityMechanic implements Mechanic {
         Vector change = new Vector(parseFloat(p.get("x"), 0f), parseFloat(p.get("y"), 0f), parseFloat(p.get("z"), 0f));
         long interval = Math.max(1, parseInt(firstParam(p, "repeatinterval", "ri"), 1));
         apply(entity, mode, change);
-        int repeat = parseInt(p.get("repeat"), 0);
+        int repeat = Math.min(MAX_REPEAT, parseInt(p.get("repeat"), 0));
         for (int i = 1; i <= repeat; i++) {
             Tasks.runLater(engine.plugin(), entity, i * interval, () -> apply(entity, mode, change));
         }
