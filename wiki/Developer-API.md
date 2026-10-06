@@ -127,7 +127,7 @@ Skills:
 
 ## Example plugin
 
-[`examples/api-example`](https://github.com/HyperGaming99/bettermob/tree/main/examples/api-example) is a small plugin built on this API: it registers a `heal{amount=4}` mechanic, listens to `BetterMobSpawnEvent` and `BetterMobDeathEvent` and has a `/apiexample <mob>` command that spawns a mob.
+[`examples/api-example`](https://github.com/HyperGaming99/bettermob/tree/main/examples/api-example) is a small plugin built on this API: it registers a `heal{amount=4}` mechanic, a `?daytime` condition, a `@NearestPlayer` targeter and an `<example.world>` placeholder, listens to `BetterMobSpawnEvent` and `BetterMobDeathEvent` and has a `/apiexample <mob>` command that spawns a mob. `ModernEvents` listens to `BetterMobDamageEvent` and `BetterMobSkillEvent`; it needs BetterMob 1.1.8 or newer, so the default build (against the published jar) leaves it out and the plugin logs that at start. Build with the `local` profile below to include it.
 
 ```bash
 mvn -f examples/api-example/pom.xml package

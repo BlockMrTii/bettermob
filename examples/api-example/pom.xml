@@ -12,6 +12,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <bettermob.groupId>com.github.HyperGaming99</bettermob.groupId>
         <bettermob.version>v1.1.7.1</bettermob.version>
+        <example.excludes>**/ModernEvents.java</example.excludes>
     </properties>
 
     <repositories>
@@ -45,6 +46,7 @@
             <id>local</id>
             <properties>
                 <bettermob.groupId>eu.northsoft</bettermob.groupId>
+                <example.excludes>**/None.java</example.excludes>
             </properties>
         </profile>
     </profiles>
@@ -55,6 +57,11 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
+                <configuration>
+                    <excludes>
+                        <exclude>${example.excludes}</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>
