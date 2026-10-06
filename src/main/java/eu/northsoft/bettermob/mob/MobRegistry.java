@@ -26,7 +26,7 @@ public final class MobRegistry {
     private final File legacyFile;
     private final File folder;
     private final PackScanner packScanner;
-    private final Map<String, MobDefinition> mobs = new LinkedHashMap<>();
+    private volatile Map<String, MobDefinition> mobs = Map.of();
 
     public MobRegistry(BetterMobPlugin plugin, PackScanner packScanner) {
         this.plugin = plugin;
@@ -44,21 +44,22 @@ public final class MobRegistry {
             plugin.saveResource("mobs/nm_wumpus.yml", false);
         }
 
-        mobs.clear();
+        Map<String, MobDefinition> loaded = new LinkedHashMap<>();
         for (File sourceFolder : packScanner.foldersFor("mobs")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
                 for (Map.Entry<String, ConfigurationSection> entry : extractMobSections(file).entrySet()) {
                     String id = entry.getKey();
-                    if (mobs.containsKey(id.toLowerCase(Locale.ROOT))) {
+                    if (loaded.containsKey(id.toLowerCase(Locale.ROOT))) {
                         plugin.messages().warn("mob.duplicate", "mob", id, "folder", sourceFolder.getPath());
                         continue;
                     }
                     MobDefinition definition = parse(id, entry.getValue());
-                    if (definition != null) mobs.put(id.toLowerCase(Locale.ROOT), definition);
+                    if (definition != null) loaded.put(id.toLowerCase(Locale.ROOT), definition);
                 }
             }
         }
-        plugin.messages().info("mob.loaded", "count", mobs.size());
+        mobs = loaded;
+        plugin.messages().info("mob.loaded", "count", loaded.size());
     }
 
     private void migrateLegacyFile() {
