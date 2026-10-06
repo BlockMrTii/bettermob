@@ -76,6 +76,11 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `spin` | `duration` ticks, `velocity` degrees per tick | Spin the target |
 | `effect:particles` (`e:p`) | `p`, `amount`, `hS`, `vS`, `speed`, `y`, `repeat`, `repeatInterval` | Spawn particles. `y` shifts them up; `repeat` spawns them that many more times every `repeatInterval` ticks, following a moving target (entity, `@ModelPart`, `@Forward`) |
 | `effect:particlering` | `particle`, `radius`, `points`, `amount`, `hS`, `vS` | Ring of particles |
+| `effect:particleline` (`particleline`) | `particle`, `points` or `density`, `fy`, `y` | Particles on a line from the caster (chest height, `fy` shifts it) to the target (`y` shifts its end). `density` is points per block (default 2), `points` fixes the count; at most 500 points. Particle options are the same as for `effect:particles` |
+| `effect:particlebeam` (`particlebeam`) | as `effect:particleline`, plus `d` | The same line, drawn from the caster towards the target over `d` ticks (default 10, at most 100). The end points are taken when the mechanic starts |
+| `effect:particlesphere` (`particlesphere`) | `particle`, `radius`, `points`, `y` | Evenly spread particles on a sphere around the target (radius 1.5, 40 points by default) |
+| `effect:particlehelix` (`particlehelix`) | `particle`, `radius`, `height`, `turns`, `points`, `y` | A spiral rising from the target's location (radius 1, height 2, 3 turns, 60 points by default) |
+| `glow` | `d` | Make the target glow for `d` ticks (default 40), then restore its previous glow state |
 | `equip` | `item=<item>:<slot>` | Put a registered item or material into a slot: `HAND` (default), `OFFHAND`, `HEAD`, `CHEST`, `LEGS`, `FEET`. The slot's drop chance is set to 0 |
 | `addtag` / `removetag` | `t` | Mark the target, check it with `hastag` |
 | `onDamaged`, `onAttack`, `onDeath`, `onShoot`, `aura` | `auraName`, `time`, `cE`, `oS`, `oE`, `oT`, `i`, `oH` | Put a named aura on the target for `time` ticks (forever without it). `hasaura` sees it. `oS=[ ... ]` runs at the start, `oE` at the end, `oT` every `i` ticks (default 20), `oH` each time the matching event happens to that entity (`onDamaged` = it is hit, `onAttack` = it hits, ...). `cE=true` cancels that event while the aura is active |
