@@ -5,6 +5,9 @@ import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import org.bukkit.entity.LivingEntity;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import static eu.northsoft.bettermob.skill.Params.firstParam;
 
 public final class SkillMechanic implements Mechanic {
@@ -27,7 +30,11 @@ public final class SkillMechanic implements Mechanic {
         boolean forTarget = !call.step().targeter().isEmpty() && !call.step().targeter().equals("self")
                 && call.target().entity() instanceof LivingEntity;
         SkillContext child = forTarget ? call.context().withTrigger((LivingEntity) call.target().entity()) : call.context();
-        if (id.trim().startsWith("[")) engine.runInline(id, child);
+        if (id.trim().startsWith("[")) {
+            Map<String, String> arguments = new LinkedHashMap<>(child.arguments());
+            arguments.putAll(Arguments.from(call.params()));
+            engine.runInline(id, child.withArguments(arguments));
+        }
         else engine.runById(id.trim(), child.withArguments(Arguments.from(call.params())));
     }
 }
