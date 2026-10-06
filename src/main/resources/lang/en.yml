@@ -46,6 +46,12 @@ command:
       timer: "timer"
       use: "use"
       shoot: "shoot"
+      health: "health"
+      target: "target"
+      losetarget: "lost target"
+      entercombat: "combat enter"
+      exitcombat: "combat exit"
+      kill: "kill"
   validate:
     unknownPack: "&cPack '{pack}' was not found in packs/."
     header: "&7Checked &f{lines} &7lines in &f{sources} &7place(s):"

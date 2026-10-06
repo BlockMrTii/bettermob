@@ -46,6 +46,12 @@ command:
       timer: "Timer"
       use: "Benutzung"
       shoot: "Schuss"
+      health: "Gesundheit"
+      target: "Ziel"
+      losetarget: "Ziel verloren"
+      entercombat: "Kampf Beginn"
+      exitcombat: "Kampf Ende"
+      kill: "Kill"
   validate:
     unknownPack: "&cPack '{pack}' wurde in packs/ nicht gefunden."
     header: "&7{lines} Zeilen in &f{sources} &7Ordner(n) geprueft:"

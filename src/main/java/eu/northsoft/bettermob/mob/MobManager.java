@@ -191,6 +191,8 @@ public final class MobManager {
         threatTables.remove(entity.getUniqueId());
         damageModifiers.remove(entity.getUniqueId());
         definitions.remove(entity.getUniqueId());
+        healthFired.remove(entity.getUniqueId());
+        inCombat.remove(entity.getUniqueId());
         List<Runnable> cancellers = timers.remove(entity.getUniqueId());
         if (cancellers != null) cancellers.forEach(Runnable::run);
     }
@@ -253,10 +255,15 @@ public final class MobManager {
 
     public void fireTrigger(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
                       LivingEntity trigger, Cancellable event) {
+        fireTriggers(entity, definition, type, definition.triggersOf(type), trigger, event);
+    }
+
+    private void fireTriggers(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
+                              List<MobDefinition.SkillTrigger> triggers, LivingEntity trigger, Cancellable event) {
         if (skillEngine == null) return;
         if (!Bukkit.isOwnedByCurrentRegion(entity)) {
             LivingEntity original = trigger;
-            Tasks.runOwned(plugin, entity, () -> fireTrigger(entity, definition, type, original, null));
+            Tasks.runOwned(plugin, entity, () -> fireTriggers(entity, definition, type, triggers, original, null));
             return;
         }
         if (trigger != null && !Bukkit.isOwnedByCurrentRegion(trigger)) trigger = null;
@@ -270,10 +277,51 @@ public final class MobManager {
         };
         if (auraKind != null) skillEngine.fireAuras(entity, auraKind, trigger, event);
         SkillContext context = new SkillContext(entity, trigger, event);
-        for (MobDefinition.SkillTrigger skillTrigger : definition.triggersOf(type)) {
+        for (MobDefinition.SkillTrigger skillTrigger : triggers) {
             skillEngine.runStep(skillTrigger.step(), context);
         }
         if (event != null && event.isCancelled()) plugin.debug().info("trigger " + type + " on " + definition.id + ": event cancelled", definition.id);
+    }
+
+    private final Map<UUID, Set<Integer>> healthFired = new ConcurrentHashMap<>();
+    private final Set<UUID> inCombat = ConcurrentHashMap.newKeySet();
+    private static final long EXIT_COMBAT_TICKS = 100L;
+
+    public boolean hasHealthTriggers(MobDefinition definition) {
+        return !definition.triggersOf(MobDefinition.SkillTrigger.Trigger.HEALTH).isEmpty();
+    }
+
+    public void checkHealth(LivingEntity mob, MobDefinition definition, double health) {
+        List<MobDefinition.SkillTrigger> triggers = definition.triggersOf(MobDefinition.SkillTrigger.Trigger.HEALTH);
+        if (triggers.isEmpty() || health <= 0) return;
+        var attribute = mob.getAttribute(Attribute.MAX_HEALTH);
+        double max = attribute == null ? health : attribute.getValue();
+        Set<Integer> fired = healthFired.computeIfAbsent(mob.getUniqueId(), id -> ConcurrentHashMap.newKeySet());
+        for (int i = 0; i < triggers.size(); i++) {
+            MobDefinition.SkillTrigger trigger = triggers.get(i);
+            if (trigger.health() == null) continue;
+            if (!trigger.health().matches(health, max)) {
+                fired.remove(i);
+            } else if (fired.add(i)) {
+                fireTriggers(mob, definition, MobDefinition.SkillTrigger.Trigger.HEALTH, List.of(trigger), null, null);
+            }
+        }
+    }
+
+    public void targetChanged(LivingEntity mob, MobDefinition definition, LivingEntity target) {
+        UUID id = mob.getUniqueId();
+        if (target != null) {
+            fireTrigger(mob, definition, MobDefinition.SkillTrigger.Trigger.TARGET, target, null);
+            if (inCombat.add(id)) fireTrigger(mob, definition, MobDefinition.SkillTrigger.Trigger.ENTERCOMBAT, target, null);
+            return;
+        }
+        fireTrigger(mob, definition, MobDefinition.SkillTrigger.Trigger.LOSETARGET, null, null);
+        if (!inCombat.contains(id)) return;
+        Tasks.runLater(plugin, mob, EXIT_COMBAT_TICKS, () -> {
+            if (mob instanceof Mob living && living.getTarget() == null && inCombat.remove(id)) {
+                fireTrigger(mob, definition, MobDefinition.SkillTrigger.Trigger.EXITCOMBAT, null, null);
+            }
+        });
     }
 
     private void scheduleTimers(LivingEntity entity, MobDefinition definition) {
