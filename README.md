@@ -630,7 +630,7 @@ skill lines or trigger a command. `caster` and `target` are reserved namespaces.
 
 ### Example plugin
 
-[`examples/api-example`](examples/api-example) is a small plugin built on this API: it registers a `heal{amount=4}` mechanic, listens to `BetterMobSpawnEvent` and `BetterMobDeathEvent` and has a `/apiexample <mob>` command that spawns a mob.
+[`examples/api-example`](examples/api-example) is a small plugin built on this API: it registers a `heal{amount=4}` mechanic, a `?daytime` condition, a `@NearestPlayer` targeter and an `<example.world>` placeholder, listens to `BetterMobSpawnEvent` and `BetterMobDeathEvent` and has a `/apiexample <mob>` command that spawns a mob. Its damage and skill event listener (`ModernEvents`) needs BetterMob 1.1.8 and is only built with the `local` profile.
 
 ```bash
 mvn -f examples/api-example/pom.xml package
