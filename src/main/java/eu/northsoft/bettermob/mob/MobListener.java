@@ -99,7 +99,8 @@ public final class MobListener implements Listener {
     private void fireDamageApi(EntityDamageByEntityEvent event) {
         if (BetterMobDamageEvent.getHandlerList().getRegisteredListeners().length == 0) return;
         Entity source = event.getDamager();
-        if (source instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter) source = shooter;
+        if (source instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter && Bukkit.isOwnedByCurrentRegion(shooter)) source = shooter;
+        if (!Bukkit.isOwnedByCurrentRegion(source)) return;
         if (event.getEntity() instanceof LivingEntity victim && fireDamage(victim, source, true, event)) return;
         if (source instanceof LivingEntity attacker) fireDamage(attacker, event.getEntity(), false, event);
     }
