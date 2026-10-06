@@ -129,10 +129,13 @@ public final class MobManager {
         String stored = entity.getPersistentDataContainer().get(homeKey(), PersistentDataType.STRING);
         if (stored == null) return null;
         String[] parts = stored.split(";");
-        if (parts.length != 3) return null;
+        if (parts.length != 3 && parts.length != 4) return null;
         try {
-            return new Location(entity.getWorld(), Double.parseDouble(parts[0]), Double.parseDouble(parts[1]), Double.parseDouble(parts[2]));
-        } catch (NumberFormatException exception) {
+            int offset = parts.length - 3;
+            World world = offset == 0 ? entity.getWorld() : Bukkit.getWorld(UUID.fromString(parts[0]));
+            if (world == null) return null;
+            return new Location(world, Double.parseDouble(parts[offset]), Double.parseDouble(parts[offset + 1]), Double.parseDouble(parts[offset + 2]));
+        } catch (IllegalArgumentException exception) {
             return null;
         }
     }
@@ -141,7 +144,7 @@ public final class MobManager {
         Behaviour behaviour = definition.behaviour;
         if (behaviour != null && behaviour.needsHome() && homeOf(entity) == null) {
             Location at = entity.getLocation();
-            entity.getPersistentDataContainer().set(homeKey(), PersistentDataType.STRING, at.getX() + ";" + at.getY() + ";" + at.getZ());
+            entity.getPersistentDataContainer().set(homeKey(), PersistentDataType.STRING, at.getWorld().getUID() + ";" + at.getX() + ";" + at.getY() + ";" + at.getZ());
         }
         if (entity instanceof Mob mob) BehaviourGoals.apply(plugin, mob, behaviour, () -> homeOf(entity));
     }

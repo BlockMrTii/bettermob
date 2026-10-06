@@ -34,10 +34,13 @@ public record Behaviour(List<Waypoint> patrol, boolean loop, int waitTicks, doub
         List<String> lines = List.of();
         if (patrol instanceof ConfigurationSection section) {
             lines = section.getStringList("Points");
-            if (section.contains("Loop")) loop = section.getBoolean("Loop", true);
+            if (section.contains("Loop")) loop = !"false".equalsIgnoreCase(String.valueOf(section.get("Loop")).trim());
+            if (section.contains("Points") && !section.isList("Points")) invalid.accept("Patrol: Points " + section.get("Points"));
             waitTicks = (int) Math.round(Math.max(0, section.getDouble("Wait", 0)) * 20);
         } else if (mob.isList("Patrol")) {
             lines = mob.getStringList("Patrol");
+        } else if (patrol != null) {
+            invalid.accept("Patrol: " + patrol);
         }
         for (String line : lines) {
             Waypoint point = parsePoint(line);

@@ -63,4 +63,12 @@ class BehaviourTest {
         assertNull(parse("Type: PIG\n", new ArrayList<>()));
         assertNull(parse("Guard: 0\nMaxHomeDistance: -4\n", new ArrayList<>()));
     }
+
+    @Test
+    void aQuotedFalseStopsTheLoopAndAWrongShapeIsReported() throws Exception {
+        assertFalse(parse("Patrol:\n  Points:\n    - 1 64 1\n  Loop: \"false\"\n", new ArrayList<>()).loop());
+        List<String> invalid = new ArrayList<>();
+        parse("Patrol:\n  Points: 1 64 1\nGuard: 5\n", invalid);
+        assertEquals(List.of("Patrol: Points 1 64 1"), invalid);
+    }
 }

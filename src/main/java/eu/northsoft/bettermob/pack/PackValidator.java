@@ -97,6 +97,12 @@ public final class PackValidator {
             if (key.equalsIgnoreCase("Patrol")) {
                 List<String> points = section.isList(key) ? section.getStringList(key)
                         : section.isConfigurationSection(key) ? section.getConfigurationSection(key).getStringList("Points") : List.of();
+                Object shape = section.get(key);
+                boolean wrongShape = shape instanceof ConfigurationSection nested ? nested.contains("Points") && !nested.isList("Points") : !(shape instanceof List<?>);
+                if (wrongShape) {
+                    report.lines++;
+                    report.issues.add(new Issue(file, "Patrol: " + shape, Reason.UNPARSEABLE, ""));
+                }
                 for (String point : points) {
                     report.lines++;
                     if (Behaviour.parsePoint(point) == null) report.issues.add(new Issue(file, "Patrol: " + point, Reason.UNPARSEABLE, ""));
