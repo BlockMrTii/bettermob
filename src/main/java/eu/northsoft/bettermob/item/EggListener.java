@@ -7,6 +7,7 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -27,11 +28,13 @@ public final class EggListener implements Listener {
         this.eggs = eggs;
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onUse(PlayerInteractEvent event) {
         String mobId = eggs.mobIdOf(event.getItem());
         if (mobId == null) return;
+        if (event.useInteractedBlock() == Event.Result.DENY || event.useItemInHand() == Event.Result.DENY) return;
         event.setCancelled(true);
+        if (event.getHand() == EquipmentSlot.OFF_HAND && eggs.mobIdOf(event.getPlayer().getInventory().getItemInMainHand()) != null) return;
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getHand() == null) return;
 
         MobDefinition definition = manager.registry().get(mobId);
