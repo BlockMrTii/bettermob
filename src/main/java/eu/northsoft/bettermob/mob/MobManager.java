@@ -191,8 +191,8 @@ public final class MobManager {
         threatTables.remove(entity.getUniqueId());
         damageModifiers.remove(entity.getUniqueId());
         definitions.remove(entity.getUniqueId());
-        healthFired.remove(entity.getUniqueId());
         inCombat.remove(entity.getUniqueId());
+        exitCombatToken.remove(entity.getUniqueId());
         List<Runnable> cancellers = timers.remove(entity.getUniqueId());
         if (cancellers != null) cancellers.forEach(Runnable::run);
     }
@@ -283,7 +283,7 @@ public final class MobManager {
         if (event != null && event.isCancelled()) plugin.debug().info("trigger " + type + " on " + definition.id + ": event cancelled", definition.id);
     }
 
-    private final Map<UUID, Set<Integer>> healthFired = new ConcurrentHashMap<>();
+    private final Map<UUID, Object> exitCombatToken = new ConcurrentHashMap<>();
     private final Set<UUID> inCombat = ConcurrentHashMap.newKeySet();
     private static final long EXIT_COMBAT_TICKS = 100L;
 
@@ -291,18 +291,14 @@ public final class MobManager {
         return !definition.triggersOf(MobDefinition.SkillTrigger.Trigger.HEALTH).isEmpty();
     }
 
-    public void checkHealth(LivingEntity mob, MobDefinition definition, double health) {
+    public void checkHealth(LivingEntity mob, MobDefinition definition, double before, double health) {
         List<MobDefinition.SkillTrigger> triggers = definition.triggersOf(MobDefinition.SkillTrigger.Trigger.HEALTH);
         if (triggers.isEmpty() || health <= 0) return;
         var attribute = mob.getAttribute(Attribute.MAX_HEALTH);
-        double max = attribute == null ? health : attribute.getValue();
-        Set<Integer> fired = healthFired.computeIfAbsent(mob.getUniqueId(), id -> ConcurrentHashMap.newKeySet());
-        for (int i = 0; i < triggers.size(); i++) {
-            MobDefinition.SkillTrigger trigger = triggers.get(i);
+        double max = attribute == null ? Math.max(before, health) : attribute.getValue();
+        for (MobDefinition.SkillTrigger trigger : triggers) {
             if (trigger.health() == null) continue;
-            if (!trigger.health().matches(health, max)) {
-                fired.remove(i);
-            } else if (fired.add(i)) {
+            if (trigger.health().matches(health, max) && !trigger.health().matches(before, max)) {
                 fireTriggers(mob, definition, MobDefinition.SkillTrigger.Trigger.HEALTH, List.of(trigger), null, null);
             }
         }
@@ -311,14 +307,17 @@ public final class MobManager {
     public void targetChanged(LivingEntity mob, MobDefinition definition, LivingEntity target) {
         UUID id = mob.getUniqueId();
         if (target != null) {
+            exitCombatToken.remove(id);
             fireTrigger(mob, definition, MobDefinition.SkillTrigger.Trigger.TARGET, target, null);
             if (inCombat.add(id)) fireTrigger(mob, definition, MobDefinition.SkillTrigger.Trigger.ENTERCOMBAT, target, null);
             return;
         }
         fireTrigger(mob, definition, MobDefinition.SkillTrigger.Trigger.LOSETARGET, null, null);
         if (!inCombat.contains(id)) return;
+        Object token = new Object();
+        exitCombatToken.put(id, token);
         Tasks.runLater(plugin, mob, EXIT_COMBAT_TICKS, () -> {
-            if (mob instanceof Mob living && living.getTarget() == null && inCombat.remove(id)) {
+            if (exitCombatToken.remove(id, token) && mob instanceof Mob living && living.getTarget() == null && inCombat.remove(id)) {
                 fireTrigger(mob, definition, MobDefinition.SkillTrigger.Trigger.EXITCOMBAT, null, null);
             }
         });
@@ -364,6 +363,8 @@ public final class MobManager {
         List<Runnable> cancellers = timers.remove(id);
         if (cancellers != null) cancellers.forEach(Runnable::run);
         if (skillEngine != null) skillEngine.forget(id);
+        inCombat.remove(id);
+        exitCombatToken.remove(id);
 
         definitions.put(id, fresh);
         if (fresh.threatTable) threatTables.putIfAbsent(id, new ConcurrentHashMap<>());

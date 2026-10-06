@@ -134,7 +134,7 @@ public final class MobListener implements Listener {
         if (!(event.getEntity() instanceof LivingEntity mob)) return;
         MobDefinition definition = manager.definitionOf(mob.getUniqueId());
         if (definition != null && manager.hasHealthTriggers(definition)) {
-            manager.checkHealth(mob, definition, Math.max(0, mob.getHealth() - event.getFinalDamage()));
+            manager.checkHealth(mob, definition, mob.getHealth(), Math.max(0, mob.getHealth() - event.getFinalDamage()));
         }
     }
 
@@ -143,7 +143,7 @@ public final class MobListener implements Listener {
         if (!(event.getEntity() instanceof LivingEntity mob)) return;
         MobDefinition definition = manager.definitionOf(mob.getUniqueId());
         if (definition != null && manager.hasHealthTriggers(definition)) {
-            manager.checkHealth(mob, definition, mob.getHealth() + event.getAmount());
+            manager.checkHealth(mob, definition, mob.getHealth(), mob.getHealth() + event.getAmount());
         }
     }
 
