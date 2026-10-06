@@ -132,7 +132,7 @@ tagged releases above are the stable ones.
 | `/bettermob packs` | List discovered packs and whether they're enabled |
 | `/bettermob info <mob>` | Show a mob's type, health, damage, faction, model, equipment, number of drop entries, skills by trigger and how many are alive |
 | `/bettermob reload` | Reload config, mobs, skills, and packs |
-| `/bettermob validate [pack]` | Check a pack (or all of them) for unsupported mechanics, conditions, targeters, undefined skills and unparsable lines (including drop lines) without spawning anything |
+| `/bettermob validate [pack]` | Check a pack (or all of them) for unsupported mechanics, conditions, targeters, undefined skills, model ids that exist in neither BetterModel nor ModelEngine, and unparsable lines (including drop lines) without spawning anything |
 | `/bettermob skill <id> [player]` | Manually run a registered skill, bypassing its normal triggers |
 | `/bettermob give <item> [player] [amount]` | Give a registered item (see [Items](#items)) |
 | `/bettermob killall [mob\|*] [world]` | Remove all living BetterMob mobs, or only one type and/or one world, and report how many |
