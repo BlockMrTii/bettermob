@@ -53,6 +53,17 @@
         "type": "number",
         "description": "Seconds per caster.",
         "minimum": 0
+      },
+      "Arguments": {
+        "type": "object",
+        "description": "Default values for <arg.name> placeholders; a call like skill{s=id;name=value} overrides them.",
+        "additionalProperties": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        }
       }
     }
   }
