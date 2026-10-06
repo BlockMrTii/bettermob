@@ -11,6 +11,9 @@ public final class BuiltinMechanics {
         registry.register(new LookMechanic(), "look");
         registry.register(new SoundMechanic(), "sound");
         registry.register(new MessageMechanic(), "message", "msg");
+        registry.register(new ActionBarMechanic(engine), "actionbar", "actionmessage");
+        registry.register(new TitleMechanic(), "title", "sendtitle");
+        registry.register(new BossBarMechanic(engine), "bossbar");
         registry.register(new StateMechanic(engine), "state");
         registry.register(new PotionMechanic(engine), "potion");
         registry.register(new BreakBlockMechanic(), "breakblock");

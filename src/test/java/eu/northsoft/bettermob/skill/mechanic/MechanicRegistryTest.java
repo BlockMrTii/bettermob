@@ -24,7 +24,8 @@ class MechanicRegistryTest {
             "setnodamageticks");
 
     private static final List<String> ADDED_NAMES = List.of("heal", "teleport", "explosion", "lightning", "setspeed", "setai",
-            "setvariable", "variableset", "addvariable", "variableadd");
+            "setvariable", "variableset", "addvariable", "variableadd",
+            "actionbar", "actionmessage", "title", "sendtitle", "bossbar");
 
     private static final Set<String> HANDLED_BY_ENGINE = Set.of("cancelskill", "delay");
 

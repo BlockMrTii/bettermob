@@ -80,7 +80,10 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `addtag` / `removetag` | `t` | Mark the target, check it with `hastag` |
 | `onDamaged`, `onAttack`, `onDeath`, `onShoot`, `aura` | `auraName`, `time`, `cE`, `oS`, `oE`, `oT`, `i`, `oH` | Put a named aura on the target for `time` ticks (forever without it). `hasaura` sees it. `oS=[ ... ]` runs at the start, `oE` at the end, `oT` every `i` ticks (default 20), `oH` each time the matching event happens to that entity (`onDamaged` = it is hit, `onAttack` = it hits, ...). `cE=true` cancels that event while the aura is active |
 | `bodyrotation` | `headUneven`, `bodyUneven`, `minHead`, `maxHead`, `minBody`, `maxBody`, `stable`, `duration`, `delay` | Set how far the model's head and body may turn apart (BetterModel and ModelEngine) |
-| `message` | `m` | Send a message to the target player. `&` colors, `<caster.name>`, `<target.name>` and PlaceholderAPI placeholders work |
+| `actionbar` (`actionmessage`) | `m`, `d` | Show text above the hotbar of the target player. It stays about 2 seconds; with `d` (ticks) it is repeated until `d` has passed |
+| `title` (`sendtitle`) | `t`, `st`, `fi`, `d`, `fo` | Show a title (`t`) and subtitle (`st`) with fade in `fi` (default 10 ticks), stay `d` (70) and fade out `fo` (20) |
+| `bossbar` | `m`, `color`, `style`, `p`, `d`, `countdown` | Show a boss bar with the text `m` to the target player for `d` ticks (default 100), then remove it. `color` is `PINK`, `BLUE`, `RED`, `GREEN`, `YELLOW`, `PURPLE` (default) or `WHITE`; `style` is `SOLID` (default), `SEGMENTED_6`, `SEGMENTED_10`, `SEGMENTED_12` or `SEGMENTED_20`; `p` is the start progress 0 to 1; `countdown=true` makes it shrink to empty over `d` |
+| `message` | `m` | Send a message to the target player. The text rules below apply to `message`, `actionbar`, `title` and `bossbar`: `&` colors, `<caster.name>`, `<target.name>` and PlaceholderAPI placeholders work |
 | `ignite` | `t` | Set the target on fire for `t` ticks |
 | `setvariable` (`variableset`) | `var`, `value`, `type` | Store a value: `var=hits` for the current skill run, `var=caster.hits` for the caster. `type` is `INTEGER`, `FLOAT` or `STRING` (default), numbers are checked. See [Variables](#variables) |
 | `addvariable` (`variableadd`) | `var`, `value` | Add a number to a variable (a missing one counts as 0) |
