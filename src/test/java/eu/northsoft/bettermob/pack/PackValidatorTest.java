@@ -7,13 +7,15 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PackValidatorTest {
-    private static final Set<String> MECHANICS = Set.of("sound", "skill", "potion", "randomskill", "cancelevent", "totem", "damage");
+    private static final Set<String> MECHANICS = Set.of("model", "modelengine", "sound", "skill", "potion", "randomskill", "cancelevent", "totem", "damage");
     private static final Set<String> CONDITIONS = Set.of("chance", "hasaura");
     private static final Set<String> TARGETERS = Set.of("self", "target", "entitiesnearorigin");
     private static final Set<String> SKILLS = Set.of("known_skill");
@@ -84,6 +86,41 @@ class PackValidatorTest {
                 + "    - damage{a=1} @EntitiesNearOrigin{r=4;Conditions=[ - isPlayer{} true - chance{chance=0.5} true - ismob{} false ]}\n");
         PackValidator.Report report = validator.validatePack("ring", root.toFile());
         assertTrue(report.issues().isEmpty(), report.issues().toString());
+    }
+
+    private PackValidator withModels(Set<String> betterModel, Set<String> modelEngine) {
+        return new PackValidator(new PackValidator.Knowledge(MECHANICS::contains, CONDITIONS::contains, TARGETERS::contains, SKILLS::contains,
+                name -> true, new PackValidator.Models(betterModel == null ? null : betterModel::contains, modelEngine == null ? null : modelEngine::contains)));
+    }
+
+    @Test
+    void modelIdsAreCheckedAgainstTheInstalledModelPlugins(@TempDir Path root) throws IOException {
+        write(root, "mobs/m.yml", "bear:\n  Model: bear_model\n  Skills:\n"
+                + "    - model{mid=bear_model} @self ~onSpawn\n"
+                + "    - modelengine{mid=cubee} @self ~onLoad\n"
+                + "    - model{mid=cubee} @self ~onDamaged\n"
+                + "    - skill{s=[ - model{mid=ghost} ]} @self ~onDeath\n"
+                + "ghost:\n  Model: ghost_model\n");
+        PackValidator validator = withModels(Set.of("bear_model"), Set.of("cubee"));
+        PackValidator.Report report = validator.validatePack("models", root.toFile());
+        List<String> missing = report.issues().stream().filter(i -> i.reason() == PackValidator.Reason.MODEL).map(PackValidator.Issue::name).toList();
+        assertEquals(List.of("cubee", "ghost", "ghost_model"), missing.stream().sorted().toList());
+    }
+
+    @Test
+    void aFieldModelNeedsToExistInOnlyOneOfTheEngines(@TempDir Path root) throws IOException {
+        write(root, "mobs/m.yml", "a:\n  Model: only_engine\nb:\n  Model: only_better\n");
+        PackValidator.Report report = withModels(Set.of("only_better"), Set.of("only_engine")).validatePack("x", root.toFile());
+        assertTrue(report.issues().isEmpty(), report.issues().toString());
+    }
+
+    @Test
+    void withoutAModelPluginNothingIsChecked(@TempDir Path root) throws IOException {
+        write(root, "mobs/m.yml", "a:\n  Model: nothing\n  Skills:\n    - model{mid=nothing} @self ~onSpawn\n");
+        PackValidator validator = withModels(null, null);
+        assertTrue(validator.validatePack("x", root.toFile()).issues().isEmpty());
+        assertFalse(validator.checksModels());
+        assertTrue(withModels(Set.of(), null).checksModels());
     }
 
     @Test
