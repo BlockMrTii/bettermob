@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.skill.mechanic;
 
+import eu.northsoft.bettermob.skill.Arguments;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import org.bukkit.entity.LivingEntity;
@@ -27,6 +28,6 @@ public final class SkillMechanic implements Mechanic {
                 && call.target().entity() instanceof LivingEntity;
         SkillContext child = forTarget ? call.context().withTrigger((LivingEntity) call.target().entity()) : call.context();
         if (id.trim().startsWith("[")) engine.runInline(id, child);
-        else engine.runById(id.trim(), child);
+        else engine.runById(id.trim(), child.withArguments(Arguments.from(call.params())));
     }
 }

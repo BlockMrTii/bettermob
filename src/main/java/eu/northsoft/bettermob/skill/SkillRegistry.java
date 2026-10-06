@@ -69,7 +69,17 @@ public final class SkillRegistry {
             if (step != null) steps.add(step);
             else plugin.messages().warn("skill.lineInvalid", "skill", id, "line", line);
         }
-        return new SkillDefinition(id, conditions, targetConditions, steps, section.getDouble("Cooldown", 0));
+        return new SkillDefinition(id, conditions, targetConditions, steps, section.getDouble("Cooldown", 0), parseArguments(section.getConfigurationSection("Arguments")));
+    }
+
+    private static Map<String, String> parseArguments(ConfigurationSection section) {
+        if (section == null) return Map.of();
+        Map<String, String> arguments = new LinkedHashMap<>();
+        for (String key : section.getKeys(false)) {
+            Object value = section.get(key);
+            if (value != null && !(value instanceof ConfigurationSection)) arguments.put(key.toLowerCase(Locale.ROOT), String.valueOf(value));
+        }
+        return Map.copyOf(arguments);
     }
 
     private static List<String> stringList(ConfigurationSection section, String pluralKey, String singularKey) {

@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.skill.mechanic;
 
+import eu.northsoft.bettermob.skill.Arguments;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import org.bukkit.entity.LivingEntity;
@@ -17,6 +18,6 @@ public final class SudoSkillMechanic implements Mechanic {
     public void execute(MechanicCall call) {
         if (!(call.target().entity() instanceof LivingEntity executor)) return;
         String id = firstParam(call.params(), "s", "skill", "skills");
-        if (id != null) engine.runById(id.trim(), new SkillContext(executor, call.context().caster(), null));
+        if (id != null) engine.runById(id.trim(), new SkillContext(executor, call.context().caster(), null).withArguments(Arguments.from(call.params())));
     }
 }

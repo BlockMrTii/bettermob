@@ -394,7 +394,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private Map<String, String> substitute(String mechanicName, Map<String, String> params, SkillContext context) {
-        Map<String, String> p = withVariables(params, context);
+        Map<String, String> p = withArguments(withVariables(params, context), context);
         if (!placeholders.isEmpty()) {
             Map<String, String> applied = new LinkedHashMap<>();
             for (Map.Entry<String, String> entry : p.entrySet()) applied.put(entry.getKey(), placeholders.apply(entry.getValue(), context));
@@ -415,6 +415,19 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : p.entrySet()) {
             result.put(entry.getKey(), withCasterValues(entry.getValue(), damage, name, escapesItself));
+        }
+        return result;
+    }
+
+    private final java.util.Set<String> missingArguments = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    private Map<String, String> withArguments(Map<String, String> params, SkillContext context) {
+        if (!Arguments.mentions(params)) return params;
+        Map<String, String> result = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            result.put(entry.getKey(), Arguments.resolve(entry.getValue(), context.arguments(), name -> {
+                if (missingArguments.add(name)) plugin.messages().warn("skill.argumentMissing", "argument", name);
+            }));
         }
         return result;
     }
