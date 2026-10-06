@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.mob;
 
+import eu.northsoft.bettermob.api.event.BetterMobDamageEvent;
 import eu.northsoft.bettermob.api.event.BetterMobDeathEvent;
 import eu.northsoft.bettermob.drop.DropRegistry;
 import org.bukkit.Bukkit;
@@ -88,9 +89,32 @@ public final class MobListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW)
     public void onDamageModifier(EntityDamageEvent event) {
-        if (!(event.getEntity() instanceof LivingEntity victim)) return;
-        double modifier = manager.modifierFor(victim.getUniqueId(), event.getCause());
-        if (modifier != 1.0) event.setDamage(event.getDamage() * modifier);
+        if (event.getEntity() instanceof LivingEntity victim) {
+            double modifier = manager.modifierFor(victim.getUniqueId(), event.getCause());
+            if (modifier != 1.0) event.setDamage(event.getDamage() * modifier);
+        }
+        if (event instanceof EntityDamageByEntityEvent byEntity && !byEntity.isCancelled()) fireDamageApi(byEntity);
+    }
+
+    private void fireDamageApi(EntityDamageByEntityEvent event) {
+        if (BetterMobDamageEvent.getHandlerList().getRegisteredListeners().length == 0) return;
+        Entity source = event.getDamager();
+        if (source instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter) source = shooter;
+        if (event.getEntity() instanceof LivingEntity victim && fireDamage(victim, source, true, event)) return;
+        if (source instanceof LivingEntity attacker) fireDamage(attacker, event.getEntity(), false, event);
+    }
+
+    private boolean fireDamage(LivingEntity mob, Entity other, boolean mobIsVictim, EntityDamageByEntityEvent event) {
+        MobDefinition definition = manager.definitionOf(mob.getUniqueId());
+        if (definition == null) return false;
+        BetterMobDamageEvent api = new BetterMobDamageEvent(mob, definition.toInfo(), other, mobIsVictim, event.getCause(), event.getDamage());
+        Bukkit.getPluginManager().callEvent(api);
+        if (api.isCancelled()) {
+            event.setCancelled(true);
+            return true;
+        }
+        if (api.getDamage() != event.getDamage()) event.setDamage(api.getDamage());
+        return false;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
