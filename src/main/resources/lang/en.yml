@@ -70,6 +70,7 @@ command:
       targeterCondition: "targeter condition '{name}' is not supported"
       skill: "skill '{name}' is not defined"
       model: "model '{name}' was not found in the installed model plugin"
+      dropTable: "drop table '{name}' is not defined"
   reloaded: "&aBetterMob reloaded."
   reloadedLiving: "&7{count} living mobs queued to update to their new definition."
   mobList: "&7Mobs: &f{mobs}"

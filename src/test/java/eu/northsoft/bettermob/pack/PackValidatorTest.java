@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PackValidatorTest {
-    private static final Set<String> MECHANICS = Set.of("model", "modelengine", "sound", "skill", "potion", "randomskill", "cancelevent", "totem", "damage");
+    private static final Set<String> MECHANICS = Set.of("model", "modelengine", "sound", "skill", "potion", "randomskill", "cancelevent", "totem", "damage", "loot");
     private static final Set<String> CONDITIONS = Set.of("chance", "hasaura");
     private static final Set<String> TARGETERS = Set.of("self", "target", "entitiesnearorigin");
     private static final Set<String> SKILLS = Set.of("known_skill");
@@ -129,6 +129,16 @@ class PackValidatorTest {
         PackValidator.Report report = validator.validatePack("patrol", root.toFile());
         assertEquals(4, report.lines());
         assertEquals(List.of("Patrol: broken", "Patrol: 1 2"), report.issues().stream().map(PackValidator.Issue::line).toList());
+    }
+
+    @Test
+    void lootChecksTheDropTableId(@TempDir Path root) throws IOException {
+        PackValidator checking = new PackValidator(new PackValidator.Knowledge(MECHANICS::contains, CONDITIONS::contains, TARGETERS::contains,
+                SKILLS::contains, name -> true, null, "bag"::equals));
+        write(root, "skills/s.yml", "s:\n  Skills:\n    - loot{table=bag} @target\n    - loot{table=nope} @target\n    - loot{vanilla=minecraft:entities/zombie} @target\n");
+        PackValidator.Report report = checking.validatePack("loot", root.toFile());
+        assertEquals(List.of("nope"), report.issues().stream().map(PackValidator.Issue::name).toList());
+        assertEquals(PackValidator.Reason.DROP_TABLE, report.issues().get(0).reason());
     }
 
     @Test

@@ -70,6 +70,7 @@ command:
       targeterCondition: "Targeter-Condition '{name}' wird nicht unterstuetzt"
       skill: "Skill '{name}' ist nicht definiert"
       model: "Modell '{name}' wurde im installierten Modell-Plugin nicht gefunden"
+      dropTable: "Drop-Tabelle '{name}' ist nicht definiert"
   reloaded: "&aBetterMob neu geladen."
   reloadedLiving: "&7{count} lebende Mobs werden auf die neue Definition umgestellt."
   mobList: "&7Mobs: &f{mobs}"
