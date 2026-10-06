@@ -254,6 +254,7 @@ public final class MobManager {
     public void fireTrigger(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
                       LivingEntity trigger, Cancellable event) {
         if (skillEngine == null) return;
+        if (trigger != null && !Bukkit.isOwnedByCurrentRegion(trigger)) trigger = null;
         if (plugin.debug().info()) plugin.debug().info("trigger " + type + " on " + definition.id + (trigger != null ? " (by " + trigger.getName() + ")" : ""), definition.id);
         String auraKind = switch (type) {
             case DAMAGED -> "ondamaged";
