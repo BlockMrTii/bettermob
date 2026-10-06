@@ -403,12 +403,14 @@ public final class MobManager {
         return members != null && (members.contains(player.getName().toLowerCase(java.util.Locale.ROOT)) || members.contains(player.getUniqueId().toString()));
     }
 
-    private org.bukkit.configuration.file.FileConfiguration membersSource;
-    private Map<String, Set<String>> members = Map.of();
+    private record FactionCache(org.bukkit.configuration.file.FileConfiguration source, Map<String, Set<String>> members) {}
+
+    private volatile FactionCache factionCache = new FactionCache(null, Map.of());
 
     private Map<String, Set<String>> factionMembers() {
         org.bukkit.configuration.file.FileConfiguration config = plugin.getConfig();
-        if (config != membersSource) {
+        FactionCache cache = factionCache;
+        if (config != cache.source()) {
             Map<String, Set<String>> loaded = new java.util.HashMap<>();
             var section = config.getConfigurationSection("factions");
             if (section != null) {
@@ -418,10 +420,10 @@ public final class MobManager {
                     loaded.put(name.toLowerCase(java.util.Locale.ROOT), names);
                 }
             }
-            members = loaded;
-            membersSource = config;
+            cache = new FactionCache(config, loaded);
+            factionCache = cache;
         }
-        return members;
+        return cache.members();
     }
 
     private final java.util.Set<String> registeredFactionPermissions = ConcurrentHashMap.newKeySet();
