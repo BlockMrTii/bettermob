@@ -31,6 +31,15 @@ public final class BetterModelHook {
         return Bukkit.getPluginManager().isPluginEnabled("BetterModel") && classExists(API);
     }
 
+    public boolean hasModel(String modelId) {
+        if (!available()) return false;
+        try {
+            return modelOrNullMethod().invoke(null, modelId) != null;
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            return false;
+        }
+    }
+
     public Object attachIfPresent(Entity entity, String modelId) {
         if (!available()) return null;
         try {

@@ -53,6 +53,7 @@ command:
     mainName: "main folder"
     issue: "&8  {file}: &7{line} &8- &c{reason}"
     more: "&8  ... and {count} more problem(s) in this pack."
+    modelsSkipped: "&8Model ids were not checked: neither BetterModel nor ModelEngine is installed."
     allGood: "&aNo unsupported lines found."
     reason:
       unparseable: "line could not be parsed"
@@ -61,6 +62,7 @@ command:
       condition: "unknown condition '{name}'"
       targeterCondition: "targeter condition '{name}' is not supported"
       skill: "skill '{name}' is not defined"
+      model: "model '{name}' was not found in the installed model plugin"
   reloaded: "&aBetterMob reloaded."
   reloadedLiving: "&7{count} living mobs queued to update to their new definition."
   mobList: "&7Mobs: &f{mobs}"
