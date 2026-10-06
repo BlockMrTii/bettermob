@@ -329,6 +329,20 @@ actually has — Paper can reuse existing goals, not invent new ones. `clear` re
 the category first; named goals (matched loosely, e.g. `randomstroll` also matches
 `water_avoiding_random_stroll`) are re-added from what the mob had before clearing.
 
+### Patrol, guard and home distance
+
+```yaml
+Patrol:
+  Points: [ "100 64 200", "world 110 64 200" ]
+  Loop: true
+  Wait: 3
+Guard:
+  Radius: 20
+MaxHomeDistance: 60
+```
+
+`Patrol` walks the points while the mob has no target (`Loop`, `Wait` in seconds), `Guard` sends it back to its spawn point once it is further away than the radius, `MaxHomeDistance` teleports it back. The spawn point is saved on the mob. Details in the [wiki](https://github.com/HyperGaming99/bettermob/wiki/Mobs).
+
 ## Items
 
 `items/*.yml` (and each pack's `Items/`) define items the same way MythicMobs does -

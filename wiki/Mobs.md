@@ -145,6 +145,27 @@ AITargetSelectors:
   - attacker
 ```
 
+## Patrol, guard and home distance
+
+Three optional fields give a mob a place to be. They work with the normal AI goals and need Paper's pathfinder.
+
+```yaml
+Patrol:
+  Points:
+    - 100 64 200
+    - world 110 64 200
+  Loop: true
+  Wait: 3
+Guard:
+  Radius: 20
+MaxHomeDistance: 60
+```
+
+- `Patrol` walks the points in order while the mob has nothing better to do. A plain list also works. `Loop` (default `true`) starts again after the last point, `false` stops there. `Wait` is the pause in seconds at each point. A point is `x y z` in the mob's world or `world x y z`.
+- `Guard` (a number or `Radius`) sends the mob back to where it spawned once it is further away than the radius, and it drops its target on the way.
+- `MaxHomeDistance` teleports a mob that got further than this many blocks from its spawn point back there (checked every 2 seconds).
+- The spawn point is stored on the mob, so it survives restarts. Invalid points are skipped with a warning, and `/bettermob validate` checks them.
+
 ## Models
 
 BetterMob attaches a model in three ways:
