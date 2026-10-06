@@ -1,0 +1,451 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/HyperGaming99/bettermob/schemas/mob.schema.json",
+  "title": "BetterMob mob file",
+  "description": "A mob file holds one mob (fields at the root, the id is the file name) or several mobs (one key per mob id).",
+  "type": "object",
+  "if": {
+    "required": [
+      "Type"
+    ]
+  },
+  "then": {
+    "$ref": "#/definitions/mob"
+  },
+  "else": {
+    "additionalProperties": {
+      "$ref": "#/definitions/mob"
+    }
+  },
+  "definitions": {
+    "mob": {
+      "type": "object",
+      "properties": {
+        "Type": {
+          "description": "Vanilla entity type, case-insensitive.",
+          "anyOf": [
+            {
+              "enum": [
+                "ALLAY",
+                "ARMADILLO",
+                "ARMOR_STAND",
+                "AXOLOTL",
+                "BAT",
+                "BEE",
+                "BLAZE",
+                "BOGGED",
+                "BREEZE",
+                "CAMEL",
+                "CAMEL_HUSK",
+                "CAT",
+                "CAVE_SPIDER",
+                "CHICKEN",
+                "COD",
+                "COPPER_GOLEM",
+                "COW",
+                "CREAKING",
+                "CREEPER",
+                "DOLPHIN",
+                "DONKEY",
+                "DROWNED",
+                "ELDER_GUARDIAN",
+                "ENDER_DRAGON",
+                "ENDERMAN",
+                "ENDERMITE",
+                "EVOKER",
+                "FOX",
+                "FROG",
+                "GHAST",
+                "GIANT",
+                "GLOW_SQUID",
+                "GOAT",
+                "GUARDIAN",
+                "HAPPY_GHAST",
+                "HOGLIN",
+                "HORSE",
+                "HUSK",
+                "ILLUSIONER",
+                "IRON_GOLEM",
+                "LLAMA",
+                "MAGMA_CUBE",
+                "MANNEQUIN",
+                "MOOSHROOM",
+                "MULE",
+                "NAUTILUS",
+                "OCELOT",
+                "PANDA",
+                "PARCHED",
+                "PARROT",
+                "PHANTOM",
+                "PIG",
+                "PIGLIN",
+                "PIGLIN_BRUTE",
+                "PILLAGER",
+                "POLAR_BEAR",
+                "PUFFERFISH",
+                "RABBIT",
+                "RAVAGER",
+                "SALMON",
+                "SHEEP",
+                "SHULKER",
+                "SILVERFISH",
+                "SKELETON",
+                "SKELETON_HORSE",
+                "SLIME",
+                "SNIFFER",
+                "SNOW_GOLEM",
+                "SPIDER",
+                "SQUID",
+                "STRAY",
+                "STRIDER",
+                "TADPOLE",
+                "TRADER_LLAMA",
+                "TROPICAL_FISH",
+                "TURTLE",
+                "VEX",
+                "VILLAGER",
+                "VINDICATOR",
+                "WANDERING_TRADER",
+                "WARDEN",
+                "WITCH",
+                "WITHER",
+                "WITHER_SKELETON",
+                "WOLF",
+                "ZOGLIN",
+                "ZOMBIE",
+                "ZOMBIE_HORSE",
+                "ZOMBIE_NAUTILUS",
+                "ZOMBIE_VILLAGER",
+                "ZOMBIFIED_PIGLIN"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^[a-z_]+$"
+            }
+          ]
+        },
+        "Display": {
+          "type": "string",
+          "description": "Name, & colour codes."
+        },
+        "Model": {
+          "type": "string",
+          "description": "Model id; BetterModel is asked first, then ModelEngine. Default is the mob id."
+        },
+        "Health": {
+          "type": "number",
+          "description": "Max health.",
+          "minimum": 0
+        },
+        "Damage": {
+          "type": "number",
+          "description": "Attack damage.",
+          "minimum": 0
+        },
+        "RemoveAi": {
+          "type": [
+            "boolean",
+            "string"
+          ],
+          "description": "Disable the AI completely."
+        },
+        "Faction": {
+          "type": "string",
+          "description": "Mobs of the same faction never target or hurt each other."
+        },
+        "AIGoalSelectors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Movement, look and jump goals, for example: clear, randomstroll, 1 rangedAttack{...}."
+        },
+        "AITargetSelectors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Targeting goals, for example: 0 clear, 1 player, 2 attacker."
+        },
+        "Options": {
+          "type": "object",
+          "description": "Behaviour options.",
+          "properties": {
+            "Collidable": {
+              "type": [
+                "boolean",
+                "string"
+              ],
+              "description": "Other entities can push the mob."
+            },
+            "MovementSpeed": {
+              "type": "number",
+              "description": "Movement speed attribute.",
+              "minimum": 0
+            },
+            "PreventOtherDrops": {
+              "type": [
+                "boolean",
+                "string"
+              ],
+              "description": "Remove the vanilla drops."
+            },
+            "Silent": {
+              "type": [
+                "boolean",
+                "string"
+              ],
+              "description": "No ambient sounds."
+            },
+            "PreventRenaming": {
+              "type": [
+                "boolean",
+                "string"
+              ],
+              "description": "Name tags are refused."
+            },
+            "PreventLeashing": {
+              "type": [
+                "boolean",
+                "string"
+              ],
+              "description": "Leads are refused."
+            },
+            "AlwaysShowName": {
+              "type": [
+                "boolean",
+                "string"
+              ],
+              "description": "Show the name above the mob."
+            },
+            "PreventSunburn": {
+              "type": [
+                "boolean",
+                "string"
+              ],
+              "description": "Undead do not burn in daylight."
+            },
+            "Invincible": {
+              "type": [
+                "boolean",
+                "string"
+              ],
+              "description": "The mob takes no damage."
+            },
+            "Invisible": {
+              "type": [
+                "boolean",
+                "string"
+              ],
+              "description": "Hide the vanilla body."
+            },
+            "CanMove": {
+              "type": [
+                "boolean",
+                "string"
+              ],
+              "description": "False freezes the mob."
+            },
+            "Interactable": {
+              "type": [
+                "boolean",
+                "string"
+              ],
+              "description": "False cancels right clicks."
+            },
+            "Marker": {
+              "type": [
+                "boolean",
+                "string"
+              ],
+              "description": "Armor stand marker mode."
+            },
+            "ItemHead": {
+              "type": "string",
+              "description": "Id of a registered item worn on the head."
+            },
+            "KnockbackResistance": {
+              "type": "number",
+              "description": "0 to 1.",
+              "minimum": 0
+            },
+            "FollowRange": {
+              "type": "number",
+              "description": "Blocks.",
+              "minimum": 0
+            },
+            "PreventItemPickup": {
+              "type": [
+                "boolean",
+                "string"
+              ],
+              "description": "The mob does not pick up items."
+            },
+            "Scale": {
+              "type": "number",
+              "description": "Size scale.",
+              "minimum": 0
+            }
+          }
+        },
+        "Modules": {
+          "type": "object",
+          "properties": {
+            "ThreatTable": {
+              "type": [
+                "boolean",
+                "string"
+              ],
+              "description": "Retarget to whoever dealt the most damage."
+            },
+            "BossBar": {
+              "description": "true for the defaults, or the settings.",
+              "oneOf": [
+                {
+                  "type": [
+                    "boolean",
+                    "string"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "Title": {
+                      "type": "string",
+                      "description": "Placeholders: <mob.name> <mob.id> <mob.hp> <mob.maxhp>."
+                    },
+                    "Range": {
+                      "type": "number",
+                      "description": "Blocks.",
+                      "minimum": 1
+                    },
+                    "Color": {
+                      "enum": [
+                        "PINK",
+                        "BLUE",
+                        "RED",
+                        "GREEN",
+                        "YELLOW",
+                        "PURPLE",
+                        "WHITE"
+                      ]
+                    },
+                    "Style": {
+                      "enum": [
+                        "SOLID",
+                        "SEGMENTED_6",
+                        "SEGMENTED_10",
+                        "SEGMENTED_12",
+                        "SEGMENTED_20"
+                      ]
+                    },
+                    "CreateFog": {
+                      "type": [
+                        "boolean",
+                        "string"
+                      ],
+                      "description": "Fog effect."
+                    },
+                    "DarkenSky": {
+                      "type": [
+                        "boolean",
+                        "string"
+                      ],
+                      "description": "Darken the sky."
+                    },
+                    "PlayMusic": {
+                      "type": [
+                        "boolean",
+                        "string"
+                      ],
+                      "description": "Boss music."
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "DamageModifiers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Lines like: FIRE 1.2"
+        },
+        "Skills": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "~[oO][nN][A-Za-z]+(:[0-9]+)?(\\s+\\?!?[A-Za-z0-9_]+(\\{.*\\})?)?\\s*$",
+            "description": "A skill line ending with a trigger, for example: sound{s=entity.pig.hurt} @self ~onDamaged"
+          },
+          "description": "Skill lines with a trigger."
+        },
+        "Drops": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Drop table ids and drop lines like: diamond 1to2 0.5"
+        },
+        "Equipment": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Lines like: BOW:HAND or my_helmet:HEAD."
+        },
+        "Spawn": {
+          "type": "object",
+          "description": "Replaces natural spawns of the mob's Type.",
+          "properties": {
+            "Worlds": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "Biomes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "Time": {
+              "enum": [
+                "day",
+                "night",
+                "any",
+                "DAY",
+                "NIGHT",
+                "ANY",
+                "Day",
+                "Night",
+                "Any"
+              ]
+            },
+            "Chance": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "Egg": {
+          "type": "object",
+          "description": "Spawn egg given by /bettermob egg.",
+          "properties": {
+            "Material": {
+              "type": "string"
+            },
+            "Name": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
