@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/HyperGaming99/bettermob/schemas/skill.schema.json",
+  "title": "BetterMob skill file",
+  "description": "One key per skill id.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "properties": {
+      "Skills": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Mechanic lines: mechanic{params} @targeter ?condition, or: delay 20"
+      },
+      "Skill": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Alias of Skills."
+      },
+      "Conditions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Conditions the caster must meet."
+      },
+      "Condition": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Alias of Conditions."
+      },
+      "TargetConditions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Conditions on the target, may end in: castinstead <skill>"
+      },
+      "TargetCondition": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Alias of TargetConditions."
+      },
+      "Cooldown": {
+        "type": "number",
+        "description": "Seconds per caster.",
+        "minimum": 0
+      }
+    }
+  }
+}

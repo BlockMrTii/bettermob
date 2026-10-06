@@ -101,6 +101,24 @@ The wiki pages are in [`wiki/`](wiki). Edit them in a pull request, a workflow p
 Which MythicMobs packs were tried and how far they run is on the wiki page
 [Pack compatibility](https://github.com/HyperGaming99/bettermob/wiki/Pack-Compatibility); check your own pack with `/bettermob validate <pack>`.
 
+## Editor support
+
+JSON schemas for mob, skill and item files live in [`schemas/`](schemas). They give auto-completion and error hints for the known fields, the entity types, the boss bar colours and styles, and the trigger suffix of `Skills:` lines; unknown fields stay allowed because BetterMob ignores them. A mob file may hold one mob (with `Type:` at the root) or several mobs, both are covered.
+
+**VS Code** (with the Red Hat "YAML" extension), in `settings.json`:
+
+```json
+"yaml.schemas": {
+  "https://raw.githubusercontent.com/HyperGaming99/bettermob/main/schemas/mob.schema.json": ["**/BetterMob/mobs/**/*.yml", "**/BetterMob/packs/*/[mM]obs/**/*.yml"],
+  "https://raw.githubusercontent.com/HyperGaming99/bettermob/main/schemas/skill.schema.json": ["**/BetterMob/skills/**/*.yml", "**/BetterMob/packs/*/[sS]kills/**/*.yml"],
+  "https://raw.githubusercontent.com/HyperGaming99/bettermob/main/schemas/item.schema.json": ["**/BetterMob/items/**/*.yml", "**/BetterMob/packs/*/[iI]tems/**/*.yml"]
+}
+```
+
+**IntelliJ IDEA**: Settings, Languages & Frameworks, Schemas and DTDs, JSON Schema Mappings. Add each schema (URL above or the downloaded file), choose "JSON Schema version 7" and map the file patterns or folders.
+
+The schemas do not check the content of the skill lines (mechanic, condition and targeter names); use `/bettermob validate` for that. A test checks that every mob, skill and item file shipped with the plugin and the sample packs matches the schemas.
+
 ## Code layout
 
 Everything lives under `eu.northsoft.bettermob`: `api`/`api.event` (public API), `command`, `mob`,
