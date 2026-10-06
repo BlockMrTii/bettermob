@@ -18,8 +18,8 @@ public final class Messages {
 
     private final BetterMobPlugin plugin;
     private final File folder;
-    private YamlConfiguration english;
-    private YamlConfiguration selected;
+    private volatile YamlConfiguration english;
+    private volatile YamlConfiguration selected;
 
     public Messages(BetterMobPlugin plugin) {
         this.plugin = plugin;
