@@ -608,7 +608,7 @@ api.registerMechanic(this, "heal", ctx -> {
 });
 ```
 
-**Custom conditions, targeters and placeholders** (BetterMob 1.1.7 or newer; the published 1.1.6.x builds don't have these methods, use the dev build until 1.1.7 is released): the same registration works for the other
+**Custom conditions, targeters and placeholders** (BetterMob 1.1.7 or newer; the 1.1.6.x builds don't have these methods): the same registration works for the other
 building blocks of a skill line, which is what a plugin that adds its own mobs or pets needs.
 Built-in names can't be taken, entries are removed when your plugin is disabled, and a
 `RuntimeException` is caught and logged.
