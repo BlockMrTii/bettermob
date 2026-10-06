@@ -45,6 +45,12 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `~onDamaged` | The mob is hit. `@trigger` is the attacker |
 | `~onAttack` | The mob hits something in melee (projectiles don't count). `@trigger` is the victim |
 | `~onShoot` | The mob shoots with a bow or crossbow. `@trigger` is its target. `CancelEvent` stops the vanilla arrow |
+| `~onHealth<50%` | The mob's health crosses the threshold. Operators `<`, `<=`, `>`, `>=`, a number is absolute health, with `%` a share of max health. Fires once when it crosses and is armed again after the health has moved back across (healing). A missing threshold makes the line invalid |
+| `~onTarget` | The mob acquires a target. `@trigger` is the target |
+| `~onLoseTarget` | The mob loses its target |
+| `~onEnterCombat` | The mob gets a target after having none (and was not in combat). `@trigger` is the target |
+| `~onExitCombat` | The mob has had no target for 5 seconds after being in combat |
+| `~onKill` | The mob killed a living entity (melee or projectile). `@trigger` is the victim |
 | `~onDeath` | The mob dies (the body still exists, so sounds and effects work) |
 | `~onTimer:<ticks>` | Repeatedly, default every 20 ticks |
 | `~onUse` | Items only: right-click with the item in the main hand |

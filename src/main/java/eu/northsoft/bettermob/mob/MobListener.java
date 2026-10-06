@@ -17,6 +17,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
@@ -57,6 +58,7 @@ public final class MobListener implements Listener {
 
     @EventHandler
     public void onDeath(EntityDeathEvent event) {
+        fireKill(event.getEntity());
         MobDefinition definition = manager.definitionOf(event.getEntity().getUniqueId());
         if (definition == null) return;
 
@@ -116,6 +118,40 @@ public final class MobListener implements Listener {
         }
         if (api.getDamage() != event.getDamage()) event.setDamage(api.getDamage());
         return false;
+    }
+
+    private void fireKill(LivingEntity victim) {
+        if (!(victim.getLastDamageCause() instanceof EntityDamageByEntityEvent byEntity)) return;
+        Entity damager = byEntity.getDamager();
+        if (damager instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter) damager = shooter;
+        if (!(damager instanceof LivingEntity killer) || killer.equals(victim)) return;
+        MobDefinition definition = manager.definitionOf(killer.getUniqueId());
+        if (definition != null) manager.fireTrigger(killer, definition, MobDefinition.SkillTrigger.Trigger.KILL, victim, null);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onHealthLoss(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof LivingEntity mob)) return;
+        MobDefinition definition = manager.definitionOf(mob.getUniqueId());
+        if (definition != null && manager.hasHealthTriggers(definition)) {
+            manager.checkHealth(mob, definition, mob.getHealth(), Math.max(0, mob.getHealth() - event.getFinalDamage()));
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onHealthGain(EntityRegainHealthEvent event) {
+        if (!(event.getEntity() instanceof LivingEntity mob)) return;
+        MobDefinition definition = manager.definitionOf(mob.getUniqueId());
+        if (definition != null && manager.hasHealthTriggers(definition)) {
+            manager.checkHealth(mob, definition, mob.getHealth(), mob.getHealth() + event.getAmount());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onTargetChanged(EntityTargetLivingEntityEvent event) {
+        if (!(event.getEntity() instanceof LivingEntity mob)) return;
+        MobDefinition definition = manager.definitionOf(mob.getUniqueId());
+        if (definition != null) manager.targetChanged(mob, definition, event.getTarget());
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

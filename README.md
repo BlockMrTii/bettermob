@@ -424,7 +424,7 @@ Skills:
 
 **Triggers:** `~onSpawn`, `~onLoad` (chunk/restart rehydration), `~onInteract`,
 `~onDamaged`, `~onAttack` (melee hits only, projectiles don't count), `~onShoot` (bow/crossbow
-shot, `CancelEvent` stops the vanilla arrow), `~onDeath`, `~onTimer:<ticks>` (repeats). Triggers fire for any
+shot, `CancelEvent` stops the vanilla arrow), `~onDeath`, `~onHealth<50%` (also `<=`, `>`, `>=` and absolute values like `~onHealth<=10`; fires once when the mob's health crosses the threshold and again after it has healed back across it), `~onTarget` (a target is acquired, `@trigger` is the target), `~onLoseTarget`, `~onEnterCombat` (first target after being idle), `~onExitCombat` (no target for 5 seconds), `~onKill` (the mob killed something, `@trigger` is the victim), `~onTimer:<ticks>` (repeats). Triggers fire for any
 living entity, armor stands included. On items: `~onUse` (right click, see [Items](#items)).
 
 **Mechanics:** `sound`, `model` (attach via BetterModel), `modelengine` (attach the

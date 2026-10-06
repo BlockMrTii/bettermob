@@ -33,7 +33,7 @@
         "type": "array",
         "items": {
           "type": "string",
-          "pattern": "~[oO][nN][A-Za-z]+(:[0-9]+)?(\\s+\\?!?[A-Za-z0-9_]+(\\{.*\\})?)?\\s*$",
+          "pattern": "~[oO][nN][A-Za-z]+(:[0-9]+|(<=|>=|<|>)[0-9]+(\\.[0-9]+)?%?)?(\\s+\\?!?[A-Za-z0-9_]+(\\{.*\\})?)?\\s*$",
           "description": "A skill line ending with a trigger, for example: sound{s=entity.pig.hurt} @self ~onDamaged"
         },
         "description": "Skill lines with a trigger, for example ~onUse."
