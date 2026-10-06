@@ -4,6 +4,7 @@ import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillStep;
 import eu.northsoft.bettermob.skill.Target;
 import eu.northsoft.bettermob.util.Tasks;
+import org.bukkit.Location;
 import org.bukkit.Particle;
 
 import java.util.Map;
@@ -33,7 +34,8 @@ public final class ParticlesMechanic implements Mechanic {
         for (int i = 1; i <= repeat; i++) {
             Tasks.runLater(engine.plugin(), call.context().caster(), i * interval, () -> {
                 for (Target again : engine.targeters().resolveAll(step.targeter(), step.targeterParams(), call.context())) {
-                    ParticleSupport.spawn(engine.plugin(), again.location().clone().add(0, yOffset, 0), particle, p);
+                    Location at = again.location().clone().add(0, yOffset, 0);
+                    Tasks.runOwnedAt(engine.plugin(), at, () -> ParticleSupport.spawn(engine.plugin(), at, particle, p));
                 }
             });
         }
