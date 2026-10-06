@@ -16,6 +16,7 @@ import eu.northsoft.bettermob.skill.SkillRegistry;
 import eu.northsoft.bettermob.skill.SkillStep;
 import eu.northsoft.bettermob.spawner.Spawner;
 import eu.northsoft.bettermob.spawner.SpawnerManager;
+import eu.northsoft.bettermob.util.Tasks;
 import eu.northsoft.bettermob.stats.SkillStats;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -472,9 +473,12 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             } catch (NumberFormatException ignored) {
             }
         }
-        receiver.getInventory().addItem(itemRegistry.create(definition, amount)).values()
-                .forEach(rest -> receiver.getWorld().dropItemNaturally(receiver.getLocation(), rest));
-        messages.send(sender, "command.give.done", "amount", amount, "item", definition.id, "player", receiver.getName());
+        int given = amount;
+        Tasks.runOwned(plugin, receiver, () -> {
+            receiver.getInventory().addItem(itemRegistry.create(definition, given)).values()
+                    .forEach(rest -> receiver.getWorld().dropItemNaturally(receiver.getLocation(), rest));
+            messages.send(sender, "command.give.done", "amount", given, "item", definition.id, "player", receiver.getName());
+        }, () -> messages.send(sender, "command.playerOffline", "player", receiver.getName()));
     }
 
     @Override
