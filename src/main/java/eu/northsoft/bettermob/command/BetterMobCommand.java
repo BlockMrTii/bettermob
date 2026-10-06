@@ -368,8 +368,10 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        Tasks.runOwned(plugin, caster, () -> skillEngine.runById(skillId, SkillContext.of(caster)));
-        messages.send(sender, "command.skill.done", "skill", skillId, "player", caster.getName());
+        Tasks.runOwned(plugin, caster, () -> {
+            skillEngine.runById(skillId, SkillContext.of(caster));
+            messages.send(sender, "command.skill.done", "skill", skillId, "player", caster.getName());
+        }, () -> messages.send(sender, "command.playerOffline", "player", caster.getName()));
     }
 
     private void handleSpawner(CommandSender sender, String[] args) {
