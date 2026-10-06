@@ -18,6 +18,7 @@ command:
     reload: "&7/bettermob reload &8- &7Mobs, Skills und Packs neu laden"
     skill: "&7/bettermob skill <id> [Spieler] &8- &7Skill manuell auslösen"
     give: "&7/bettermob give <item> [Spieler] [amount] &8- &7Item geben"
+    egg: "&7/bettermob egg <mob> [player] [amount] &8- &7Spawn-Ei fuer einen Mob geben"
     debug: "&7/bettermob debug [off|info|verbose|filter|chat] &8- &7Debug-Ausgabe steuern"
     killall: "&7/bettermob killall [mob|*] [Welt] &8- &7Lebende BetterMob-Mobs entfernen"
     spawner: "&7/bettermob spawner <create|remove|list> &8- &7Mob-Spawner verwalten"
@@ -84,6 +85,10 @@ command:
     usage: "&cNutzung: /bettermob skill <id> [Spieler]"
     notRegistered: "&cSkill '{skill}' ist nicht registriert."
     done: "&aSkill '{skill}' auf {player} ausgeführt."
+  egg:
+    usage: "&cNutzung: /bettermob egg <mob> [player] [amount]"
+    notRegistered: "&cMob '{mob}' ist nicht registriert."
+    done: "&a{amount}x Spawn-Ei von '{mob}' an {player} gegeben."
   give:
     usage: "&cNutzung: /bettermob give <item> [Spieler] [amount]"
     notRegistered: "&cItem '{item}' ist nicht registriert."
@@ -122,6 +127,7 @@ ai:
   goalUnavailable: "AI-Goal '{goal}' ist für Mob-Typ '{type}' nicht verfügbar."
 
 mob:
+  eggMaterialInvalid: "Mob '{mob}': Egg-Material '{value}' ist kein Material, es wird das Ei des Mob-Typs verwendet."
   loaded: "{count} Mobs geladen."
   duplicate: "Mob '{mob}' aus {folder} überschreibt eine bereits geladene Definition - ignoriert."
   unknownType: "Mob '{mob}': unbekannter Type '{type}'."
@@ -210,3 +216,6 @@ modelEngine:
 
 stats:
   slowSkill: "Skill '{skill}' brauchte {millis} ms (Schwelle {threshold} ms)."
+
+egg:
+  unknownMob: "Das Spawn-Ei gehoert zum unbekannten Mob '{mob}'."
