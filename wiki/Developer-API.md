@@ -61,6 +61,22 @@ api.reload();                                    // same as /bettermob reload, l
 `BetterMobSpawnEvent` and `BetterMobDeathEvent` (package `eu.northsoft.bettermob.api.event`).
 Both expose the entity and its `MobInfo`.
 
+Two more events are **cancellable** and need BetterMob 1.1.8 or newer:
+
+| Event | Fired when | Getters |
+|---|---|---|
+| `BetterMobDamageEvent` | A BetterMob mob is hit by an entity or a projectile (`isMobVictim()` is true) or hits something (false); one event per mob involved. Skill damage counts too | `getEntity()`, `getMob()`, `getOther()`, `isMobVictim()`, `getCause()`, `getDamage()`; `setDamage(double)` changes the damage, `setCancelled(true)` cancels the hit |
+| `BetterMobSkillEvent` | A named skill is about to run: after its `Conditions` and `TargetConditions` passed, before its `Cooldown` starts. Inline skills and single mechanic lines are not skills and fire nothing | `getSkillId()`, `getCaster()`, `getTrigger()` (may be null), `getMob()` (null when the caster is not a BetterMob mob); `setCancelled(true)` stops the skill without using its cooldown |
+
+When no plugin listens to an event nothing is created for it.
+
+```java
+@EventHandler
+public void onDamage(BetterMobDamageEvent event) {
+    if (event.isMobVictim() && event.getOther() instanceof Player) event.setDamage(event.getDamage() * 0.5);
+}
+```
+
 ## Custom mechanics
 
 Register a mechanic and use it in skill lines like any built-in one:

@@ -541,7 +541,11 @@ api.reload();                                    // same as /bettermob reload
 ```
 
 **Events** (`eu.northsoft.bettermob.api.event`): `BetterMobSpawnEvent` and
-`BetterMobDeathEvent`, both exposing the entity and its `MobInfo`.
+`BetterMobDeathEvent`, both exposing the entity and its `MobInfo`, and two cancellable events (1.1.8 or newer):
+`BetterMobDamageEvent` (a BetterMob mob takes or deals melee or projectile damage; `getOther()`, `isMobVictim()`,
+`getCause()`, `getDamage()`/`setDamage()`) and `BetterMobSkillEvent` (a named skill is about to run, after its
+conditions and before its cooldown starts; `getSkillId()`, `getCaster()`, `getTrigger()`, `getMob()`). Nothing is
+built when no plugin listens to them.
 
 **Custom mechanics:** register your own mechanic and use it in skill lines like any
 built-in one (`heal{amount=4} @self ~onDamaged`). Built-ins can't be overridden, and
