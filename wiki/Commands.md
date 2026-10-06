@@ -12,6 +12,7 @@ Alias: `/bmob`. Every subcommand has its own permission node, all default to op:
 | `bettermob.give` | `/bettermob give` and `/bettermob egg` |
 | `bettermob.killall` | `/bettermob killall` |
 | `bettermob.spawner` | `/bettermob spawner` |
+| `bettermob.top` | `/bettermob top` |
 | `bettermob.debug` | `/bettermob debug` and `/bettermob stats` |
 
 Without a node the subcommand is refused and left out of the help and out of tab completion. `bettermob.faction.<name>` is unrelated to commands, see [Mobs](Mobs#player-factions).
@@ -25,6 +26,7 @@ Without a node the subcommand is refused and left out of the help and out of tab
 | `/bettermob list` | List all registered mob IDs |
 | `/bettermob packs` | List packs in `packs/` and whether they are enabled |
 | `/bettermob info <mob>` | Show a mob's type, health, damage, faction, model, equipment, number of drop entries, skills by trigger and how many are alive |
+| `/bettermob top [mob]` | The 10 players with the most kills, of all BetterMob mobs or of one mob, see [Kill counters](#kill-counters) |
 | `/bettermob debug [off\|info\|verbose\|filter <id>\|filter clear\|chat]` | Show or change the debug output. Permission `bettermob.debug` (included in `bettermob.admin`) |
 | `/bettermob stats [on\|off\|reset]` | Show living mobs per type, running timers, loaded skills and packs; `on`/`off` switch the skill timing, `reset` clears it. Permission `bettermob.debug` |
 | `/bettermob killall [mob\|*] [world]` | Remove all living BetterMob mobs, or only one type and/or one world, and report how many |
@@ -70,3 +72,9 @@ Set `Debug: off|info|verbose` in `config.yml` (default `off`), or change it whil
 | `verbose` | Everything from `info`, plus every mechanic with its targeter, target count and parameters, `cancelskill`, failed conditions, BetterModel bone offsets, `shoot` and `totem` |
 
 `/bettermob debug filter <id>` limits the output to a mob id, skill id or player name (mob ids, skill ids and online player names tab-complete; call it again to add more, `filter clear` removes them). `/bettermob debug chat` also sends the output to you in chat. While debug is off nothing is built or logged.
+
+## Kill counters
+
+Every kill of a BetterMob mob by a player is counted per player and mob id. The numbers are saved in `plugins/BetterMob/kills.yml` (written every five minutes and when the server stops, off the main thread). `/bettermob top` lists the ten best players; `/bettermob top <mob>` only counts that mob. With PlaceholderAPI the counters are available as `%bettermob_kills_total%`, `%bettermob_kills_<mob>%` and `%bettermob_top_<n>_name%` / `%bettermob_top_<n>_kills%` (see [Installation](Installation#placeholderapi-optional)).
+
+Only kills by players are counted. To reset the counters stop the server and delete `kills.yml`.
