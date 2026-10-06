@@ -22,8 +22,8 @@ public final class RegionEntities {
     public static Collection<Entity> near(Location center, double radius) {
         if (!Double.isFinite(radius) || radius < 0) return List.of();
         World world = center.getWorld();
-        if (!Tasks.FOLIA) return world.getNearbyEntities(center, radius, radius, radius);
         double scanned = Math.min(radius, MAX_RADIUS);
+        if (!Tasks.FOLIA) return world.getNearbyEntities(center, scanned, scanned, scanned);
         BoundingBox search = BoundingBox.of(center, scanned, scanned, scanned);
         double reach = scanned + ENTITY_MARGIN;
         List<Entity> found = new ArrayList<>();
