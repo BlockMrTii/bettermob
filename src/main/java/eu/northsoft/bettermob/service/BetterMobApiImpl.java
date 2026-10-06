@@ -9,6 +9,7 @@ import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillRegistry;
+import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -74,7 +75,7 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
     @Override
     public boolean runSkill(String skillId, LivingEntity caster, LivingEntity trigger) {
         if (skillId == null || skillRegistry.get(skillId) == null) return false;
-        skillEngine.runById(skillId, new SkillContext(caster, trigger, null));
+        Tasks.runOwned(plugin, caster, () -> skillEngine.runById(skillId, new SkillContext(caster, trigger, null)));
         return true;
     }
 
