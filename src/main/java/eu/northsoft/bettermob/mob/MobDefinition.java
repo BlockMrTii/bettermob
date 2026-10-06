@@ -32,6 +32,7 @@ public final class MobDefinition {
     public final DropTable drops;
     public final String faction;
     public final BossBarSettings bossBar;
+    public final EggSettings egg;
     public final List<String> equipment;
     public final SpawnRule spawnRule;
 
@@ -40,7 +41,7 @@ public final class MobDefinition {
                   List<String> aiGoalSelectors, List<String> aiTargetSelectors,
                   Options options, boolean threatTable, Map<DamageCause, Double> damageModifiers,
                   List<SkillTrigger> skillTriggers, DropTable drops, String faction,
-                  BossBarSettings bossBar, List<String> equipment, SpawnRule spawnRule) {
+                  BossBarSettings bossBar, List<String> equipment, SpawnRule spawnRule, EggSettings egg) {
         this.id = id;
         this.type = type;
         this.displayName = displayName;
@@ -61,6 +62,7 @@ public final class MobDefinition {
         this.drops = drops;
         this.faction = faction;
         this.bossBar = bossBar;
+        this.egg = egg;
         this.equipment = equipment;
         this.spawnRule = spawnRule;
     }
@@ -68,6 +70,8 @@ public final class MobDefinition {
     public List<SkillTrigger> triggersOf(SkillTrigger.Trigger type) {
         return triggersByType.getOrDefault(type, List.of());
     }
+
+    public record EggSettings(String material, String name) {}
 
     public MobInfo toInfo() {
         return new MobInfo(id, type, displayName, modelId, health, damage);

@@ -161,8 +161,19 @@ public final class MobRegistry {
                 section.getString("Faction"),
                 parseBossBar(id, modulesSection),
                 List.copyOf(section.getStringList("Equipment")),
-                parseSpawnRule(id, section.getConfigurationSection("Spawn"))
+                parseSpawnRule(id, section.getConfigurationSection("Spawn")),
+                parseEgg(id, section.getConfigurationSection("Egg"))
         );
+    }
+
+    private MobDefinition.EggSettings parseEgg(String id, ConfigurationSection egg) {
+        if (egg == null) return null;
+        String material = egg.getString("Material");
+        if (material != null && org.bukkit.Material.getMaterial(material.trim().toUpperCase(java.util.Locale.ROOT)) == null) {
+            plugin.messages().warn("mob.eggMaterialInvalid", "mob", id, "value", material);
+            material = null;
+        }
+        return new MobDefinition.EggSettings(material == null ? null : material.trim().toUpperCase(java.util.Locale.ROOT), egg.getString("Name"));
     }
 
     private SpawnRule parseSpawnRule(String id, ConfigurationSection spawn) {

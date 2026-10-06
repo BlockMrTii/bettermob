@@ -153,6 +153,7 @@ tagged releases above are the stable ones.
 | `/bettermob validate [pack]` | Check a pack (or all of them) for unsupported mechanics, conditions, targeters, undefined skills and unparsable lines (including drop lines) without spawning anything |
 | `/bettermob skill <id> [player]` | Manually run a registered skill, bypassing its normal triggers |
 | `/bettermob give <item> [player] [amount]` | Give a registered item (see [Items](#items)) |
+| `/bettermob egg <mob> [player] [amount]` | Give a spawn egg that spawns exactly that mob (see Spawn eggs below) |
 | `/bettermob killall [mob\|*] [world]` | Remove all living BetterMob mobs, or only one type and/or one world, and report how many |
 | `/bettermob spawner create <id> <mob> [radius] [interval] [max]` | Create a spawner at your position; `remove <id>` and `list` manage them |
 | `/bettermob stats [on\|off\|reset]` | Show living mobs per type, running timers, loaded skills and packs; `on`/`off` switch the skill timing, `reset` clears it (permission `bettermob.debug`) |
@@ -167,7 +168,7 @@ Alias: `/bmob`.
 | `bettermob.list` | `/bettermob list`, `/bettermob packs` and `/bettermob info` | op |
 | `bettermob.reload` | `/bettermob reload` and `/bettermob validate` | op |
 | `bettermob.skill` | `/bettermob skill` | op |
-| `bettermob.give` | `/bettermob give` | op |
+| `bettermob.give` | `/bettermob give` and `/bettermob egg` | op |
 | `bettermob.killall` | `/bettermob killall` | op |
 | `bettermob.spawner` | `/bettermob spawner` | op |
 | `bettermob.debug` | `/bettermob debug` | op |
@@ -376,6 +377,20 @@ Drops:
 
 A mob with a `Drops:` list loses its vanilla drops **and** vanilla experience automatically, only
 its own drops remain. `PreventOtherDrops: true` does the same for mobs without any `Drops:`.
+
+## Spawn eggs
+
+`/bettermob egg <mob> [player] [amount]` gives a spawn egg item for a registered mob (up to 64). Right-clicking
+a block with it spawns that mob on the clicked face and uses up the egg (not in creative mode). The egg is
+the vanilla spawn egg of the mob's `Type` (a zombie egg for types that have none), named after the mob's
+`Display:`, with the mob id stored on the item so it keeps working after restarts and reloads. It never spawns
+the vanilla mob: using it on an entity or a spawner and shooting it from a dispenser do nothing.
+
+```yaml
+Egg:                        # optional
+  Material: PIG_SPAWN_EGG   # any material; default is the egg of the mob's Type
+  Name: '&6Goblin Egg'      # default is the mob's Display
+```
 
 ## Skills
 

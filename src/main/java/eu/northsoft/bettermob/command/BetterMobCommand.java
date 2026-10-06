@@ -3,6 +3,7 @@ package eu.northsoft.bettermob.command;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.debug.DebugManager;
 import eu.northsoft.bettermob.drop.DropRegistry;
+import eu.northsoft.bettermob.item.EggItems;
 import eu.northsoft.bettermob.item.ItemDefinition;
 import eu.northsoft.bettermob.item.ItemRegistry;
 import eu.northsoft.bettermob.lang.Messages;
@@ -35,6 +36,7 @@ import java.util.Map;
 public final class BetterMobCommand implements CommandExecutor, TabCompleter {
     private static final int TIMING_ROWS = 10;
     private static final int MAX_SPAWN_AMOUNT = 100;
+    private static final int MAX_GIVE_AMOUNT = 64;
 
     static final Map<String, String> PERMISSIONS = permissions();
 
@@ -48,6 +50,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         nodes.put("validate", "bettermob.reload");
         nodes.put("skill", "bettermob.skill");
         nodes.put("give", "bettermob.give");
+        nodes.put("egg", "bettermob.give");
         nodes.put("killall", "bettermob.killall");
         nodes.put("spawner", "bettermob.spawner");
         nodes.put("debug", "bettermob.debug");
@@ -64,8 +67,9 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
     private final ItemRegistry itemRegistry;
     private final DropRegistry dropRegistry;
     private final SpawnerManager spawners;
+    private final EggItems eggItems;
 
-    public BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry, DropRegistry dropRegistry, SpawnerManager spawners) {
+    public BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry, DropRegistry dropRegistry, SpawnerManager spawners, EggItems eggItems) {
         this.plugin = plugin;
         this.messages = plugin.messages();
         this.manager = manager;
@@ -75,6 +79,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         this.itemRegistry = itemRegistry;
         this.dropRegistry = dropRegistry;
         this.spawners = spawners;
+        this.eggItems = eggItems;
     }
 
     @Override
@@ -89,6 +94,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             shown |= help(sender, "validate", "command.help.validate");
             shown |= help(sender, "skill", "command.help.skill");
             shown |= help(sender, "give", "command.help.give");
+            shown |= help(sender, "egg", "command.help.egg");
             shown |= help(sender, "killall", "command.help.killall");
             shown |= help(sender, "spawner", "command.help.spawner");
             shown |= help(sender, "debug", "command.help.debug");
@@ -121,6 +127,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             case "spawn" -> handleSpawn(sender, args);
             case "skill" -> handleSkill(sender, args);
             case "give" -> handleGive(sender, args);
+            case "egg" -> handleEgg(sender, args);
             case "killall" -> handleKillAll(sender, args);
             case "spawner" -> handleSpawner(sender, args);
             case "debug" -> handleDebug(sender, args);
@@ -445,6 +452,41 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         messages.send(sender, "command.killall.done", "count", manager.killAll(mobId, world));
     }
 
+    private void handleEgg(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            messages.send(sender, "command.egg.usage");
+            return;
+        }
+        MobDefinition definition = manager.registry().get(args[1]);
+        if (definition == null) {
+            messages.send(sender, "command.egg.notRegistered", "mob", args[1]);
+            return;
+        }
+        Player receiver;
+        if (args.length >= 3) {
+            receiver = Bukkit.getPlayer(args[2]);
+            if (receiver == null) {
+                messages.send(sender, "command.playerOffline", "player", args[2]);
+                return;
+            }
+        } else if (sender instanceof Player player) {
+            receiver = player;
+        } else {
+            messages.send(sender, "command.playerRequired");
+            return;
+        }
+        int amount = 1;
+        if (args.length >= 4) {
+            try {
+                amount = Math.max(1, Math.min(MAX_GIVE_AMOUNT, Integer.parseInt(args[3])));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        receiver.getInventory().addItem(eggItems.create(definition, amount)).values()
+                .forEach(rest -> receiver.getWorld().dropItemNaturally(receiver.getLocation(), rest));
+        messages.send(sender, "command.egg.done", "amount", amount, "mob", definition.id, "player", receiver.getName());
+    }
+
     private void handleGive(CommandSender sender, String[] args) {
         if (args.length < 2) {
             messages.send(sender, "command.give.usage");
@@ -503,7 +545,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             return ids;
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("stats")) return List.of("on", "off", "reset");
-        if (args.length == 2 && (args[0].equalsIgnoreCase("spawn") || args[0].equalsIgnoreCase("info"))) return new ArrayList<>(manager.registry().all().keySet());
+        if (args.length == 2 && (args[0].equalsIgnoreCase("spawn") || args[0].equalsIgnoreCase("info") || args[0].equalsIgnoreCase("egg"))) return new ArrayList<>(manager.registry().all().keySet());
         if (args.length == 2 && args[0].equalsIgnoreCase("skill")) return new ArrayList<>(skillRegistry.ids());
         if (args.length == 2 && args[0].equalsIgnoreCase("give")) return new ArrayList<>(itemRegistry.ids());
         if (args[0].equalsIgnoreCase("spawner")) {
@@ -520,7 +562,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         if (args.length == 3 && args[0].equalsIgnoreCase("killall")) {
             return Bukkit.getWorlds().stream().map(World::getName).toList();
         }
-        if (args.length == 3 && (args[0].equalsIgnoreCase("skill") || args[0].equalsIgnoreCase("give"))) {
+        if (args.length == 3 && (args[0].equalsIgnoreCase("skill") || args[0].equalsIgnoreCase("give") || args[0].equalsIgnoreCase("egg"))) {
             List<String> names = new ArrayList<>();
             for (Player player : Bukkit.getOnlinePlayers()) names.add(player.getName());
             return names;

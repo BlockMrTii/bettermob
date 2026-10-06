@@ -5,6 +5,8 @@ import eu.northsoft.bettermob.command.BetterMobCommand;
 import eu.northsoft.bettermob.debug.DebugManager;
 import eu.northsoft.bettermob.drop.DropRegistry;
 import eu.northsoft.bettermob.integration.BetterMobExpansion;
+import eu.northsoft.bettermob.item.EggItems;
+import eu.northsoft.bettermob.item.EggListener;
 import eu.northsoft.bettermob.item.ItemListener;
 import eu.northsoft.bettermob.item.ItemRegistry;
 import eu.northsoft.bettermob.lang.Messages;
@@ -82,6 +84,8 @@ public final class BetterMobPlugin extends JavaPlugin {
         manager.setSkillEngine(skillEngine);
         getServer().getPluginManager().registerEvents(new MobListener(manager, dropRegistry), this);
         getServer().getPluginManager().registerEvents(new ItemListener(itemRegistry, skillEngine), this);
+        EggItems eggItems = new EggItems(this);
+        getServer().getPluginManager().registerEvents(new EggListener(this, manager, eggItems), this);
         if (!Tasks.FOLIA) {
             Tasks.runGlobal(this, () -> getServer().getWorlds()
                     .forEach(world -> manager.removeLeftoverHelpers(world.getEntitiesByClass(ArmorStand.class))));
@@ -92,7 +96,7 @@ public final class BetterMobPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new SpawnerListener(spawners), this);
         spawners.start();
 
-        BetterMobCommand commandHandler = new BetterMobCommand(this, manager, skillRegistry, packScanner, skillEngine, itemRegistry, dropRegistry, spawners);
+        BetterMobCommand commandHandler = new BetterMobCommand(this, manager, skillRegistry, packScanner, skillEngine, itemRegistry, dropRegistry, spawners, eggItems);
         PluginCommand command = getCommand("bettermob");
         if (command == null) {
             messages.severe("plugin.commandMissing");
