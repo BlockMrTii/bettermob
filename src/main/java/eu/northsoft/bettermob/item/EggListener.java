@@ -3,6 +3,7 @@ package eu.northsoft.bettermob.item;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.mob.MobManager;
+import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -45,7 +46,7 @@ public final class EggListener implements Listener {
         }
         Block clicked = event.getClickedBlock();
         Location at = clicked.getRelative(event.getBlockFace()).getLocation().add(0.5, 0, 0.5);
-        manager.spawn(definition, at);
+        Tasks.runOwnedAt(plugin, at, () -> manager.spawn(definition, at));
         if (player.getGameMode() != GameMode.CREATIVE) consume(player, event.getHand());
     }
 
