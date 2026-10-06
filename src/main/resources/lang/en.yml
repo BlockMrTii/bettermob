@@ -129,6 +129,7 @@ ai:
   goalUnavailable: "AI goal '{goal}' is not available for mob type '{type}'."
 
 mob:
+  behaviourInvalid: "Mob '{mob}': invalid movement option '{option}'."
   eggMaterialInvalid: "Mob '{mob}': Egg Material '{value}' is not a material, using the egg of the mob type."
   loaded: "{count} mobs loaded."
   duplicate: "Mob '{mob}' from {folder} overrides an already loaded definition - ignored."
