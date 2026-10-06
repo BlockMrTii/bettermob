@@ -293,7 +293,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             deferral.add();
             Runnable run = () -> {
                 try {
-                    handler.execute(call);
+                    handler.execute(new MechanicCall(call.step(), call.context().ownedHere(), call.target(), call.params()));
                 } finally {
                     deferral.complete();
                 }
