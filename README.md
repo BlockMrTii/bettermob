@@ -14,6 +14,7 @@ small skill engine for AI behavior, triggers, and MythicMobs-compatible skill sy
   <tbody>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://0x79.one"><img src="https://avatars.githubusercontent.com/u/130169800?v=4?s=100" width="100px;" alt="TheNull"/><br /><sub><b>TheNull</b></sub></a><br /><a href="https://github.com/HyperGaming99/bettermob/commits?author=HyperGaming99" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/BlockMrTii"><img src="https://avatars.githubusercontent.com/u/134159440?v=4?s=100" width="100px;" alt="Block_MrTii"/><br /><sub><b>Block_MrTii</b></sub></a><br /><a href="https://github.com/HyperGaming99/bettermob/commits?author=BlockMrTii" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>

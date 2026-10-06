@@ -102,7 +102,8 @@ Skills:
 
 ## Custom conditions, targeters and placeholders
 
-Plugins that bring their own mobs or pets can register the other building blocks of a skill line too. This needs **BetterMob 1.1.7 or newer**; the 1.1.6.x builds do not have these methods.
+Plugins that bring their own mobs or pets can register the other building blocks of a skill line too. This needs **BetterMob 1.1.8 or newer**: the published 1.1.8.x builds (and the Maven/JitPack coordinates pinned to them above) do not have these methods, so use the `dev-build` jar until 
+is released.
 
 ```java
 api.registerCondition(this, "petlevel", ctx -> level(ctx.caster()) >= Integer.parseInt(ctx.params().getOrDefault("min", "1")));
