@@ -4,6 +4,7 @@ import static eu.northsoft.bettermob.skill.Params.*;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.api.CustomMechanic;
+import eu.northsoft.bettermob.api.event.BetterMobSkillEvent;
 import eu.northsoft.bettermob.debug.DebugManager;
 import eu.northsoft.bettermob.item.ItemRegistry;
 import eu.northsoft.bettermob.mob.MobDefinition;
@@ -18,6 +19,7 @@ import eu.northsoft.bettermob.skill.mechanic.MechanicRegistry;
 import eu.northsoft.bettermob.skill.target.TargeterRegistry;
 import eu.northsoft.bettermob.stats.SkillStats;
 import eu.northsoft.bettermob.util.Tasks;
+import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -152,6 +154,15 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             Check targetConditions = check(skill.targetConditions, context, obstructing);
             if (targetConditions != Check.PASS) {
                 if (debug.info()) debug.info("skill '" + skill.id + "' stopped: target conditions " + targetConditions.name().toLowerCase(Locale.ROOT), skill.id, caster);
+                return;
+            }
+        }
+        if (BetterMobSkillEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            MobDefinition definition = mobManager.definitionOf(context.caster().getUniqueId());
+            BetterMobSkillEvent api = new BetterMobSkillEvent(skill.id, context.caster(), context.trigger(), definition == null ? null : definition.toInfo());
+            Bukkit.getPluginManager().callEvent(api);
+            if (api.isCancelled()) {
+                if (debug.info()) debug.info("skill '" + skill.id + "' stopped: cancelled by a plugin", skill.id, caster);
                 return;
             }
         }
