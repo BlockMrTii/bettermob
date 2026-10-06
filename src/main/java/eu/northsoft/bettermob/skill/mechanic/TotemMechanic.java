@@ -102,8 +102,9 @@ public final class TotemMechanic implements Mechanic, Listener {
         Entity damager = event.getDamager();
         if (damager instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter) damager = shooter;
         if (damager instanceof LivingEntity attacker && !attacker.equals(totem.caster())) {
-            engine.runSteps(engine.inline(totem.lines()),
-                    new SkillContext(totem.caster(), attacker, null, totem.at().origin(), true));
+            LivingEntity hitBy = attacker;
+            Tasks.runOwned(engine.plugin(), totem.caster(), () -> engine.runSteps(engine.inline(totem.lines()),
+                    new SkillContext(totem.caster(), hitBy, null, totem.at().origin(), true)));
         }
     }
 
