@@ -43,6 +43,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private final ItemRegistry items;
     private final DebugManager debug;
     private final SkillState state = new SkillState();
+    private static final int INLINE_CACHE_LIMIT = 4096;
     private final Map<String, List<SkillStep>> inlineSkills = new ConcurrentHashMap<>();
     private final TargeterRegistry targeters;
     private final ConditionRegistry conditionRegistry;
@@ -364,6 +365,9 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     public List<SkillStep> inline(String raw) {
+        List<SkillStep> cached = inlineSkills.get(raw);
+        if (cached != null) return cached;
+        if (inlineSkills.size() >= INLINE_CACHE_LIMIT) inlineSkills.clear();
         return inlineSkills.computeIfAbsent(raw, this::parseInline);
     }
 
