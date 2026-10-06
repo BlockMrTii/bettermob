@@ -43,6 +43,7 @@ automatically, so a MythicMobs-style `my_mob:` block pasted into its own file wo
 | `Skills` | - | Skill lines with triggers, see [Skills](Skills) |
 | `Equipment` | - | List of `<item>:<slot>` lines, for example `- BOW:HAND` and `- my_helmet:HEAD`. The item is a registered [item](Items) id or a vanilla material, the slot is `HAND` (default), `OFFHAND`, `HEAD`, `CHEST`, `LEGS` or `FEET`. Applied on spawn and on `reload`; dropping chance is 0. Unknown items and slots are logged with the mob id |
 | `Spawn` | - | Turns the mob into a natural spawn, see [Natural spawns](#natural-spawns) |
+| `Egg` | - | Options of the spawn egg given by `/bettermob egg`, see [Spawn eggs](#spawn-eggs) |
 | `Drops` | - | Drop table names and/or drop lines, see [Drop tables](Drop-Tables) |
 
 Unknown fields are ignored.
@@ -174,6 +175,22 @@ my_display:
 ```
 
 Triggers work for every living entity, armor stands included.
+
+## Spawn eggs
+
+`/bettermob egg <mob> [player] [amount]` gives a spawn egg item for the mob (up to 64 at a time). Right-click a block with it to spawn the mob on the clicked face; the egg is used up unless you are in creative mode.
+
+- The egg is the vanilla spawn egg of the mob's `Type` (a zombie egg for types without one), named after the mob's `Display:`, and carries the mob id so it keeps working after restarts and `/bettermob reload`.
+- It never spawns the vanilla mob: using it on an entity or a spawner, and dispensers, do nothing.
+- A removed mob makes its eggs tell the player that the mob is unknown.
+
+```yaml
+Egg:                        # optional
+  Material: PIG_SPAWN_EGG   # any material, default is the egg of the mob's Type
+  Name: '&6Goblin Egg'      # default is the mob's Display
+```
+
+An unknown `Material` is logged with the mob id and the default egg is used. Permission: `bettermob.give`.
 
 ## Natural spawns
 

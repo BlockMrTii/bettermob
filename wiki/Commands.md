@@ -9,7 +9,7 @@ Alias: `/bmob`. Every subcommand has its own permission node, all default to op:
 | `bettermob.list` | `/bettermob list`, `/bettermob packs` and `/bettermob info` |
 | `bettermob.reload` | `/bettermob reload` and `/bettermob validate` |
 | `bettermob.skill` | `/bettermob skill` |
-| `bettermob.give` | `/bettermob give` |
+| `bettermob.give` | `/bettermob give` and `/bettermob egg` |
 | `bettermob.killall` | `/bettermob killall` |
 | `bettermob.spawner` | `/bettermob spawner` |
 | `bettermob.debug` | `/bettermob debug` and `/bettermob stats` |
@@ -20,6 +20,7 @@ Without a node the subcommand is refused and left out of the help and out of tab
 |---|---|
 | `/bettermob spawn <id> [amount]` | Spawn a registered mob at your location |
 | `/bettermob give <item> [player] [amount]` | Give a registered item. Without a player it goes to you |
+| `/bettermob egg <mob> [player] [amount]` | Give a spawn egg item that spawns exactly that mob when used on a block, see [Spawn eggs](Mobs#spawn-eggs) |
 | `/bettermob skill <id> [player]` | Run a skill by hand, with you (or the player) as caster |
 | `/bettermob list` | List all registered mob IDs |
 | `/bettermob packs` | List packs in `packs/` and whether they are enabled |
