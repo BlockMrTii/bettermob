@@ -474,9 +474,11 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             }
         }
         int given = amount;
-        Tasks.runOwned(plugin, receiver, () -> receiver.getInventory().addItem(itemRegistry.create(definition, given)).values()
-                .forEach(rest -> receiver.getWorld().dropItemNaturally(receiver.getLocation(), rest)));
-        messages.send(sender, "command.give.done", "amount", amount, "item", definition.id, "player", receiver.getName());
+        Tasks.runOwned(plugin, receiver, () -> {
+            receiver.getInventory().addItem(itemRegistry.create(definition, given)).values()
+                    .forEach(rest -> receiver.getWorld().dropItemNaturally(receiver.getLocation(), rest));
+            messages.send(sender, "command.give.done", "amount", given, "item", definition.id, "player", receiver.getName());
+        }, () -> messages.send(sender, "command.playerOffline", "player", receiver.getName()));
     }
 
     @Override
