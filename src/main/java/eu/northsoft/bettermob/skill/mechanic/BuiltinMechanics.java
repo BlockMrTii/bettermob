@@ -27,6 +27,11 @@ public final class BuiltinMechanics {
         registry.register(new MountModelMechanic(engine), "mountmodel");
         registry.register(new ParticlesMechanic(engine), "effect:particles", "e:p", "particles");
         registry.register(new ParticleRingMechanic(engine), "effect:particlering");
+        registry.register(new ParticleLineMechanic(engine, false), "effect:particleline", "particleline");
+        registry.register(new ParticleLineMechanic(engine, true), "effect:particlebeam", "particlebeam");
+        registry.register(new ParticleShapeMechanic(engine, ParticleShapeMechanic.Shape.SPHERE), "effect:particlesphere", "particlesphere");
+        registry.register(new ParticleShapeMechanic(engine, ParticleShapeMechanic.Shape.HELIX), "effect:particlehelix", "particlehelix");
+        registry.register(new GlowMechanic(engine), "glow");
         registry.register(new SpinMechanic(engine), "spin");
         registry.register(new TakeItemMechanic(engine), "takeitem");
         registry.register(new SudoSkillMechanic(engine), "sudoskill");
