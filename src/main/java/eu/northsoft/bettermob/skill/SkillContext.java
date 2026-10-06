@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.skill;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
@@ -23,6 +24,11 @@ public record SkillContext(LivingEntity caster, LivingEntity trigger, Cancellabl
 
     public SkillContext withTrigger(LivingEntity newTrigger) {
         return new SkillContext(caster, newTrigger, event, origin, true, variables);
+    }
+
+    public SkillContext ownedHere() {
+        if (trigger == null || Bukkit.isOwnedByCurrentRegion(trigger)) return this;
+        return new SkillContext(caster, null, event, origin, false, variables);
     }
 
     public SkillContext withOrigin(Location newOrigin) {
