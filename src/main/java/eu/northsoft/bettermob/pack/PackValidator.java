@@ -20,14 +20,19 @@ public final class PackValidator {
     public record Models(Predicate<String> betterModel, Predicate<String> modelEngine) {}
 
     public record Knowledge(Predicate<String> mechanic, Predicate<String> condition, Predicate<String> targeter, Predicate<String> skill,
-                            Predicate<String> targeterCondition, Models models) {
+                            Predicate<String> targeterCondition, Models models, Predicate<String> dropTable) {
+        public Knowledge(Predicate<String> mechanic, Predicate<String> condition, Predicate<String> targeter, Predicate<String> skill,
+                         Predicate<String> targeterCondition, Models models) {
+            this(mechanic, condition, targeter, skill, targeterCondition, models, null);
+        }
+
         public Knowledge(Predicate<String> mechanic, Predicate<String> condition, Predicate<String> targeter, Predicate<String> skill,
                          Predicate<String> targeterCondition) {
             this(mechanic, condition, targeter, skill, targeterCondition, null);
         }
     }
 
-    public enum Reason { UNPARSEABLE, MECHANIC, TARGETER, CONDITION, TARGETER_CONDITION, SKILL, MODEL }
+    public enum Reason { UNPARSEABLE, MECHANIC, TARGETER, CONDITION, TARGETER_CONDITION, SKILL, MODEL, DROP_TABLE }
 
     public record Issue(String file, String line, Reason reason, String name) {}
 
@@ -69,7 +74,8 @@ public final class PackValidator {
                 skill,
                 name -> CandidateFilters.knows(name, engine.conditionRegistry()::has),
                 new Models(engine.betterModel().available() ? engine.betterModel()::hasModel : null,
-                        engine.modelEngine().available() ? engine.modelEngine()::hasModel : null));
+                        engine.modelEngine().available() ? engine.modelEngine()::hasModel : null),
+                name -> engine.drops() == null || engine.drops().get(name) != null);
     }
 
     public boolean checksModels() {
@@ -200,6 +206,10 @@ public final class PackValidator {
             report.issues.add(new Issue(file, line, Reason.TARGETER, mechanic.targeter()));
         }
         if (mechanic.inlineCondition() != null) checkCondition(mechanic.inlineCondition(), line, file, report);
+        if (mechanic.name().equals("loot") && known.dropTable() != null) {
+            String table = firstOf(mechanic.params(), "table", "droptable");
+            if (table != null && !table.isBlank() && !known.dropTable().test(table.trim())) report.issues.add(new Issue(file, line, Reason.DROP_TABLE, table.trim()));
+        }
         if (mechanic.name().equals("model")) checkModel(mechanic.params().get("mid"), Engine.BETTER_MODEL, line, file, report);
         if (mechanic.name().equals("modelengine")) checkModel(mechanic.params().get("mid"), Engine.MODEL_ENGINE, line, file, report);
 
@@ -240,5 +250,12 @@ public final class PackValidator {
                 else checkStep(innerStep, inner, file, report);
             }
         }
+    }
+
+    private static String firstOf(java.util.Map<String, String> params, String... keys) {
+        for (String key : keys) {
+            if (params.containsKey(key)) return params.get(key);
+        }
+        return null;
     }
 }

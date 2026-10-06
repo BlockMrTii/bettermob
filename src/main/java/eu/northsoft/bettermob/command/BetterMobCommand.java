@@ -244,6 +244,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             case TARGETER_CONDITION -> "command.validate.reason.targeterCondition";
             case SKILL -> "command.validate.reason.skill";
             case MODEL -> "command.validate.reason.model";
+            case DROP_TABLE -> "command.validate.reason.dropTable";
         };
     }
 
