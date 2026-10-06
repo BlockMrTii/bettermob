@@ -198,6 +198,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
 
         int lines = reports.stream().mapToInt(PackValidator.Report::lines).sum();
         messages.send(sender, "command.validate.header", "lines", lines, "sources", reports.size());
+        if (!validator.checksModels()) messages.send(sender, "command.validate.modelsSkipped");
         boolean anyProblem = false;
         for (PackValidator.Report report : reports) {
             messages.send(sender, "command.validate.pack", "pack", report.pack(), "lines", report.lines(), "problems", report.issues().size());
@@ -224,6 +225,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             case CONDITION -> "command.validate.reason.condition";
             case TARGETER_CONDITION -> "command.validate.reason.targeterCondition";
             case SKILL -> "command.validate.reason.skill";
+            case MODEL -> "command.validate.reason.model";
         };
     }
 

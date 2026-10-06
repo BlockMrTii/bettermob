@@ -16,10 +16,17 @@ import java.util.Locale;
 import java.util.function.Predicate;
 
 public final class PackValidator {
-    public record Knowledge(Predicate<String> mechanic, Predicate<String> condition, Predicate<String> targeter, Predicate<String> skill,
-                            Predicate<String> targeterCondition) {}
+    public record Models(Predicate<String> betterModel, Predicate<String> modelEngine) {}
 
-    public enum Reason { UNPARSEABLE, MECHANIC, TARGETER, CONDITION, TARGETER_CONDITION, SKILL }
+    public record Knowledge(Predicate<String> mechanic, Predicate<String> condition, Predicate<String> targeter, Predicate<String> skill,
+                            Predicate<String> targeterCondition, Models models) {
+        public Knowledge(Predicate<String> mechanic, Predicate<String> condition, Predicate<String> targeter, Predicate<String> skill,
+                         Predicate<String> targeterCondition) {
+            this(mechanic, condition, targeter, skill, targeterCondition, null);
+        }
+    }
+
+    public enum Reason { UNPARSEABLE, MECHANIC, TARGETER, CONDITION, TARGETER_CONDITION, SKILL, MODEL }
 
     public record Issue(String file, String line, Reason reason, String name) {}
 
@@ -59,7 +66,13 @@ public final class PackValidator {
                 name -> engine.conditionRegistry().has(name),
                 name -> engine.targeters().has(name),
                 skill,
-                name -> CandidateFilters.knows(name, engine.conditionRegistry()::has));
+                name -> CandidateFilters.knows(name, engine.conditionRegistry()::has),
+                new Models(engine.betterModel().available() ? engine.betterModel()::hasModel : null,
+                        engine.modelEngine().available() ? engine.modelEngine()::hasModel : null));
+    }
+
+    public boolean checksModels() {
+        return known.models() != null && (known.models().betterModel() != null || known.models().modelEngine() != null);
     }
 
     public Report validatePack(String pack, File folder) {
@@ -80,7 +93,10 @@ public final class PackValidator {
 
     void walkTriggerLists(ConfigurationSection section, String file, Report report) {
         for (String key : section.getKeys(false)) {
-            if (key.equalsIgnoreCase("Skills") && section.isList(key)) {
+            if (key.equalsIgnoreCase("Model") && section.isString(key)) {
+                report.lines++;
+                checkModel(section.getString(key), Engine.ANY, "Model: " + section.getString(key), file, report);
+            } else if (key.equalsIgnoreCase("Skills") && section.isList(key)) {
                 for (String line : section.getStringList(key)) validateTriggerLine(line, file, report);
             } else if (key.equalsIgnoreCase("Drops") && section.isList(key)) {
                 for (String line : section.getStringList(key)) validateDropLine(line, file, report);
@@ -144,6 +160,19 @@ public final class PackValidator {
         checkCondition(line, line, file, report);
     }
 
+    private enum Engine { ANY, BETTER_MODEL, MODEL_ENGINE }
+
+    private void checkModel(String id, Engine engine, String line, String file, Report report) {
+        Models models = known.models();
+        if (models == null || id == null || id.isBlank()) return;
+        Predicate<String> better = engine == Engine.MODEL_ENGINE ? null : models.betterModel();
+        Predicate<String> modelEngine = engine == Engine.BETTER_MODEL ? null : models.modelEngine();
+        if (better == null && modelEngine == null) return;
+        String name = id.trim();
+        boolean found = (better != null && better.test(name)) || (modelEngine != null && modelEngine.test(name));
+        if (!found) report.issues.add(new Issue(file, line, Reason.MODEL, name));
+    }
+
     private void checkCondition(String raw, String line, String file, Report report) {
         Condition condition = Condition.parse(raw);
         if (condition == null) report.issues.add(new Issue(file, line, Reason.UNPARSEABLE, ""));
@@ -157,6 +186,8 @@ public final class PackValidator {
             report.issues.add(new Issue(file, line, Reason.TARGETER, mechanic.targeter()));
         }
         if (mechanic.inlineCondition() != null) checkCondition(mechanic.inlineCondition(), line, file, report);
+        if (mechanic.name().equals("model")) checkModel(mechanic.params().get("mid"), Engine.BETTER_MODEL, line, file, report);
+        if (mechanic.name().equals("modelengine")) checkModel(mechanic.params().get("mid"), Engine.MODEL_ENGINE, line, file, report);
 
         String conditions = mechanic.targeterParams().get("conditions");
         if (conditions != null) {
