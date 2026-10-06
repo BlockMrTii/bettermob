@@ -21,6 +21,7 @@ import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillRegistry;
 import eu.northsoft.bettermob.spawner.SpawnerListener;
 import eu.northsoft.bettermob.spawner.SpawnerManager;
+import eu.northsoft.bettermob.stats.KillStats;
 import eu.northsoft.bettermob.stats.SkillStats;
 import eu.northsoft.bettermob.util.Tasks;
 import org.bstats.bukkit.Metrics;
@@ -29,9 +30,15 @@ import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
+
 public final class BetterMobPlugin extends JavaPlugin {
+    private static final long KILLS_SAVE_TICKS = 6000L;
+
     private DebugManager debug;
     private SkillStats stats;
+    private KillStats kills;
+    private File killsFile;
     private Messages messages;
     private BetterMobExpansion expansion;
     private MobManager manager;
@@ -42,6 +49,23 @@ public final class BetterMobPlugin extends JavaPlugin {
 
     public DebugManager debug() {
         return debug;
+    }
+
+    public KillStats kills() {
+        return kills;
+    }
+
+    public void saveKills(boolean async) {
+        if (kills == null || !kills.dirty()) return;
+        Runnable write = () -> {
+            try {
+                kills.flush(killsFile);
+            } catch (java.io.IOException exception) {
+                messages.warn("kills.saveFailed", "error", exception);
+            }
+        };
+        if (async) Tasks.runAsync(this, write);
+        else write.run();
     }
 
     public SkillStats stats() {
@@ -61,6 +85,19 @@ public final class BetterMobPlugin extends JavaPlugin {
         debug = new DebugManager(this);
         stats = new SkillStats();
         stats.reload(getConfig());
+        kills = new KillStats();
+        killsFile = new File(getDataFolder(), "kills.yml");
+        if (killsFile.isFile()) {
+            try {
+                var loaded = new org.bukkit.configuration.file.YamlConfiguration();
+                loaded.load(killsFile);
+                kills.load(loaded);
+            } catch (java.io.IOException | org.bukkit.configuration.InvalidConfigurationException exception) {
+                kills.protect();
+                messages.warn("kills.loadFailed", "error", exception);
+            }
+        }
+        Tasks.runGlobalTimer(this, KILLS_SAVE_TICKS, () -> saveKills(true));
         PackScanner packScanner = new PackScanner(this);
 
         MobRegistry registry = new MobRegistry(this, packScanner);
@@ -82,7 +119,7 @@ public final class BetterMobPlugin extends JavaPlugin {
         manager = new MobManager(this, registry, betterModel, modelEngine, itemRegistry);
         SkillEngine skillEngine = new SkillEngine(this, skillRegistry, manager, betterModel, modelEngine, itemRegistry);
         manager.setSkillEngine(skillEngine);
-        getServer().getPluginManager().registerEvents(new MobListener(manager, dropRegistry), this);
+        getServer().getPluginManager().registerEvents(new MobListener(manager, dropRegistry, kills), this);
         getServer().getPluginManager().registerEvents(new ItemListener(itemRegistry, skillEngine), this);
         EggItems eggItems = new EggItems(this);
         getServer().getPluginManager().registerEvents(new EggListener(this, manager, eggItems), this);
@@ -111,7 +148,7 @@ public final class BetterMobPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(api, this);
 
         if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-            expansion = new BetterMobExpansion(this, manager, skillRegistry, itemRegistry);
+            expansion = new BetterMobExpansion(this, manager, skillRegistry, itemRegistry, kills);
             expansion.register();
         }
     }
@@ -131,6 +168,7 @@ public final class BetterMobPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        saveKills(false);
         if (spawners != null) spawners.stop();
         if (expansion != null) expansion.unregister();
         if (manager != null) manager.shutdown();

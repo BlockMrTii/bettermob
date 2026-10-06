@@ -19,6 +19,7 @@ command:
     skill: "&7/bettermob skill <id> [player] &8- &7Run a skill manually"
     give: "&7/bettermob give <item> [player] [amount] &8- &7Give an item"
     egg: "&7/bettermob egg <mob> [player] [amount] &8- &7Give a spawn egg for a mob"
+    top: "&7/bettermob top [mob] &8- &7Show the players with the most kills"
     debug: "&7/bettermob debug [off|info|verbose|filter|chat] &8- &7Control debug output"
     killall: "&7/bettermob killall [mob|*] [world] &8- &7Remove living BetterMob mobs"
     spawner: "&7/bettermob spawner <create|remove|list> &8- &7Manage mob spawners"
@@ -93,6 +94,12 @@ command:
     usage: "&cUsage: /bettermob skill <id> [player]"
     notRegistered: "&cSkill '{skill}' is not registered."
     done: "&aSkill '{skill}' run on {player}."
+  top:
+    notRegistered: "&cMob '{mob}' is not registered."
+    none: "&7Nobody has killed a BetterMob mob yet."
+    header: "&6Top kills &7({mob}):"
+    entry: "&e{place}. &f{player} &8- &7{kills}"
+    allMobs: "all mobs"
   egg:
     usage: "&cUsage: /bettermob egg <mob> [player] [amount]"
     notRegistered: "&cMob '{mob}' is not registered."
@@ -228,3 +235,7 @@ stats:
 
 egg:
   unknownMob: "The spawn egg is for the unknown mob '{mob}'."
+
+kills:
+  saveFailed: "Could not save kills.yml: {error}"
+  loadFailed: "Could not read kills.yml, kill counts are not saved until it is fixed: {error}"

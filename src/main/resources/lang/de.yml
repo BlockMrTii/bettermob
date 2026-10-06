@@ -19,6 +19,7 @@ command:
     skill: "&7/bettermob skill <id> [Spieler] &8- &7Skill manuell auslösen"
     give: "&7/bettermob give <item> [Spieler] [amount] &8- &7Item geben"
     egg: "&7/bettermob egg <mob> [player] [amount] &8- &7Spawn-Ei fuer einen Mob geben"
+    top: "&7/bettermob top [mob] &8- &7Spieler mit den meisten Kills anzeigen"
     debug: "&7/bettermob debug [off|info|verbose|filter|chat] &8- &7Debug-Ausgabe steuern"
     killall: "&7/bettermob killall [mob|*] [Welt] &8- &7Lebende BetterMob-Mobs entfernen"
     spawner: "&7/bettermob spawner <create|remove|list> &8- &7Mob-Spawner verwalten"
@@ -93,6 +94,12 @@ command:
     usage: "&cNutzung: /bettermob skill <id> [Spieler]"
     notRegistered: "&cSkill '{skill}' ist nicht registriert."
     done: "&aSkill '{skill}' auf {player} ausgeführt."
+  top:
+    notRegistered: "&cMob '{mob}' ist nicht registriert."
+    none: "&7Noch niemand hat einen BetterMob-Mob getoetet."
+    header: "&6Top Kills &7({mob}):"
+    entry: "&e{place}. &f{player} &8- &7{kills}"
+    allMobs: "alle Mobs"
   egg:
     usage: "&cNutzung: /bettermob egg <mob> [player] [amount]"
     notRegistered: "&cMob '{mob}' ist nicht registriert."
@@ -228,3 +235,7 @@ stats:
 
 egg:
   unknownMob: "Das Spawn-Ei gehoert zum unbekannten Mob '{mob}'."
+
+kills:
+  saveFailed: "kills.yml konnte nicht gespeichert werden: {error}"
+  loadFailed: "kills.yml konnte nicht gelesen werden, Kill-Zaehler werden erst wieder gespeichert, wenn sie repariert ist: {error}"

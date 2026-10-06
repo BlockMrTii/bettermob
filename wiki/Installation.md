@@ -94,5 +94,8 @@ With [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) i
 | `%bettermob_loaded_mobs%` | Registered mob definitions |
 | `%bettermob_loaded_skills%` | Registered skills |
 | `%bettermob_loaded_items%` | Registered items |
+| `%bettermob_kills_total%` | The player's kills of BetterMob mobs |
+| `%bettermob_kills_<mob>%` | The player's kills of that mob id |
+| `%bettermob_top_<n>_name%` / `%bettermob_top_<n>_kills%` | Name and kills of place `n` in the all-mob top list (`-` and `0` when empty) |
 
 Placeholders from any expansion are also resolved in a mob's `Display:` name and in the text of the `command{c=...}` and `message{m=...}` mechanics. The player is the trigger if it is a player, otherwise the caster. Without PlaceholderAPI nothing changes.

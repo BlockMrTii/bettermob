@@ -89,6 +89,11 @@ public final class Tasks {
         return false;
     }
 
+    public static void runAsync(Plugin plugin, Runnable task) {
+        if (FOLIA) Bukkit.getAsyncScheduler().runNow(plugin, scheduled -> task.run());
+        else Bukkit.getScheduler().runTaskAsynchronously(plugin, task);
+    }
+
     public static void runGlobal(Plugin plugin, Runnable task) {
         if (FOLIA) Bukkit.getGlobalRegionScheduler().run(plugin, scheduled -> task.run());
         else Bukkit.getScheduler().runTask(plugin, task);

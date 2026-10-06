@@ -18,6 +18,7 @@ import eu.northsoft.bettermob.skill.SkillStep;
 import eu.northsoft.bettermob.spawner.Spawner;
 import eu.northsoft.bettermob.spawner.SpawnerManager;
 import eu.northsoft.bettermob.util.Tasks;
+import eu.northsoft.bettermob.stats.KillStats;
 import eu.northsoft.bettermob.stats.SkillStats;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -46,6 +47,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         nodes.put("list", "bettermob.list");
         nodes.put("packs", "bettermob.list");
         nodes.put("info", "bettermob.list");
+        nodes.put("top", "bettermob.top");
         nodes.put("reload", "bettermob.reload");
         nodes.put("validate", "bettermob.reload");
         nodes.put("skill", "bettermob.skill");
@@ -94,6 +96,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             shown |= help(sender, "validate", "command.help.validate");
             shown |= help(sender, "skill", "command.help.skill");
             shown |= help(sender, "give", "command.help.give");
+            shown |= help(sender, "top", "command.help.top");
             shown |= help(sender, "egg", "command.help.egg");
             shown |= help(sender, "killall", "command.help.killall");
             shown |= help(sender, "spawner", "command.help.spawner");
@@ -127,6 +130,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             case "spawn" -> handleSpawn(sender, args);
             case "skill" -> handleSkill(sender, args);
             case "give" -> handleGive(sender, args);
+            case "top" -> handleTop(sender, args);
             case "egg" -> handleEgg(sender, args);
             case "killall" -> handleKillAll(sender, args);
             case "spawner" -> handleSpawner(sender, args);
@@ -498,6 +502,25 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         }, () -> messages.send(sender, "command.playerOffline", "player", receiver.getName()));
     }
 
+    private static final int TOP_ROWS = 10;
+
+    private void handleTop(CommandSender sender, String[] args) {
+        String mob = args.length >= 2 ? args[1] : null;
+        if (mob != null && manager.registry().get(mob) == null) {
+            messages.send(sender, "command.top.notRegistered", "mob", mob);
+            return;
+        }
+        List<KillStats.Row> rows = plugin.kills().top(mob, TOP_ROWS);
+        if (rows.isEmpty()) {
+            messages.send(sender, "command.top.none");
+            return;
+        }
+        messages.send(sender, "command.top.header", "mob", mob == null ? messages.get("command.top.allMobs") : mob);
+        for (int i = 0; i < rows.size(); i++) {
+            messages.send(sender, "command.top.entry", "place", i + 1, "player", rows.get(i).name(), "kills", rows.get(i).kills());
+        }
+    }
+
     private void handleGive(CommandSender sender, String[] args) {
         if (args.length < 2) {
             messages.send(sender, "command.give.usage");
@@ -556,7 +579,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             return ids;
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("stats")) return List.of("on", "off", "reset");
-        if (args.length == 2 && (args[0].equalsIgnoreCase("spawn") || args[0].equalsIgnoreCase("info") || args[0].equalsIgnoreCase("egg"))) return new ArrayList<>(manager.registry().all().keySet());
+        if (args.length == 2 && (args[0].equalsIgnoreCase("spawn") || args[0].equalsIgnoreCase("info") || args[0].equalsIgnoreCase("egg") || args[0].equalsIgnoreCase("top"))) return new ArrayList<>(manager.registry().all().keySet());
         if (args.length == 2 && args[0].equalsIgnoreCase("skill")) return new ArrayList<>(skillRegistry.ids());
         if (args.length == 2 && args[0].equalsIgnoreCase("give")) return new ArrayList<>(itemRegistry.ids());
         if (args[0].equalsIgnoreCase("spawner")) {
