@@ -25,7 +25,9 @@ class MechanicRegistryTest {
 
     private static final List<String> ADDED_NAMES = List.of("heal", "teleport", "explosion", "lightning", "setspeed", "setai",
             "setvariable", "variableset", "addvariable", "variableadd",
-            "actionbar", "actionmessage", "title", "sendtitle", "bossbar");
+            "actionbar", "actionmessage", "title", "sendtitle", "bossbar",
+            "particleline", "effect:particleline", "particlebeam", "effect:particlebeam", "particlesphere", "effect:particlesphere",
+            "particlehelix", "effect:particlehelix", "glow");
 
     private static final Set<String> HANDLED_BY_ENGINE = Set.of("cancelskill", "delay");
 
