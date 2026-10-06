@@ -27,6 +27,7 @@ public final class KillStats {
     public void record(UUID player, String name, String mobId) {
         kills.computeIfAbsent(player, id -> new ConcurrentHashMap<>()).merge(mobId.toLowerCase(Locale.ROOT), 1, Integer::sum);
         names.put(player, name);
+        ranked.clear();
         dirty = true;
     }
 
@@ -40,14 +41,21 @@ public final class KillStats {
         return own == null ? 0 : own.getOrDefault(mobId.toLowerCase(Locale.ROOT), 0);
     }
 
+    private final Map<String, List<Row>> ranked = new ConcurrentHashMap<>();
+
     public List<Row> top(String mobId, int limit) {
+        List<Row> all = ranked.computeIfAbsent(mobId == null ? "" : mobId.toLowerCase(Locale.ROOT), key -> rank(mobId));
+        return all.size() > limit ? List.copyOf(all.subList(0, Math.max(0, limit))) : all;
+    }
+
+    private List<Row> rank(String mobId) {
         List<Row> rows = new ArrayList<>();
         for (UUID player : kills.keySet()) {
             int amount = mobId == null ? total(player) : count(player, mobId);
             if (amount > 0) rows.add(new Row(player, names.getOrDefault(player, player.toString()), amount));
         }
         rows.sort(Comparator.comparingInt(Row::kills).reversed().thenComparing(Row::name, String.CASE_INSENSITIVE_ORDER));
-        return rows.size() > limit ? List.copyOf(rows.subList(0, Math.max(0, limit))) : List.copyOf(rows);
+        return List.copyOf(rows);
     }
 
     public boolean dirty() {
@@ -91,6 +99,7 @@ public final class KillStats {
     public void load(YamlConfiguration config) {
         kills.clear();
         names.clear();
+        ranked.clear();
         ConfigurationSection players = config.getConfigurationSection("players");
         if (players == null) return;
         for (String key : players.getKeys(false)) {
