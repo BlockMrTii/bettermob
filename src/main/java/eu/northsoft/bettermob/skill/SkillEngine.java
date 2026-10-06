@@ -139,7 +139,8 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         run(skill, context);
     }
 
-    public void run(SkillDefinition skill, SkillContext context) {
+    public void run(SkillDefinition skill, SkillContext source) {
+        SkillContext context = source.ownedHere();
         String caster = debug.info() ? subject(context.caster()) : null;
         if (debug.info()) debug.info("skill '" + skill.id + "' started by " + caster, skill.id, caster);
         Check conditions = check(skill.conditions, context, null);
@@ -220,7 +221,8 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         executeSteps(steps, 0, context);
     }
 
-    private void executeSteps(List<SkillStep> steps, int index, SkillContext context) {
+    private void executeSteps(List<SkillStep> steps, int index, SkillContext source) {
+        SkillContext context = source.ownedHere();
         for (int i = index; i < steps.size(); i++) {
             SkillStep step = steps.get(i);
             if (step instanceof SkillStep.Delay delay) {
@@ -257,7 +259,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
 
             SkillStep.Mechanic withoutDelay = new SkillStep.Mechanic(mechanic.name(),
                     without(without(p, "delay"), "cd"), mechanic.targeter(), mechanic.targeterParams(), null, false);
-            Tasks.runLater(plugin, context.caster(), ticks, plugin.stats().trackPending(() -> runMechanic(withoutDelay, context, new Deferral())));
+            Tasks.runLater(plugin, context.caster(), ticks, plugin.stats().trackPending(() -> runMechanic(withoutDelay, context.ownedHere(), new Deferral())));
             return false;
         }
 
