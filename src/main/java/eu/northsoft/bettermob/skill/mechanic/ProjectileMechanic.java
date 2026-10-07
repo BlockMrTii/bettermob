@@ -25,6 +25,7 @@ import static eu.northsoft.bettermob.skill.SkillTags.HELPER_TAG;
 public final class ProjectileMechanic implements Mechanic {
     private static final double MAX_RANGE = 200;
     private static final double TURN_PER_TICK = Math.toRadians(8);
+    private static final double MIN_REACH_DIVISOR = 8;
 
     private final SkillEngine engine;
 
@@ -141,8 +142,10 @@ public final class ProjectileMechanic implements Mechanic {
             if (homingTarget != null && homingTarget.isValid() && homingTarget.getWorld().equals(position.getWorld())) {
                 direction = ProjectileMotion.steer(direction, homingTarget.getEyeLocation().toVector().subtract(position.toVector()), TURN_PER_TICK);
             }
-            boolean ownedAhead = Bukkit.isOwnedByCurrentRegion(position.clone().add(direction.clone().multiply(perTick)));
-            RayTraceResult block = ownedAhead ? position.getWorld().rayTraceBlocks(position, direction, perTick, org.bukkit.FluidCollisionMode.NEVER, true) : null;
+            double ownedReach = perTick;
+            while (ownedReach > perTick / MIN_REACH_DIVISOR && !Bukkit.isOwnedByCurrentRegion(position.clone().add(direction.clone().multiply(ownedReach)))) ownedReach /= 2;
+            boolean ownedAhead = Bukkit.isOwnedByCurrentRegion(position.clone().add(direction.clone().multiply(ownedReach)));
+            RayTraceResult block = ownedAhead ? position.getWorld().rayTraceBlocks(position, direction, ownedReach, org.bukkit.FluidCollisionMode.NEVER, true) : null;
             double step = block == null ? perTick : Math.max(0, block.getHitPosition().distance(position.toVector()));
             Location next = position.clone().add(direction.clone().multiply(step));
             next.setDirection(direction);
