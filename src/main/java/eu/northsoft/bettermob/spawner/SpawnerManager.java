@@ -33,7 +33,7 @@ public final class SpawnerManager {
     private final MobManager manager;
     private final File file;
     private final Map<String, Spawner> spawners = new ConcurrentHashMap<>();
-    private Runnable cancelTask = () -> { };
+    private volatile Runnable cancelTask = () -> { };
 
     public SpawnerManager(BetterMobPlugin plugin, MobManager manager) {
         this.plugin = plugin;
