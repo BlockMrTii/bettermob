@@ -39,10 +39,10 @@ public final class AuraMechanic implements Mechanic {
         String onTick = firstParam(p, "ot", "ontick");
         if (onTick != null) {
             long interval = Math.max(1, parseInt(firstParam(p, "i", "interval"), 20));
-            aura.cancelTicker = Tasks.runTimer(engine.plugin(), entity, interval, interval, () -> {
+            aura.bindTicker(Tasks.runTimer(engine.plugin(), entity, interval, interval, () -> {
                 if (entity.isDead() || active.get(key) != aura) aura.cancelTicker.run();
                 else runLines(onTick, SkillContext.of(entity));
-            });
+            }));
         }
         if (ticks > 0) {
             Tasks.runLater(engine.plugin(), entity, ticks, () -> end(entity, active, key, aura));
