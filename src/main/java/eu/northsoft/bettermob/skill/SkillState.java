@@ -18,7 +18,7 @@ public final class SkillState {
     private final Map<UUID, Map<String, Aura>> auras = new ConcurrentHashMap<>();
     private static final int MIN_PURGE_SIZE = 2048;
 
-    private int purgeSize = MIN_PURGE_SIZE;
+    private volatile int purgeSize = MIN_PURGE_SIZE;
     private final ThreadLocal<Boolean> applyingDamage = ThreadLocal.withInitial(() -> false);
 
     public void setGcd(UUID casterId, int ticks) {
@@ -45,14 +45,17 @@ public final class SkillState {
 
     boolean acquire(Object key, long millis) {
         long now = System.currentTimeMillis();
-        Long until = cooldowns.get(key);
-        if (until != null && until > now) return false;
         if (cooldowns.size() > purgeSize) {
             cooldowns.values().removeIf(time -> time <= now);
             purgeSize = Math.max(MIN_PURGE_SIZE, cooldowns.size() * 2);
         }
-        cooldowns.put(key, now + millis);
-        return true;
+        boolean[] acquired = {false};
+        cooldowns.compute(key, (ignored, until) -> {
+            if (until != null && until > now) return until;
+            acquired[0] = true;
+            return now + millis;
+        });
+        return acquired[0];
     }
 
     private static SkillKey skillCooldownKey(LivingEntity caster, String skillId) {
