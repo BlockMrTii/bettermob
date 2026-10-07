@@ -144,7 +144,7 @@ public final class ProjectileMechanic implements Mechanic {
                 crossedBorder = false;
                 if (strike(position)) return;
             }
-            if (homingTarget != null && homingTarget.isValid() && homingTarget.getWorld().equals(position.getWorld())) {
+            if (homingTarget != null && Bukkit.isOwnedByCurrentRegion(homingTarget) && homingTarget.isValid() && homingTarget.getWorld().equals(position.getWorld())) {
                 direction = ProjectileMotion.steer(direction, homingTarget.getEyeLocation().toVector().subtract(position.toVector()), TURN_PER_TICK);
             }
             double ownedReach = perTick;
