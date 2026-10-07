@@ -6,8 +6,8 @@ public final class Aura {
     public final boolean cancelEvent;
     public final String onEnd;
     public final String onHit;
-    public Runnable cancelTicker = () -> { };
-    public Runnable cancelEnd = () -> { };
+    public volatile Runnable cancelTicker = () -> { };
+    public volatile Runnable cancelEnd = () -> { };
 
     public Aura(String kind, long until, boolean cancelEvent, String onEnd, String onHit) {
         this.kind = kind;
