@@ -529,8 +529,11 @@ public final class MobManager {
         String node = "bettermob.faction." + faction;
         if (registeredFactionPermissions.contains(node)) return node;
         synchronized (registeredFactionPermissions) {
-            if (registeredFactionPermissions.add(node) && Bukkit.getPluginManager().getPermission(node) == null) {
-                Bukkit.getPluginManager().addPermission(new org.bukkit.permissions.Permission(node, org.bukkit.permissions.PermissionDefault.FALSE));
+            if (!registeredFactionPermissions.contains(node)) {
+                if (Bukkit.getPluginManager().getPermission(node) == null) {
+                    Bukkit.getPluginManager().addPermission(new org.bukkit.permissions.Permission(node, org.bukkit.permissions.PermissionDefault.FALSE));
+                }
+                registeredFactionPermissions.add(node);
             }
         }
         return node;
