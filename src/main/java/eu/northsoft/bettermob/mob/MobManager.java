@@ -608,7 +608,12 @@ public final class MobManager {
         while (iterator.hasNext()) {
             Threat threat = iterator.next();
             LivingEntity attacker = threat.attacker.get();
-            if (attacker == null || attacker.isDead() || !attacker.getWorld().equals(mob.getWorld())) {
+            if (attacker == null) {
+                iterator.remove();
+                continue;
+            }
+            if (!Bukkit.isOwnedByCurrentRegion(attacker)) continue;
+            if (attacker.isDead() || !attacker.getWorld().equals(mob.getWorld())) {
                 iterator.remove();
                 continue;
             }
