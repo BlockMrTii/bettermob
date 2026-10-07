@@ -4,6 +4,7 @@ import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.util.Tasks;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -152,7 +153,12 @@ public final class SpawnerManager {
                     complete = false;
                     continue;
                 }
-                for (Entity entity : world.getChunkAt(x, z, false).getEntities()) {
+                Chunk chunk = world.getChunkAt(x, z, false);
+                if (chunk == null || !chunk.isEntitiesLoaded()) {
+                    complete = false;
+                    continue;
+                }
+                for (Entity entity : chunk.getEntities()) {
                     if (entity.getScoreboardTags().contains(spawner.tag())) spawner.alive.add(entity.getUniqueId());
                 }
             }
