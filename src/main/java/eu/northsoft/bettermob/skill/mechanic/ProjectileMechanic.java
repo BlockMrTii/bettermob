@@ -136,7 +136,7 @@ public final class ProjectileMechanic implements Mechanic {
                 return;
             }
             Location position = body.getLocation();
-            if (homingTarget != null && homingTarget.isValid() && homingTarget.getWorld().equals(position.getWorld())) {
+            if (homingTarget != null && Bukkit.isOwnedByCurrentRegion(homingTarget) && homingTarget.isValid() && homingTarget.getWorld().equals(position.getWorld())) {
                 direction = ProjectileMotion.steer(direction, homingTarget.getEyeLocation().toVector().subtract(position.toVector()), TURN_PER_TICK);
             }
             RayTraceResult block = position.getWorld().rayTraceBlocks(position, direction, perTick, org.bukkit.FluidCollisionMode.NEVER, true);
