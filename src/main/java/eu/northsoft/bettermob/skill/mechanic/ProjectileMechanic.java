@@ -131,7 +131,7 @@ public final class ProjectileMechanic implements Mechanic {
 
         private void tick() {
             if (finished) return;
-            if (!body.isValid() || !caster.isValid() || caster.isDead()) {
+            if (!body.isValid() || Bukkit.isOwnedByCurrentRegion(caster) && (!caster.isValid() || caster.isDead())) {
                 finish(null, false);
                 return;
             }
