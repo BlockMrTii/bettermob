@@ -34,7 +34,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -43,6 +42,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 
 public final class MobManager {
     private final BetterMobPlugin plugin;
@@ -357,12 +358,11 @@ public final class MobManager {
 
     private void scheduleTimers(LivingEntity entity, MobDefinition definition) {
         if (definition.threatTable && entity instanceof Mob mob) {
-            timers.computeIfAbsent(mob.getUniqueId(), key -> new ArrayList<>())
-                    .add(Tasks.runTimer(plugin, mob, 20L, 20L, () -> retarget(mob)));
+            addTimer(mob.getUniqueId(), () -> Tasks.runTimer(plugin, mob, 20L, 20L, () -> retarget(mob)));
         }
         if (definition.behaviour != null && definition.behaviour.hasHomeLimit()) {
             double limit = definition.behaviour.maxHomeDistance();
-            timers.computeIfAbsent(entity.getUniqueId(), key -> new ArrayList<>()).add(Tasks.runTimer(plugin, entity, HOME_CHECK_TICKS, HOME_CHECK_TICKS, () -> {
+            addTimer(entity.getUniqueId(), () -> Tasks.runTimer(plugin, entity, HOME_CHECK_TICKS, HOME_CHECK_TICKS, () -> {
                 Location home = homeOf(entity);
                 if (home == null || !home.getWorld().equals(entity.getWorld()) || entity.getLocation().distanceSquared(home) <= limit * limit) return;
                 if (plugin.debug().info()) plugin.debug().info("mob " + definition.id + " is further than " + limit + " blocks from home, teleporting it back", definition.id);
@@ -370,12 +370,19 @@ public final class MobManager {
             }));
         }
         for (MobDefinition.SkillTrigger trigger : definition.triggersOf(MobDefinition.SkillTrigger.Trigger.TIMER)) {
-            Runnable cancel = Tasks.runTimer(plugin, entity, trigger.timerTicks(), trigger.timerTicks(), () -> {
+            addTimer(entity.getUniqueId(), () -> Tasks.runTimer(plugin, entity, trigger.timerTicks(), trigger.timerTicks(), () -> {
                 if (!entity.isValid()) return;
                 skillEngine.runStep(trigger.step(), SkillContext.of(entity));
-            });
-            timers.computeIfAbsent(entity.getUniqueId(), key -> new ArrayList<>()).add(cancel);
+            }));
         }
+    }
+
+    private void addTimer(UUID id, Supplier<Runnable> schedule) {
+        timers.compute(id, (key, cancellers) -> {
+            List<Runnable> list = cancellers == null ? new CopyOnWriteArrayList<>() : cancellers;
+            list.add(schedule.get());
+            return list;
+        });
     }
 
     public int reloadLiving() {
@@ -527,8 +534,14 @@ public final class MobManager {
 
     private String factionPermission(String faction) {
         String node = "bettermob.faction." + faction;
-        if (registeredFactionPermissions.add(node) && Bukkit.getPluginManager().getPermission(node) == null) {
-            Bukkit.getPluginManager().addPermission(new org.bukkit.permissions.Permission(node, org.bukkit.permissions.PermissionDefault.FALSE));
+        if (registeredFactionPermissions.contains(node)) return node;
+        synchronized (registeredFactionPermissions) {
+            if (!registeredFactionPermissions.contains(node)) {
+                if (Bukkit.getPluginManager().getPermission(node) == null) {
+                    Bukkit.getPluginManager().addPermission(new org.bukkit.permissions.Permission(node, org.bukkit.permissions.PermissionDefault.FALSE));
+                }
+                registeredFactionPermissions.add(node);
+            }
         }
         return node;
     }
@@ -608,7 +621,12 @@ public final class MobManager {
         while (iterator.hasNext()) {
             Threat threat = iterator.next();
             LivingEntity attacker = threat.attacker.get();
-            if (attacker == null || attacker.isDead() || !attacker.getWorld().equals(mob.getWorld())) {
+            if (attacker == null) {
+                iterator.remove();
+                continue;
+            }
+            if (!Bukkit.isOwnedByCurrentRegion(attacker)) continue;
+            if (attacker.isDead() || !attacker.getWorld().equals(mob.getWorld())) {
                 iterator.remove();
                 continue;
             }

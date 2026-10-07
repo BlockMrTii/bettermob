@@ -36,7 +36,9 @@ public final class ParticlesMechanic implements Mechanic {
         for (int i = 1; i <= repeat; i++) {
             Tasks.runLater(engine.plugin(), call.context().caster(), i * interval, () -> {
                 for (Target again : engine.targeters().resolveAll(step.targeter(), step.targeterParams(), call.context())) {
-                    Location at = again.location().clone().add(0, yOffset, 0);
+                    Location base = again.ownedLocation();
+                    if (base == null) continue;
+                    Location at = base.clone().add(0, yOffset, 0);
                     Tasks.runOwnedAt(engine.plugin(), at, () -> ParticleSupport.spawn(engine.plugin(), at, particle, p));
                 }
             });
