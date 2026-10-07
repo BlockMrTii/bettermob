@@ -28,6 +28,7 @@ public final class SpawnerManager {
     private static final int CHUNK_SIZE = 16;
     private static final long PLAYER_FRESH_MILLIS = 3000L;
     private static final int GROUND_SEARCH_DEPTH = 3;
+    private static final int MAX_RECONCILE_ATTEMPTS = 6;
 
     private final BetterMobPlugin plugin;
     private final MobManager manager;
@@ -113,7 +114,10 @@ public final class SpawnerManager {
     private void tick(Spawner spawner, Location center) {
         long now = System.currentTimeMillis();
         if (now < spawner.nextSpawnAt || !center.getWorld().isChunkLoaded(center.getBlockX() >> 4, center.getBlockZ() >> 4)) return;
-        if (!spawner.reconciled) reconcile(spawner, center);
+        if (!spawner.reconciled) {
+            reconcile(spawner, center);
+            if (!spawner.reconciled) return;
+        }
         if (now - spawner.playerNearAt > PLAYER_FRESH_MILLIS) return;
         MobDefinition definition = manager.registry().get(spawner.mob);
         if (definition == null) return;
@@ -141,15 +145,19 @@ public final class SpawnerManager {
         World world = center.getWorld();
         int centerX = center.getBlockX() >> 4;
         int centerZ = center.getBlockZ() >> 4;
+        boolean complete = true;
         for (int x = centerX - chunkRadius; x <= centerX + chunkRadius; x++) {
             for (int z = centerZ - chunkRadius; z <= centerZ + chunkRadius; z++) {
-                if (!plugin.getServer().isOwnedByCurrentRegion(world, x, z) || !world.isChunkLoaded(x, z)) continue;
+                if (!plugin.getServer().isOwnedByCurrentRegion(world, x, z) || !world.isChunkLoaded(x, z)) {
+                    complete = false;
+                    continue;
+                }
                 for (Entity entity : world.getChunkAt(x, z, false).getEntities()) {
                     if (entity.getScoreboardTags().contains(spawner.tag())) spawner.alive.add(entity.getUniqueId());
                 }
             }
         }
-        spawner.reconciled = true;
+        if (complete || ++spawner.reconcileAttempts >= MAX_RECONCILE_ATTEMPTS) spawner.reconciled = true;
     }
 
     void track(Entity entity) {
