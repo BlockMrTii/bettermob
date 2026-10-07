@@ -3,10 +3,12 @@ package eu.northsoft.bettermob.skill.mechanic;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillStep;
+import eu.northsoft.bettermob.util.RegionEntities;
 import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.Location;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.util.RayTraceResult;
@@ -139,15 +141,16 @@ public final class ProjectileMechanic implements Mechanic {
             if (homingTarget != null && homingTarget.isValid() && homingTarget.getWorld().equals(position.getWorld())) {
                 direction = ProjectileMotion.steer(direction, homingTarget.getEyeLocation().toVector().subtract(position.toVector()), TURN_PER_TICK);
             }
-            RayTraceResult block = position.getWorld().rayTraceBlocks(position, direction, perTick, org.bukkit.FluidCollisionMode.NEVER, true);
+            boolean ownedAhead = Bukkit.isOwnedByCurrentRegion(position.clone().add(direction.clone().multiply(perTick)));
+            RayTraceResult block = ownedAhead ? position.getWorld().rayTraceBlocks(position, direction, perTick, org.bukkit.FluidCollisionMode.NEVER, true) : null;
             double step = block == null ? perTick : Math.max(0, block.getHitPosition().distance(position.toVector()));
             Location next = position.clone().add(direction.clone().multiply(step));
             next.setDirection(direction);
             body.teleportAsync(next);
             travelled += step;
 
-            for (LivingEntity candidate : next.getNearbyLivingEntities(radius)) {
-                if (candidate.equals(caster) || candidate.getScoreboardTags().contains(HELPER_TAG) || candidate instanceof ArmorStand) continue;
+            for (Entity entity : RegionEntities.near(next, radius)) {
+                if (!(entity instanceof LivingEntity candidate) || candidate.equals(caster) || candidate.getScoreboardTags().contains(HELPER_TAG) || candidate instanceof ArmorStand) continue;
                 if (damage > 0) engine.state().applyDamage(candidate, damage, caster);
                 finish(candidate, true);
                 return;
