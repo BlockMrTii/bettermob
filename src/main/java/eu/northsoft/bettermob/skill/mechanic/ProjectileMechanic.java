@@ -106,6 +106,7 @@ public final class ProjectileMechanic implements Mechanic {
         private double travelled;
         private long ticks;
         private boolean finished;
+        private boolean crossedBorder;
         private Runnable cancel = () -> { };
 
         Flight(LivingEntity caster, ArmorStand body, Vector direction, double perTick, double range, double radius, double damage,
@@ -139,6 +140,10 @@ public final class ProjectileMechanic implements Mechanic {
                 return;
             }
             Location position = body.getLocation();
+            if (crossedBorder) {
+                crossedBorder = false;
+                if (strike(position)) return;
+            }
             if (homingTarget != null && homingTarget.isValid() && homingTarget.getWorld().equals(position.getWorld())) {
                 direction = ProjectileMotion.steer(direction, homingTarget.getEyeLocation().toVector().subtract(position.toVector()), TURN_PER_TICK);
             }
@@ -152,12 +157,8 @@ public final class ProjectileMechanic implements Mechanic {
             body.teleportAsync(next);
             travelled += step;
 
-            for (Entity entity : RegionEntities.near(next, radius)) {
-                if (!(entity instanceof LivingEntity candidate) || candidate.equals(caster) || candidate.getScoreboardTags().contains(HELPER_TAG) || candidate instanceof ArmorStand) continue;
-                if (damage > 0) engine.state().applyDamage(candidate, damage, caster);
-                finish(candidate, true);
-                return;
-            }
+            if (strike(next)) return;
+            crossedBorder = !Bukkit.isOwnedByCurrentRegion(next);
             if (block != null && block.getHitBlockFace() != null) {
                 if (bouncesLeft > 0) {
                     bouncesLeft--;
@@ -176,6 +177,16 @@ public final class ProjectileMechanic implements Mechanic {
                 Location at = next.clone();
                 Tasks.runOwned(engine.plugin(), caster, () -> engine.runSteps(onTick, SkillContext.of(caster).withOrigin(at)));
             }
+        }
+
+        private boolean strike(Location at) {
+            for (Entity entity : RegionEntities.near(at, radius)) {
+                if (!(entity instanceof LivingEntity candidate) || candidate.equals(caster) || candidate.getScoreboardTags().contains(HELPER_TAG) || candidate instanceof ArmorStand) continue;
+                if (damage > 0) engine.state().applyDamage(candidate, damage, caster);
+                finish(candidate, true);
+                return true;
+            }
+            return false;
         }
 
         private void finish(LivingEntity hit, boolean runSkills) {
