@@ -2,6 +2,7 @@ package eu.northsoft.bettermob.skill;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 
 import java.util.Locale;
 import java.util.Map;
@@ -91,7 +92,7 @@ public final class SkillState {
         boolean previous = applyingDamage.get();
         applyingDamage.set(true);
         try {
-            victim.damage(amount, source != null && Bukkit.isOwnedByCurrentRegion(source) ? source : null);
+            victim.damage(amount, source instanceof Player || source != null && Bukkit.isOwnedByCurrentRegion(source) ? source : null);
         } finally {
             applyingDamage.set(previous);
         }
