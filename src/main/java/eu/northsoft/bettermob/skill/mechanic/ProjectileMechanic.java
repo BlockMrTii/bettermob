@@ -151,7 +151,7 @@ public final class ProjectileMechanic implements Mechanic {
             while (ownedReach > perTick / MIN_REACH_DIVISOR && !Bukkit.isOwnedByCurrentRegion(position.clone().add(direction.clone().multiply(ownedReach)))) ownedReach /= 2;
             boolean ownedAhead = Bukkit.isOwnedByCurrentRegion(position.clone().add(direction.clone().multiply(ownedReach)));
             RayTraceResult block = ownedAhead ? position.getWorld().rayTraceBlocks(position, direction, ownedReach, org.bukkit.FluidCollisionMode.NEVER, true) : null;
-            double step = block == null ? perTick : Math.max(0, block.getHitPosition().distance(position.toVector()));
+            double step = block == null ? ownedReach : Math.max(0, block.getHitPosition().distance(position.toVector()));
             Location next = position.clone().add(direction.clone().multiply(step));
             next.setDirection(direction);
             body.teleportAsync(next);
