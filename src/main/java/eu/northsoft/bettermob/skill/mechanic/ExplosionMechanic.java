@@ -17,9 +17,14 @@ public final class ExplosionMechanic implements Mechanic {
         if (at == null) return;
         float power = parseFloat(firstParam(call.params(), "yield", "y", "power"), 2f);
         if (!Float.isFinite(power)) power = 2f;
-        while (power > SAFE_POWER && !Bukkit.isOwnedByCurrentRegion(at, (int) Math.ceil(power * BLOCKS_PER_POWER / CHUNK_SIZE))) power /= 2;
+        while (power > SAFE_POWER && !ownsReach(at, power)) power /= 2;
+        if (!ownsReach(at, power)) return;
         boolean blockDamage = "true".equalsIgnoreCase(firstParam(call.params(), "bd", "blockdamage"));
         boolean fire = "true".equalsIgnoreCase(call.params().get("fire"));
         at.getWorld().createExplosion(at, power, fire, blockDamage, call.context().caster());
+    }
+
+    private static boolean ownsReach(Location at, float power) {
+        return Bukkit.isOwnedByCurrentRegion(at, Math.max(0, (int) Math.ceil(power * BLOCKS_PER_POWER / CHUNK_SIZE)));
     }
 }
