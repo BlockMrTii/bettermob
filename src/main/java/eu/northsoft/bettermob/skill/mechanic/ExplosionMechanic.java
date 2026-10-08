@@ -16,6 +16,7 @@ public final class ExplosionMechanic implements Mechanic {
         Location at = call.target().location();
         if (at == null) return;
         float power = parseFloat(firstParam(call.params(), "yield", "y", "power"), 2f);
+        if (!Float.isFinite(power)) power = 2f;
         while (power > SAFE_POWER && !Bukkit.isOwnedByCurrentRegion(at, (int) Math.ceil(power * BLOCKS_PER_POWER / CHUNK_SIZE))) power /= 2;
         boolean blockDamage = "true".equalsIgnoreCase(firstParam(call.params(), "bd", "blockdamage"));
         boolean fire = "true".equalsIgnoreCase(call.params().get("fire"));
