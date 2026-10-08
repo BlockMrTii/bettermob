@@ -146,16 +146,21 @@ public final class SpawnerManager {
         World world = center.getWorld();
         int centerX = center.getBlockX() >> 4;
         int centerZ = center.getBlockZ() >> 4;
-        boolean complete = true;
+        boolean notLoaded = false;
+        boolean foreignRegion = false;
         for (int x = centerX - chunkRadius; x <= centerX + chunkRadius; x++) {
             for (int z = centerZ - chunkRadius; z <= centerZ + chunkRadius; z++) {
-                if (!plugin.getServer().isOwnedByCurrentRegion(world, x, z) || !world.isChunkLoaded(x, z)) {
-                    complete = false;
+                if (!plugin.getServer().isOwnedByCurrentRegion(world, x, z)) {
+                    foreignRegion = true;
+                    continue;
+                }
+                if (!world.isChunkLoaded(x, z)) {
+                    notLoaded = true;
                     continue;
                 }
                 Chunk chunk = world.getChunkAt(x, z, false);
                 if (chunk == null || !chunk.isEntitiesLoaded()) {
-                    complete = false;
+                    notLoaded = true;
                     continue;
                 }
                 for (Entity entity : chunk.getEntities()) {
@@ -163,7 +168,8 @@ public final class SpawnerManager {
                 }
             }
         }
-        if (complete || ++spawner.reconcileAttempts >= MAX_RECONCILE_ATTEMPTS) spawner.reconciled = true;
+        if (notLoaded) return;
+        if (!foreignRegion || ++spawner.reconcileAttempts >= MAX_RECONCILE_ATTEMPTS) spawner.reconciled = true;
     }
 
     void track(Entity entity) {
