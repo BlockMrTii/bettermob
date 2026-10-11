@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.mob;
 
+import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.drop.DropEntry;
 import eu.northsoft.bettermob.drop.DropTable;
@@ -45,6 +46,7 @@ public final class MobRegistry {
         }
 
         Map<String, MobDefinition> loaded = new LinkedHashMap<>();
+        Map<String, Integer> prints = new LinkedHashMap<>();
         for (File sourceFolder : packScanner.foldersFor("mobs")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
                 for (Map.Entry<String, ConfigurationSection> entry : extractMobSections(file).entrySet()) {
@@ -54,11 +56,15 @@ public final class MobRegistry {
                         continue;
                     }
                     MobDefinition definition = parse(id, entry.getValue());
-                    if (definition != null) loaded.put(id.toLowerCase(Locale.ROOT), definition);
+                    if (definition != null) {
+                        loaded.put(id.toLowerCase(Locale.ROOT), definition);
+                        prints.put(id.toLowerCase(Locale.ROOT), ReloadDiff.fingerprint(entry.getValue()));
+                    }
                 }
             }
         }
         mobs = loaded;
+        fingerprints = prints;
         plugin.messages().info("mob.loaded", "count", loaded.size());
     }
 
@@ -101,6 +107,12 @@ public final class MobRegistry {
             if (nested != null) result.put(key, nested);
         }
         return result;
+    }
+
+    private volatile Map<String, Integer> fingerprints = Map.of();
+
+    public Map<String, Integer> fingerprints() {
+        return fingerprints;
     }
 
     public MobDefinition get(String id) {

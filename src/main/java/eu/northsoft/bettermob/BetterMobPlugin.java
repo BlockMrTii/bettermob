@@ -23,6 +23,7 @@ import eu.northsoft.bettermob.spawner.SpawnerListener;
 import eu.northsoft.bettermob.spawner.SpawnerManager;
 import eu.northsoft.bettermob.stats.KillStats;
 import eu.northsoft.bettermob.stats.SkillStats;
+import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.util.Tasks;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.entity.ArmorStand;
@@ -31,6 +32,8 @@ import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.Map;
+import java.util.List;
 
 public final class BetterMobPlugin extends JavaPlugin {
     private static final long KILLS_SAVE_TICKS = 6000L;
@@ -154,17 +157,27 @@ public final class BetterMobPlugin extends JavaPlugin {
         }
     }
 
-    public int reloadAll() {
+    public record ReloadReport(int updated, Map<String, ReloadDiff> diffs, int affectedLiving) {}
+
+    public ReloadReport reloadAll() {
         reloadConfig();
         messages.reload();
         debug.reload();
         stats.reload(getConfig());
+        var before = List.of(manager.registry().fingerprints(), skillRegistry.fingerprints(), itemRegistry.fingerprints(), dropRegistry.fingerprints());
         skillRegistry.load();
         itemRegistry.load();
         dropRegistry.load();
         manager.registry().load();
         spawners.load();
-        return manager.reloadLiving();
+        Map<String, ReloadDiff> diffs = new java.util.LinkedHashMap<>();
+        diffs.put("mobs", ReloadDiff.of(before.get(0), manager.registry().fingerprints()));
+        diffs.put("skills", ReloadDiff.of(before.get(1), skillRegistry.fingerprints()));
+        diffs.put("items", ReloadDiff.of(before.get(2), itemRegistry.fingerprints()));
+        diffs.put("droptables", ReloadDiff.of(before.get(3), dropRegistry.fingerprints()));
+        ReloadDiff mobs = diffs.get("mobs");
+        int affected = manager.livingOf(new java.util.HashSet<>(mobs.changed()));
+        return new ReloadReport(manager.reloadLiving(), diffs, affected);
     }
 
     @Override

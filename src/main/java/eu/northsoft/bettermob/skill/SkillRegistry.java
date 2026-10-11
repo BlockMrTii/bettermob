@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.skill;
 
+import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.pack.PackScanner;
 import eu.northsoft.bettermob.pack.YamlFiles;
@@ -34,6 +35,7 @@ public final class SkillRegistry {
         }
 
         Map<String, SkillDefinition> loaded = new LinkedHashMap<>();
+        Map<String, Integer> prints = new LinkedHashMap<>();
         for (File sourceFolder : packScanner.foldersFor("skills")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
@@ -45,11 +47,19 @@ public final class SkillRegistry {
                         continue;
                     }
                     loaded.put(id.toLowerCase(Locale.ROOT), parse(id, section));
+                    prints.put(id.toLowerCase(Locale.ROOT), ReloadDiff.fingerprint(section));
                 }
             }
         }
         skills = loaded;
+        fingerprints = prints;
         plugin.messages().info("skill.loaded", "count", loaded.size());
+    }
+
+    private volatile Map<String, Integer> fingerprints = Map.of();
+
+    public Map<String, Integer> fingerprints() {
+        return fingerprints;
     }
 
     public SkillDefinition get(String id) {

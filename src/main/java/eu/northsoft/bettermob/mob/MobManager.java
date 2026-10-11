@@ -408,6 +408,14 @@ public final class MobManager {
         });
     }
 
+    public int livingOf(Set<String> mobIds) {
+        int count = 0;
+        for (MobDefinition definition : definitions.values()) {
+            if (mobIds.contains(definition.id.toLowerCase(java.util.Locale.ROOT))) count++;
+        }
+        return count;
+    }
+
     public int reloadLiving() {
         int updated = 0;
         Set<String> removed = new HashSet<>();
