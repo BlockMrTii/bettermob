@@ -158,6 +158,7 @@ tagged releases above are the stable ones.
 | `/bettermob egg <mob> [player] [amount]` | Give a spawn egg that spawns exactly that mob (see Spawn eggs below) |
 | `/bettermob killall [mob\|*] [world]` | Remove all living BetterMob mobs, or only one type and/or one world, and report how many |
 | `/bettermob spawner create <id> <mob> [radius] [interval] [max]` | Create a spawner at your position; `remove <id>` and `list` manage them |
+| `/bettermob test <mob>\|stop` | Spawn the mob at you and send its debug output (triggers, skills, conditions, cooldowns, at verbose detail) only to you. It ends when that mob is removed, after 5 minutes or with `/bettermob test stop`; global debug settings are not changed. Permission `bettermob.debug` |
 | `/bettermob stats [on\|off\|reset]` | Show living mobs per type, running timers, loaded skills and packs; `on`/`off` switch the skill timing, `reset` clears it (permission `bettermob.debug`) |
 | `/bettermob debug [off\|info\|verbose\|filter <id>\|filter clear\|chat]` | Show or change the debug output (permission `bettermob.debug`, part of `bettermob.admin`) |
 
@@ -174,7 +175,7 @@ Alias: `/bmob`.
 | `bettermob.killall` | `/bettermob killall` | op |
 | `bettermob.spawner` | `/bettermob spawner` | op |
 | `bettermob.top` | `/bettermob top` | op |
-| `bettermob.debug` | `/bettermob debug` | op |
+| `bettermob.debug` | `/bettermob debug` and `/bettermob test` | op |
 
 `bettermob.admin` is the parent of all the others. Without a node the subcommand is refused, left out of the help and left out of tab completion. `bettermob.faction.<name>` (see `factions` in `config.yml`) is unrelated to the commands.
 

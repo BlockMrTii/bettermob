@@ -77,7 +77,12 @@ public final class MobManager {
     }
 
     public LivingEntity spawn(MobDefinition definition, Location location) {
+        return spawn(definition, location, null);
+    }
+
+    public LivingEntity spawn(MobDefinition definition, Location location, java.util.function.Consumer<LivingEntity> created) {
         LivingEntity entity = (LivingEntity) location.getWorld().spawnEntity(location, definition.type);
+        if (created != null) created.accept(entity);
         applyDefinition(entity, definition, true);
 
         if (entity instanceof Mob mob) AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
@@ -249,6 +254,7 @@ public final class MobManager {
         inCombat.remove(entity.getUniqueId());
         exitCombatToken.remove(entity.getUniqueId());
         lastAlert.remove(entity.getUniqueId());
+        plugin.debug().endSessionsOf(entity.getUniqueId());
         List<Runnable> cancellers = timers.remove(entity.getUniqueId());
         if (cancellers != null) cancellers.forEach(Runnable::run);
     }
@@ -316,6 +322,16 @@ public final class MobManager {
 
     private void fireTriggers(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
                               List<MobDefinition.SkillTrigger> triggers, LivingEntity trigger, Cancellable event) {
+        Runnable leave = plugin.debug().enter(entity.getUniqueId());
+        try {
+            fireTriggersScoped(entity, definition, type, triggers, trigger, event);
+        } finally {
+            leave.run();
+        }
+    }
+
+    private void fireTriggersScoped(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
+                                    List<MobDefinition.SkillTrigger> triggers, LivingEntity trigger, Cancellable event) {
         if (skillEngine == null) return;
         if (!Bukkit.isOwnedByCurrentRegion(entity)) {
             LivingEntity original = trigger;

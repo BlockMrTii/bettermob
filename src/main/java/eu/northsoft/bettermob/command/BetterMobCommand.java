@@ -56,6 +56,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         nodes.put("killall", "bettermob.killall");
         nodes.put("spawner", "bettermob.spawner");
         nodes.put("debug", "bettermob.debug");
+        nodes.put("test", "bettermob.debug");
         nodes.put("stats", "bettermob.debug");
         return nodes;
     }
@@ -101,6 +102,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             shown |= help(sender, "killall", "command.help.killall");
             shown |= help(sender, "spawner", "command.help.spawner");
             shown |= help(sender, "debug", "command.help.debug");
+            shown |= help(sender, "test", "command.help.test");
             shown |= help(sender, "stats", "command.help.stats");
             if (!shown) messages.send(sender, "command.noPermission");
             return true;
@@ -136,6 +138,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             case "killall" -> handleKillAll(sender, args);
             case "spawner" -> handleSpawner(sender, args);
             case "debug" -> handleDebug(sender, args);
+            case "test" -> handleTest(sender, args);
             case "stats" -> handleStats(sender, args);
             default -> messages.send(sender, "command.unknown");
         }
@@ -360,6 +363,29 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
     private void sendDebugStatus(CommandSender sender, DebugManager debug) {
         String filters = debug.filters().isEmpty() ? messages.get("command.debug.filtersAll") : String.join(", ", debug.filters());
         messages.send(sender, "command.debug.status", "level", debug.level().name().toLowerCase(Locale.ROOT), "filters", filters);
+    }
+
+    private void handleTest(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            messages.send(sender, "command.test.usage");
+            return;
+        }
+        if (!(sender instanceof Player player)) {
+            messages.send(sender, "command.playersOnly");
+            return;
+        }
+        if (args[1].equalsIgnoreCase("stop")) {
+            messages.send(sender, plugin.debug().endSession(player.getUniqueId()) ? "command.test.stopped" : "command.test.none");
+            return;
+        }
+        MobDefinition definition = manager.registry().get(args[1]);
+        if (definition == null) {
+            messages.send(sender, "command.spawn.notRegistered", "mob", args[1]);
+            return;
+        }
+        long[] minutes = {0};
+        manager.spawn(definition, player.getLocation(), created -> minutes[0] = plugin.debug().startSession(player, definition.id, created.getUniqueId()));
+        messages.send(sender, "command.test.started", "mob", definition.id, "minutes", minutes[0]);
     }
 
     private void handleSpawn(CommandSender sender, String[] args) {

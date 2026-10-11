@@ -21,6 +21,7 @@ command:
     egg: "&7/bettermob egg <mob> [player] [amount] &8- &7Spawn-Ei fuer einen Mob geben"
     top: "&7/bettermob top [mob] &8- &7Spieler mit den meisten Kills anzeigen"
     debug: "&7/bettermob debug [off|info|verbose|filter|chat] &8- &7Debug-Ausgabe steuern"
+    test: "&7/bettermob test <mob|stop> &8- &7Mob spawnen und nur dessen Debug-Ausgabe sehen"
     killall: "&7/bettermob killall [mob|*] [Welt] &8- &7Lebende BetterMob-Mobs entfernen"
     spawner: "&7/bettermob spawner <create|remove|list> &8- &7Mob-Spawner verwalten"
     info: "&7/bettermob info <mob> &8- &7Details eines Mobs anzeigen"
@@ -92,6 +93,11 @@ command:
     chatOn: "&aDebug-Ausgabe im Chat an."
     chatOff: "&7Debug-Ausgabe im Chat aus."
     usage: "&cNutzung: /bettermob debug [off|info|verbose|filter <id>|filter clear|chat]"
+  test:
+    usage: "&cVerwendung: /bettermob test <mob>|stop"
+    started: "&aSpawnte '{mob}'. Seine Debug-Ausgabe geht nur an dich, bis er entfernt wird, bis /bettermob test stop oder {minutes} Minuten."
+    stopped: "&7Test-Debug-Ausgabe beendet."
+    none: "&7Du hast keinen laufenden Test."
   spawn:
     usage: "&cNutzung: /bettermob spawn <id> [amount]"
     notRegistered: "&cMob '{mob}' ist nicht registriert."
