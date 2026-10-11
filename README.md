@@ -151,7 +151,7 @@ tagged releases above are the stable ones.
 | `/bettermob packs` | List discovered packs and whether they're enabled |
 | `/bettermob info <mob>` | Show a mob's type, health, damage, faction, model, equipment, number of drop entries, skills by trigger and how many are alive |
 | `/bettermob top [mob]` | The 10 players with the most kills, of all BetterMob mobs or of one mob (permission `bettermob.top`) |
-| `/bettermob reload` | Reload config, mobs, skills, and packs |
+| `/bettermob reload [verbose]` | Reload config, mobs, skills, and packs and list what changed |
 | `/bettermob validate [pack]` | Check a pack (or all of them) for unsupported mechanics, conditions, targeters, undefined skills, model ids that exist in neither BetterModel nor ModelEngine, and unparsable lines (including drop lines) without spawning anything |
 | `/bettermob skill <id> [player]` | Manually run a registered skill, bypassing its normal triggers |
 | `/bettermob give <item> [player] [amount]` | Give a registered item (see [Items](#items)) |
@@ -178,7 +178,7 @@ Alias: `/bmob`.
 
 `bettermob.admin` is the parent of all the others. Without a node the subcommand is refused, left out of the help and left out of tab completion. `bettermob.faction.<name>` (see `factions` in `config.yml`) is unrelated to the commands.
 
-**Reload:** `/bettermob reload` also updates mobs that are already alive. Each one is bound to the new definition of the same id: name, health cap, attack, speed and the options are applied again, its timers are restarted (the old ones are cancelled, so nothing runs twice), its auras and global cooldown are cleared, the model is attached again and the `~onLoad` skills run again. AI goals are applied again only when `AIGoalSelectors` or `AITargetSelectors` changed and the new list starts with `clear`; goals an earlier `clear` removed cannot come back until the mob is respawned. A mob whose definition was removed keeps the old one and a warning is logged. Totem bodies that are already in the world run out on their own.
+**Reload:** `/bettermob reload` lists per kind how many mobs, skills, items and drop tables are new, removed or changed (`verbose` lists every id) and how many living mobs use a changed mob. It also updates mobs that are already alive. Each one is bound to the new definition of the same id: name, health cap, attack, speed and the options are applied again, its timers are restarted (the old ones are cancelled, so nothing runs twice), its auras and global cooldown are cleared, the model is attached again and the `~onLoad` skills run again. AI goals are applied again only when `AIGoalSelectors` or `AITargetSelectors` changed and the new list starts with `clear`; goals an earlier `clear` removed cannot come back until the mob is respawned. A mob whose definition was removed keeps the old one and a warning is logged. Totem bodies that are already in the world run out on their own.
 
 **Kill counters:** every kill of a BetterMob mob by a player is counted per player and mob id and saved in `plugins/BetterMob/kills.yml` (written every five minutes and when the server stops, without blocking the server). `/bettermob top` lists the best players, and PlaceholderAPI exposes the numbers (see the placeholders table). Only kills by players count; mobs that die from other causes are not counted.
 

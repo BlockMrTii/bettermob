@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.item;
 
+import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.pack.PackScanner;
@@ -41,6 +42,7 @@ public final class ItemRegistry {
     public void load() {
         folder.mkdirs();
         Map<String, ItemDefinition> loaded = new LinkedHashMap<>();
+        Map<String, String> prints = new LinkedHashMap<>();
         for (File sourceFolder : packScanner.foldersFor("items")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
@@ -52,12 +54,22 @@ public final class ItemRegistry {
                         continue;
                     }
                     ItemDefinition definition = parse(id, section);
-                    if (definition != null) loaded.put(id.toLowerCase(Locale.ROOT), definition);
+                    if (definition != null) {
+                        loaded.put(id.toLowerCase(Locale.ROOT), definition);
+                        prints.put(id.toLowerCase(Locale.ROOT), ReloadDiff.fingerprint(section));
+                    }
                 }
             }
         }
         items = loaded;
+        fingerprints = prints;
         plugin.messages().info("item.loaded", "count", loaded.size());
+    }
+
+    private volatile Map<String, String> fingerprints = Map.of();
+
+    public Map<String, String> fingerprints() {
+        return fingerprints;
     }
 
     public ItemDefinition get(String id) {
