@@ -32,6 +32,8 @@ public final class ConditionRegistry {
         conditions.put("time", new TimeCondition());
         conditions.put("variable", new VariableCondition(engine));
         conditions.put("sneaking", new SneakingCondition());
+        conditions.put("killedmob", new KillCondition(engine, false));
+        conditions.put("killedmobs", new KillCondition(engine, true));
     }
 
     private final Map<String, CustomEntry> customs = new java.util.concurrent.ConcurrentHashMap<>();
