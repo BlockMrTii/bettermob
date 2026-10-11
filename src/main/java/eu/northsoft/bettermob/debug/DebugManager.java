@@ -5,6 +5,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,12 +34,39 @@ public final class DebugManager {
         };
     }
 
+    private record Session(UUID player, String mob, UUID entity, long expiresAt) {}
+
+    private static final long SESSION_MILLIS = 5 * 60 * 1000L;
+
+    private final Map<UUID, Session> sessions = new ConcurrentHashMap<>();
+
     public boolean info() {
-        return level != Level.OFF;
+        return level != Level.OFF || hasSessions();
     }
 
     public boolean verbose() {
-        return level == Level.VERBOSE;
+        return level == Level.VERBOSE || hasSessions();
+    }
+
+    public long startSession(Player player, String mobId, UUID entity) {
+        long expires = System.currentTimeMillis() + SESSION_MILLIS;
+        sessions.put(player.getUniqueId(), new Session(player.getUniqueId(), mobId.toLowerCase(Locale.ROOT), entity, expires));
+        return SESSION_MILLIS / 60000L;
+    }
+
+    public boolean endSession(UUID player) {
+        return sessions.remove(player) != null;
+    }
+
+    public void endSessionsOf(UUID entity) {
+        if (!sessions.isEmpty()) sessions.values().removeIf(session -> session.entity().equals(entity));
+    }
+
+    private boolean hasSessions() {
+        if (sessions.isEmpty()) return false;
+        long now = System.currentTimeMillis();
+        sessions.values().removeIf(session -> session.expiresAt() <= now);
+        return !sessions.isEmpty();
     }
 
     public Level level() {
@@ -60,11 +88,27 @@ public final class DebugManager {
     }
 
     public void info(String message, String... subjects) {
-        if (info() && matches(subjects)) emit(message);
+        if (level != Level.OFF && matches(subjects)) emit(message);
+        emitToSessions(message, subjects);
     }
 
     public void verbose(String message, String... subjects) {
-        if (verbose() && matches(subjects)) emit(message);
+        if (level == Level.VERBOSE && matches(subjects)) emit(message);
+        emitToSessions(message, subjects);
+    }
+
+    private void emitToSessions(String message, String[] subjects) {
+        if (sessions.isEmpty()) return;
+        for (Session session : sessions.values()) {
+            for (String subject : subjects) {
+                if (subject != null && subject.toLowerCase(Locale.ROOT).equals(session.mob())) {
+                    Player player = Bukkit.getPlayer(session.player());
+                    if (player == null) sessions.remove(session.player());
+                    else player.sendMessage("§8[§7test§8] §7" + message);
+                    break;
+                }
+            }
+        }
     }
 
     private boolean matches(String[] subjects) {

@@ -249,6 +249,7 @@ public final class MobManager {
         inCombat.remove(entity.getUniqueId());
         exitCombatToken.remove(entity.getUniqueId());
         lastAlert.remove(entity.getUniqueId());
+        plugin.debug().endSessionsOf(entity.getUniqueId());
         List<Runnable> cancellers = timers.remove(entity.getUniqueId());
         if (cancellers != null) cancellers.forEach(Runnable::run);
     }
