@@ -56,6 +56,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         nodes.put("killall", "bettermob.killall");
         nodes.put("spawner", "bettermob.spawner");
         nodes.put("debug", "bettermob.debug");
+        nodes.put("test", "bettermob.debug");
         nodes.put("aggro", "bettermob.debug");
         nodes.put("threat", "bettermob.debug");
         nodes.put("stats", "bettermob.debug");
@@ -106,6 +107,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             shown |= help(sender, "killall", "command.help.killall");
             shown |= help(sender, "spawner", "command.help.spawner");
             shown |= help(sender, "debug", "command.help.debug");
+            shown |= help(sender, "test", "command.help.test");
             shown |= help(sender, "aggro", "command.help.aggro");
             shown |= help(sender, "threat", "command.help.threat");
             shown |= help(sender, "stats", "command.help.stats");
@@ -122,9 +124,10 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
 
         switch (subcommand) {
             case "reload" -> {
-                int updated = plugin.reloadAll();
+                var report = plugin.reloadAll();
                 messages.send(sender, "command.reloaded");
-                if (updated > 0) messages.send(sender, "command.reloadedLiving", "count", updated);
+                sendReloadDiff(sender, report, args.length > 1 && args[1].equalsIgnoreCase("verbose"));
+                if (report.updated() > 0) messages.send(sender, "command.reloadedLiving", "count", report.updated());
             }
             case "list" -> messages.send(sender, "command.mobList", "mobs", String.join(", ", manager.registry().all().keySet()));
             case "packs" -> {
@@ -142,6 +145,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             case "killall" -> handleKillAll(sender, args);
             case "spawner" -> handleSpawner(sender, args);
             case "debug" -> handleDebug(sender, args);
+            case "test" -> handleTest(sender, args);
             case "aggro" -> handleAggro(sender);
             case "threat" -> handleThreat(sender);
             case "stats" -> handleStats(sender, args);
@@ -242,6 +246,31 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             }
         }
         if (!anyProblem) messages.send(sender, "command.validate.allGood");
+    }
+
+    private static final int DIFF_IDS_SHOWN = 5;
+
+    private void sendReloadDiff(CommandSender sender, BetterMobPlugin.ReloadReport report, boolean verbose) {
+        boolean any = false;
+        for (var entry : report.diffs().entrySet()) {
+            var diff = entry.getValue();
+            if (diff.isEmpty()) continue;
+            any = true;
+            messages.send(sender, "command.reloadDiff.line", "kind", entry.getKey(), "added", diff.added().size(),
+                    "removed", diff.removed().size(), "changed", diff.changed().size());
+            sendDiffIds(sender, "+", diff.added(), verbose);
+            sendDiffIds(sender, "-", diff.removed(), verbose);
+            sendDiffIds(sender, "~", diff.changed(), verbose);
+        }
+        if (!any) messages.send(sender, "command.reloadDiff.none");
+        if (report.affectedLiving() > 0) messages.send(sender, "command.reloadDiff.affected", "count", report.affectedLiving());
+    }
+
+    private void sendDiffIds(CommandSender sender, String sign, List<String> ids, boolean verbose) {
+        if (ids.isEmpty()) return;
+        List<String> shown = verbose || ids.size() <= DIFF_IDS_SHOWN ? ids : ids.subList(0, DIFF_IDS_SHOWN);
+        String more = shown.size() < ids.size() ? " (+" + (ids.size() - shown.size()) + ")" : "";
+        messages.send(sender, "command.reloadDiff.ids", "sign", sign, "ids", String.join(", ", shown) + more);
     }
 
     private static String reasonKey(PackValidator.Reason reason) {
@@ -376,6 +405,29 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
 
     private static final int THREAT_LOOK_DISTANCE = 30;
     private static final int THREAT_ROWS = 5;
+
+    private void handleTest(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            messages.send(sender, "command.test.usage");
+            return;
+        }
+        if (!(sender instanceof Player player)) {
+            messages.send(sender, "command.playersOnly");
+            return;
+        }
+        if (args[1].equalsIgnoreCase("stop")) {
+            messages.send(sender, plugin.debug().endSession(player.getUniqueId()) ? "command.test.stopped" : "command.test.none");
+            return;
+        }
+        MobDefinition definition = manager.registry().get(args[1]);
+        if (definition == null) {
+            messages.send(sender, "command.spawn.notRegistered", "mob", args[1]);
+            return;
+        }
+        long[] minutes = {0};
+        manager.spawn(definition, player.getLocation(), created -> minutes[0] = plugin.debug().startSession(player, definition.id, created.getUniqueId()));
+        messages.send(sender, "command.test.started", "mob", definition.id, "minutes", minutes[0]);
+    }
 
     private void handleSpawn(CommandSender sender, String[] args) {
         if (args.length < 2) {
@@ -613,6 +665,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         if (node == null || !sender.hasPermission(node)) return List.of();
         if (args.length == 2 && args[0].equalsIgnoreCase("validate")) return new ArrayList<>(packScanner.sources().keySet().stream().filter(name -> !name.isEmpty()).toList());
         if (args.length == 2 && args[0].equalsIgnoreCase("debug")) return List.of("off", "info", "verbose", "filter", "chat");
+        if (args.length == 2 && args[0].equalsIgnoreCase("reload")) return List.of("verbose");
         if (args.length == 3 && args[0].equalsIgnoreCase("debug") && args[1].equalsIgnoreCase("filter")) {
             List<String> ids = new ArrayList<>(manager.registry().all().keySet());
             ids.addAll(skillRegistry.ids());

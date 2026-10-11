@@ -74,6 +74,7 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `command` | `c`: command | Run a console command. `<caster.name>` and `<target.name>` are replaced |
 | `takeitem` | `i` item ID, `a` amount | Take items from the target player |
 | `loot` | `table`, `vanilla`, `lootingmodifier`, `mode` | Roll a BetterMob drop table (`table=<id>`) or a vanilla loot table (`vanilla=minecraft:entities/zombie`, with the caster as the looted entity and `lootingmodifier` as looting level, default 0) and give the result to the target player; what doesn't fit is dropped at their feet. Drop-table exp goes to the player. With `mode=drop` (also `target=drop`) the items and exp drop at the target's location instead, and the target doesn't have to be a player. An unknown table is logged once and reported by `/bettermob validate`. Use it from an item's `~onUse` after `takeitem` |
+| `killcount` | `var`, `mob` | Store a player's kill count (the target if it is a player, otherwise the trigger, otherwise the caster) (of `mob`, or all mobs without it) in a skill variable, e.g. `killcount{var=caster.kills;mob=goblin} @trigger`, to use it as `<var.kills>` |
 | `breakblock` | `usetool` | Break the target block |
 | `setblock` | `m` material | Replace the block at the target |
 | `damage` | `amount` | Damage the target with the caster as attacker. Does not fire `~onAttack` again |
@@ -190,6 +191,8 @@ Skills:
 | `biome{b=DESERT,PLAINS}` | The caster stands in one of these biomes (names without `minecraft:` are fine) |
 | `variable{var=hits;value=>=3}` | The variable matches: a number test (`>3`, `<=5`, `2-4`, `7`) when it holds a number, otherwise text equality. A missing variable counts as 0 for number tests |
 | `sneaking` | The caster is a player and is sneaking |
+| `killedmob{mob=goblin;count=10}` | The player has killed at least 10 of that mob (the kill counters, see `/bettermob top`). `count` is a number (at least), a comparison (`<5`) or a range (`3-6`); default 1. The player is the checked target, otherwise the trigger, otherwise the caster |
+| `killedmobs{count=50}` | The same for the kills of all BetterMob mobs together |
 | `time{t=day}` | `day` or `night` of the caster's world; also a tick or range, e.g. `time{t=0-6000}` |
 | `chance{chance=0.75}` | A random roll succeeds (0 to 1) |
 | `hastag{t=pet}` | The caster has the tag set by `addtag` |

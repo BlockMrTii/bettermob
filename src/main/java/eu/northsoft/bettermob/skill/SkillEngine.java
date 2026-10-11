@@ -153,6 +153,15 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     public void run(SkillDefinition skill, SkillContext source) {
+        Runnable leave = debug.enter(source.caster().getUniqueId());
+        try {
+            runScoped(skill, source);
+        } finally {
+            leave.run();
+        }
+    }
+
+    private void runScoped(SkillDefinition skill, SkillContext source) {
         SkillContext context = source.ownedHere().withArguments(Arguments.withDefaults(source.arguments(), skill.arguments));
         String caster = debug.info() ? subject(context.caster()) : null;
         if (debug.info()) debug.info("skill '" + skill.id + "' started by " + caster, skill.id, caster);
@@ -265,6 +274,15 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private boolean runMechanic(SkillStep.Mechanic mechanic, SkillContext context, Deferral deferral) {
+        Runnable leave = debug.enter(context.caster().getUniqueId());
+        try {
+            return runMechanicScoped(mechanic, context, deferral);
+        } finally {
+            leave.run();
+        }
+    }
+
+    private boolean runMechanicScoped(SkillStep.Mechanic mechanic, SkillContext context, Deferral deferral) {
         Map<String, String> p = mechanic.params();
 
         if (mechanic.inlineCondition() != null) {
