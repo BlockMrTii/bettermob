@@ -18,7 +18,10 @@ public final class KillCountMechanic implements Mechanic {
 
     @Override
     public void execute(MechanicCall call) {
-        if (!(call.target().entity() instanceof Player player) || engine.plugin().kills() == null) return;
+        Player player = call.target().entity() instanceof Player target ? target
+                : call.context().trigger() instanceof Player trigger ? trigger
+                : call.context().caster() instanceof Player caster ? caster : null;
+        if (player == null || engine.plugin().kills() == null) return;
         String variable = firstParam(call.params(), "var", "variable", "name");
         String name = variable == null ? null : Variables.nameOf(variable);
         if (name == null) {

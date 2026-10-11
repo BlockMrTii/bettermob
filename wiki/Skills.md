@@ -74,7 +74,7 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `command` | `c`: command | Run a console command. `<caster.name>` and `<target.name>` are replaced |
 | `takeitem` | `i` item ID, `a` amount | Take items from the target player |
 | `loot` | `table`, `vanilla`, `lootingmodifier`, `mode` | Roll a BetterMob drop table (`table=<id>`) or a vanilla loot table (`vanilla=minecraft:entities/zombie`, with the caster as the looted entity and `lootingmodifier` as looting level, default 0) and give the result to the target player; what doesn't fit is dropped at their feet. Drop-table exp goes to the player. With `mode=drop` (also `target=drop`) the items and exp drop at the target's location instead, and the target doesn't have to be a player. An unknown table is logged once and reported by `/bettermob validate`. Use it from an item's `~onUse` after `takeitem` |
-| `killcount` | `var`, `mob` | Store the target player's kill count (of `mob`, or all mobs without it) in a skill variable, e.g. `killcount{var=caster.kills;mob=goblin} @trigger`, to use it as `<var.kills>` |
+| `killcount` | `var`, `mob` | Store a player's kill count (the target if it is a player, otherwise the trigger, otherwise the caster) (of `mob`, or all mobs without it) in a skill variable, e.g. `killcount{var=caster.kills;mob=goblin} @trigger`, to use it as `<var.kills>` |
 | `breakblock` | `usetool` | Break the target block |
 | `setblock` | `m` material | Replace the block at the target |
 | `damage` | `amount` | Damage the target with the caster as attacker. Does not fire `~onAttack` again |
