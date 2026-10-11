@@ -348,6 +348,16 @@ MaxHomeDistance: 60
 
 `Patrol` walks the points while the mob has no target (`Loop`, `Wait` in seconds), `Guard` sends it back to its spawn point once it is further away than the radius, `MaxHomeDistance` teleports it back. The spawn point is saved on the mob. Details in the [wiki](https://github.com/HyperGaming99/bettermob/wiki/Mobs).
 
+### Groups and leaders
+
+```yaml
+Group: orcs
+AlertRadius: 20
+Leader: { Mob: orc_chief, Distance: 4, Range: 32, OnLeaderDeath: HOME }
+```
+
+Members of a `Group` take the attacker as target when a packmate is damaged (within `AlertRadius`, default 16). `Leader` makes a mob follow the nearest mob with that id; `OnLeaderDeath` is `FIND`, `STAY` or `HOME`. Details in the [wiki](https://github.com/HyperGaming99/bettermob/wiki/Mobs).
+
 ## Items
 
 `items/*.yml` (and each pack's `Items/`) define items the same way MythicMobs does -

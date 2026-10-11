@@ -505,6 +505,55 @@
           "type": "number",
           "minimum": 0,
           "description": "A mob further away than this (blocks) is teleported to its spawn point."
+        },
+        "Group": {
+          "type": "string",
+          "description": "Mobs with the same group alert each other when one is damaged."
+        },
+        "AlertRadius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 128,
+          "description": "Blocks around a damaged group member whose members take the attacker as target (default 16, 0 turns it off)."
+        },
+        "Leader": {
+          "description": "Follow the nearest living mob with this id.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "Mob": {
+                  "type": "string"
+                },
+                "Distance": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 128
+                },
+                "Range": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 128
+                },
+                "OnLeaderDeath": {
+                  "enum": [
+                    "FIND",
+                    "STAY",
+                    "HOME",
+                    "find",
+                    "stay",
+                    "home"
+                  ]
+                }
+              },
+              "required": [
+                "Mob"
+              ]
+            }
+          ]
         }
       }
     }

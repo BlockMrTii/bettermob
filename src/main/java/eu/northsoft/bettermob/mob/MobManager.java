@@ -14,6 +14,7 @@ import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillStep;
 import eu.northsoft.bettermob.skill.SkillTags;
+import eu.northsoft.bettermob.util.RegionEntities;
 import eu.northsoft.bettermob.util.Tasks;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
@@ -141,13 +142,34 @@ public final class MobManager {
         }
     }
 
+    private final Map<UUID, Long> lastAlert = new ConcurrentHashMap<>();
+    private static final long ALERT_COOLDOWN_MILLIS = 1000L;
+
+    public void alertGroup(LivingEntity victim, MobDefinition definition, LivingEntity attacker) {
+        Behaviour behaviour = definition.behaviour;
+        if (behaviour == null || !behaviour.hasGroup() || attacker == null || !attacker.isValid() || attacker.equals(victim)) return;
+        long now = System.currentTimeMillis();
+        Long previous = lastAlert.get(victim.getUniqueId());
+        if (previous != null && now - previous < ALERT_COOLDOWN_MILLIS) return;
+        lastAlert.put(victim.getUniqueId(), now);
+        for (Entity entity : RegionEntities.near(victim.getLocation(), behaviour.alertRadius())) {
+            if (!(entity instanceof Mob member) || member.equals(victim) || member.equals(attacker) || member.getTarget() != null) continue;
+            MobDefinition other = definitions.get(member.getUniqueId());
+            if (other == null || other.behaviour == null || !behaviour.group().equals(other.behaviour.group()) || sameFaction(member, attacker)) continue;
+            member.setTarget(attacker);
+        }
+    }
+
     private void applyBehaviour(LivingEntity entity, MobDefinition definition) {
         Behaviour behaviour = definition.behaviour;
         if (behaviour != null && behaviour.needsHome() && homeOf(entity) == null) {
             Location at = entity.getLocation();
             entity.getPersistentDataContainer().set(homeKey(), PersistentDataType.STRING, at.getWorld().getUID() + ";" + at.getX() + ";" + at.getY() + ";" + at.getZ());
         }
-        if (entity instanceof Mob mob) BehaviourGoals.apply(plugin, mob, behaviour, () -> homeOf(entity));
+        if (entity instanceof Mob mob) BehaviourGoals.apply(plugin, mob, behaviour, () -> homeOf(entity), other -> {
+            MobDefinition found = definitions.get(other.getUniqueId());
+            return found == null ? null : found.id;
+        });
     }
 
     private void applyEquipment(LivingEntity entity, MobDefinition definition) {
@@ -226,6 +248,7 @@ public final class MobManager {
         definitions.remove(entity.getUniqueId());
         inCombat.remove(entity.getUniqueId());
         exitCombatToken.remove(entity.getUniqueId());
+        lastAlert.remove(entity.getUniqueId());
         List<Runnable> cancellers = timers.remove(entity.getUniqueId());
         if (cancellers != null) cancellers.forEach(Runnable::run);
     }

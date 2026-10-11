@@ -188,6 +188,7 @@ public final class MobListener implements Listener {
                 if (definition.threatTable && source instanceof LivingEntity attacker) {
                     manager.registerThreat(victimMob.getUniqueId(), attacker, event.getFinalDamage());
                 }
+                if (source instanceof LivingEntity attacker) manager.alertGroup(victimMob, definition, attacker);
                 manager.fireTrigger(victimMob, definition, MobDefinition.SkillTrigger.Trigger.DAMAGED,
                         source instanceof LivingEntity living ? living : null, event);
             }

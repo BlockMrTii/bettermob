@@ -71,4 +71,31 @@ class BehaviourTest {
         parse("Patrol:\n  Points: 1 64 1\nGuard: 5\n", invalid);
         assertEquals(List.of("Patrol: Points 1 64 1"), invalid);
     }
+
+    @Test
+    void groupAndLeaderAreParsedWithDefaultsAndLimits() throws Exception {
+        Behaviour group = parse("Group: Orcs\n", new ArrayList<>());
+        assertEquals("orcs", group.group());
+        assertEquals(Behaviour.DEFAULT_ALERT_RADIUS, group.alertRadius());
+        assertTrue(group.hasGroup());
+        assertEquals(128, parse("Group: a\nAlertRadius: 9000\n", new ArrayList<>()).alertRadius());
+        assertFalse(parse("Group: a\nAlertRadius: 0\n", new ArrayList<>()).hasGroup());
+
+        Behaviour text = parse("Leader: Orc_Chief\n", new ArrayList<>());
+        assertEquals(new Behaviour.Leader("orc_chief", 4, 32, Behaviour.LeaderLoss.FIND), text.leader());
+        Behaviour section = parse("Leader:\n  Mob: chief\n  Distance: 6\n  Range: 50\n  OnLeaderDeath: home\n", new ArrayList<>());
+        assertEquals(new Behaviour.Leader("chief", 6, 50, Behaviour.LeaderLoss.HOME), section.leader());
+        assertTrue(section.needsHome());
+    }
+
+    @Test
+    void invalidLeaderSettingsAreReported() throws Exception {
+        List<String> invalid = new ArrayList<>();
+        Behaviour behaviour = parse("Leader:\n  Mob: chief\n  OnLeaderDeath: explode\n", invalid);
+        assertEquals(Behaviour.LeaderLoss.FIND, behaviour.leader().onLoss());
+        assertEquals(List.of("Leader: OnLeaderDeath explode"), invalid);
+        List<String> missing = new ArrayList<>();
+        assertNull(parse("Leader:\n  Distance: 3\n", missing));
+        assertEquals(1, missing.size());
+    }
 }
