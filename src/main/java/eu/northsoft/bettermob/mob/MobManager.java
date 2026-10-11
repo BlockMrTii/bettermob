@@ -622,10 +622,12 @@ public final class MobManager {
 
     private static final class Threat {
         public final WeakReference<LivingEntity> attacker;
+        public final String name;
         public double amount;
 
         public Threat(LivingEntity attacker) {
             this.attacker = new WeakReference<>(attacker);
+            this.name = attacker.getName();
         }
     }
 
@@ -634,8 +636,7 @@ public final class MobManager {
         if (table == null) return List.of();
         List<Map.Entry<String, Double>> rows = new java.util.ArrayList<>();
         for (Threat threat : table.values()) {
-            LivingEntity attacker = threat.attacker.get();
-            if (attacker != null && attacker.isValid()) rows.add(Map.entry(attacker.getName(), threat.amount));
+            if (threat.attacker.get() != null) rows.add(Map.entry(threat.name, threat.amount));
         }
         rows.sort(Map.Entry.<String, Double>comparingByValue().reversed());
         return rows.size() > limit ? List.copyOf(rows.subList(0, limit)) : rows;

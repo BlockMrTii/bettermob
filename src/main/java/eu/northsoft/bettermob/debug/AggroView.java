@@ -11,12 +11,15 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class AggroView {
+public final class AggroView implements Listener {
     static final int RANGE = 48;
     static final int MAX_MOBS = 30;
     static final int MAX_POINTS = 60;
@@ -52,6 +55,12 @@ public final class AggroView {
         return true;
     }
 
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        Runnable running = active.remove(event.getPlayer().getUniqueId());
+        if (running != null) running.run();
+    }
+
     public void stopAll() {
         active.values().forEach(Runnable::run);
         active.clear();
@@ -63,7 +72,7 @@ public final class AggroView {
             if (shown >= MAX_MOBS) break;
             if (!(entity instanceof Mob mob) || manager.definitionOf(mob.getUniqueId()) == null) continue;
             LivingEntity target = mob.getTarget();
-            if (target == null || !target.getWorld().equals(mob.getWorld())) continue;
+            if (target == null || !target.getWorld().equals(mob.getWorld()) || !Bukkit.isOwnedByCurrentRegion(target)) continue;
             shown++;
             line(player, mob.getEyeLocation(), target.getEyeLocation());
         }

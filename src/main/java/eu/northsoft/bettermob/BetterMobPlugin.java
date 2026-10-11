@@ -136,6 +136,7 @@ public final class BetterMobPlugin extends JavaPlugin {
         spawners.start();
 
         aggroView = new eu.northsoft.bettermob.debug.AggroView(this, manager);
+        getServer().getPluginManager().registerEvents(aggroView, this);
         BetterMobCommand commandHandler = new BetterMobCommand(this, manager, skillRegistry, packScanner, skillEngine, itemRegistry, dropRegistry, spawners, eggItems, aggroView);
         PluginCommand command = getCommand("bettermob");
         if (command == null) {
