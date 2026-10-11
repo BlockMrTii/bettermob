@@ -646,11 +646,24 @@ public final class MobManager {
 
     private static final class Threat {
         public final WeakReference<LivingEntity> attacker;
+        public final String name;
         public double amount;
 
         public Threat(LivingEntity attacker) {
             this.attacker = new WeakReference<>(attacker);
+            this.name = attacker.getName();
         }
+    }
+
+    public List<Map.Entry<String, Double>> threatOf(UUID mobId, int limit) {
+        Map<UUID, Threat> table = threatTables.get(mobId);
+        if (table == null) return List.of();
+        List<Map.Entry<String, Double>> rows = new java.util.ArrayList<>();
+        for (Threat threat : table.values()) {
+            if (threat.attacker.get() != null) rows.add(Map.entry(threat.name, threat.amount));
+        }
+        rows.sort(Map.Entry.<String, Double>comparingByValue().reversed());
+        return rows.size() > limit ? List.copyOf(rows.subList(0, limit)) : rows;
     }
 
     public void registerThreat(UUID mobId, LivingEntity attacker, double amount) {

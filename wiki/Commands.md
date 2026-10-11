@@ -13,7 +13,7 @@ Alias: `/bmob`. Every subcommand has its own permission node, all default to op:
 | `bettermob.killall` | `/bettermob killall` |
 | `bettermob.spawner` | `/bettermob spawner` |
 | `bettermob.top` | `/bettermob top` |
-| `bettermob.debug` | `/bettermob debug`, `/bettermob test` and `/bettermob stats` |
+| `bettermob.debug` | `/bettermob debug`, `/bettermob test`, `/bettermob aggro`, `/bettermob threat` and `/bettermob stats` |
 
 Without a node the subcommand is refused and left out of the help and out of tab completion. `bettermob.faction.<name>` is unrelated to commands, see [Mobs](Mobs#player-factions).
 
@@ -28,6 +28,8 @@ Without a node the subcommand is refused and left out of the help and out of tab
 | `/bettermob info <mob>` | Show a mob's type, health, damage, faction, model, equipment, number of drop entries, skills by trigger and how many are alive |
 | `/bettermob top [mob]` | The 10 players with the most kills, of all BetterMob mobs or of one mob, see [Kill counters](#kill-counters) |
 | `/bettermob debug [off\|info\|verbose\|filter <id>\|filter clear\|chat]` | Show or change the debug output. Permission `bettermob.debug` (included in `bettermob.admin`) |
+| `/bettermob aggro` | Toggle particle lines from nearby BetterMob mobs (within 48 blocks, at most 30) to their current targets. Only you see them; nothing runs while nobody has it on. Permission `bettermob.debug` |
+| `/bettermob threat` | Show the top 5 threat entries of the BetterMob mob you look at (up to 30 blocks). Needs `Modules: ThreatTable: true` on that mob. Permission `bettermob.debug` |
 | `/bettermob test <mob>\|stop` | Spawn the mob at you and send its debug output (triggers, skills, conditions, cooldowns, at verbose detail) only to you. It ends when that mob is removed, after 5 minutes or with `/bettermob test stop`; global debug settings are not changed. Permission `bettermob.debug` |
 | `/bettermob stats [on\|off\|reset]` | Show living mobs per type, running timers, loaded skills and packs; `on`/`off` switch the skill timing, `reset` clears it. Permission `bettermob.debug` |
 | `/bettermob killall [mob\|*] [world]` | Remove all living BetterMob mobs, or only one type and/or one world, and report how many |

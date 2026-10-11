@@ -41,6 +41,7 @@ public final class BetterMobPlugin extends JavaPlugin {
     private DebugManager debug;
     private SkillStats stats;
     private KillStats kills;
+    private eu.northsoft.bettermob.debug.AggroView aggroView;
     private File killsFile;
     private Messages messages;
     private BetterMobExpansion expansion;
@@ -137,7 +138,9 @@ public final class BetterMobPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new SpawnerListener(spawners), this);
         spawners.start();
 
-        BetterMobCommand commandHandler = new BetterMobCommand(this, manager, skillRegistry, packScanner, skillEngine, itemRegistry, dropRegistry, spawners, eggItems);
+        aggroView = new eu.northsoft.bettermob.debug.AggroView(this, manager);
+        getServer().getPluginManager().registerEvents(aggroView, this);
+        BetterMobCommand commandHandler = new BetterMobCommand(this, manager, skillRegistry, packScanner, skillEngine, itemRegistry, dropRegistry, spawners, eggItems, aggroView);
         PluginCommand command = getCommand("bettermob");
         if (command == null) {
             messages.severe("plugin.commandMissing");
@@ -183,6 +186,7 @@ public final class BetterMobPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         saveKills(false);
+        if (aggroView != null) aggroView.stopAll();
         if (spawners != null) spawners.stop();
         if (expansion != null) expansion.unregister();
         if (manager != null) manager.shutdown();

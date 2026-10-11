@@ -21,6 +21,8 @@ command:
     egg: "&7/bettermob egg <mob> [player] [amount] &8- &7Give a spawn egg for a mob"
     top: "&7/bettermob top [mob] &8- &7Show the players with the most kills"
     debug: "&7/bettermob debug [off|info|verbose|filter|chat] &8- &7Control debug output"
+    aggro: "&7/bettermob aggro &8- &7Toggle lines from mobs to their targets"
+    threat: "&7/bettermob threat &8- &7Show the threat table of the mob you look at"
     test: "&7/bettermob test <mob|stop> &8- &7Spawn a mob and get its debug output only"
     killall: "&7/bettermob killall [mob|*] [world] &8- &7Remove living BetterMob mobs"
     spawner: "&7/bettermob spawner <create|remove|list> &8- &7Manage mob spawners"
@@ -93,6 +95,14 @@ command:
     chatOn: "&aDebug output in chat enabled."
     chatOff: "&7Debug output in chat disabled."
     usage: "&cUsage: /bettermob debug [off|info|verbose|filter <id>|filter clear|chat]"
+  aggro:
+    enabled: "&aAggro lines on: particle lines from nearby BetterMob mobs to their targets."
+    disabled: "&7Aggro lines off."
+  threat:
+    notLooking: "&cLook at a BetterMob mob (up to 30 blocks)."
+    none: "&7'{mob}' has no threat entries (it needs Modules.ThreatTable and an attacker)."
+    header: "&7Threat of &f{mob}&7:"
+    entry: "&8 {rank}. &f{name} &7{amount}"
   test:
     usage: "&cUsage: /bettermob test <mob>|stop"
     started: "&aSpawned '{mob}'. Its debug output goes only to you until it is removed, /bettermob test stop or {minutes} minutes."

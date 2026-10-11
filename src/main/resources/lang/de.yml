@@ -21,6 +21,8 @@ command:
     egg: "&7/bettermob egg <mob> [player] [amount] &8- &7Spawn-Ei fuer einen Mob geben"
     top: "&7/bettermob top [mob] &8- &7Spieler mit den meisten Kills anzeigen"
     debug: "&7/bettermob debug [off|info|verbose|filter|chat] &8- &7Debug-Ausgabe steuern"
+    aggro: "&7/bettermob aggro &8- &7Linien von Mobs zu ihren Zielen ein-/ausschalten"
+    threat: "&7/bettermob threat &8- &7Threat-Tabelle des angeschauten Mobs zeigen"
     test: "&7/bettermob test <mob|stop> &8- &7Mob spawnen und nur dessen Debug-Ausgabe sehen"
     killall: "&7/bettermob killall [mob|*] [Welt] &8- &7Lebende BetterMob-Mobs entfernen"
     spawner: "&7/bettermob spawner <create|remove|list> &8- &7Mob-Spawner verwalten"
@@ -93,6 +95,14 @@ command:
     chatOn: "&aDebug-Ausgabe im Chat an."
     chatOff: "&7Debug-Ausgabe im Chat aus."
     usage: "&cNutzung: /bettermob debug [off|info|verbose|filter <id>|filter clear|chat]"
+  aggro:
+    enabled: "&aAggro-Linien an: Partikellinien von BetterMob-Mobs in der Naehe zu ihren Zielen."
+    disabled: "&7Aggro-Linien aus."
+  threat:
+    notLooking: "&cSchau ein BetterMob-Mob an (bis 30 Bloecke)."
+    none: "&7'{mob}' hat keine Threat-Eintraege (braucht Modules.ThreatTable und einen Angreifer)."
+    header: "&7Threat von &f{mob}&7:"
+    entry: "&8 {rank}. &f{name} &7{amount}"
   test:
     usage: "&cVerwendung: /bettermob test <mob>|stop"
     started: "&aSpawnte '{mob}'. Seine Debug-Ausgabe geht nur an dich, bis er entfernt wird, bis /bettermob test stop oder {minutes} Minuten."
