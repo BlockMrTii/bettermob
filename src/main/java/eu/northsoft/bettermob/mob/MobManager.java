@@ -629,6 +629,18 @@ public final class MobManager {
         }
     }
 
+    public List<Map.Entry<String, Double>> threatOf(UUID mobId, int limit) {
+        Map<UUID, Threat> table = threatTables.get(mobId);
+        if (table == null) return List.of();
+        List<Map.Entry<String, Double>> rows = new java.util.ArrayList<>();
+        for (Threat threat : table.values()) {
+            LivingEntity attacker = threat.attacker.get();
+            if (attacker != null && attacker.isValid()) rows.add(Map.entry(attacker.getName(), threat.amount));
+        }
+        rows.sort(Map.Entry.<String, Double>comparingByValue().reversed());
+        return rows.size() > limit ? List.copyOf(rows.subList(0, limit)) : rows;
+    }
+
     public void registerThreat(UUID mobId, LivingEntity attacker, double amount) {
         Map<UUID, Threat> table = threatTables.get(mobId);
         if (table != null) table.computeIfAbsent(attacker.getUniqueId(), id -> new Threat(attacker)).amount += amount;

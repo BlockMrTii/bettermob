@@ -56,6 +56,8 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         nodes.put("killall", "bettermob.killall");
         nodes.put("spawner", "bettermob.spawner");
         nodes.put("debug", "bettermob.debug");
+        nodes.put("aggro", "bettermob.debug");
+        nodes.put("threat", "bettermob.debug");
         nodes.put("stats", "bettermob.debug");
         return nodes;
     }
@@ -71,8 +73,11 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
     private final SpawnerManager spawners;
     private final EggItems eggItems;
 
-    public BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry, DropRegistry dropRegistry, SpawnerManager spawners, EggItems eggItems) {
+    private final eu.northsoft.bettermob.debug.AggroView aggroView;
+
+    public BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry, DropRegistry dropRegistry, SpawnerManager spawners, EggItems eggItems, eu.northsoft.bettermob.debug.AggroView aggroView) {
         this.plugin = plugin;
+        this.aggroView = aggroView;
         this.messages = plugin.messages();
         this.manager = manager;
         this.skillRegistry = skillRegistry;
@@ -101,6 +106,8 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             shown |= help(sender, "killall", "command.help.killall");
             shown |= help(sender, "spawner", "command.help.spawner");
             shown |= help(sender, "debug", "command.help.debug");
+            shown |= help(sender, "aggro", "command.help.aggro");
+            shown |= help(sender, "threat", "command.help.threat");
             shown |= help(sender, "stats", "command.help.stats");
             if (!shown) messages.send(sender, "command.noPermission");
             return true;
@@ -135,6 +142,8 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             case "killall" -> handleKillAll(sender, args);
             case "spawner" -> handleSpawner(sender, args);
             case "debug" -> handleDebug(sender, args);
+            case "aggro" -> handleAggro(sender);
+            case "threat" -> handleThreat(sender);
             case "stats" -> handleStats(sender, args);
             default -> messages.send(sender, "command.unknown");
         }
@@ -335,6 +344,38 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         String filters = debug.filters().isEmpty() ? messages.get("command.debug.filtersAll") : String.join(", ", debug.filters());
         messages.send(sender, "command.debug.status", "level", debug.level().name().toLowerCase(Locale.ROOT), "filters", filters);
     }
+
+    private void handleAggro(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            messages.send(sender, "command.playersOnly");
+            return;
+        }
+        messages.send(sender, aggroView.toggle(player) ? "command.aggro.enabled" : "command.aggro.disabled");
+    }
+
+    private void handleThreat(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            messages.send(sender, "command.playersOnly");
+            return;
+        }
+        var looked = player.getTargetEntity(THREAT_LOOK_DISTANCE);
+        MobDefinition definition = looked == null ? null : manager.definitionOf(looked.getUniqueId());
+        if (definition == null) {
+            messages.send(sender, "command.threat.notLooking");
+            return;
+        }
+        var rows = manager.threatOf(looked.getUniqueId(), THREAT_ROWS);
+        if (rows.isEmpty()) {
+            messages.send(sender, "command.threat.none", "mob", definition.id);
+            return;
+        }
+        messages.send(sender, "command.threat.header", "mob", definition.id);
+        int rank = 1;
+        for (var row : rows) messages.send(sender, "command.threat.entry", "rank", rank++, "name", row.getKey(), "amount", String.format(Locale.ROOT, "%.1f", row.getValue()));
+    }
+
+    private static final int THREAT_LOOK_DISTANCE = 30;
+    private static final int THREAT_ROWS = 5;
 
     private void handleSpawn(CommandSender sender, String[] args) {
         if (args.length < 2) {
