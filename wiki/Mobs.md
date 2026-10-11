@@ -181,7 +181,7 @@ Leader:
 - `Group` puts the mob into a pack. When one member is damaged by a living entity, the other members of the same group within `AlertRadius` blocks (default 16, `0` turns it off, at most 128) that have no target yet take the attacker as target. A member alerts at most once per second, and mobs of the attacker's faction are not alerted against it.
 - `Leader` makes the mob walk to the nearest living mob with the id `Mob` within `Range` blocks (default 32) while it has no target, and stop when it is within `Distance` blocks (default 4). `Leader: orc_chief` is the short form.
 - `OnLeaderDeath` decides what happens when the leader is gone: `FIND` (default) looks for another leader, `STAY` stops following, `HOME` walks back to the spawn point.
-- Both are Paper goals and checks once per second, no per-tick scans. Invalid options are skipped with a warning.
+- Only `Leader` is a Paper goal; it looks for its leader once per second. The group alert runs when a member is damaged. Neither scans every tick, and invalid options are skipped with a warning.
 
 ## Models
 

@@ -4,6 +4,7 @@ import com.destroystokyo.paper.entity.ai.Goal;
 import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.destroystokyo.paper.entity.ai.GoalType;
 import eu.northsoft.bettermob.mob.Behaviour;
+import eu.northsoft.bettermob.util.RegionEntities;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -167,14 +168,14 @@ public final class BehaviourGoals {
         return new Goal<>() {
             private LivingEntity current() {
                 LivingEntity found = leader[0];
-                if (found != null && found.isValid() && found.getWorld().equals(mob.getWorld())) return found;
+                if (found != null && found.isValid() && found.getWorld().equals(mob.getWorld())) return Bukkit.isOwnedByCurrentRegion(found) ? found : null;
                 if (found != null) {
                     leader[0] = null;
                     if (settings.onLoss() != Behaviour.LeaderLoss.FIND) lost[0] = true;
                 }
                 if (lost[0] || ticks[0]++ % REPATH_TICKS != 0) return null;
                 double best = Double.MAX_VALUE;
-                for (Entity entity : mob.getNearbyEntities(settings.range(), settings.range(), settings.range())) {
+                for (Entity entity : RegionEntities.near(mob.getLocation(), settings.range())) {
                     if (!(entity instanceof LivingEntity candidate) || candidate.equals(mob) || !settings.mob().equalsIgnoreCase(mobId.apply(candidate))) continue;
                     double distance = candidate.getLocation().distanceSquared(mob.getLocation());
                     if (distance < best) {
