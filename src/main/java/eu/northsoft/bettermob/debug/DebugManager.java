@@ -1,6 +1,7 @@
 package eu.northsoft.bettermob.debug;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -62,6 +63,19 @@ public final class DebugManager {
         if (!sessions.isEmpty()) sessions.values().removeIf(session -> session.entity().equals(entity));
     }
 
+    private static final ThreadLocal<UUID> SOURCE = new ThreadLocal<>();
+    private static final Runnable NO_SCOPE = () -> { };
+
+    public Runnable enter(UUID source) {
+        if (sessions.isEmpty()) return NO_SCOPE;
+        UUID previous = SOURCE.get();
+        SOURCE.set(source);
+        return () -> {
+            if (previous == null) SOURCE.remove();
+            else SOURCE.set(previous);
+        };
+    }
+
     private boolean hasSessions() {
         if (sessions.isEmpty()) return false;
         long now = System.currentTimeMillis();
@@ -89,25 +103,33 @@ public final class DebugManager {
 
     public void info(String message, String... subjects) {
         if (level != Level.OFF && matches(subjects)) emit(message);
-        emitToSessions(message, subjects);
+        emitToSessions(message);
     }
 
     public void verbose(String message, String... subjects) {
         if (level == Level.VERBOSE && matches(subjects)) emit(message);
-        emitToSessions(message, subjects);
+        emitToSessions(message);
     }
 
-    private void emitToSessions(String message, String[] subjects) {
+    private void emitToSessions(String message) {
         if (sessions.isEmpty()) return;
+        UUID source = SOURCE.get();
+        if (source == null) return;
+        long now = System.currentTimeMillis();
         for (Session session : sessions.values()) {
-            for (String subject : subjects) {
-                if (subject != null && subject.toLowerCase(Locale.ROOT).equals(session.mob())) {
-                    Player player = Bukkit.getPlayer(session.player());
-                    if (player == null) sessions.remove(session.player());
-                    else player.sendMessage("§8[§7test§8] §7" + message);
-                    break;
-                }
+            if (session.expiresAt() <= now) {
+                sessions.remove(session.player(), session);
+                continue;
             }
+            if (!session.entity().equals(source)) continue;
+            Player player = Bukkit.getPlayer(session.player());
+            if (player == null) {
+                sessions.remove(session.player(), session);
+                continue;
+            }
+            Tasks.runOn(plugin, player, () -> {
+                if (sessions.get(session.player()) == session) player.sendMessage("§8[§7test§8] §7" + message);
+            });
         }
     }
 

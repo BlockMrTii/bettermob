@@ -357,9 +357,9 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             messages.send(sender, "command.spawn.notRegistered", "mob", args[1]);
             return;
         }
-        var entity = manager.spawn(definition, player.getLocation());
-        long minutes = plugin.debug().startSession(player, definition.id, entity.getUniqueId());
-        messages.send(sender, "command.test.started", "mob", definition.id, "minutes", minutes);
+        long[] minutes = {0};
+        manager.spawn(definition, player.getLocation(), created -> minutes[0] = plugin.debug().startSession(player, definition.id, created.getUniqueId()));
+        messages.send(sender, "command.test.started", "mob", definition.id, "minutes", minutes[0]);
     }
 
     private void handleSpawn(CommandSender sender, String[] args) {
