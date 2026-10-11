@@ -35,7 +35,7 @@ public final class SkillRegistry {
         }
 
         Map<String, SkillDefinition> loaded = new LinkedHashMap<>();
-        Map<String, Integer> prints = new LinkedHashMap<>();
+        Map<String, String> prints = new LinkedHashMap<>();
         for (File sourceFolder : packScanner.foldersFor("skills")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
@@ -56,9 +56,9 @@ public final class SkillRegistry {
         plugin.messages().info("skill.loaded", "count", loaded.size());
     }
 
-    private volatile Map<String, Integer> fingerprints = Map.of();
+    private volatile Map<String, String> fingerprints = Map.of();
 
-    public Map<String, Integer> fingerprints() {
+    public Map<String, String> fingerprints() {
         return fingerprints;
     }
 

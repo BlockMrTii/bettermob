@@ -42,7 +42,7 @@ public final class ItemRegistry {
     public void load() {
         folder.mkdirs();
         Map<String, ItemDefinition> loaded = new LinkedHashMap<>();
-        Map<String, Integer> prints = new LinkedHashMap<>();
+        Map<String, String> prints = new LinkedHashMap<>();
         for (File sourceFolder : packScanner.foldersFor("items")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
@@ -66,9 +66,9 @@ public final class ItemRegistry {
         plugin.messages().info("item.loaded", "count", loaded.size());
     }
 
-    private volatile Map<String, Integer> fingerprints = Map.of();
+    private volatile Map<String, String> fingerprints = Map.of();
 
-    public Map<String, Integer> fingerprints() {
+    public Map<String, String> fingerprints() {
         return fingerprints;
     }
 

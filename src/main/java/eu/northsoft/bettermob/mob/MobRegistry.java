@@ -46,7 +46,7 @@ public final class MobRegistry {
         }
 
         Map<String, MobDefinition> loaded = new LinkedHashMap<>();
-        Map<String, Integer> prints = new LinkedHashMap<>();
+        Map<String, String> prints = new LinkedHashMap<>();
         for (File sourceFolder : packScanner.foldersFor("mobs")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
                 for (Map.Entry<String, ConfigurationSection> entry : extractMobSections(file).entrySet()) {
@@ -109,9 +109,9 @@ public final class MobRegistry {
         return result;
     }
 
-    private volatile Map<String, Integer> fingerprints = Map.of();
+    private volatile Map<String, String> fingerprints = Map.of();
 
-    public Map<String, Integer> fingerprints() {
+    public Map<String, String> fingerprints() {
         return fingerprints;
     }
 

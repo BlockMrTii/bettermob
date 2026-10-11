@@ -44,7 +44,7 @@ public final class DropRegistry {
     public void load() {
         folder.mkdirs();
         Map<String, DropTable> loaded = new LinkedHashMap<>();
-        Map<String, Integer> prints = new LinkedHashMap<>();
+        Map<String, String> prints = new LinkedHashMap<>();
         warned.clear();
         for (File sourceFolder : packScanner.foldersFor("droptables")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
@@ -79,9 +79,9 @@ public final class DropRegistry {
         return entries;
     }
 
-    private volatile Map<String, Integer> fingerprints = Map.of();
+    private volatile Map<String, String> fingerprints = Map.of();
 
-    public Map<String, Integer> fingerprints() {
+    public Map<String, String> fingerprints() {
         return fingerprints;
     }
 

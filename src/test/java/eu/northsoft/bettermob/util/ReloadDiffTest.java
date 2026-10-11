@@ -13,11 +13,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ReloadDiffTest {
     @Test
     void newRemovedAndChangedIdsAreSortedAndSeparated() {
-        ReloadDiff diff = ReloadDiff.of(Map.of("a", 1, "b", 2, "c", 3), Map.of("b", 2, "c", 9, "z", 1, "d", 5));
+        ReloadDiff diff = ReloadDiff.of(Map.of("a", "1", "b", "2", "c", "3"), Map.of("b", "2", "c", "9", "z", "1", "d", "5"));
         assertEquals(List.of("d", "z"), diff.added());
         assertEquals(List.of("a"), diff.removed());
         assertEquals(List.of("c"), diff.changed());
-        assertTrue(ReloadDiff.of(Map.of("a", 1), Map.of("a", 1)).isEmpty());
+        assertTrue(ReloadDiff.of(Map.of("a", "1"), Map.of("a", "1")).isEmpty());
     }
 
     @Test
@@ -30,5 +30,15 @@ class ReloadDiffTest {
         other.loadFromString("Health: 21\nSkills:\n  - a\n");
         assertEquals(ReloadDiff.fingerprint(first), ReloadDiff.fingerprint(same));
         assertNotEquals(ReloadDiff.fingerprint(first), ReloadDiff.fingerprint(other));
+    }
+
+    @Test
+    void valuesWithTheSameJavaHashCodeStillDiffer() throws Exception {
+        assertEquals("Aa".hashCode(), "BB".hashCode());
+        YamlConfiguration first = new YamlConfiguration();
+        first.loadFromString("Display: Aa\n");
+        YamlConfiguration second = new YamlConfiguration();
+        second.loadFromString("Display: BB\n");
+        assertNotEquals(ReloadDiff.fingerprint(first), ReloadDiff.fingerprint(second));
     }
 }
