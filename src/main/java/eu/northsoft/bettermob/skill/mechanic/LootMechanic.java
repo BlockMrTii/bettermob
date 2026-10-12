@@ -65,7 +65,8 @@ public final class LootMechanic implements Mechanic {
         if (engine.debug().verbose()) engine.debug().verbose("loot " + (tableId != null ? tableId : vanilla) + " gave " + items.size() + " stack(s), " + exp + " exp", engine.subject(call.context().caster()));
         int rolledExp = exp;
         if (drop) Tasks.runOwnedAt(engine.plugin(), at, () -> dropAt(at, items, rolledExp));
-        else Tasks.runOwned(engine.plugin(), player, () -> give(player, items, rolledExp));
+        else Tasks.runOwned(engine.plugin(), player, () -> give(player, items, rolledExp),
+                () -> Tasks.runOwnedAt(engine.plugin(), at, () -> dropAt(at, items, rolledExp)));
     }
 
     @Override
