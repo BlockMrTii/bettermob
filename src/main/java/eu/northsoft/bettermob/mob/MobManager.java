@@ -339,6 +339,20 @@ public final class MobManager {
             return;
         }
         if (trigger != null && !Bukkit.isOwnedByCurrentRegion(trigger)) trigger = null;
+        String firing = entity.getUniqueId() + ":" + type;
+        if (!FIRING.get().add(firing)) {
+            if (plugin.debug().info()) plugin.debug().info("trigger " + type + " on " + definition.id + " skipped: it is already running", definition.id);
+            return;
+        }
+        try {
+            runTriggers(entity, definition, type, triggers, trigger, event);
+        } finally {
+            FIRING.get().remove(firing);
+        }
+    }
+
+    private void runTriggers(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
+                             List<MobDefinition.SkillTrigger> triggers, LivingEntity trigger, Cancellable event) {
         if (plugin.debug().info()) plugin.debug().info("trigger " + type + " on " + definition.id + (trigger != null ? " (by " + trigger.getName() + ")" : ""), definition.id);
         String auraKind = switch (type) {
             case DAMAGED -> "ondamaged";
@@ -355,6 +369,7 @@ public final class MobManager {
         if (event != null && event.isCancelled()) plugin.debug().info("trigger " + type + " on " + definition.id + ": event cancelled", definition.id);
     }
 
+    private static final ThreadLocal<Set<String>> FIRING = ThreadLocal.withInitial(HashSet::new);
     private final Map<UUID, Object> exitCombatToken = new ConcurrentHashMap<>();
     private final Set<UUID> inCombat = ConcurrentHashMap.newKeySet();
     private static final long EXIT_COMBAT_TICKS = 100L;
