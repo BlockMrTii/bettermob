@@ -30,7 +30,7 @@ public final class AiGoalApplier {
             "rangedattack", List.of("rangedbowattack", "rangedcrossbowattack"));
 
     private static final Pattern PRIORITY = Pattern.compile("^(\\d+)\\s+(.*)$");
-    private static final Object GOAL_LOOKUP = new Object();
+    static final Object GOAL_LOOKUP = new Object();
 
     private AiGoalApplier() {}
 
@@ -68,7 +68,9 @@ public final class AiGoalApplier {
         }
 
         if (tokens.stream().anyMatch(token -> token.name().equalsIgnoreCase("clear"))) {
-            for (GoalType type : types) mobGoals.removeAllGoals(mob, type);
+            synchronized (GOAL_LOOKUP) {
+                for (GoalType type : types) mobGoals.removeAllGoals(mob, type);
+            }
         }
 
         int next = 0;

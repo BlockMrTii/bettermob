@@ -42,9 +42,11 @@ public final class BehaviourGoals {
 
     public static void apply(Plugin plugin, Mob mob, Behaviour behaviour, Supplier<Location> home, Function<Entity, String> mobId) {
         var goals = Bukkit.getMobGoals();
-        goals.removeGoal(mob, patrolKey(plugin));
-        goals.removeGoal(mob, guardKey(plugin));
-        goals.removeGoal(mob, leaderKey(plugin));
+        synchronized (AiGoalApplier.GOAL_LOOKUP) {
+            goals.removeGoal(mob, patrolKey(plugin));
+            goals.removeGoal(mob, guardKey(plugin));
+            goals.removeGoal(mob, leaderKey(plugin));
+        }
         if (behaviour == null) return;
         if (behaviour.hasGuard()) goals.addGoal(mob, GUARD_PRIORITY, guard(plugin, mob, behaviour.guardRadius(), home));
         if (behaviour.leader() != null) goals.addGoal(mob, LEADER_PRIORITY, follow(plugin, mob, behaviour.leader(), home, mobId));
