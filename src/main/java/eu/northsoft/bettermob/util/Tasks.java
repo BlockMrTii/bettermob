@@ -10,6 +10,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 public final class Tasks {
     public static final boolean FOLIA = detectFolia();
+    private static final long NANOS_PER_TICK = 50_000_000L;
 
     private Tasks() {
     }
@@ -26,7 +27,7 @@ public final class Tasks {
     public static void runLater(Plugin plugin, Entity entity, long ticks, Runnable task) {
         if (FOLIA) {
             long delay = Math.max(1, ticks);
-            int startedAt = Bukkit.getCurrentTick();
+            long startedAt = System.nanoTime();
             entity.getScheduler().runDelayed(plugin, scheduled -> task.run(), () -> runAfterDeath(plugin, entity, delay, startedAt, task), delay);
             return;
         }
@@ -36,9 +37,9 @@ public final class Tasks {
         }, ticks);
     }
 
-    private static void runAfterDeath(Plugin plugin, Entity entity, long delay, int startedAt, Runnable task) {
+    private static void runAfterDeath(Plugin plugin, Entity entity, long delay, long startedAt, Runnable task) {
         if (!(entity instanceof LivingEntity living) || !Bukkit.isOwnedByCurrentRegion(living) || living.getHealth() > 0) return;
-        long elapsed = Bukkit.getCurrentTick() - startedAt;
+        long elapsed = (System.nanoTime() - startedAt) / NANOS_PER_TICK;
         Bukkit.getRegionScheduler().runDelayed(plugin, living.getLocation(), scheduled -> task.run(), Math.max(1, delay - elapsed));
     }
 
