@@ -659,6 +659,16 @@ mvn -f examples/api-example/pom.xml -Plocal -Dbettermob.version=<version in pom.
 
 The workflow builds it that way on every push and pull request, so it keeps compiling with the API.
 
+## Addons
+
+Addons are separate plugins built on the [Developer API](#developer-api). They need BetterMob and add content or features on top of it.
+
+| Addon | What it adds |
+|---|---|
+| [BetterMobCrucible](https://github.com/HyperGaming99/BetterMobCrucible) | More item triggers in the normal `Skills:` lists (`~onSwing`, `~onPressF`, `~onEquip`, `~onPickup`, `~onDrop`, `~onTimer:<ticks>`), item data with `setitemnbt` and `<itemnbt.key>`, and `setlore`. Lets item content made for MythicCrucible-style plugins run on BetterMob. Latest release: [1.0.0](https://github.com/HyperGaming99/BetterMobCrucible/releases/latest) |
+
+Made an addon? Open an issue or a pull request to get it listed here.
+
 ## Persistence
 
 Mob state (model tracker, threat table, timers) lives in memory and is tied to the
