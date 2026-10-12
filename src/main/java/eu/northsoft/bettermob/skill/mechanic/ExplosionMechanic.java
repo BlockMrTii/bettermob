@@ -2,6 +2,7 @@ package eu.northsoft.bettermob.skill.mechanic;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.entity.LivingEntity;
 
 import static eu.northsoft.bettermob.skill.Params.firstParam;
 import static eu.northsoft.bettermob.skill.Params.parseFloat;
@@ -21,7 +22,8 @@ public final class ExplosionMechanic implements Mechanic {
         if (!ownsReach(at, power)) return;
         boolean blockDamage = "true".equalsIgnoreCase(firstParam(call.params(), "bd", "blockdamage"));
         boolean fire = "true".equalsIgnoreCase(call.params().get("fire"));
-        at.getWorld().createExplosion(at, power, fire, blockDamage, call.context().caster());
+        LivingEntity caster = call.context().caster();
+        at.getWorld().createExplosion(at, power, fire, blockDamage, Bukkit.isOwnedByCurrentRegion(caster) ? caster : null);
     }
 
     private static boolean ownsReach(Location at, float power) {
