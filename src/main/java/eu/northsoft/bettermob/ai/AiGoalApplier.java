@@ -30,6 +30,7 @@ public final class AiGoalApplier {
             "rangedattack", List.of("rangedbowattack", "rangedcrossbowattack"));
 
     private static final Pattern PRIORITY = Pattern.compile("^(\\d+)\\s+(.*)$");
+    static final Object GOAL_LOOKUP = new Object();
 
     private AiGoalApplier() {}
 
@@ -62,10 +63,14 @@ public final class AiGoalApplier {
         List<Token> tokens = raw.stream().map(Token::parse).toList();
 
         List<Goal<Mob>> snapshot = new ArrayList<>();
-        for (GoalType type : types) snapshot.addAll(mobGoals.getAllGoals(mob, type));
+        synchronized (GOAL_LOOKUP) {
+            for (GoalType type : types) snapshot.addAll(mobGoals.getAllGoals(mob, type));
+        }
 
         if (tokens.stream().anyMatch(token -> token.name().equalsIgnoreCase("clear"))) {
-            for (GoalType type : types) mobGoals.removeAllGoals(mob, type);
+            synchronized (GOAL_LOOKUP) {
+                for (GoalType type : types) mobGoals.removeAllGoals(mob, type);
+            }
         }
 
         int next = 0;
@@ -86,7 +91,11 @@ public final class AiGoalApplier {
 
     public static void promoteRanged(Mob mob) {
         MobGoals mobGoals = Bukkit.getMobGoals();
-        for (Goal<Mob> goal : new ArrayList<>(mobGoals.getAllGoals(mob))) {
+        List<Goal<Mob>> goals;
+        synchronized (GOAL_LOOKUP) {
+            goals = new ArrayList<>(mobGoals.getAllGoals(mob));
+        }
+        for (Goal<Mob> goal : goals) {
             String key = keyOf(goal);
             if (!key.equals("rangedbowattack") && !key.equals("rangedcrossbowattack")) continue;
             mobGoals.removeGoal(mob, goal);
