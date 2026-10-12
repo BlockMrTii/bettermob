@@ -70,6 +70,18 @@ Skills:
 
 <a href="https://github.com/HyperGaming99/bettermob/wiki/"><img alt="ghpages" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/documentation/ghpages_vector.svg"></a>
 
+🧱 Addons
+-
+
+Addons are separate plugins that build on BetterMob's Developer API and need BetterMob installed.
+
+- **[BetterMobCrucible](https://github.com/HyperGaming99/BetterMobCrucible)**: more item triggers
+  (`~onSwing`, `~onPressF`, `~onEquip`, `~onPickup`, `~onDrop`, `~onTimer`), item data with
+  `setitemnbt` and `<itemnbt.key>`, and `setlore`. Lets item content made for MythicCrucible-style
+  plugins run on BetterMob. [Latest release](https://github.com/HyperGaming99/BetterMobCrucible/releases/latest).
+
+Made an addon? Open an issue or a pull request to get it listed here.
+
 🏗️ Supported environment
 -
 <a href="https://www.minecraft.net/en-us/download/server"><img src="https://img.shields.io/badge/minecraft-1.21.X%7E26.3.x-8FCA5C?style=for-the-badge" alt="mcversion"></a>
