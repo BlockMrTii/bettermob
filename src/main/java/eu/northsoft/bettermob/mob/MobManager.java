@@ -152,7 +152,7 @@ public final class MobManager {
 
     public void alertGroup(LivingEntity victim, MobDefinition definition, LivingEntity attacker) {
         Behaviour behaviour = definition.behaviour;
-        if (behaviour == null || !behaviour.hasGroup() || attacker == null || !attacker.isValid() || attacker.equals(victim)) return;
+        if (behaviour == null || !behaviour.hasGroup() || attacker == null || !Bukkit.isOwnedByCurrentRegion(attacker) || !attacker.isValid() || attacker.equals(victim)) return;
         long now = System.currentTimeMillis();
         Long previous = lastAlert.get(victim.getUniqueId());
         if (previous != null && now - previous < ALERT_COOLDOWN_MILLIS) return;
