@@ -3,6 +3,7 @@ package eu.northsoft.bettermob.skill.mechanic;
 import eu.northsoft.bettermob.drop.DropRegistry;
 import eu.northsoft.bettermob.drop.DropTable;
 import eu.northsoft.bettermob.skill.SkillEngine;
+import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -62,12 +63,22 @@ public final class LootMechanic implements Mechanic {
         }
 
         if (engine.debug().verbose()) engine.debug().verbose("loot " + (tableId != null ? tableId : vanilla) + " gave " + items.size() + " stack(s), " + exp + " exp", engine.subject(call.context().caster()));
-        if (drop) {
-            for (ItemStack stack : items) at.getWorld().dropItemNaturally(at, stack);
-            int orbExp = exp;
-            if (orbExp > 0) at.getWorld().spawn(at, ExperienceOrb.class, orb -> orb.setExperience(orbExp));
-            return;
-        }
+        int rolledExp = exp;
+        if (drop) Tasks.runOwnedAt(engine.plugin(), at, () -> dropAt(at, items, rolledExp));
+        else Tasks.runOwned(engine.plugin(), player, () -> give(player, items, rolledExp));
+    }
+
+    @Override
+    public boolean runsOnTarget() {
+        return false;
+    }
+
+    private static void dropAt(Location at, List<ItemStack> items, int exp) {
+        for (ItemStack stack : items) at.getWorld().dropItemNaturally(at, stack);
+        if (exp > 0) at.getWorld().spawn(at, ExperienceOrb.class, orb -> orb.setExperience(exp));
+    }
+
+    private static void give(Player player, List<ItemStack> items, int exp) {
         for (ItemStack stack : items) {
             for (ItemStack left : player.getInventory().addItem(stack).values()) player.getWorld().dropItem(player.getLocation(), left);
         }
@@ -83,7 +94,7 @@ public final class LootMechanic implements Mechanic {
         }
         LivingEntity caster = call.context().caster();
         LootContext.Builder builder = new LootContext.Builder(at).lootedEntity(caster).lootingModifier(looting);
-        if (player != null) builder.killer(player);
+        if (player != null && Bukkit.isOwnedByCurrentRegion(player)) builder.killer(player);
         return table.populateLoot(new Random(), builder.build());
     }
 
