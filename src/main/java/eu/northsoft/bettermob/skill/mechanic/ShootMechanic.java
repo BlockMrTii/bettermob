@@ -102,7 +102,9 @@ public final class ShootMechanic implements Mechanic, Listener {
         if (engine.debug().verbose()) engine.debug().verbose("shoot " + typeName + " at " + aim.getName() + ", speed " + speed + ", damage " + damage, engine.subject(caster));
         double spread = Math.toRadians(parseFloat(p.get("spread"), 0f));
         boolean gravity = !"false".equalsIgnoreCase(p.get("gravity"));
-        Vector direction = aim.getEyeLocation().toVector().subtract(caster.getEyeLocation().toVector()).normalize();
+        Vector direction = aim.getEyeLocation().toVector().subtract(caster.getEyeLocation().toVector());
+        if (direction.lengthSquared() < 1.0e-9) direction = caster.getEyeLocation().getDirection();
+        direction.normalize();
         if (spread > 0) {
             ThreadLocalRandom random = ThreadLocalRandom.current();
             direction.add(new Vector(random.nextDouble(-spread, spread), random.nextDouble(-spread, spread), random.nextDouble(-spread, spread))).normalize();
