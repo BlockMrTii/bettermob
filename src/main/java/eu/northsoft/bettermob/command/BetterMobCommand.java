@@ -172,7 +172,8 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         messages.send(sender, "command.info.equipment", "equipment", mob.equipment == null || mob.equipment.isEmpty() ? none : String.join(", ", mob.equipment));
         messages.send(sender, "command.info.drops", "count", mob.drops == null ? 0 : mob.drops.entries().size());
         for (MobDefinition.SkillTrigger.Trigger trigger : MobDefinition.SkillTrigger.Trigger.values()) {
-            List<String> names = mob.triggersOf(trigger).stream().map(entry -> stepName(entry.step())).toList();
+            List<String> names = mob.triggersOf(trigger).stream()
+                    .map(entry -> entry.signal() == null ? stepName(entry.step()) : entry.signal() + ": " + stepName(entry.step())).toList();
             if (!names.isEmpty()) messages.send(sender, "command.info.skills", "trigger", messages.get(triggerKey(trigger)), "skills", String.join(", ", names));
         }
     }

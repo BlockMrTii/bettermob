@@ -339,7 +339,7 @@ public final class MobManager {
             return;
         }
         if (trigger != null && !Bukkit.isOwnedByCurrentRegion(trigger)) trigger = null;
-        String firing = entity.getUniqueId() + ":" + type;
+        String firing = entity.getUniqueId() + ":" + type + (type == MobDefinition.SkillTrigger.Trigger.SIGNAL && !triggers.isEmpty() ? ":" + triggers.get(0).signal() : "");
         if (!FIRING.get().add(firing)) {
             if (plugin.debug().info()) plugin.debug().info("trigger " + type + " on " + definition.id + " skipped: it is already running", definition.id);
             return;

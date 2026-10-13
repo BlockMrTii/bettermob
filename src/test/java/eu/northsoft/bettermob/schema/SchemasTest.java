@@ -71,6 +71,16 @@ class SchemasTest {
     }
 
     @Test
+    void theSchemasFollowTheTriggerGrammarForSignalsAndTimers() throws IOException {
+        String ok = "Type: PIG\nSkills:\n  - sound{s=x} @self ~on";
+        assertTrue(schema("mob").validate(YAML.readTree(ok + "Signal:HIT\n")).isEmpty());
+        assertTrue(schema("mob").validate(YAML.readTree(ok + "Timer:40\n")).isEmpty());
+        assertFalse(schema("mob").validate(YAML.readTree(ok + "Signal\n")).isEmpty());
+        assertFalse(schema("mob").validate(YAML.readTree(ok + "Timer:HIT\n")).isEmpty());
+        assertFalse(schema("mob").validate(YAML.readTree(ok + "Damaged:HIT\n")).isEmpty());
+    }
+
+    @Test
     void theSchemasAcceptBothMobFileLayouts() throws IOException {
         assertTrue(schema("mob").validate(YAML.readTree("Type: zombie\nHealth: 30\nSpawn:\n  Time: night\n")).isEmpty());
         assertTrue(schema("mob").validate(YAML.readTree("a:\n  Type: PIG\nb:\n  Type: COW\n  Skills:\n    - sound{s=x} @self ~onSpawn\n")).isEmpty());

@@ -51,7 +51,7 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `~onEnterCombat` | The mob gets a target after having none (and was not in combat). `@trigger` is the target |
 | `~onExitCombat` | The mob has had no target for 5 seconds after being in combat |
 | `~onKill` | The mob killed a living entity (melee or projectile). `@trigger` is the victim |
-| `~onSignal:<NAME>` | The mob received the signal `NAME` (case-insensitive) from the `signal` mechanic. `@trigger` is the entity that sent it |
+| `~onSignal:<NAME>` | The mob received the signal `NAME` (case-insensitive) from the `signal` mechanic. `@trigger` is the entity that sent it, as long as it is in the same region as the receiver (on Folia a sender in another region is not passed, the skill then runs without a trigger) |
 | `~onDeath` | The mob dies (the body still exists, so sounds and effects work) |
 | `~onTimer:<ticks>` | Repeatedly, default every 20 ticks |
 | `~onUse` | Items only: right-click with the item in the main hand |
