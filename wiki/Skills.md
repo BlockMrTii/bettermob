@@ -51,6 +51,7 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `~onEnterCombat` | The mob gets a target after having none (and was not in combat). `@trigger` is the target |
 | `~onExitCombat` | The mob has had no target for 5 seconds after being in combat |
 | `~onKill` | The mob killed a living entity (melee or projectile). `@trigger` is the victim |
+| `~onSignal:<NAME>` | The mob received the signal `NAME` (case-insensitive) from the `signal` mechanic. `@trigger` is the entity that sent it |
 | `~onDeath` | The mob dies (the body still exists, so sounds and effects work) |
 | `~onTimer:<ticks>` | Repeatedly, default every 20 ticks |
 | `~onUse` | Items only: right-click with the item in the main hand |
@@ -75,6 +76,7 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `takeitem` | `i` item ID, `a` amount | Take items from the target player |
 | `loot` | `table`, `vanilla`, `lootingmodifier`, `mode` | Roll a BetterMob drop table (`table=<id>`) or a vanilla loot table (`vanilla=minecraft:entities/zombie`, with the caster as the looted entity and `lootingmodifier` as looting level, default 0) and give the result to the target player; what doesn't fit is dropped at their feet. Drop-table exp goes to the player. With `mode=drop` (also `target=drop`) the items and exp drop at the target's location instead, and the target doesn't have to be a player. An unknown table is logged once and reported by `/bettermob validate`. Use it from an item's `~onUse` after `takeitem` |
 | `killcount` | `var`, `mob` | Store a player's kill count (the target if it is a player, otherwise the trigger, otherwise the caster) (of `mob`, or all mobs without it) in a skill variable, e.g. `killcount{var=caster.kills;mob=goblin} @trigger`, to use it as `<var.kills>` |
+| `signal` | `s` | Send the signal `s` to the target mob: its `~onSignal:<s>` skills run, with the caster as `@trigger`. A target that is not a BetterMob mob or has no matching line does nothing. Example: `signal{s=HIT} @target` |
 | `breakblock` | `usetool` | Break the target block |
 | `setblock` | `m` material | Replace the block at the target |
 | `damage` | `amount` | Damage the target with the caster as attacker. Does not fire `~onAttack` again |
