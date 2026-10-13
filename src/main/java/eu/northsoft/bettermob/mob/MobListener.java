@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.mob;
 
+import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import eu.northsoft.bettermob.api.event.BetterMobDamageEvent;
 import eu.northsoft.bettermob.api.event.BetterMobDeathEvent;
 import eu.northsoft.bettermob.drop.DropRegistry;
@@ -86,6 +87,11 @@ public final class MobListener implements Listener {
     @EventHandler
     public void onRemove(EntityRemoveEvent event) {
         manager.release(event.getEntity());
+    }
+
+    @EventHandler
+    public void onAddToWorld(EntityAddToWorldEvent event) {
+        if (event.getEntity() instanceof LivingEntity living) manager.handleCopied(living);
     }
 
     @EventHandler
