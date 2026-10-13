@@ -2,7 +2,7 @@ name: Strip code comments
 
 on:
   pull_request_target:
-    branches: [main, dev]
+    branches: [main, dev, 'fixes/**']
     types: [opened, synchronize, reopened]
 
 concurrency:
