@@ -196,6 +196,11 @@ public final class MobManager {
         if (entity instanceof Mob mob && !definition.aiGoalSelectors.isEmpty()) AiGoalApplier.promoteRanged(mob);
     }
 
+    private static void restoreUnsavedOptions(LivingEntity entity, MobDefinition definition) {
+        entity.setCollidable(definition.options.collidable());
+        preventSunburn(entity, definition);
+    }
+
     private static void preventSunburn(LivingEntity entity, MobDefinition definition) {
         if (!definition.options.preventSunburn()) return;
         if (entity instanceof Zombie zombie) zombie.setShouldBurnInDay(false);
@@ -626,7 +631,7 @@ public final class MobManager {
             AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
         }
         applyBehaviour(entity, definition);
-        preventSunburn(entity, definition);
+        restoreUnsavedOptions(entity, definition);
     }
 
     public void handleLoad(LivingEntity entity) {
@@ -644,7 +649,7 @@ public final class MobManager {
             AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
         }
         applyBehaviour(entity, definition);
-        preventSunburn(entity, definition);
+        restoreUnsavedOptions(entity, definition);
 
         if (!hasModelSkill(definition, MobDefinition.SkillTrigger.Trigger.LOAD)) {
             attachModelField(entity, definition.modelId);
