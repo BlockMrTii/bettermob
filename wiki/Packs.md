@@ -64,4 +64,4 @@ Permission: `bettermob.reload`.
 
 ## Duplicate ids
 
-If a mob, skill, item or drop table id is defined more than once across `plugins/BetterMob` and the packs, the first definition (main folder first, then the packs in order) is kept and the others are ignored. The console prints one warning per id with the number of repeats and the first folder that repeats it.
+If a mob, skill, item or drop table id is defined more than once across `plugins/BetterMob` and the packs, the first definition that is loaded is kept and the others are ignored. The main folder is read before the packs; the order between packs is not specified, so do not rely on one pack overriding another. The console prints one warning per id with the number of repeats and the first folder that repeats it.
