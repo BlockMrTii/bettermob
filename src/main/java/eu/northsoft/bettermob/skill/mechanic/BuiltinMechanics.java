@@ -36,6 +36,7 @@ public final class BuiltinMechanics {
         registry.register(new TakeItemMechanic(engine), "takeitem");
         registry.register(new LootMechanic(engine), "loot");
         registry.register(new KillCountMechanic(engine), "killcount");
+        registry.register(new SignalMechanic(engine), "signal");
         registry.register(new SudoSkillMechanic(engine), "sudoskill");
         registry.register(new DamageMechanic(engine), "damage");
         registry.register(new ThrowMechanic(), "throw");
