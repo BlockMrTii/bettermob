@@ -179,7 +179,7 @@ public final class MobListener implements Listener {
         Entity source = event.getDamager();
         if (source instanceof Projectile projectile) {
             ProjectileSource shooter = projectile.getShooter();
-            source = shooter instanceof Entity shooterEntity ? shooterEntity : null;
+            source = shooter instanceof Entity shooterEntity && Bukkit.isOwnedByCurrentRegion(shooterEntity) ? shooterEntity : null;
         }
 
         if (event.getEntity() instanceof LivingEntity victimMob) {
