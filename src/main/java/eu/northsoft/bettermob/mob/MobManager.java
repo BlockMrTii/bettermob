@@ -619,6 +619,16 @@ public final class MobManager {
         return definitions.get(entityId);
     }
 
+    public void handleCopied(LivingEntity entity) {
+        MobDefinition definition = definitions.get(entity.getUniqueId());
+        if (definition == null) return;
+        if (entity instanceof Mob mob) {
+            AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
+        }
+        applyBehaviour(entity, definition);
+        preventSunburn(entity, definition);
+    }
+
     public void handleLoad(LivingEntity entity) {
         if (definitions.containsKey(entity.getUniqueId())) return;
         String id = entity.getPersistentDataContainer().get(mobIdKey, PersistentDataType.STRING);
