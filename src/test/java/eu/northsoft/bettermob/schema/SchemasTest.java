@@ -1,12 +1,12 @@
 package eu.northsoft.bettermob.schema;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SpecificationVersion;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -22,14 +22,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SchemasTest {
-    private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
+    private static final ObjectMapper YAML = YAMLMapper.builder().build();
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Path SCHEMAS = Path.of("schemas");
     private static final List<Path> ROOTS = List.of(Path.of("src/main/resources"), Path.of("src/test/resources/packs"));
 
-    private static JsonSchema schema(String name) throws IOException {
+    private static Schema schema(String name) throws IOException {
         JsonNode node = JSON.readTree(SCHEMAS.resolve(name + ".schema.json").toFile());
-        return JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7).getSchema(node);
+        return SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_7).getSchema(node);
     }
 
     private static String kindOf(Path relative) {
@@ -51,7 +51,7 @@ class SchemasTest {
                     String kind = kindOf(root.relativize(file));
                     if (kind == null) continue;
                     checked++;
-                    for (ValidationMessage message : schema(kind).validate(YAML.readTree(file.toFile()))) {
+                    for (Error message : schema(kind).validate(YAML.readTree(file.toFile()))) {
                         failures.add(file + ": " + message.getMessage());
                     }
                 }
