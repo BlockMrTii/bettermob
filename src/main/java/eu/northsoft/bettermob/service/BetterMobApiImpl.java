@@ -1,6 +1,7 @@
 package eu.northsoft.bettermob.service;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.mob.ExtraTriggers;
 import eu.northsoft.bettermob.api.BetterMobAPI;
 import eu.northsoft.bettermob.api.CustomMechanic;
 import eu.northsoft.bettermob.api.MobInfo;
@@ -143,6 +144,17 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
         skillEngine.conditionRegistry().unregisterCustom(event.getPlugin());
         skillEngine.targeters().unregisterCustom(event.getPlugin());
         skillEngine.placeholders().unregister(event.getPlugin());
+        ExtraTriggers.unregister(event.getPlugin());
+    }
+
+    @Override
+    public boolean registerTrigger(Plugin owner, String name) {
+        return ExtraTriggers.register(owner, name);
+    }
+
+    @Override
+    public void unregisterTrigger(String name) {
+        ExtraTriggers.unregister(name);
     }
 
     @Override

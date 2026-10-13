@@ -2,6 +2,7 @@ package eu.northsoft.bettermob.pack;
 
 import eu.northsoft.bettermob.drop.DropEntry;
 import eu.northsoft.bettermob.mob.Behaviour;
+import eu.northsoft.bettermob.mob.ExtraTriggers;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.skill.Condition;
 import eu.northsoft.bettermob.skill.SkillEngine;
@@ -159,7 +160,7 @@ public final class PackValidator {
         report.lines++;
         MobDefinition.SkillTrigger trigger = MobDefinition.SkillTrigger.parse(line);
         if (trigger == null) {
-            report.issues.add(new Issue(file, line, Reason.UNPARSEABLE, ""));
+            if (!ExtraTriggers.accepts(line)) report.issues.add(new Issue(file, line, Reason.UNPARSEABLE, ""));
             return;
         }
         checkStep(trigger.step(), line, file, report);

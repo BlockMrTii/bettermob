@@ -10,6 +10,7 @@ import eu.northsoft.bettermob.item.EggListener;
 import eu.northsoft.bettermob.item.ItemListener;
 import eu.northsoft.bettermob.item.ItemRegistry;
 import eu.northsoft.bettermob.lang.Messages;
+import eu.northsoft.bettermob.mob.ExtraTriggers;
 import eu.northsoft.bettermob.mob.MobListener;
 import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.mob.MobRegistry;
@@ -137,6 +138,7 @@ public final class BetterMobPlugin extends JavaPlugin {
         spawners.load();
         getServer().getPluginManager().registerEvents(new SpawnerListener(spawners), this);
         spawners.start();
+        Tasks.runGlobal(this, ExtraTriggers::ready);
 
         aggroView = new eu.northsoft.bettermob.debug.AggroView(this, manager);
         getServer().getPluginManager().registerEvents(aggroView, this);
@@ -185,6 +187,7 @@ public final class BetterMobPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        ExtraTriggers.reset();
         saveKills(false);
         if (aggroView != null) aggroView.stopAll();
         if (spawners != null) spawners.stop();
