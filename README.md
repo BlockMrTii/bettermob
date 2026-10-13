@@ -642,6 +642,8 @@ A placeholder `<namespace.key>` is resolved in every mechanic parameter. Its val
 text: braces, brackets, `;`, `=`, quotes, `%` and control characters are removed so a value can never add
 skill lines or trigger a command. `caster` and `target` are reserved namespaces.
 
+**Custom triggers** (BetterMob 1.1.9 or newer): `api.registerTrigger(this, "onSwing")` makes BetterMob accept `~onSwing` lines in mobs and items without the "could not be parsed" warning when an addon runs them itself. `unregisterTrigger(name)` removes it; it is also removed when the addon is disabled.
+
 ### Example plugin
 
 [`examples/api-example`](examples/api-example) is a small plugin built on this API: it registers a `heal{amount=4}` mechanic, a `?daytime` condition, a `@NearestPlayer` targeter and an `<example.world>` placeholder, listens to `BetterMobSpawnEvent` and `BetterMobDeathEvent` and has a `/apiexample <mob>` command that spawns a mob. Its damage and skill event listener (`ModernEvents`) needs BetterMob 1.1.8 and is only built with the `local` profile.

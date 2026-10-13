@@ -126,6 +126,18 @@ Skills:
 - An exception thrown by your code is caught and logged. A failing condition counts as not met, a failing targeter as no target, a failing placeholder keeps its text and is logged with the namespace and your plugin.
 - `/bettermob validate` knows registered names once your plugin is enabled.
 
+## Custom triggers
+
+An addon that runs `~onSwing`-style lines itself can tell BetterMob about the trigger so it stops warning "could not be parsed" for those lines. This needs **BetterMob 1.1.9 or newer**.
+
+```java
+api.registerTrigger(this, "onSwing");
+```
+
+- `registerTrigger(owner, name)` takes the name with or without `on` and returns `false` for a built-in trigger or a name that is already taken. `unregisterTrigger(name)` removes one; an addon's triggers are removed when it is disabled.
+- BetterMob only accepts the lines when loading mobs and items and in `/bettermob validate`; it never runs them. Running them is up to the addon.
+- Warnings for unparsed trigger lines are held until the first server tick, so an addon that registers in its own `onEnable` is already known by then.
+
 ## Example plugin
 
 [`examples/api-example`](https://github.com/HyperGaming99/bettermob/tree/main/examples/api-example) is a small plugin built on this API: it registers a `heal{amount=4}` mechanic, a `?daytime` condition, a `@NearestPlayer` targeter and an `<example.world>` placeholder, listens to `BetterMobSpawnEvent` and `BetterMobDeathEvent` and has a `/apiexample <mob>` command that spawns a mob. `ModernEvents` listens to `BetterMobDamageEvent` and `BetterMobSkillEvent`; it needs BetterMob 1.1.8 or newer, so the default build (against the published jar) leaves it out and the plugin logs that at start. Build with the `local` profile below to include it.
