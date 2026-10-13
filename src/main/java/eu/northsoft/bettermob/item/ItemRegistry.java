@@ -2,6 +2,7 @@ package eu.northsoft.bettermob.item;
 
 import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.mob.ExtraTriggers;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.pack.PackScanner;
 import eu.northsoft.bettermob.pack.YamlFiles;
@@ -118,7 +119,7 @@ public final class ItemRegistry {
         List<MobDefinition.SkillTrigger> triggers = new ArrayList<>();
         for (String line : section.getStringList("Skills")) {
             MobDefinition.SkillTrigger trigger = MobDefinition.SkillTrigger.parse(line);
-            if (trigger == null) plugin.messages().warn("item.skillLineInvalid", "item", id, "line", line);
+            if (trigger == null) ExtraTriggers.warnUnparsed(line, () -> plugin.messages().warn("item.skillLineInvalid", "item", id, "line", line));
             else triggers.add(trigger);
         }
         return new ItemDefinition(id, material, section.getInt("Model", -1), section.getString("Display", id),

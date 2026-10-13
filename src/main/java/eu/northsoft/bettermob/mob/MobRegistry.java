@@ -242,7 +242,7 @@ public final class MobRegistry {
         List<MobDefinition.SkillTrigger> triggers = new ArrayList<>();
         for (String entry : entries) {
             MobDefinition.SkillTrigger trigger = MobDefinition.SkillTrigger.parse(entry);
-            if (trigger == null) plugin.messages().warn("mob.skillLineInvalid", "mob", id, "line", entry);
+            if (trigger == null) ExtraTriggers.warnUnparsed(entry, () -> plugin.messages().warn("mob.skillLineInvalid", "mob", id, "line", entry));
             else triggers.add(trigger);
         }
         return triggers;

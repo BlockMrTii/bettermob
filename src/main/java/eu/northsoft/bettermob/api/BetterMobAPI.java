@@ -51,5 +51,9 @@ public interface BetterMobAPI {
 
     void unregisterPlaceholder(String namespace);
 
+    boolean registerTrigger(Plugin owner, String name);
+
+    void unregisterTrigger(String name);
+
     void reload();
 }
