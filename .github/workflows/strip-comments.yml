@@ -21,7 +21,7 @@ jobs:
       HAS_PAT: ${{ secrets.PR_PUSH_TOKEN != '' }}
     steps:
       - name: Checkout the base branch for the script
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: base
 
@@ -29,7 +29,7 @@ jobs:
         run: python -m unittest discover -s base/.github/scripts
 
       - name: Checkout the pull request branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
