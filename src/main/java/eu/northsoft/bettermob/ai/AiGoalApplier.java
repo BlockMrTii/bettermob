@@ -10,10 +10,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,6 +30,9 @@ public final class AiGoalApplier {
             "lookatplayers", List.of("lookatplayer"),
             "fleeplayers", List.of("avoidentity"),
             "rangedattack", List.of("rangedbowattack", "rangedcrossbowattack"));
+
+    private static final Set<String> PLAYER_ALIASES = Set.of("players", "player", "nearestplayer", "nearestplayers");
+    private static final String PLAYER_CLASS = "net.minecraft.world.entity.player.Player";
 
     private static final Pattern PRIORITY = Pattern.compile("^(\\d+)\\s+(.*)$");
     static final Object GOAL_LOOKUP = new Object();
@@ -115,8 +120,13 @@ public final class AiGoalApplier {
 
     private static Goal<Mob> findByName(List<Goal<Mob>> snapshot, String name) {
         String normalized = normalize(name);
+        List<Goal<Mob>> candidates = snapshot;
+        if (PLAYER_ALIASES.contains(normalized)) {
+            List<Goal<Mob>> players = snapshot.stream().filter(AiGoalApplier::targetsPlayers).toList();
+            if (!players.isEmpty()) candidates = players;
+        }
         for (String candidate : ALIASES.getOrDefault(normalized, List.of(normalized))) {
-            Goal<Mob> goal = findGoal(snapshot, candidate);
+            Goal<Mob> goal = findGoal(candidates, candidate);
             if (goal != null) return goal;
         }
         return null;
@@ -134,6 +144,32 @@ public final class AiGoalApplier {
             if (keyOf(goal).contains(normalized)) return goal;
         }
         return null;
+    }
+
+    private static boolean targetsPlayers(Goal<Mob> goal) {
+        try {
+            Object handle = goal.getClass().getMethod("getHandle").invoke(goal);
+            for (Class<?> type = handle.getClass(); type != null; type = type.getSuperclass()) {
+                Field field;
+                try {
+                    field = type.getDeclaredField("targetType");
+                } catch (NoSuchFieldException missing) {
+                    continue;
+                }
+                field.setAccessible(true);
+                return field.get(handle) instanceof Class<?> target && isPlayerClass(target);
+            }
+        } catch (ReflectiveOperationException | RuntimeException exception) {
+            return false;
+        }
+        return false;
+    }
+
+    private static boolean isPlayerClass(Class<?> target) {
+        for (Class<?> type = target; type != null; type = type.getSuperclass()) {
+            if (type.getName().equals(PLAYER_CLASS)) return true;
+        }
+        return false;
     }
 
     private static String keyOf(Goal<Mob> goal) {
