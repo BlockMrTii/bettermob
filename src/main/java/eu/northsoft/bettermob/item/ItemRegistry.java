@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.item;
 
+import eu.northsoft.bettermob.util.Duplicates;
 import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.mob.MobDefinition;
@@ -43,6 +44,7 @@ public final class ItemRegistry {
         folder.mkdirs();
         Map<String, ItemDefinition> loaded = new LinkedHashMap<>();
         Map<String, String> prints = new LinkedHashMap<>();
+        Duplicates duplicates = new Duplicates();
         for (File sourceFolder : packScanner.foldersFor("items")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
@@ -50,7 +52,7 @@ public final class ItemRegistry {
                     ConfigurationSection section = config.getConfigurationSection(id);
                     if (section == null || !section.contains("Id")) continue;
                     if (loaded.containsKey(id.toLowerCase(Locale.ROOT))) {
-                        plugin.messages().warn("item.duplicate", "item", id, "folder", sourceFolder.getPath());
+                        duplicates.add(id, sourceFolder.getPath());
                         continue;
                     }
                     ItemDefinition definition = parse(id, section);
@@ -61,6 +63,7 @@ public final class ItemRegistry {
                 }
             }
         }
+        duplicates.report((dup, folder, count) -> plugin.messages().warn("item.duplicate", "item", dup, "folder", folder, "count", count));
         items = loaded;
         fingerprints = prints;
         plugin.messages().info("item.loaded", "count", loaded.size());

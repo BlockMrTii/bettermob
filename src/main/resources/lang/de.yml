@@ -167,7 +167,7 @@ mob:
   behaviourInvalid: "Mob '{mob}': ungueltige Bewegungsoption '{option}'."
   eggMaterialInvalid: "Mob '{mob}': Egg-Material '{value}' ist kein Material, es wird das Ei des Mob-Typs verwendet."
   loaded: "{count} Mobs geladen."
-  duplicate: "Mob '{mob}' aus {folder} überschreibt eine bereits geladene Definition - ignoriert."
+  duplicate: "Mob '{mob}' ist mehrfach definiert ({count} weitere, zuerst wiederholt in {folder}). Die erste Definition bleibt, die anderen werden ignoriert."
   unknownType: "Mob '{mob}': unbekannter Type '{type}'."
   dropLineInvalid: "Mob '{mob}': Drop-Zeile '{line}' konnte nicht geparst werden."
   skillLineInvalid: "Mob '{mob}': Skill-Zeile '{line}' konnte nicht geparst werden."
@@ -186,7 +186,7 @@ mob:
 
 skill:
   loaded: "{count} Skills geladen."
-  duplicate: "Skill '{skill}' aus {folder} überschreibt eine bereits geladene Definition - ignoriert."
+  duplicate: "Skill '{skill}' ist mehrfach definiert ({count} weitere, zuerst wiederholt in {folder}). Die erste Definition bleibt, die anderen werden ignoriert."
   lineInvalid: "Skill '{skill}': Zeile '{line}' konnte nicht geparst werden."
   notRegistered: "Skill '{skill}' ist nicht registriert."
   inlineLineInvalid: "Inline-Skill: Zeile '{line}' konnte nicht geparst werden."
@@ -215,13 +215,13 @@ skill:
 
 item:
   loaded: "{count} Items geladen."
-  duplicate: "Item '{item}' aus {folder} überschreibt eine bereits geladene Definition - ignoriert."
+  duplicate: "Item '{item}' ist mehrfach definiert ({count} weitere, zuerst wiederholt in {folder}). Die erste Definition bleibt, die anderen werden ignoriert."
   unknownMaterial: "Item '{item}': unbekanntes Material '{material}'."
   skillLineInvalid: "Item '{item}': Skill-Zeile '{line}' konnte nicht geparst werden."
 
 drop:
   loaded: "{count} Drop-Tables geladen."
-  duplicate: "Drop-Table '{table}' aus {folder} überschreibt eine bereits geladene Definition - ignoriert."
+  duplicate: "Drop-Tabelle '{table}' ist mehrfach definiert ({count} weitere, zuerst wiederholt in {folder}). Die erste Definition bleibt, die anderen werden ignoriert."
   lineInvalid: "Drop-Table '{table}': Zeile '{line}' konnte nicht geparst werden."
   tooDeep: "Drop-Table '{table}' ist zu tief verschachtelt (Schleife?)."
   unresolvable: "Drop '{drop}' ist weder EXP, Drop-Table, Item noch Material - wird übersprungen."

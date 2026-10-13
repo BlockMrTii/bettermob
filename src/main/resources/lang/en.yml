@@ -167,7 +167,7 @@ mob:
   behaviourInvalid: "Mob '{mob}': invalid movement option '{option}'."
   eggMaterialInvalid: "Mob '{mob}': Egg Material '{value}' is not a material, using the egg of the mob type."
   loaded: "{count} mobs loaded."
-  duplicate: "Mob '{mob}' from {folder} overrides an already loaded definition - ignored."
+  duplicate: "Mob '{mob}' is defined more than once ({count} more, first repeated in {folder}). The first definition is kept, the others are ignored."
   unknownType: "Mob '{mob}': unknown Type '{type}'."
   dropLineInvalid: "Mob '{mob}': drop line '{line}' could not be parsed."
   skillLineInvalid: "Mob '{mob}': skill line '{line}' could not be parsed."
@@ -186,7 +186,7 @@ mob:
 
 skill:
   loaded: "{count} skills loaded."
-  duplicate: "Skill '{skill}' from {folder} overrides an already loaded definition - ignored."
+  duplicate: "Skill '{skill}' is defined more than once ({count} more, first repeated in {folder}). The first definition is kept, the others are ignored."
   lineInvalid: "Skill '{skill}': line '{line}' could not be parsed."
   notRegistered: "Skill '{skill}' is not registered."
   inlineLineInvalid: "Inline skill: line '{line}' could not be parsed."
@@ -215,13 +215,13 @@ skill:
 
 item:
   loaded: "{count} items loaded."
-  duplicate: "Item '{item}' from {folder} overrides an already loaded definition - ignored."
+  duplicate: "Item '{item}' is defined more than once ({count} more, first repeated in {folder}). The first definition is kept, the others are ignored."
   unknownMaterial: "Item '{item}': unknown material '{material}'."
   skillLineInvalid: "Item '{item}': skill line '{line}' could not be parsed."
 
 drop:
   loaded: "{count} drop tables loaded."
-  duplicate: "Drop table '{table}' from {folder} overrides an already loaded definition - ignored."
+  duplicate: "Drop table '{table}' is defined more than once ({count} more, first repeated in {folder}). The first definition is kept, the others are ignored."
   lineInvalid: "Drop table '{table}': line '{line}' could not be parsed."
   tooDeep: "Drop table '{table}' is nested too deeply (loop?)."
   unresolvable: "Drop '{drop}' is neither EXP, a drop table, an item nor a material - skipped."
