@@ -325,7 +325,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         Mechanic handler = mechanics.get(mechanic.name());
         if (handler == null) plugin.messages().warn("skill.mechanicUnsupported", "mechanic", mechanic.name());
         else {
-            MechanicCall call = new MechanicCall(mechanic, context, target, p);
+            MechanicCall call = new MechanicCall(mechanic, context, target, p, context.caster().getName());
             if (!handler.runsOnTarget()) {
                 handler.execute(call);
                 return;
@@ -333,7 +333,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             deferral.add();
             Runnable run = () -> {
                 try {
-                    handler.execute(new MechanicCall(call.step(), call.context().ownedHere(), call.target(), call.params()));
+                    handler.execute(new MechanicCall(call.step(), call.context().ownedHere(), call.target(), call.params(), call.casterName()));
                 } finally {
                     deferral.complete();
                 }
