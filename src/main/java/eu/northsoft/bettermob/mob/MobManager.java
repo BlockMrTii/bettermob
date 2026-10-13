@@ -339,7 +339,7 @@ public final class MobManager {
             return;
         }
         if (trigger != null && !Bukkit.isOwnedByCurrentRegion(trigger)) trigger = null;
-        String firing = entity.getUniqueId() + ":" + type;
+        String firing = entity.getUniqueId() + ":" + type + (type == MobDefinition.SkillTrigger.Trigger.SIGNAL && !triggers.isEmpty() ? ":" + triggers.get(0).signal() : "");
         if (!FIRING.get().add(firing)) {
             if (plugin.debug().info()) plugin.debug().info("trigger " + type + " on " + definition.id + " skipped: it is already running", definition.id);
             return;
@@ -373,6 +373,17 @@ public final class MobManager {
     private final Map<UUID, Object> exitCombatToken = new ConcurrentHashMap<>();
     private final Set<UUID> inCombat = ConcurrentHashMap.newKeySet();
     private static final long EXIT_COMBAT_TICKS = 100L;
+
+    public boolean signal(LivingEntity entity, String name, LivingEntity sender) {
+        MobDefinition definition = definitions.get(entity.getUniqueId());
+        if (definition == null || name == null) return false;
+        List<MobDefinition.SkillTrigger> matching = definition.triggersOf(MobDefinition.SkillTrigger.Trigger.SIGNAL).stream()
+                .filter(trigger -> name.equalsIgnoreCase(trigger.signal()))
+                .toList();
+        if (matching.isEmpty()) return false;
+        fireTriggers(entity, definition, MobDefinition.SkillTrigger.Trigger.SIGNAL, matching, sender, null);
+        return true;
+    }
 
     public boolean hasHealthTriggers(MobDefinition definition) {
         return !definition.triggersOf(MobDefinition.SkillTrigger.Trigger.HEALTH).isEmpty();

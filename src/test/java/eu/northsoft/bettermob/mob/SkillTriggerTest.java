@@ -51,6 +51,17 @@ class SkillTriggerTest {
     }
 
     @Test
+    void signalTriggersNeedANameAndAreCaseInsensitive() {
+        SkillTrigger trigger = SkillTrigger.parse("skill{s=hit} @self ~onSignal:HIT");
+        assertEquals(Trigger.SIGNAL, trigger.trigger());
+        assertEquals("hit", trigger.signal());
+        assertEquals("iron-golem", SkillTrigger.parse("skill{s=x} @trigger ~onSignal:Iron-Golem ?sneaking").signal());
+        assertNull(SkillTrigger.parse("skill{s=hit} @self ~onSignal"));
+        assertNull(SkillTrigger.parse("skill{s=hit} @self ~onDamaged:HIT"));
+        assertEquals(40, SkillTrigger.parse("skill{s=hit} @self ~onTimer:40").timerTicks());
+    }
+
+    @Test
     void rejectsUnknownTriggersAndLinesWithoutOne() {
         assertNull(SkillTrigger.parse("remove @self ~onNothing"));
         assertNull(SkillTrigger.parse("remove @self"));

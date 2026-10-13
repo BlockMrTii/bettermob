@@ -56,6 +56,7 @@ command:
       entercombat: "combat enter"
       exitcombat: "combat exit"
       kill: "kill"
+      signal: "Signal received"
   validate:
     unknownPack: "&cPack '{pack}' was not found in packs/."
     header: "&7Checked &f{lines} &7lines in &f{sources} &7place(s):"

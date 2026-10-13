@@ -88,12 +88,16 @@ public final class MobDefinition {
                 false, true, true, false, null, -1, -1, false, -1);
     }
 
-    public record SkillTrigger(SkillStep step, Trigger trigger, int timerTicks, HealthSpec health) {
-        public SkillTrigger(SkillStep step, Trigger trigger, int timerTicks) {
-            this(step, trigger, timerTicks, null);
+    public record SkillTrigger(SkillStep step, Trigger trigger, int timerTicks, HealthSpec health, String signal) {
+        public SkillTrigger(SkillStep step, Trigger trigger, int timerTicks, HealthSpec health) {
+            this(step, trigger, timerTicks, health, null);
         }
 
-        private static final Pattern PATTERN = Pattern.compile("^(.*\\S)\\s+~on(\\w+?)(?::(\\d+))?(?:(<=|>=|<|>)(\\d+(?:\\.\\d+)?)(%)?)?(?:\\s+(\\?!?\\w+(?:\\{.*})?))?\\s*$", Pattern.CASE_INSENSITIVE);
+        public SkillTrigger(SkillStep step, Trigger trigger, int timerTicks) {
+            this(step, trigger, timerTicks, null, null);
+        }
+
+        private static final Pattern PATTERN = Pattern.compile("^(.*\\S)\\s+~on(\\w+?)(?::([A-Za-z0-9_-]+))?(?:(<=|>=|<|>)(\\d+(?:\\.\\d+)?)(%)?)?(?:\\s+(\\?!?\\w+(?:\\{.*})?))?\\s*$", Pattern.CASE_INSENSITIVE);
 
         public static SkillTrigger parse(String line) {
             Matcher matcher = PATTERN.matcher(line.trim());
@@ -105,12 +109,20 @@ public final class MobDefinition {
             if (trigger != Trigger.HEALTH && matcher.group(4) != null) return null;
             SkillStep step = SkillStep.parse(matcher.group(7) == null ? matcher.group(1) : matcher.group(1) + " " + matcher.group(7));
             if (step == null) return null;
-            int ticks = Params.parseInt(matcher.group(3), 20);
-            return new SkillTrigger(step, trigger, ticks, health);
+            String suffix = matcher.group(3);
+            String signal = null;
+            if (trigger == Trigger.SIGNAL) {
+                if (suffix == null) return null;
+                signal = suffix.toLowerCase(Locale.ROOT);
+            } else if (suffix != null && !suffix.chars().allMatch(Character::isDigit)) {
+                return null;
+            }
+            int ticks = Params.parseInt(trigger == Trigger.SIGNAL ? null : suffix, 20);
+            return new SkillTrigger(step, trigger, ticks, health, signal);
         }
 
         public enum Trigger {
-            SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT, HEALTH, TARGET, LOSETARGET, ENTERCOMBAT, EXITCOMBAT, KILL;
+            SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT, HEALTH, TARGET, LOSETARGET, ENTERCOMBAT, EXITCOMBAT, KILL, SIGNAL;
 
             static Trigger parse(String value) {
                 return switch (value.toLowerCase(Locale.ROOT)) {
@@ -129,6 +141,7 @@ public final class MobDefinition {
                     case "entercombat" -> ENTERCOMBAT;
                     case "exitcombat" -> EXITCOMBAT;
                     case "kill" -> KILL;
+                    case "signal" -> SIGNAL;
                     default -> null;
                 };
             }
