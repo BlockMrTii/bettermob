@@ -28,7 +28,7 @@ public final class BossBarMechanic implements Mechanic {
         float progress = Math.max(0f, Math.min(1f, parseFloat(firstParam(call.params(), "p", "progress"), 1f)));
         boolean countdown = "true".equalsIgnoreCase(call.params().get("countdown"));
 
-        BossBar bar = BossBar.bossBar(MessageText.render(raw, receiver, call.context().caster().getName()), progress,
+        BossBar bar = BossBar.bossBar(MessageText.render(raw, receiver, call.casterName()), progress,
                 color(call.params().get("color")), overlay(call.params().get("style")));
         receiver.showBossBar(bar);
         Tasks.runLater(engine.plugin(), receiver, duration, () -> receiver.hideBossBar(bar));
