@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.mob;
 
+import eu.northsoft.bettermob.util.Duplicates;
 import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.drop.DropEntry;
@@ -47,12 +48,13 @@ public final class MobRegistry {
 
         Map<String, MobDefinition> loaded = new LinkedHashMap<>();
         Map<String, String> prints = new LinkedHashMap<>();
+        Duplicates duplicates = new Duplicates();
         for (File sourceFolder : packScanner.foldersFor("mobs")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
                 for (Map.Entry<String, ConfigurationSection> entry : extractMobSections(file).entrySet()) {
                     String id = entry.getKey();
                     if (loaded.containsKey(id.toLowerCase(Locale.ROOT))) {
-                        plugin.messages().warn("mob.duplicate", "mob", id, "folder", sourceFolder.getPath());
+                        duplicates.add(id, sourceFolder.getPath());
                         continue;
                     }
                     MobDefinition definition = parse(id, entry.getValue());
@@ -63,6 +65,7 @@ public final class MobRegistry {
                 }
             }
         }
+        duplicates.report((dup, folder, count) -> plugin.messages().warn("mob.duplicate", "mob", dup, "folder", folder, "count", count));
         mobs = loaded;
         fingerprints = prints;
         plugin.messages().info("mob.loaded", "count", loaded.size());
