@@ -187,6 +187,7 @@ public final class BetterMobPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        ExtraTriggers.reset();
         saveKills(false);
         if (aggroView != null) aggroView.stopAll();
         if (spawners != null) spawners.stop();

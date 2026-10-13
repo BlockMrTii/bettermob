@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.mob;
 
+import eu.northsoft.bettermob.skill.SkillStep;
 import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
@@ -15,7 +16,7 @@ public final class ExtraTriggers {
 
     private record Pending(String line, Runnable warn) {}
 
-    private static final Pattern TAIL = Pattern.compile("~on(\\w+?)(?::\\S*)?(?:\\s+\\?\\S.*)?\\s*$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern TAIL = Pattern.compile("~on(\\w+?)(?::\\S*)?(\\s+\\?\\S.*)?\\s*$", Pattern.CASE_INSENSITIVE);
     private static final Map<String, Entry> TRIGGERS = new ConcurrentHashMap<>();
     private static final List<Pending> PENDING = new ArrayList<>();
     private static boolean ready;
@@ -29,7 +30,7 @@ public final class ExtraTriggers {
     }
 
     public static boolean register(Plugin owner, String name) {
-        if (name == null || name.isBlank()) return false;
+        if (owner == null || name == null || name.isBlank()) return false;
         String key = key(name);
         if (key.isEmpty() || MobDefinition.SkillTrigger.Trigger.parse(key) != null) return false;
         return TRIGGERS.putIfAbsent(key, new Entry(owner)) == null;
@@ -45,14 +46,23 @@ public final class ExtraTriggers {
 
     public static boolean accepts(String line) {
         if (line == null || TRIGGERS.isEmpty()) return false;
-        Matcher matcher = TAIL.matcher(line.trim());
-        return matcher.find() && TRIGGERS.containsKey(matcher.group(1).toLowerCase(Locale.ROOT));
+        String text = line.trim();
+        Matcher matcher = TAIL.matcher(text);
+        if (!matcher.find() || !TRIGGERS.containsKey(matcher.group(1).toLowerCase(Locale.ROOT))) return false;
+        String step = text.substring(0, matcher.start()).trim() + (matcher.group(2) == null ? "" : " " + matcher.group(2).trim());
+        return !step.isBlank() && SkillStep.parse(step) != null;
     }
 
     public static synchronized void warnUnparsed(String line, Runnable warn) {
         if (accepts(line)) return;
         if (ready) warn.run();
         else PENDING.add(new Pending(line, warn));
+    }
+
+    public static synchronized void reset() {
+        ready = false;
+        PENDING.clear();
+        TRIGGERS.clear();
     }
 
     public static synchronized void ready() {
