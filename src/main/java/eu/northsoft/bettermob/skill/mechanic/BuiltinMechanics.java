@@ -25,6 +25,9 @@ public final class BuiltinMechanics {
         registry.register(new CommandMechanic(engine), "command");
         registry.register(new SummonMechanic(engine), "summon");
         registry.register(new MountModelMechanic(engine), "mountmodel");
+        registry.register(new DismountMechanic(engine, true), "dismountallmodel");
+        registry.register(new DismountMechanic(engine, false), "dismountall");
+        registry.register(new MountTargetMechanic(engine), "mounttarget");
         registry.register(new ParticlesMechanic(engine), "effect:particles", "effect:particle", "e:p", "particles");
         registry.register(new ParticleRingMechanic(engine), "effect:particlering");
         registry.register(new ParticleLineMechanic(engine, false), "effect:particleline", "particleline");

@@ -461,7 +461,7 @@ living entity, armor stands included. On items: `~onUse` (right click, see [Item
 
 **Mechanics:** `sound`, `model` (attach via BetterModel), `modelengine` (attach the
 same way via ModelEngine instead — pick whichever engine that mob's model is
-registered in), `mountmodel` (BetterModel seats — the rider gets actual WASD
+registered in), `mounttarget` / `dismountall` / `dismountallmodel` (seat the target on the caster, take passengers off), `@ModelPassengers{p=...}` / `@mountedmodel` / `@children{target=...}` (riders and summons, only those BetterMob seated or summoned) and `modelhaspassengers` / `ridingmodel` / `mounted`, `mountmodel` (BetterModel seats — the rider gets actual WASD
 control), `potion`, `look`, `breakblock`, `state` (plays a BetterModel animation),
 `summon` (spawns another registered mob), `remove`, `command`, `gcd`, `randomskill`
 (`s=a,b,c`), `skill`, `sudoskill` (run a skill with the target as caster), `cancelevent`,

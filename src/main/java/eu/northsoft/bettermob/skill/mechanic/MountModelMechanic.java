@@ -20,10 +20,11 @@ public final class MountModelMechanic implements Mechanic {
     public void execute(MechanicCall call) {
         if (!(call.target().entity() instanceof LivingEntity rider) || !Bukkit.isOwnedByCurrentRegion(rider)) return;
         java.util.UUID id = call.context().caster().getUniqueId();
-        String seat = call.params().getOrDefault("seat", "mount");
+        String seat = eu.northsoft.bettermob.skill.Params.firstParam(call.params(), "seat", "p");
+        if (seat == null) seat = "mount";
         Object tracker = engine.mobManager().trackerFor(id);
         if (tracker != null) {
-            engine.betterModel().mount(tracker, seat, rider);
+            if (engine.betterModel().mount(tracker, seat, rider)) engine.modelPassengers().add(id, seat, rider.getUniqueId());
             return;
         }
         Object engineTracker = engine.mobManager().modelEngineTrackerFor(id);
@@ -31,6 +32,6 @@ public final class MountModelMechanic implements Mechanic {
             engine.plugin().messages().warn("skill.mountNoTracker");
             return;
         }
-        engine.modelEngine().mount(engineTracker, seat, rider, call.params().get("controller"));
+        if (engine.modelEngine().mount(engineTracker, seat, rider, call.params().get("controller"))) engine.modelPassengers().add(id, seat, rider.getUniqueId());
     }
 }
