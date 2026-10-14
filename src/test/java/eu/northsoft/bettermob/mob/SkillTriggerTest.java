@@ -62,6 +62,14 @@ class SkillTriggerTest {
     }
 
     @Test
+    void despawnAndMoveParseAndMoveHasAFiveTickDefault() {
+        assertEquals(Trigger.DESPAWN, SkillTrigger.parse("unsetvar{var=x} @Owner ~onDespawn").trigger());
+        assertEquals(Trigger.MOVE, SkillTrigger.parse("animation{a=walk} @self ~onMove").trigger());
+        assertEquals(5, SkillTrigger.parse("animation{a=walk} @self ~onMove").timerTicks());
+        assertEquals(10, SkillTrigger.parse("animation{a=walk} @self ~onMove:10").timerTicks());
+    }
+
+    @Test
     void rejectsUnknownTriggersAndLinesWithoutOne() {
         assertNull(SkillTrigger.parse("remove @self ~onNothing"));
         assertNull(SkillTrigger.parse("remove @self"));

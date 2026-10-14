@@ -372,6 +372,7 @@ public final class MobManager {
     private static final ThreadLocal<Set<String>> FIRING = ThreadLocal.withInitial(HashSet::new);
     private final Map<UUID, Object> exitCombatToken = new ConcurrentHashMap<>();
     private final Set<UUID> inCombat = ConcurrentHashMap.newKeySet();
+    private static final double MOVE_EPSILON_SQUARED = 0.0025;
     private static final long EXIT_COMBAT_TICKS = 100L;
 
     public boolean signal(LivingEntity entity, String name, LivingEntity sender) {
@@ -432,6 +433,21 @@ public final class MobManager {
                 if (home == null || !home.getWorld().equals(entity.getWorld()) || entity.getLocation().distanceSquared(home) <= limit * limit) return;
                 if (plugin.debug().info()) plugin.debug().info("mob " + definition.id + " is further than " + limit + " blocks from home, teleporting it back", definition.id);
                 entity.teleportAsync(home);
+            }));
+        }
+        for (MobDefinition.SkillTrigger trigger : definition.triggersOf(MobDefinition.SkillTrigger.Trigger.MOVE)) {
+            double[] last = {Double.NaN, 0, 0};
+            addTimer(entity.getUniqueId(), () -> Tasks.runTimer(plugin, entity, trigger.timerTicks(), trigger.timerTicks(), () -> {
+                if (!entity.isValid()) return;
+                Location at = entity.getLocation();
+                double dx = at.getX() - last[0];
+                double dy = at.getY() - last[1];
+                double dz = at.getZ() - last[2];
+                boolean moved = !Double.isNaN(last[0]) && dx * dx + dy * dy + dz * dz > MOVE_EPSILON_SQUARED;
+                last[0] = at.getX();
+                last[1] = at.getY();
+                last[2] = at.getZ();
+                if (moved) fireTriggers(entity, definition, MobDefinition.SkillTrigger.Trigger.MOVE, List.of(trigger), null, null);
             }));
         }
         for (MobDefinition.SkillTrigger trigger : definition.triggersOf(MobDefinition.SkillTrigger.Trigger.TIMER)) {
