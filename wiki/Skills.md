@@ -68,6 +68,12 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `modelengine` | `mid` | Attach a ModelEngine model |
 | `state` | `state` (`s`) | Play a model animation: once for BetterModel; for ModelEngine also `lerpIn`, `lerpOut` (default 0.1), `speed` (1) and `force` (true) |
 | `mountmodel` | `seat` (default `mount`), `controller` | Seat the target on a model's seat. BetterModel handles steering; with ModelEngine `controller` is `walking` (default), `flying`, `walking_force` or `flying_force`, and the driver seat is used when `seat` is not a passenger seat |
+| `setrotation` | `yaw`, `pitch`, `relative` | Turn the target to that yaw/pitch (pitch is limited to -90..90). With `relative=true` the numbers are added to the current ones. `<caster.l.yaw>` / `<caster.l.pitch>` insert the caster's own, `<caster.l.x>` `<caster.l.y>` `<caster.l.z>` its position |
+| `setpitch` | `p` | Set only the pitch (the yaw stays) |
+| `setgravity` | `g` | `false` switches gravity off for the target, anything else on |
+| `scale` | `s` | Scale a display entity (its transformation) or a living entity (the scale attribute), from 0.0625 to 16 |
+| `brightness` | `b`, `s` | Block and sky light level 0-15 of a display entity |
+| `setdisplayentityitem` | `i` | Put a BetterMob item id or a material on an item display |
 | `potion` | `type`, `duration` (ticks), `level` | Apply an effect |
 | `look` | - | Turn the caster toward the target |
 | `summon` | `type` (also `t`, `mob`) | Spawn another registered mob at the target |
@@ -218,3 +224,5 @@ Conditions BetterMob doesn't know are logged and treated as
 Several MythicMobs mechanics, conditions and targeters. Mechanics inside aura
 effects that aren't supported (for example `velocity`) produce a warning like
 `Skill-Mechanic 'velocity' wird nicht unterstuetzt` and are skipped.
+
+Not supported: `tint` and `lockmodel` (model plugin specific, no stable call to reflect on), and `meg:setitemmodel` (ModelEngine only).
