@@ -38,6 +38,16 @@ public final class ConditionRegistry {
         conditions.put("stringeq", new StringEqualsCondition(engine));
         conditions.put("stringequals", new StringEqualsCondition(engine));
         conditions.put("sneaking", new SneakingCondition());
+        conditions.put("crouching", new SneakingCondition());
+        conditions.put("day", new DayCondition());
+        conditions.put("gamemode", new GameModeCondition());
+        conditions.put("outside", new OutsideCondition());
+        conditions.put("holding", new HoldingCondition(engine));
+        conditions.put("moving", new MovingCondition());
+        conditions.put("ismoving", new MovingCondition());
+        conditions.put("playerwithin", new PlayerWithinCondition());
+        conditions.put("playersinradius", new PlayerWithinCondition());
+        conditions.put("fieldofview", new FieldOfViewCondition());
         conditions.put("killedmob", new KillCondition(engine, false));
         conditions.put("killedmobs", new KillCondition(engine, true));
     }
