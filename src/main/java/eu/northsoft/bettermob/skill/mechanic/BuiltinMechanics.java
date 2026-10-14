@@ -55,8 +55,11 @@ public final class BuiltinMechanics {
         registry.register(new FreezeMechanic(), "freeze");
         registry.register(new SetNoDamageTicksMechanic(), "setnodamageticks");
         registry.register(new TotemMechanic(engine), "totem");
-        registry.register(new VariableMechanic(engine, false), "setvariable", "variableset");
-        registry.register(new VariableMechanic(engine, true), "addvariable", "variableadd");
+        registry.register(new VariableMechanic(engine, VariableMechanic.Mode.SET), "setvariable", "variableset", "setvar");
+        registry.register(new VariableMechanic(engine, VariableMechanic.Mode.ADD), "addvariable", "variableadd");
+        registry.register(new VariableMechanic(engine, VariableMechanic.Mode.SUBTRACT), "subtractvariable", "variablesubtract");
+        registry.register(new VariableMechanic(engine, VariableMechanic.Mode.MATH), "variablemath");
+        registry.register(new VariableMechanic(engine, VariableMechanic.Mode.UNSET), "variableunset", "unsetvar", "unsetvariable");
         registry.register(new HealMechanic(), "heal");
         registry.register(new TeleportMechanic(), "teleport");
         registry.register(new ExplosionMechanic(), "explosion");
