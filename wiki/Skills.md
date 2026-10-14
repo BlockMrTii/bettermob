@@ -68,9 +68,9 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `modelengine` | `mid` | Attach a ModelEngine model |
 | `state` | `state` (`s`) | Play a model animation: once for BetterModel; for ModelEngine also `lerpIn`, `lerpOut` (default 0.1), `speed` (1) and `force` (true) |
 | `mountmodel` | `seat` (`p`, default `mount`), `controller` | Seat the target on a model's seat. BetterModel handles steering; with ModelEngine `controller` is `walking` (default), `flying`, `walking_force` or `flying_force`, and the driver seat is used when `seat` is not a passenger seat |
-| `dismountallmodel` | | Take everyone BetterMob seated on the target's model (with `mountmodel`) off it |
-| `dismountall` | | Take every passenger off the target, seated by a model or not |
-| `mounttarget` | `repeat`, `repeati` | Seat the target on the caster (plain vehicle passenger). `repeat` tries again that many more times (up to 40) every `repeati` ticks |
+| `dismountallmodel` | | Take everyone BetterMob seated on the target's model (with `mountmodel`) off it. A rider is forgotten only after it really left (a plugin that cancels the dismount keeps the record) |
+| `dismountall` | | Take every passenger off the target, seated by a model or not: plain passengers are ejected and the riders BetterMob seated on its model are taken off too |
+| `mounttarget` | `repeat`, `repeati` | Seat the target on the caster (plain vehicle passenger). `repeat` tries again that many more times (up to 40) every `repeati` ticks, and stops as soon as one try worked |
 | `potion` | `type`, `duration` (ticks), `level` | Apply an effect |
 | `look` | - | Turn the caster toward the target |
 | `summon` | `type` (also `t`, `mob`) | Spawn another registered mob at the target |

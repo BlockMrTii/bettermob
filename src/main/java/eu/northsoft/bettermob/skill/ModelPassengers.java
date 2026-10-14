@@ -63,13 +63,14 @@ public final class ModelPassengers implements Listener {
         return riders;
     }
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     public void onDismount(EntityDismountEvent event) {
         remove(event.getEntity().getUniqueId());
     }
 
     @EventHandler
     public void onRemove(EntityRemoveEvent event) {
+        if (event.getCause() == EntityRemoveEvent.Cause.UNLOAD) return;
         UUID id = event.getEntity().getUniqueId();
         remove(id);
         clear(id);

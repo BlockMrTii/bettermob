@@ -20,14 +20,16 @@ public final class DismountMechanic implements Mechanic {
     public void execute(MechanicCall call) {
         Entity owner = call.target().entity();
         if (owner == null) return;
-        if (!modelOnly) {
-            owner.eject();
-            engine.modelPassengers().clear(owner.getUniqueId());
-            return;
-        }
-        for (UUID id : engine.modelPassengers().clear(owner.getUniqueId())) {
+        if (!modelOnly) owner.eject();
+        for (UUID id : engine.modelPassengers().riders(owner.getUniqueId(), null)) {
             Entity rider = Bukkit.getEntity(id);
-            if (rider != null) Tasks.runOwned(engine.plugin(), rider, rider::leaveVehicle);
+            if (rider == null) {
+                engine.modelPassengers().remove(id);
+                continue;
+            }
+            Tasks.runOwned(engine.plugin(), rider, () -> {
+                if (!rider.isInsideVehicle() || rider.leaveVehicle()) engine.modelPassengers().remove(id);
+            });
         }
     }
 }
