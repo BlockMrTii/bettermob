@@ -198,7 +198,7 @@ Skills:
 | `varequals{var;val}` (`variableequals`) | Same test as `variable` |
 | `variableisset{var}` | The variable exists |
 | `variableinrange{var;range=0.5to2}` | The number is in the range (`0.5to2`, `>3`, `<=5`, `2-4`); a text value never matches |
-| `stringeq{val1;val2}` (`stringequals`) | Both texts are equal after `<var.x>`, `<skill.x>` and `<caster.var.x>` are inserted; other placeholders in condition parameters are not resolved |
+| `stringeq{val1;val2}` (`stringequals`) | Both texts are equal after `<var.x>`, `<skill.x>`, `<caster.var.x>` and `<target.var.x>` are inserted; other placeholders in condition parameters are not resolved |
 | `sneaking` | The caster is a player and is sneaking |
 | `killedmob{mob=goblin;count=10}` | The player has killed at least 10 of that mob (the kill counters, see `/bettermob top`). `count` is a number (at least), a comparison (`<5`) or a range (`3-6`); default 1. The player is the checked target, otherwise the trigger, otherwise the caster |
 | `killedmobs{count=50}` | The same for the kills of all BetterMob mobs together |

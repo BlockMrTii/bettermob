@@ -20,6 +20,7 @@ public final class VariableMechanic implements Mechanic {
 
     private final SkillEngine engine;
     private final Mode mode;
+    private final java.util.concurrent.ConcurrentHashMap<String, Object> expiries = new java.util.concurrent.ConcurrentHashMap<>();
 
     public VariableMechanic(SkillEngine engine, boolean add) {
         this(engine, add ? Mode.ADD : Mode.SET);
@@ -47,6 +48,7 @@ public final class VariableMechanic implements Mechanic {
             synchronized (scope) {
                 scope.remove(name);
             }
+            expiries.remove(System.identityHashCode(scope) + ":" + name);
             return;
         }
 
@@ -59,14 +61,20 @@ public final class VariableMechanic implements Mechanic {
             engine.plugin().messages().warn("skill.variableLimit", "variable", variable, "limit", Variables.MAX_PER_SCOPE);
             return;
         }
+        String slot = System.identityHashCode(scope) + ":" + name;
         int duration = Math.min(MAX_DURATION_TICKS, parseInt(firstParam(call.params(), "duration", "d"), 0));
         if (duration > 0) {
-            Entity owner = target != null ? target : context.caster();
+            Object token = new Object();
+            expiries.put(slot, token);
+            Entity owner = Variables.isTargetScope(variable) ? (target != null ? target : context.trigger() != null ? context.trigger() : context.caster()) : context.caster();
             Tasks.runLater(engine.plugin(), owner, duration, () -> {
+                if (!expiries.remove(slot, token)) return;
                 synchronized (scope) {
                     if (result.equals(scope.get(name))) scope.remove(name);
                 }
             });
+        } else {
+            expiries.remove(slot);
         }
     }
 

@@ -317,7 +317,14 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             debug.verbose("mechanic '" + mechanic.name() + "' @" + (mechanic.targeter().isEmpty() ? "(inherited)" : mechanic.targeter())
                     + " -> " + targets.size() + " target(s), params " + params, subject(context.caster()));
         }
-        for (Target target : targets) dispatch(mechanic, context, target, params, deferral);
+        boolean perTarget = false;
+        for (String value : params.values()) {
+            if (value.indexOf("<target.var.") >= 0) {
+                perTarget = true;
+                break;
+            }
+        }
+        for (Target target : targets) dispatch(mechanic, context, target, perTarget ? withTargetVariables(params, target, context) : params, deferral);
         return false;
     }
 
@@ -470,8 +477,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private Map<String, String> withVariables(Map<String, String> params, SkillContext context) {
-        return resolveVariables(params, context.variables(), state.existingVariablesOf(context.caster().getUniqueId()),
-                context.trigger() == null ? null : state.existingVariablesOf(context.trigger().getUniqueId()));
+        return resolveVariables(params, context.variables(), state.existingVariablesOf(context.caster().getUniqueId()));
     }
 
     static Map<String, String> resolveVariables(Map<String, String> params, Map<String, String> skillScope, Map<String, String> casterScope) {
@@ -481,7 +487,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     static Map<String, String> resolveVariables(Map<String, String> params, Map<String, String> skillScope, Map<String, String> casterScope, Map<String, String> targetScope) {
         boolean needed = false;
         for (String value : params.values()) {
-            if (value.indexOf("<skill.") >= 0 || value.indexOf("<var.") >= 0 || value.indexOf("<caster.var.") >= 0 || value.indexOf("<target.var.") >= 0) {
+            if (value.indexOf("<skill.") >= 0 || value.indexOf("<var.") >= 0 || value.indexOf("<caster.var.") >= 0) {
                 needed = true;
                 break;
             }
@@ -489,7 +495,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         if (!needed) return params;
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : params.entrySet()) {
-            result.put(entry.getKey(), replaceVariables(entry.getValue(), skillScope, casterScope, targetScope));
+            result.put(entry.getKey(), replaceVariables(entry.getValue(), skillScope, casterScope, targetScope, targetScope == null));
         }
         return result;
     }
@@ -498,13 +504,44 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return replaceVariables(value, skillScope, casterScope, null);
     }
 
-    static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope, Map<String, String> targetScope) {
+    public static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope, Map<String, String> targetScope) {
+        return replaceVariables(value, skillScope, casterScope, targetScope, false);
+    }
+
+    private static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope, Map<String, String> targetScope, boolean keepTarget) {
         java.util.regex.Matcher matcher = VARIABLE_PLACEHOLDER.matcher(value);
         StringBuilder result = new StringBuilder();
         while (matcher.find()) {
             String kind = matcher.group(1);
+            if (keepTarget && kind.startsWith("target")) {
+                matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(matcher.group()));
+                continue;
+            }
             Map<String, String> scope = kind.startsWith("skill") ? skillScope : kind.startsWith("target") ? targetScope : casterScope;
             String found = scope == null ? null : scope.get(matcher.group(2).toLowerCase(Locale.ROOT));
+            matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(found == null ? "0" : Params.stripPlaceholderValue(found)));
+        }
+        matcher.appendTail(result);
+        return result.toString();
+    }
+
+    private static final java.util.regex.Pattern TARGET_VARIABLE = java.util.regex.Pattern.compile("<target\\.var\\.([A-Za-z0-9_]{1,32})>");
+
+    private Map<String, String> withTargetVariables(Map<String, String> params, Target target, SkillContext context) {
+        org.bukkit.entity.Entity entity = target.entity() != null ? target.entity() : context.trigger();
+        Map<String, String> scope = entity == null ? null : state.existingVariablesOf(entity.getUniqueId());
+        Map<String, String> result = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            result.put(entry.getKey(), replaceTargetVariables(entry.getValue(), scope));
+        }
+        return result;
+    }
+
+    static String replaceTargetVariables(String value, Map<String, String> scope) {
+        java.util.regex.Matcher matcher = TARGET_VARIABLE.matcher(value);
+        StringBuilder result = new StringBuilder();
+        while (matcher.find()) {
+            String found = scope == null ? null : scope.get(matcher.group(1).toLowerCase(Locale.ROOT));
             matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(found == null ? "0" : Params.stripPlaceholderValue(found)));
         }
         matcher.appendTail(result);
