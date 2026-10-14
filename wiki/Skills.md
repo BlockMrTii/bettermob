@@ -52,6 +52,8 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `~onExitCombat` | The mob has had no target for 5 seconds after being in combat |
 | `~onKill` | The mob killed a living entity (melee or projectile). `@trigger` is the victim |
 | `~onSignal:<NAME>` | The mob received the signal `NAME` (case-insensitive) from the `signal` mechanic. `@trigger` is the entity that sent it, as long as it is in the same region as the receiver (on Folia a sender in another region is not passed, the skill then runs without a trigger) |
+| `~onDespawn` | The mob was removed without dying: despawned, discarded or removed by a plugin or `/bettermob killall`. Not for deaths and not for chunk unloads. It runs before the mob's state is cleared, `@self` is the mob that is going away |
+| `~onMove:<ticks>` | The mob moved more than 0.05 blocks since the last check, checked every `ticks` ticks (default 5). Only mobs with this trigger get a timer, nothing runs on mobs without it |
 | `~onDeath` | The mob dies (the body still exists, so sounds and effects work) |
 | `~onTimer:<ticks>` | Repeatedly, default every 20 ticks |
 | `~onUse` | Items only: right-click with the item in the main hand |
@@ -80,6 +82,10 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `remove` | - | Remove the target |
 | `command` | `c`: command | Run a console command. `<caster.name>` and `<target.name>` are replaced |
 | `takeitem` | `i` item ID, `a` amount | Take items from the target player |
+| `setname` | `n` | Set the target's custom name (`&` colors); an empty name removes it |
+| `giveitem` | `i`, `a` | Give the target player a BetterMob item id or material (`a` up to 64); what doesn't fit drops at their feet |
+| `fakeexplosion` | | An explosion particle and sound at the target without any damage |
+| `recoil` | `f` | Push the target backwards, away from where it looks (force -5 to 5, default 1) |
 | `loot` | `table`, `vanilla`, `lootingmodifier`, `mode` | Roll a BetterMob drop table (`table=<id>`) or a vanilla loot table (`vanilla=minecraft:entities/zombie`, with the caster as the looted entity and `lootingmodifier` as looting level, default 0) and give the result to the target player; what doesn't fit is dropped at their feet. Drop-table exp goes to the player. With `mode=drop` (also `target=drop`) the items and exp drop at the target's location instead, and the target doesn't have to be a player. An unknown table is logged once and reported by `/bettermob validate`. Use it from an item's `~onUse` after `takeitem` |
 | `killcount` | `var`, `mob` | Store a player's kill count (the target if it is a player, otherwise the trigger, otherwise the caster) (of `mob`, or all mobs without it) in a skill variable, e.g. `killcount{var=caster.kills;mob=goblin} @trigger`, to use it as `<var.kills>` |
 | `signal` | `s` | Send the signal `s` to the target mob: its `~onSignal:<s>` skills run, with the caster as `@trigger`. A target that is not a BetterMob mob or has no matching line does nothing. Example: `signal{s=HIT} @target` |
@@ -199,6 +205,14 @@ Skills:
 | `biome{b=DESERT,PLAINS}` | The caster stands in one of these biomes (names without `minecraft:` are fine) |
 | `variable{var=hits;value=>=3}` | The variable matches: a number test (`>3`, `<=5`, `2-4`, `7`) when it holds a number, otherwise text equality. A missing variable counts as 0 for number tests |
 | `sneaking` | The caster is a player and is sneaking |
+| `crouching` | Same as `sneaking` (also usable in targeter `conditions=[...]`) |
+| `day` | It is day in the caster's world |
+| `gamemode{gm=SURVIVAL,ADVENTURE}` | The caster is a player in one of these game modes |
+| `outside` | Nothing is above the caster up to the sky |
+| `holding{m=DIAMOND_SWORD}` | The caster holds this material or BetterMob item id in the main hand (a list with `,` works) |
+| `moving` (`ismoving`) | The caster's velocity is above a small limit; players often report no velocity, so use it for mobs |
+| `playerwithin{d=10;count=2}` (`playersinradius`) | At least `count` players (default 1) are within `d` blocks; `count` also takes `<3` or `1-2` |
+| `fieldofview{a=90}` | The target (or trigger) is within a cone of `a` degrees in front of the caster |
 | `killedmob{mob=goblin;count=10}` | The player has killed at least 10 of that mob (the kill counters, see `/bettermob top`). `count` is a number (at least), a comparison (`<5`) or a range (`3-6`); default 1. The player is the checked target, otherwise the trigger, otherwise the caster |
 | `killedmobs{count=50}` | The same for the kills of all BetterMob mobs together |
 | `time{t=day}` | `day` or `night` of the caster's world; also a tick or range, e.g. `time{t=0-6000}` |
@@ -225,4 +239,6 @@ Several MythicMobs mechanics, conditions and targeters. Mechanics inside aura
 effects that aren't supported (for example `velocity`) produce a warning like
 `Skill-Mechanic 'velocity' wird nicht unterstuetzt` and are skipped.
 
-Not supported: `tint` and `lockmodel` (model plugin specific, no stable call to reflect on), and `meg:setitemmodel` (ModelEngine only).
+Not supported: the targeter `@LivingInCone`, and the mechanics `teleportto`, `teleporty`, `propel`, `speak`, `blackscreen` and `jsonmessage`; they have no clear equivalent yet. `effect:particle` is an alias of `effect:particles`.
+
+Also not supported: `tint` and `lockmodel` (model plugin specific, no stable call to reflect on) and `meg:setitemmodel` (ModelEngine only).
