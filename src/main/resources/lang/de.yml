@@ -57,6 +57,8 @@ command:
       exitcombat: "Kampf Ende"
       kill: "Kill"
       signal: "Signal empfangen"
+      despawn: "Despawn"
+      move: "Bewegung"
   validate:
     unknownPack: "&cPack '{pack}' wurde in packs/ nicht gefunden."
     header: "&7{lines} Zeilen in &f{sources} &7Ordner(n) geprueft:"
@@ -206,6 +208,7 @@ skill:
   shootUnknownProjectile: "shoot: unbekannter Projektiltyp '{type}', es wird ein Pfeil verwendet."
   lootUnknownTable: "loot: unbekannte Drop-Tabelle '{table}'."
   lootUnknownVanilla: "loot: unbekannte Vanilla-Loot-Tabelle '{table}'."
+  giveItemUnknown: "giveitem: unbekanntes Item '{item}'."
   potionUnknown: "Unbekannter Potion-Typ '{type}'."
   particleNeedsData: "Partikel '{particle}' braucht Zusatzdaten (z.B. Farbe) und wird nicht unterstützt."
   particleUnknown: "Unbekannter Partikel '{particle}'."

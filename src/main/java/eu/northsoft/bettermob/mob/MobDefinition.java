@@ -117,12 +117,12 @@ public final class MobDefinition {
             } else if (suffix != null && !suffix.chars().allMatch(Character::isDigit)) {
                 return null;
             }
-            int ticks = Params.parseInt(trigger == Trigger.SIGNAL ? null : suffix, 20);
+            int ticks = Params.parseInt(trigger == Trigger.SIGNAL ? null : suffix, trigger == Trigger.MOVE ? 5 : 20);
             return new SkillTrigger(step, trigger, ticks, health, signal);
         }
 
         public enum Trigger {
-            SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT, HEALTH, TARGET, LOSETARGET, ENTERCOMBAT, EXITCOMBAT, KILL, SIGNAL;
+            SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT, HEALTH, TARGET, LOSETARGET, ENTERCOMBAT, EXITCOMBAT, KILL, SIGNAL, DESPAWN, MOVE;
 
             static Trigger parse(String value) {
                 return switch (value.toLowerCase(Locale.ROOT)) {
@@ -142,6 +142,8 @@ public final class MobDefinition {
                     case "exitcombat" -> EXITCOMBAT;
                     case "kill" -> KILL;
                     case "signal" -> SIGNAL;
+                    case "despawn" -> DESPAWN;
+                    case "move" -> MOVE;
                     default -> null;
                 };
             }

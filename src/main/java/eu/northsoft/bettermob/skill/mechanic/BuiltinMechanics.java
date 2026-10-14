@@ -28,7 +28,7 @@ public final class BuiltinMechanics {
         registry.register(new DismountMechanic(engine, true), "dismountallmodel");
         registry.register(new DismountMechanic(engine, false), "dismountall");
         registry.register(new MountTargetMechanic(engine), "mounttarget");
-        registry.register(new ParticlesMechanic(engine), "effect:particles", "e:p", "particles");
+        registry.register(new ParticlesMechanic(engine), "effect:particles", "effect:particle", "e:p", "particles");
         registry.register(new ParticleRingMechanic(engine), "effect:particlering");
         registry.register(new ParticleLineMechanic(engine, false), "effect:particleline", "particleline");
         registry.register(new ParticleLineMechanic(engine, true), "effect:particlebeam", "particlebeam");
@@ -66,5 +66,9 @@ public final class BuiltinMechanics {
         registry.register(new LightningMechanic(), "lightning");
         registry.register(new SetSpeedMechanic(), "setspeed");
         registry.register(new SetAiMechanic(), "setai");
+        registry.register(new SetNameMechanic(), "setname");
+        registry.register(new GiveItemMechanic(engine), "giveitem");
+        registry.register(new FakeExplosionMechanic(), "fakeexplosion");
+        registry.register(new RecoilMechanic(), "recoil");
     }
 }
