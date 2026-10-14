@@ -57,6 +57,8 @@ command:
       exitcombat: "combat exit"
       kill: "kill"
       signal: "Signal received"
+      despawn: "Despawn"
+      move: "Move"
   validate:
     unknownPack: "&cPack '{pack}' was not found in packs/."
     header: "&7Checked &f{lines} &7lines in &f{sources} &7place(s):"

@@ -52,6 +52,8 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `~onExitCombat` | The mob has had no target for 5 seconds after being in combat |
 | `~onKill` | The mob killed a living entity (melee or projectile). `@trigger` is the victim |
 | `~onSignal:<NAME>` | The mob received the signal `NAME` (case-insensitive) from the `signal` mechanic. `@trigger` is the entity that sent it, as long as it is in the same region as the receiver (on Folia a sender in another region is not passed, the skill then runs without a trigger) |
+| `~onDespawn` | The mob was removed without dying: despawned, discarded or removed by a plugin or `/bettermob killall`. Not for deaths and not for chunk unloads. It runs before the mob's state is cleared, `@self` is the mob that is going away |
+| `~onMove:<ticks>` | The mob moved more than 0.05 blocks since the last check, checked every `ticks` ticks (default 5). Only mobs with this trigger get a timer, nothing runs on mobs without it |
 | `~onDeath` | The mob dies (the body still exists, so sounds and effects work) |
 | `~onTimer:<ticks>` | Repeatedly, default every 20 ticks |
 | `~onUse` | Items only: right-click with the item in the main hand |
