@@ -94,7 +94,7 @@ public final class TotemMechanic implements Mechanic, Listener {
         totemBodies.remove(event.getEntity().getUniqueId());
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler
     public void onTotemHit(EntityDamageByEntityEvent event) {
         TotemBody totem = totemBodies.get(event.getEntity().getUniqueId());
         if (totem == null) return;
