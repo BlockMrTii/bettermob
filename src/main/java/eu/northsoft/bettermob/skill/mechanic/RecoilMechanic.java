@@ -13,7 +13,9 @@ public final class RecoilMechanic implements Mechanic {
     public void execute(MechanicCall call) {
         Entity entity = call.target().entity();
         if (entity == null) return;
-        float force = Math.max(-MAX, Math.min(MAX, parseFloat(firstParam(call.params(), "f", "force", "v"), 1f)));
+        float raw = parseFloat(firstParam(call.params(), "f", "force", "v"), 1f);
+        if (!Float.isFinite(raw)) return;
+        float force = Math.max(-MAX, Math.min(MAX, raw));
         Vector back = entity.getLocation().getDirection().setY(0);
         if (back.lengthSquared() < 1.0e-9) return;
         entity.setVelocity(entity.getVelocity().add(back.normalize().multiply(-force)));
