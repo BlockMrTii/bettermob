@@ -73,6 +73,12 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `dismountallmodel` | | Take everyone BetterMob seated on the target's model (with `mountmodel`) off it. A rider is forgotten only after it really left (a plugin that cancels the dismount keeps the record) |
 | `dismountall` | | Take every passenger off the target, seated by a model or not: plain passengers are ejected and the riders BetterMob seated on its model are taken off too |
 | `mounttarget` | `repeat`, `repeati` | Seat the target on the caster (plain vehicle passenger). `repeat` tries again that many more times (up to 40) every `repeati` ticks, and stops as soon as one try worked |
+| `setrotation` | `yaw`, `pitch`, `relative` | Turn the target to that yaw/pitch (pitch is limited to -90..90). With `relative=true` the numbers are added to the current ones. `<caster.l.yaw>` / `<caster.l.pitch>` insert the caster's own, `<caster.l.x>` `<caster.l.y>` `<caster.l.z>` its position |
+| `setpitch` | `p` | Set only the pitch (the yaw stays) |
+| `setgravity` | `g` | `false` switches gravity off for the target, anything else on |
+| `scale` | `s` | Scale a display entity (its transformation) or a living entity (the scale attribute), from 0.0625 to 16 |
+| `brightness` | `b`, `s` | Block and sky light level 0-15 of a display entity |
+| `setdisplayentityitem` | `i` | Put a BetterMob item id or a material on an item display |
 | `potion` | `type`, `duration` (ticks), `level` | Apply an effect |
 | `look` | - | Turn the caster toward the target |
 | `summon` | `type` (also `t`, `mob`) | Spawn another registered mob at the target |
@@ -250,3 +256,5 @@ effects that aren't supported (for example `velocity`) produce a warning like
 `Skill-Mechanic 'velocity' wird nicht unterstuetzt` and are skipped.
 
 Not supported: the targeter `@LivingInCone`, and the mechanics `teleportto`, `teleporty`, `propel`, `speak`, `blackscreen` and `jsonmessage`; they have no clear equivalent yet. `effect:particle` is an alias of `effect:particles`.
+
+Also not supported: `tint` and `lockmodel` (model plugin specific, no stable call to reflect on) and `meg:setitemmodel` (ModelEngine only).
