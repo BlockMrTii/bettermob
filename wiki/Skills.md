@@ -52,6 +52,8 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `~onExitCombat` | The mob has had no target for 5 seconds after being in combat |
 | `~onKill` | The mob killed a living entity (melee or projectile). `@trigger` is the victim |
 | `~onSignal:<NAME>` | The mob received the signal `NAME` (case-insensitive) from the `signal` mechanic. `@trigger` is the entity that sent it, as long as it is in the same region as the receiver (on Folia a sender in another region is not passed, the skill then runs without a trigger) |
+| `~onDespawn` | The mob was removed without dying: despawned, discarded or removed by a plugin or `/bettermob killall`. Not for deaths and not for chunk unloads. It runs before the mob's state is cleared, `@self` is the mob that is going away |
+| `~onMove:<ticks>` | The mob moved more than 0.05 blocks since the last check, checked every `ticks` ticks (default 5). Only mobs with this trigger get a timer, nothing runs on mobs without it |
 | `~onDeath` | The mob dies (the body still exists, so sounds and effects work) |
 | `~onTimer:<ticks>` | Repeatedly, default every 20 ticks |
 | `~onUse` | Items only: right-click with the item in the main hand |
@@ -67,7 +69,10 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `model` | `mid` | Attach a BetterModel model |
 | `modelengine` | `mid` | Attach a ModelEngine model |
 | `state` | `state` (`s`) | Play a model animation: once for BetterModel; for ModelEngine also `lerpIn`, `lerpOut` (default 0.1), `speed` (1) and `force` (true) |
-| `mountmodel` | `seat` (default `mount`), `controller` | Seat the target on a model's seat. BetterModel handles steering; with ModelEngine `controller` is `walking` (default), `flying`, `walking_force` or `flying_force`, and the driver seat is used when `seat` is not a passenger seat |
+| `mountmodel` | `seat` (`p`, default `mount`), `controller` | Seat the target on a model's seat. BetterModel handles steering; with ModelEngine `controller` is `walking` (default), `flying`, `walking_force` or `flying_force`, and the driver seat is used when `seat` is not a passenger seat |
+| `dismountallmodel` | | Take everyone BetterMob seated on the target's model (with `mountmodel`) off it. A rider is forgotten only after it really left (a plugin that cancels the dismount keeps the record) |
+| `dismountall` | | Take every passenger off the target, seated by a model or not: plain passengers are ejected and the riders BetterMob seated on its model are taken off too |
+| `mounttarget` | `repeat`, `repeati` | Seat the target on the caster (plain vehicle passenger). `repeat` tries again that many more times (up to 40) every `repeati` ticks, and stops as soon as one try worked |
 | `potion` | `type`, `duration` (ticks), `level` | Apply an effect |
 | `look` | - | Turn the caster toward the target |
 | `summon` | `type` (also `t`, `mob`) | Spawn another registered mob at the target |
@@ -150,6 +155,9 @@ A line of its own, `delay 20`, pauses the rest of the skill for 20 ticks.
 | `@Location{x=0;y=64;z=0;w=world}` | A fixed location; `w` (or `world`) is the world, default the caster's |
 | `@TargetLocation` (`@TL`) | The location of the trigger/target entity |
 | `@Owner`, `@Parent` | The entity whose `summon` created the caster. If there is none, the line is skipped |
+| `@ModelPassengers{p=driver;mid=model;conditions=[...]}` | The entities BetterMob seated on the caster's model with `mountmodel`, optionally only one seat `p` and only when the caster's mob uses model `mid`. Riders seated some other way (for example by the model plugin itself) are not known |
+| `@mountedmodel` | The model owner the caster was seated on with `mountmodel` |
+| `@children{target=MARKER;r=32}` | Entities summoned by the caster (`summon`) within `r` blocks (default 32), optionally only of that entity type |
 
 All multi-target targeters (`@EntitiesNearOrigin`, `@EntitiesInRadius`, `@PlayersInRadius`, `@PIR`) also take `limit=<n>` and `sort=nearest|farthest|random`, and run the mechanic once per target. An unknown targeter is logged once and the line targets the default target.
 
@@ -204,6 +212,9 @@ Skills:
 | `variableinrange{var;range=0.5to2}` | The number is in the range (`0.5to2`, `>3`, `<=5`, `2-4`); a text value never matches |
 | `stringeq{val1;val2}` (`stringequals`) | Both texts are equal after `<var.x>`, `<skill.x>`, `<caster.var.x>` and `<target.var.x>` are inserted; other placeholders in condition parameters are not resolved |
 | `sneaking` | The caster is a player and is sneaking |
+| `modelhaspassengers{p=driver}` | BetterMob seated someone on the entity's model (on seat `p`, if given) |
+| `ridingmodel{mid=model}` | The entity was seated on a model with `mountmodel` (of mob model `mid`, if given) |
+| `mounted` | The entity was seated with `mountmodel` or rides any vehicle |
 | `crouching` | Same as `sneaking` (also usable in targeter `conditions=[...]`) |
 | `day` | It is day in the caster's world |
 | `gamemode{gm=SURVIVAL,ADVENTURE}` | The caster is a player in one of these game modes |

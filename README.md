@@ -456,12 +456,12 @@ Skills:
 
 **Triggers:** `~onSpawn`, `~onLoad` (chunk/restart rehydration), `~onInteract`,
 `~onDamaged`, `~onAttack` (melee hits only, projectiles don't count), `~onShoot` (bow/crossbow
-shot, `CancelEvent` stops the vanilla arrow), `~onSignal:<NAME>` (the mob got that signal from the `signal{s=NAME}` mechanic), `~onDeath`, `~onHealth<50%` (also `<=`, `>`, `>=` and absolute values like `~onHealth<=10`; fires once when the mob's health crosses the threshold and again after it has healed back across it), `~onTarget` (a target is acquired, `@trigger` is the target), `~onLoseTarget`, `~onEnterCombat` (first target after being idle), `~onExitCombat` (no target for 5 seconds), `~onKill` (the mob killed something, `@trigger` is the victim), `~onTimer:<ticks>` (repeats). Triggers fire for any
+shot, `CancelEvent` stops the vanilla arrow), `~onDespawn` (removed without dying), `~onMove:<ticks>` (moved since the last check, default every 5 ticks), `~onSignal:<NAME>` (the mob got that signal from the `signal{s=NAME}` mechanic), `~onDeath`, `~onHealth<50%` (also `<=`, `>`, `>=` and absolute values like `~onHealth<=10`; fires once when the mob's health crosses the threshold and again after it has healed back across it), `~onTarget` (a target is acquired, `@trigger` is the target), `~onLoseTarget`, `~onEnterCombat` (first target after being idle), `~onExitCombat` (no target for 5 seconds), `~onKill` (the mob killed something, `@trigger` is the victim), `~onTimer:<ticks>` (repeats). Triggers fire for any
 living entity, armor stands included. On items: `~onUse` (right click, see [Items](#items)).
 
 **Mechanics:** `sound`, `model` (attach via BetterModel), `modelengine` (attach the
 same way via ModelEngine instead — pick whichever engine that mob's model is
-registered in), `mountmodel` (BetterModel seats — the rider gets actual WASD
+registered in), `mounttarget` / `dismountall` / `dismountallmodel` (seat the target on the caster, take passengers off), `@ModelPassengers{p=...}` / `@mountedmodel` / `@children{target=...}` (riders and summons, only those BetterMob seated or summoned) and `modelhaspassengers` / `ridingmodel` / `mounted`, `mountmodel` (BetterModel seats — the rider gets actual WASD
 control), `potion`, `look`, `breakblock`, `state` (plays a BetterModel animation),
 `summon` (spawns another registered mob), `remove`, `command`, `gcd`, `randomskill`
 (`s=a,b,c`), `skill`, `sudoskill` (run a skill with the target as caster), `cancelevent`,

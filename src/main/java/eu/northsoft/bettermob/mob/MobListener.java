@@ -34,6 +34,9 @@ import org.bukkit.projectiles.ProjectileSource;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class MobListener implements Listener {
+    private static final java.util.Set<EntityRemoveEvent.Cause> REMOVED_WITHOUT_DYING = java.util.EnumSet.of(
+            EntityRemoveEvent.Cause.DESPAWN, EntityRemoveEvent.Cause.DISCARD, EntityRemoveEvent.Cause.PLUGIN);
+
     private final MobManager manager;
     private final DropRegistry drops;
     private final KillStats kills;
@@ -86,6 +89,10 @@ public final class MobListener implements Listener {
 
     @EventHandler
     public void onRemove(EntityRemoveEvent event) {
+        if (event.getEntity() instanceof LivingEntity living && REMOVED_WITHOUT_DYING.contains(event.getCause())) {
+            MobDefinition definition = manager.definitionOf(living.getUniqueId());
+            if (definition != null) manager.fireTrigger(living, definition, MobDefinition.SkillTrigger.Trigger.DESPAWN, null, null);
+        }
         manager.release(event.getEntity());
     }
 
