@@ -63,5 +63,11 @@ public final class BuiltinMechanics {
         registry.register(new LightningMechanic(), "lightning");
         registry.register(new SetSpeedMechanic(), "setspeed");
         registry.register(new SetAiMechanic(), "setai");
+        registry.register(new RotationMechanic(false), "setrotation");
+        registry.register(new RotationMechanic(true), "setpitch");
+        registry.register(new SetGravityMechanic(), "setgravity");
+        registry.register(new ScaleMechanic(), "scale");
+        registry.register(new BrightnessMechanic(), "brightness");
+        registry.register(new DisplayItemMechanic(engine), "setdisplayentityitem");
     }
 }

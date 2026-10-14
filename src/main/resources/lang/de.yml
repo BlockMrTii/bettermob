@@ -206,6 +206,7 @@ skill:
   shootUnknownProjectile: "shoot: unbekannter Projektiltyp '{type}', es wird ein Pfeil verwendet."
   lootUnknownTable: "loot: unbekannte Drop-Tabelle '{table}'."
   lootUnknownVanilla: "loot: unbekannte Vanilla-Loot-Tabelle '{table}'."
+  displayItemUnknown: "setdisplayentityitem: unbekanntes Item '{item}'."
   potionUnknown: "Unbekannter Potion-Typ '{type}'."
   particleNeedsData: "Partikel '{particle}' braucht Zusatzdaten (z.B. Farbe) und wird nicht unterstützt."
   particleUnknown: "Unbekannter Partikel '{particle}'."

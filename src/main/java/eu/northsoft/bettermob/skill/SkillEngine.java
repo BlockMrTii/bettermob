@@ -444,9 +444,17 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         String damage = String.valueOf(attackDamage == null ? 1.0 : attackDamage.getValue());
         String name = stripSkillSyntax(context.caster().getName());
         boolean escapesItself = mechanicName.equals("command") || mechanicName.equals("message");
+        org.bukkit.Location at = null;
+        for (String value : p.values()) {
+            if (value.indexOf("<caster.l.") >= 0) {
+                at = context.caster().getLocation();
+                break;
+            }
+        }
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : p.entrySet()) {
-            result.put(entry.getKey(), withCasterValues(entry.getValue(), damage, name, escapesItself));
+            String value = at == null ? entry.getValue() : withLocationValues(entry.getValue(), at.getX(), at.getY(), at.getZ(), at.getYaw(), at.getPitch());
+            result.put(entry.getKey(), withCasterValues(value, damage, name, escapesItself));
         }
         return result;
     }
@@ -506,6 +514,17 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private static boolean isInlineSkill(String value) {
         String trimmed = value.stripLeading();
         return trimmed.startsWith("[") && trimmed.indexOf('{') > 0;
+    }
+
+    private static String plainNumber(double value) {
+        return value == Math.rint(value) && Math.abs(value) < 1e15 ? String.valueOf((long) value) : String.valueOf(value);
+    }
+
+    public static String withLocationValues(String value, double x, double y, double z, float yaw, float pitch) {
+        if (value.indexOf("<caster.l.") < 0) return value;
+        return value.replace("<caster.l.x>", plainNumber(x)).replace("<caster.l.y>", plainNumber(y))
+                .replace("<caster.l.z>", plainNumber(z)).replace("<caster.l.yaw>", plainNumber(yaw))
+                .replace("<caster.l.pitch>", plainNumber(pitch));
     }
 
     static String withCasterValues(String value, String damage, String name, boolean escapesItself) {
