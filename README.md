@@ -517,10 +517,11 @@ heal_pulse:
 
 `setvariable{var=hits;value=1;type=INTEGER}` stores a value, `addvariable{var=hits;value=1}` adds to a number
 (a missing variable counts as 0), `?variable{var=hits;value=>=3}` tests it and `<skill.hits>` /
-`<var.hits>` insert it into mechanic parameters.
+`<var.hits>` insert it into mechanic parameters. MythicMobs names work too: `setvar{var;val;type;duration}`, `variablemath{var;equation}` (plain arithmetic), `variablesubtract`, `variableunset` / `unsetvar`, and the conditions `varequals`, `variableinrange{var;range=0.5to2}`, `variableisset` and `stringeq{val1;val2}`.
 
-- `var=name` lives for the current skill run (shared with the skills and inline skills it starts, kept across `delay`). Read it with `<skill.name>`.
-- `var=caster.name` belongs to the caster and lives as long as the mob (cleared when it is removed and on `/bettermob reload`, not saved over restarts). Read it with `<var.name>`.
+- `var=name` lives for the current skill run (shared with the skills and inline skills it starts, kept across `delay`). Read it with `<skill.name>` or `<skill.var.name>`.
+- `var=target.name` belongs to the target entity (or the trigger when there is no target) and lives like a caster variable. Read it with `<target.var.name>`.
+- `var=caster.name` belongs to the caster and lives as long as the mob (cleared when it is removed and on `/bettermob reload`, not saved over restarts). Read it with `<var.name>` or `<caster.var.name>`.
 - Names are letters, digits and `_`, up to 32 characters, case-insensitive; a scope holds at most 64 variables.
 - The condition compares numbers (`>3`, `<=5`, `2-4`, `7`) when the stored value is a number, otherwise text (case-insensitive). A missing variable counts as 0 for number tests and never equals a text.
 - Values are inserted as plain text: braces, brackets, `;`, `=`, quotes, `%` and control characters are removed, so a variable can never add skill lines or trigger a command. An unset variable is inserted as `0`.

@@ -100,7 +100,10 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `bossbar` | `m`, `color`, `style`, `p`, `d`, `countdown` | Show a boss bar with the text `m` to the target player for `d` ticks (default 100), then remove it. `color` is `PINK`, `BLUE`, `RED`, `GREEN`, `YELLOW`, `PURPLE` (default) or `WHITE`; `style` is `SOLID` (default), `SEGMENTED_6`, `SEGMENTED_10`, `SEGMENTED_12` or `SEGMENTED_20`; `p` is the start progress 0 to 1; `countdown=true` makes it shrink to empty over `d` |
 | `message` | `m` | Send a message to the target player. The text rules below apply to `message`, `actionbar`, `title` and `bossbar`: `&` colors, `<caster.name>`, `<target.name>` and PlaceholderAPI placeholders work |
 | `ignite` | `t` | Set the target on fire for `t` ticks |
-| `setvariable` (`variableset`) | `var`, `value`, `type` | Store a value: `var=hits` for the current skill run, `var=caster.hits` for the caster. `type` is `INTEGER`, `FLOAT` or `STRING` (default), numbers are checked. See [Variables](#variables) |
+| `setvariable` (`variableset`, `setvar`) | `var`, `value` (`val`), `type`, `duration` | Store a value: `var=hits` for the current skill run, `var=caster.hits` for the caster. `type` is `INTEGER`, `FLOAT` or `STRING` (default), numbers are checked. See [Variables](#variables) |
+| `variablemath` | `var`, `equation` | Store the result of plain arithmetic (`+ - * / %` and parentheses, numbers only, no functions): `variablemath{var=caster.scale;equation="<var.scale> + (5 - <var.scale>) * 0.1"}`. An invalid equation or a division by zero changes nothing and logs a warning |
+| `variablesubtract` (`subtractvariable`) | `var`, `value` (`amount`) | Subtract from a number, the opposite of `addvariable` |
+| `variableunset` (`unsetvar`, `unsetvariable`) | `var` | Remove the variable |
 | `addvariable` (`variableadd`) | `var`, `value` | Add a number to a variable (a missing one counts as 0) |
 | `heal` | `a` | Heal the target by `a` health, capped at its max health |
 | `teleport` | - | Move the caster to the targeted location or entity (for example `@Target`, `@Location{...}`, `@Forward{...}`); the caster keeps its facing |
@@ -192,6 +195,10 @@ Skills:
 | `world{w=world,world_nether}` | The caster is in one of these worlds |
 | `biome{b=DESERT,PLAINS}` | The caster stands in one of these biomes (names without `minecraft:` are fine) |
 | `variable{var=hits;value=>=3}` | The variable matches: a number test (`>3`, `<=5`, `2-4`, `7`) when it holds a number, otherwise text equality. A missing variable counts as 0 for number tests |
+| `varequals{var;val}` (`variableequals`) | Same test as `variable` |
+| `variableisset{var}` | The variable exists |
+| `variableinrange{var;range=0.5to2}` | The number is in the range (`0.5to2`, `>3`, `<=5`, `2-4`); a text value never matches |
+| `stringeq{val1;val2}` (`stringequals`) | Both texts are equal after `<var.x>`, `<skill.x>` and `<caster.var.x>` are inserted; other placeholders in condition parameters are not resolved |
 | `sneaking` | The caster is a player and is sneaking |
 | `killedmob{mob=goblin;count=10}` | The player has killed at least 10 of that mob (the kill counters, see `/bettermob top`). `count` is a number (at least), a comparison (`<5`) or a range (`3-6`); default 1. The player is the checked target, otherwise the trigger, otherwise the caster |
 | `killedmobs{count=50}` | The same for the kills of all BetterMob mobs together |
