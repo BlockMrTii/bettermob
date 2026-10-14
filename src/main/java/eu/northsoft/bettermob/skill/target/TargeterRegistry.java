@@ -36,6 +36,9 @@ public final class TargeterRegistry {
                 (context.trigger() != null ? context.trigger() : context.caster()).getLocation()), "targetlocation", "tl");
         register(new FixedLocationTargeter(), "location");
         register(new OwnerTargeter(), "owner", "parent");
+        register(new ModelPassengersTargeter(engine, filters), "modelpassengers");
+        register(new MountedModelTargeter(engine), "mountedmodel");
+        register(new ChildrenTargeter(), "children");
     }
 
     private void register(Targeter targeter, String... names) {

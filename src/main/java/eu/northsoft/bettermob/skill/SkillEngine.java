@@ -43,6 +43,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private final ItemRegistry items;
     private final DebugManager debug;
     private final SkillState state = new SkillState();
+    private final ModelPassengers modelPassengers = new ModelPassengers();
     private static final int INLINE_CACHE_LIMIT = 4096;
     private final Map<String, List<SkillStep>> inlineSkills = new ConcurrentHashMap<>();
     private final TargeterRegistry targeters;
@@ -65,9 +66,14 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         this.mechanics = new MechanicRegistry(plugin);
         BuiltinMechanics.registerAll(mechanics, this);
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        plugin.getServer().getPluginManager().registerEvents(modelPassengers, plugin);
         for (Mechanic mechanic : mechanics.builtins()) {
             if (mechanic instanceof org.bukkit.event.Listener listener) plugin.getServer().getPluginManager().registerEvents(listener, plugin);
         }
+    }
+
+    public ModelPassengers modelPassengers() {
+        return modelPassengers;
     }
 
     public BetterMobPlugin plugin() {
