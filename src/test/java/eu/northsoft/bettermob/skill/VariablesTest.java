@@ -104,4 +104,41 @@ class VariablesTest {
         assertEquals("0", SkillEngine.replaceVariables("<var.phase>", skillScope, null));
         assertEquals("<caster.name>", SkillEngine.replaceVariables("<caster.name>", skillScope, casterScope));
     }
+
+    @Test
+    void subtractAndRangeHelpersWork() {
+        assertEquals("0.9", Variables.subtract("1", "0.1"));
+        assertEquals("-1", Variables.subtract(null, "1"));
+        assertEquals("2", Variables.subtract("3", "1"));
+        assertNull(Variables.subtract("1", "x"));
+        assertTrue(Variables.inRange("1.5", "0.5to2"));
+        assertFalse(Variables.inRange("3", "0.5to2"));
+        assertTrue(Variables.inRange("7", ">5"));
+        assertTrue(Variables.inRange(null, "<1"));
+        assertFalse(Variables.inRange("text", "0to10"));
+    }
+
+    @Test
+    void targetScopeNamesAndMythicPlaceholdersResolve() {
+        assertEquals("cubeetype", Variables.nameOf("target.cubeetype"));
+        assertTrue(Variables.isTargetScope("Target.x"));
+        Map<String, String> skill = Map.of("a", "1");
+        Map<String, String> caster = Map.of("b", "2");
+        Map<String, String> target = Map.of("c", "3");
+        assertEquals("1 2 3 2", SkillEngine.replaceVariables("<skill.var.a> <caster.var.b> <target.var.c> <var.b>", skill, caster, target));
+        assertEquals("0", SkillEngine.replaceVariables("<target.var.c>", skill, caster, null));
+    }
+
+    @Test
+    void targetVariablesAreReplacedPerScopeWithAZeroFallback() {
+        assertEquals("3 0", SkillEngine.replaceTargetVariables("<target.var.c> <target.var.none>", Map.of("c", "3")));
+        assertEquals("0", SkillEngine.replaceTargetVariables("<target.var.c>", null));
+        assertEquals("<var.b>", SkillEngine.replaceTargetVariables("<var.b>", Map.of("b", "1")));
+    }
+
+    @Test
+    void theEnginePathLeavesTargetPlaceholdersForTheDispatch() {
+        Map<String, String> resolved = SkillEngine.resolveVariables(Map.of("m", "<var.b> <target.var.c>"), Map.of(), Map.of("b", "2"));
+        assertEquals("2 <target.var.c>", resolved.get("m"));
+    }
 }
