@@ -27,7 +27,9 @@ class MechanicRegistryTest {
             "setvariable", "variableset", "addvariable", "variableadd",
             "actionbar", "actionmessage", "title", "sendtitle", "bossbar",
             "particleline", "effect:particleline", "particlebeam", "effect:particlebeam", "particlesphere", "effect:particlesphere",
-            "particlehelix", "effect:particlehelix", "glow");
+            "particlehelix", "effect:particlehelix", "glow",
+            "animation", "fakelightning", "dismount", "potionclear", "removepotion",
+            "tint", "glowbone", "partvis", "partvisibility", "meg:setitemmodel", "setitemmodel", "lockmodel", "modifystate", "defaultstate");
 
     private static final Set<String> HANDLED_BY_ENGINE = Set.of("cancelskill", "delay");
 

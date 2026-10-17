@@ -237,6 +237,8 @@ drop:
   unresolvable: "Drop '{drop}' is neither EXP, a drop table, an item nor a material - skipped."
 
 betterModel:
+  callFailed: "BetterModel: {action} failed: {error}"
+  unsupported: "BetterModel has no '{action}' - the line is skipped."
   inactive: "BetterModel is not active while spawning '{model}' - no model attached."
   apiClassMissing: "BetterModel API class '{class}' not found - does the installed BetterModel version match?"
   modelMissing: "BetterModel model '{model}' does not exist."

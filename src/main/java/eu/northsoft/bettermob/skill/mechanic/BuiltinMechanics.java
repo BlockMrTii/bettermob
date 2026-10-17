@@ -81,5 +81,12 @@ public final class BuiltinMechanics {
         registry.register(new RecoilMechanic(), "recoil");
         registry.register(new LeaveVehicleMechanic(), "dismount");
         registry.register(new PotionClearMechanic(), "potionclear", "removepotion");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.TINT), "tint");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.GLOW), "glowbone");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.PART), "partvis", "partvisibility");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.ITEM), "meg:setitemmodel", "setitemmodel");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.LOCK), "lockmodel");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.MODIFY), "modifystate");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.DEFAULT), "defaultstate");
     }
 }
