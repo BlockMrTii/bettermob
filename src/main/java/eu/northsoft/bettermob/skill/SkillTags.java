@@ -4,6 +4,7 @@ public final class SkillTags {
     public static final String TAG_PREFIX = "bettermob_tag_";
     public static final String OWNER_PREFIX = "bettermob_owner_";
     public static final String HELPER_TAG = "bettermob_helper";
+    public static final String EFFECT_TAG = "bettermob_effect";
 
     private SkillTags() {}
 }

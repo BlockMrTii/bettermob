@@ -149,6 +149,11 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `propel` | `velocity` (`v`, default 10) | Push the caster towards the target at `v/10` blocks per tick (at most 4); when the target is the caster itself, along its facing |
 | `teleport` | - | Move the caster to the targeted location or entity (for example `@Target`, `@Location{...}`, `@Forward{...}`); the caster keeps its facing |
 | `explosion` | `yield`, `bd`, `fire` | Explosion at the target. `yield` is the power (default 2), `bd=true` breaks blocks, `fire=true` sets fires. Off by default |
+| `effect:firework` (`firework`) | `type` (`t`: `BALL`, `BALL_LARGE`, `STAR`, `BURST`, `CREEPER`), `color` (`c`, hex list), `fadecolor` (`fc`), `flicker` (`f`), `trail` (`tr`), `duration` (`d`, ticks before it bursts, default 0) | A firework burst at the target. It never deals damage |
+| `effect:blockmask` (`blockmask`) | `material` (`m`), `radius` (`r`, at most 8), `duration` (`d` ticks), `shape` (`s=sphere`, default cube), `onlyair` (`oa`), `noair` (`na`) | Show the blocks around the target as `m` to players within 64 blocks, only for them and only for `d` ticks (for example `m=light` for a moving light) |
+| `setchunkforceloaded` | `l` (default true) | Keep the target's chunk loaded (`l=false` releases it) |
+| `displaytransformation` | `action` (`SET`, `ADD`, `MULTIPLY`), `transformation` (`scale` or `translation`), `value` (`x,y,z`, calculations allowed) | Change a display entity's scale or translation |
+| `raytraceto` | `es` (skill id or inline skills), `syo`, `tyo` (height offsets at caster and target), `rw` (ray width) | Trace a line from the caster to the target location and run `es` for every living entity the line passes through (that entity is the trigger) |
 | `lightning` (`fakelightning`) | `damage` | Lightning at the target; only the visual effect unless `damage=true` (`fakelightning` never damages) |
 | `setspeed` | `s` | Set the target's movement speed attribute (zombie default is about 0.23) |
 | `setai` | `ai` | `ai=false` switches the target mob's AI off, `ai=true` back on |
