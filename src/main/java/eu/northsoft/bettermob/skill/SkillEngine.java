@@ -118,6 +118,12 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return conditionRegistry;
     }
 
+    private final ChatPrompts chatPrompts = new ChatPrompts(this);
+
+    public ChatPrompts chatPrompts() {
+        return chatPrompts;
+    }
+
     public CustomPlaceholders placeholders() {
         return placeholders;
     }
@@ -497,6 +503,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         for (Map.Entry<String, String> entry : p.entrySet()) {
             String value = at == null ? entry.getValue() : withLocationValues(entry.getValue(), at.getX(), at.getY(), at.getZ(), at.getYaw(), at.getPitch());
             if (value.indexOf("<caster.mythic_type>") >= 0) value = value.replace("<caster.mythic_type>", mobType(context.caster()));
+            if (value.indexOf("<caster.itemnbt.") >= 0) value = withItemNbt(value, eu.northsoft.bettermob.item.ItemNbt.heldItem(context.caster()));
             result.put(entry.getKey(), withCasterValues(value, damage, name, escapesItself));
         }
         return result;
@@ -597,6 +604,19 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private static boolean isInlineSkill(String value) {
         String trimmed = value.stripLeading();
         return trimmed.startsWith("[") && trimmed.indexOf('{') > 0;
+    }
+
+    private static final java.util.regex.Pattern ITEM_NBT = java.util.regex.Pattern.compile("<caster\\.itemnbt\\.([A-Za-z0-9_.-]{1,64})>");
+
+    static String withItemNbt(String value, org.bukkit.inventory.ItemStack held) {
+        java.util.regex.Matcher matcher = ITEM_NBT.matcher(value);
+        StringBuilder result = new StringBuilder();
+        while (matcher.find()) {
+            String found = eu.northsoft.bettermob.item.ItemNbt.get(held, matcher.group(1));
+            matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(found == null ? "" : Params.stripPlaceholderValue(found)));
+        }
+        matcher.appendTail(result);
+        return result.toString();
     }
 
     private static String plainNumber(double value) {

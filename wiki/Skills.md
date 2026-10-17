@@ -128,6 +128,14 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `title` (`sendtitle`) | `t`, `st`, `fi`, `d`, `fo` | Show a title (`t`) and subtitle (`st`) with fade in `fi` (default 10 ticks), stay `d` (70) and fade out `fo` (20) |
 | `bossbar` | `m`, `color`, `style`, `p`, `d`, `countdown` | Show a boss bar with the text `m` to the target player for `d` ticks (default 100), then remove it. `color` is `PINK`, `BLUE`, `RED`, `GREEN`, `YELLOW`, `PURPLE` (default) or `WHITE`; `style` is `SOLID` (default), `SEGMENTED_6`, `SEGMENTED_10`, `SEGMENTED_12` or `SEGMENTED_20`; `p` is the start progress 0 to 1; `countdown=true` makes it shrink to empty over `d` |
 | `message` | `m` | Send a message to the target player. The text rules below apply to `message`, `actionbar`, `title` and `bossbar`: `&` colors, `<caster.name>`, `<target.name>` and PlaceholderAPI placeholders work |
+| `jsonmessage` (`jsonmsg`) | `m` (JSON text component) | Send a JSON chat component (click and hover events work) to the target player. `<target.name>` and `<caster.name>` are inserted escaped; invalid JSON is sent as a normal message |
+| `speak` | `m`, `yo` (height above the head, default 0.5), `d` (ticks, default 60), `chat` (default true) | Show `m` as a speech bubble (text display) above the caster and, unless `chat=false`, send `Name: m` to the target players. A new bubble replaces the old one |
+| `onchat` | `onchat` (skill id), `d` (ticks to wait, default 200), `cancel` (default true) | Wait for the target player's next chat message, then run that skill with the text as `<skill.var.input>` (plain text, at most 256 characters, skill syntax removed). The message is hidden from chat unless `cancel=false` |
+| `blackscreen` | `d` (ticks, default 20) | Blind the target player (blindness and darkness) for `d` ticks |
+| `setitemnbt` | `key`, `value` | Store a text value on the item in the target's main hand; read it back with `<caster.itemnbt.key>` |
+| `setlore` | `l` (`"line 1","line 2"` or `line 1\|line 2`) | Replace the lore of the item in the target's main hand (`&` colors, placeholders work) |
+| `consumeslot` (`consumehelditem`) | `amount` (`a`, default 1) | Take items from the stack in the target's main hand |
+| `settargetscore` | `objective`, `value` (calculation allowed) | Set the target's score in that main-scoreboard objective (players by name, other entities by UUID). Does nothing on Folia |
 | `ignite` | `t` | Set the target on fire for `t` ticks |
 | `setvariable` (`variableset`, `setvar`) | `var`, `value` (`val`), `type`, `duration` | Store a value: `var=hits` for the current skill run, `var=caster.hits` for the caster. `type` is `INTEGER`, `FLOAT` or `STRING` (default), numbers are checked. See [Variables](#variables) |
 | `variablemath` | `var`, `equation` | Store the result of plain arithmetic (`+ - * / %` and parentheses, numbers only, no functions): `variablemath{var=caster.scale;equation="<var.scale> + (5 - <var.scale>) * 0.1"}`. An invalid equation or a division by zero changes nothing and logs a warning |
@@ -264,7 +272,7 @@ Skills:
 | `boundingboxesoverlap` | The hitboxes of the caster and the target (or trigger) overlap; inside targeter `conditions=[...]` it tests the candidate against the caster |
 | `blocktype{type=OAK_LOG,SPRUCE_LOG}` | The obstructing block is one of these (used in `TargetConditions`) |
 
-A skill can have `Cooldown: <seconds>` (per caster). A `Conditions`/`TargetConditions` entry ending in `castinstead <skill>` casts that skill instead when it holds. A line without a targeter uses the target of the line that called its skill. In parameters, `<caster.damage>`, `<caster.name>` and `<caster.mythic_type>` (the caster's BetterMob id, or its entity type) are replaced.
+A skill can have `Cooldown: <seconds>` (per caster). A `Conditions`/`TargetConditions` entry ending in `castinstead <skill>` casts that skill instead when it holds. A line without a targeter uses the target of the line that called its skill. In parameters, `<caster.damage>`, `<caster.name>`, `<caster.mythic_type>` (the caster's BetterMob id, or its entity type) and `<caster.itemnbt.key>` (a value set with `setitemnbt` on the caster's main-hand item, empty when missing) are replaced.
 
 Write `onground{} true` or `onground{} false` to require a value. Any mechanic line can end
 with `?condition{...}`, or `?!condition{...}` to negate it. `?~condition{...}` (and `?!~condition{...}`) tests the trigger instead
@@ -288,6 +296,6 @@ Several MythicMobs mechanics, conditions and targeters. Mechanics inside aura
 effects that aren't supported (for example `velocity`) produce a warning like
 `Skill-Mechanic 'velocity' wird nicht unterstuetzt` and are skipped.
 
-Not supported: the mechanics `speak`, `blackscreen` and `jsonmessage`; they have no clear equivalent yet. `effect:particle` is an alias of `effect:particles`.
+`effect:particle` is an alias of `effect:particles`.
 
 Also not supported: `segment` (ModelEngine segment bones; its options are not clear enough).

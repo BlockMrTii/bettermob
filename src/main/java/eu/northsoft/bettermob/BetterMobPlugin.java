@@ -127,6 +127,7 @@ public final class BetterMobPlugin extends JavaPlugin {
         manager.setSkillEngine(skillEngine);
         getServer().getPluginManager().registerEvents(new MobListener(manager, dropRegistry, kills), this);
         getServer().getPluginManager().registerEvents(new ItemListener(itemRegistry, skillEngine), this);
+        getServer().getPluginManager().registerEvents(skillEngine.chatPrompts(), this);
         EggItems eggItems = new EggItems(this);
         getServer().getPluginManager().registerEvents(new EggListener(this, manager, eggItems), this);
         if (!Tasks.FOLIA) {
