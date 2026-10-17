@@ -303,6 +303,6 @@ effects that aren't supported (for example `velocity`) produce a warning like
 
 `effect:particle` is an alias of `effect:particles`.
 
-Particles that need data take it from the same line: `material` (`m`) for `block`, `falling_dust`, `block_marker` and `item`; `color` (`#rrggbb` or `r,g,b`) and `size` for `dust`, plus `toColor` for `dust_color_transition`; `color` for `entity_effect`. `spread` sets `hS` and `vS` at once, `hSpread` and `vSpread` are aliases. Legacy names like `block_crack`, `reddust` and `spell_mob` are mapped to the current particles.
+Particles that need data take it from the same line: `material` (`m`) for `block`, `falling_dust`, `block_marker` and `item`; `color` (`#rrggbb` or `r,g,b`) and `size` for `dust`, plus `toColor` for `dust_color_transition`; `color` for `entity_effect`; `color` and `power` for `effect` and `instant_effect`. A `material` that is not a block falls back to stone for block particles. `spread` sets `hS` and `vS` at once, `hSpread` and `vSpread` are aliases. Legacy names like `block_crack`, `reddust` and `spell_mob` are mapped to the current particles.
 
 Also not supported: `segment` (ModelEngine segment bones; its options are not clear enough).

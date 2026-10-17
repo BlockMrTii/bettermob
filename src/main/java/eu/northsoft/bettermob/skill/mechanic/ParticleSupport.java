@@ -45,23 +45,24 @@ final class ParticleSupport {
         if (type == Void.class) return null;
         Color color = Color.fromRGB(ModelEffectMechanic.parseColor(firstParam(p, "color", "c"), 0xFF0000));
         float size = parseFloat(firstParam(p, "size"), 1f);
-        if (type == BlockData.class) return material(p, Material.STONE).createBlockData();
-        if (type == ItemStack.class) return new ItemStack(material(p, Material.STONE));
+        if (type == BlockData.class) return material(p, Material.STONE, true).createBlockData();
+        if (type == ItemStack.class) return new ItemStack(material(p, Material.STONE, false));
         if (type == Particle.DustOptions.class) return new Particle.DustOptions(color, size);
         if (type == Particle.DustTransition.class) {
             Color to = Color.fromRGB(ModelEffectMechanic.parseColor(firstParam(p, "tocolor", "color2"), color.asRGB()));
             return new Particle.DustTransition(color, to, size);
         }
         if (type == Color.class) return color;
+        if (type == Particle.Spell.class) return new Particle.Spell(color, parseFloat(firstParam(p, "power"), 1f));
         if (type == Float.class) return parseFloat(firstParam(p, "roll"), 0f);
         if (type == Integer.class) return parseInt(firstParam(p, "delay"), 0);
         return null;
     }
 
-    private static Material material(Map<String, String> p, Material fallback) {
+    private static Material material(Map<String, String> p, Material fallback, boolean block) {
         String name = firstParam(p, "material", "m", "block", "b", "item");
         Material material = name == null ? null : Material.matchMaterial(name);
-        return material == null ? fallback : material;
+        return material == null || (block ? !material.isBlock() : !material.isItem()) ? fallback : material;
     }
 
     static Particle parse(BetterMobPlugin plugin, String name) {

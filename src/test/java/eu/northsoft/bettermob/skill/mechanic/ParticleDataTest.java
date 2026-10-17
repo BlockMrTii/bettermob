@@ -24,6 +24,13 @@ class ParticleDataTest {
     }
 
     @Test
+    void spellUsesColorAndPower() {
+        Particle.Spell spell = (Particle.Spell) ParticleSupport.data(Particle.EFFECT, Map.of("color", "255,0,0", "power", "2"));
+        assertEquals(0xFF0000, spell.getColor().asRGB());
+        assertEquals(2f, spell.getPower());
+    }
+
+    @Test
     void plainParticleHasNoData() {
         assertNull(ParticleSupport.data(Particle.FLAME, Map.of()));
     }
