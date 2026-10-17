@@ -40,6 +40,17 @@ public final class Params {
         }
     }
 
+    public static double parseNumber(String value, double fallback) {
+        if (value == null) return fallback;
+        String text = stripQuotes(value);
+        try {
+            return Double.parseDouble(text);
+        } catch (NumberFormatException exception) {
+            Double result = Calculator.evaluate(text);
+            return result == null || !Double.isFinite(result) ? fallback : result;
+        }
+    }
+
     public static int parseInt(String value, int fallback) {
         try {
             return value == null ? fallback : Integer.parseInt(value);

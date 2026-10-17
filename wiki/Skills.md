@@ -74,6 +74,13 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `model` | `mid` | Attach a BetterModel model |
 | `modelengine` | `mid` | Attach a ModelEngine model |
 | `state` (`animation`) | `state` (`s`, `a`) | Play a model animation: once for BetterModel; for ModelEngine also `lerpIn`, `lerpOut` (default 0.1), `speed` (1) and `force` (true) |
+| `modifystate` | `s`, `sp` (speed, may be a calculation), `l` (`LOOP`, `ONCE`, `HOLD`) | Change speed and loop mode of an animation that is playing on the target's model (BetterModel replaces it with the new settings) |
+| `defaultstate` | `t` (state: `idle`, `walk`, `death`, ...), `s` (animation), `li`, `lo`, `sp` | ModelEngine only: play animation `s` instead of the default one for state `t`. BetterModel has no default states, the line is logged and skipped |
+| `tint` | `c` (hex `ff7c00` or `r,g,b`, default white), `p` (part), `em` | Tint the target's model, or only the parts named `p`. `em=false` matches every part whose name contains `p` |
+| `glowbone` | `c`, `g` (default true), `p`, `em` | Let the model (or parts `p`) glow in color `c`; `g=false` turns it off |
+| `partvis` (`partvisibility`) | `p`, `v` (default false), `em` | Hide (`v=false`) or show (`v=true`) the parts `p` of the model |
+| `meg:setitemmodel` (`setitemmodel`) | `bone` (`p`), `i` (material or BetterMob item id, `air` clears) | Show an item on that bone (ModelEngine; BetterModel item bones) |
+| `lockmodel` | `l` (default true) | Stop the model from turning with the entity; `l=false` unlocks it |
 | `mountmodel` | `seat` (`p`, default `mount`), `controller` | Seat the target on a model's seat. BetterModel handles steering; with ModelEngine `controller` is `walking` (default), `flying`, `walking_force` or `flying_force`, and the driver seat is used when `seat` is not a passenger seat |
 | `dismountallmodel` | | Take everyone BetterMob seated on the target's model (with `mountmodel`) off it. A rider is forgotten only after it really left (a plugin that cancels the dismount keeps the record) |
 | `dismount` | | The target leaves the vehicle it rides |
@@ -279,4 +286,4 @@ effects that aren't supported (for example `velocity`) produce a warning like
 
 Not supported: the mechanics `teleportto`, `teleporty`, `propel`, `speak`, `blackscreen` and `jsonmessage`; they have no clear equivalent yet. `effect:particle` is an alias of `effect:particles`.
 
-Also not supported: `tint` and `lockmodel` (model plugin specific, no stable call to reflect on) and `meg:setitemmodel` (ModelEngine only).
+Also not supported: `segment` (ModelEngine segment bones; its options are not clear enough).
