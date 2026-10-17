@@ -41,7 +41,6 @@ public final class EntitiesInRadiusTargeter implements Targeter {
         this.cone = cone;
     }
 
-    /** Horizontal cone test: is (dx, dz) within halfAngle degrees of the yaw direction? */
     static boolean inCone(double yaw, double halfAngle, double dx, double dz) {
         if (dx * dx + dz * dz < 1.0e-9) return true;
         double toTarget = Math.toDegrees(Math.atan2(-dx, dz));

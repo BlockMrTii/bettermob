@@ -37,7 +37,7 @@ public final class ScoreCondition implements SkillCondition {
             Score score = objective.getScore(entity instanceof Player player ? player.getName() : entity.getUniqueId().toString());
             return score.isScoreSet() && RangeSpec.matches(value, score.getScore());
         } catch (UnsupportedOperationException exception) {
-            return false; // Folia has no main scoreboard
+            return false;
         }
     }
 }

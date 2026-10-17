@@ -23,12 +23,12 @@ class TargeterRegistryTest {
     @Test
     void livingInConeIsRegisteredAndChecksTheHorizontalAngle() {
         assertTrue(registry.has("LivingInCone"));
-        // yaw 0 looks along +z
+
         assertTrue(EntitiesInRadiusTargeter.inCone(0, 45, 0, 5));
         assertTrue(EntitiesInRadiusTargeter.inCone(0, 90, 5, 0.01));
         assertFalse(EntitiesInRadiusTargeter.inCone(0, 45, 5, 1));
         assertFalse(EntitiesInRadiusTargeter.inCone(0, 90, 0, -5));
-        // yaw 90 looks along -x, wraps around 180/-180
+
         assertTrue(EntitiesInRadiusTargeter.inCone(90, 10, -5, 0));
         assertTrue(EntitiesInRadiusTargeter.inCone(-170, 20, 0.5, -5));
     }
