@@ -111,7 +111,7 @@ public final class MobManager {
         if (maxHealth != null) {
             maxHealth.setBaseValue(definition.health);
             double health = Math.min(definition.health, maxHealth.getValue());
-            if (health < definition.health && healthCapWarned.add(definition.id)) {
+            if (health < definition.health && maxHealth.getModifiers().isEmpty() && healthCapWarned.add(definition.id)) {
                 plugin.messages().warn("mob.healthCapped", "mob", definition.id, "health", definition.health, "max", health);
             }
             entity.setHealth(spawning ? health : Math.min(entity.getHealth(), health));
