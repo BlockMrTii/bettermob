@@ -219,7 +219,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private static boolean needsBlock(List<String> conditions) {
         for (String raw : conditions) {
             Condition condition = Condition.parse(raw);
-            if (condition != null && (condition.name().equals("blocktype") || condition.composite() && condition.params().contains("blocktype"))) return true;
+            if (condition != null && condition.mentions("blocktype")) return true;
         }
         return false;
     }
@@ -299,8 +299,12 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         if (mechanic.inlineCondition() != null) {
             String inline = mechanic.inlineCondition();
             boolean onTrigger = inline.startsWith("~");
+            if (onTrigger && context.trigger() == null) {
+                if (debug.verbose()) debug.verbose("mechanic '" + mechanic.name() + "' skipped: trigger condition without a trigger", subject(context.caster()));
+                return false;
+            }
             boolean passes = onTrigger
-                    ? context.trigger() != null && conditionPasses(inline.substring(1), context, Target.ofEntity(context.trigger()))
+                    ? conditionPasses(inline.substring(1), context, Target.ofEntity(context.trigger()))
                     : conditionPasses(inline, context, null);
             if (mechanic.negated() == passes) {
                 if (debug.verbose()) debug.verbose("mechanic '" + mechanic.name() + "' skipped: inline condition", subject(context.caster()));

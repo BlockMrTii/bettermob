@@ -17,6 +17,14 @@ class ConditionTest {
         java.util.Set<String> withA = java.util.Set.of("a");
         org.junit.jupiter.api.Assertions.assertTrue(Condition.holds(condition.params(),
                 c -> c.composite() ? Condition.holds(c.params(), x -> withA.contains(x.name())) : withA.contains(c.name()) == (c.expected() == null || c.expected())));
+        Condition both = Condition.parse("(a) && (b)");
+        assertEquals(Condition.COMPOSITE, both.name());
+        assertNull(both.action());
+        java.util.function.Predicate<Condition> onlyA = c -> c.composite() ? Condition.holds(c.params(), x -> x.name().equals("a")) : c.name().equals("a");
+        org.junit.jupiter.api.Assertions.assertFalse(Condition.holds(both.params(), onlyA));
+        org.junit.jupiter.api.Assertions.assertTrue(Condition.parse("( a || blockType{type=OAK_LOG} )").mentions("blocktype"));
+        org.junit.jupiter.api.Assertions.assertFalse(Condition.parse("( varequals{var=blocktype;val=1} )").mentions("blocktype"));
+        assertNull(Condition.parse("(a) &&"));
         assertNull(Condition.parse("( a || )"));
         assertNull(Condition.parse("( a || b"));
     }

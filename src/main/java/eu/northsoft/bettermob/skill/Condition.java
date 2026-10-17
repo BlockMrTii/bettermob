@@ -44,6 +44,16 @@ public record Condition(String name, String params, Boolean expected, String act
         return any;
     }
 
+    public boolean mentions(String conditionName) {
+        if (!composite()) return name.equals(conditionName);
+        List<List<String>> any = alternatives(params);
+        if (any == null) return false;
+        for (List<String> all : any) {
+            for (String atom : all) if (parse(atom).mentions(conditionName)) return true;
+        }
+        return false;
+    }
+
     public static boolean holds(String expression, Predicate<Condition> met) {
         List<List<String>> any = alternatives(expression);
         if (any == null) return true;
@@ -113,6 +123,8 @@ public record Condition(String name, String params, Boolean expected, String act
             }
         }
         if (end < 0) return null;
+        String rest = text.substring(end + 1).trim();
+        if (rest.startsWith("&&") || rest.startsWith("||")) return alternatives(text) == null ? null : new Condition(COMPOSITE, text, null, null, null);
         String inner = text.substring(1, end).trim();
         if (inner.isEmpty() || alternatives(inner) == null) return null;
         return withTail(COMPOSITE, inner, text.substring(end + 1).trim());
