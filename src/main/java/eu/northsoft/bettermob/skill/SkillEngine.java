@@ -43,6 +43,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private final ItemRegistry items;
     private final DebugManager debug;
     private final SkillState state = new SkillState();
+    private final ModelPassengers modelPassengers = new ModelPassengers();
     private static final int INLINE_CACHE_LIMIT = 4096;
     private final Map<String, List<SkillStep>> inlineSkills = new ConcurrentHashMap<>();
     private final TargeterRegistry targeters;
@@ -65,9 +66,14 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         this.mechanics = new MechanicRegistry(plugin);
         BuiltinMechanics.registerAll(mechanics, this);
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        plugin.getServer().getPluginManager().registerEvents(modelPassengers, plugin);
         for (Mechanic mechanic : mechanics.builtins()) {
             if (mechanic instanceof org.bukkit.event.Listener listener) plugin.getServer().getPluginManager().registerEvents(listener, plugin);
         }
+    }
+
+    public ModelPassengers modelPassengers() {
+        return modelPassengers;
     }
 
     public BetterMobPlugin plugin() {
@@ -153,6 +159,15 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     public void run(SkillDefinition skill, SkillContext source) {
+        Runnable leave = debug.enter(source.caster().getUniqueId());
+        try {
+            runScoped(skill, source);
+        } finally {
+            leave.run();
+        }
+    }
+
+    private void runScoped(SkillDefinition skill, SkillContext source) {
         SkillContext context = source.ownedHere().withArguments(Arguments.withDefaults(source.arguments(), skill.arguments));
         String caster = debug.info() ? subject(context.caster()) : null;
         if (debug.info()) debug.info("skill '" + skill.id + "' started by " + caster, skill.id, caster);
@@ -265,6 +280,15 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private boolean runMechanic(SkillStep.Mechanic mechanic, SkillContext context, Deferral deferral) {
+        Runnable leave = debug.enter(context.caster().getUniqueId());
+        try {
+            return runMechanicScoped(mechanic, context, deferral);
+        } finally {
+            leave.run();
+        }
+    }
+
+    private boolean runMechanicScoped(SkillStep.Mechanic mechanic, SkillContext context, Deferral deferral) {
         Map<String, String> p = mechanic.params();
 
         if (mechanic.inlineCondition() != null) {
@@ -299,7 +323,14 @@ public final class SkillEngine implements org.bukkit.event.Listener {
             debug.verbose("mechanic '" + mechanic.name() + "' @" + (mechanic.targeter().isEmpty() ? "(inherited)" : mechanic.targeter())
                     + " -> " + targets.size() + " target(s), params " + params, subject(context.caster()));
         }
-        for (Target target : targets) dispatch(mechanic, context, target, params, deferral);
+        boolean perTarget = false;
+        for (String value : params.values()) {
+            if (value.indexOf("<target.var.") >= 0) {
+                perTarget = true;
+                break;
+            }
+        }
+        for (Target target : targets) dispatch(mechanic, context, target, perTarget ? withTargetVariables(params, target, context) : params, deferral);
         return false;
     }
 
@@ -426,9 +457,17 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         String damage = String.valueOf(attackDamage == null ? 1.0 : attackDamage.getValue());
         String name = stripSkillSyntax(context.caster().getName());
         boolean escapesItself = mechanicName.equals("command") || mechanicName.equals("message");
+        org.bukkit.Location at = null;
+        for (String value : p.values()) {
+            if (value.indexOf("<caster.l.") >= 0) {
+                at = context.caster().getLocation();
+                break;
+            }
+        }
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : p.entrySet()) {
-            result.put(entry.getKey(), withCasterValues(entry.getValue(), damage, name, escapesItself));
+            String value = at == null ? entry.getValue() : withLocationValues(entry.getValue(), at.getX(), at.getY(), at.getZ(), at.getYaw(), at.getPitch());
+            result.put(entry.getKey(), withCasterValues(value, damage, name, escapesItself));
         }
         return result;
     }
@@ -456,9 +495,13 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     static Map<String, String> resolveVariables(Map<String, String> params, Map<String, String> skillScope, Map<String, String> casterScope) {
+        return resolveVariables(params, skillScope, casterScope, null);
+    }
+
+    static Map<String, String> resolveVariables(Map<String, String> params, Map<String, String> skillScope, Map<String, String> casterScope, Map<String, String> targetScope) {
         boolean needed = false;
         for (String value : params.values()) {
-            if (value.indexOf("<skill.") >= 0 || value.indexOf("<var.") >= 0) {
+            if (value.indexOf("<skill.") >= 0 || value.indexOf("<var.") >= 0 || value.indexOf("<caster.var.") >= 0) {
                 needed = true;
                 break;
             }
@@ -466,16 +509,29 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         if (!needed) return params;
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : params.entrySet()) {
-            result.put(entry.getKey(), replaceVariables(entry.getValue(), skillScope, casterScope));
+            result.put(entry.getKey(), replaceVariables(entry.getValue(), skillScope, casterScope, targetScope, targetScope == null));
         }
         return result;
     }
 
-    static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope) {
+    public static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope) {
+        return replaceVariables(value, skillScope, casterScope, null);
+    }
+
+    public static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope, Map<String, String> targetScope) {
+        return replaceVariables(value, skillScope, casterScope, targetScope, false);
+    }
+
+    private static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope, Map<String, String> targetScope, boolean keepTarget) {
         java.util.regex.Matcher matcher = VARIABLE_PLACEHOLDER.matcher(value);
         StringBuilder result = new StringBuilder();
         while (matcher.find()) {
-            Map<String, String> scope = matcher.group(1).equals("skill") ? skillScope : casterScope;
+            String kind = matcher.group(1);
+            if (keepTarget && kind.startsWith("target")) {
+                matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(matcher.group()));
+                continue;
+            }
+            Map<String, String> scope = kind.startsWith("skill") ? skillScope : kind.startsWith("target") ? targetScope : casterScope;
             String found = scope == null ? null : scope.get(matcher.group(2).toLowerCase(Locale.ROOT));
             matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(found == null ? "0" : Params.stripPlaceholderValue(found)));
         }
@@ -483,11 +539,45 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return result.toString();
     }
 
-    private static final java.util.regex.Pattern VARIABLE_PLACEHOLDER = java.util.regex.Pattern.compile("<(skill|var)\\.([A-Za-z0-9_]{1,32})>");
+    private static final java.util.regex.Pattern TARGET_VARIABLE = java.util.regex.Pattern.compile("<target\\.var\\.([A-Za-z0-9_]{1,32})>");
+
+    private Map<String, String> withTargetVariables(Map<String, String> params, Target target, SkillContext context) {
+        org.bukkit.entity.Entity entity = target.entity() != null ? target.entity() : context.trigger();
+        Map<String, String> scope = entity == null ? null : state.existingVariablesOf(entity.getUniqueId());
+        Map<String, String> result = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            result.put(entry.getKey(), replaceTargetVariables(entry.getValue(), scope));
+        }
+        return result;
+    }
+
+    static String replaceTargetVariables(String value, Map<String, String> scope) {
+        java.util.regex.Matcher matcher = TARGET_VARIABLE.matcher(value);
+        StringBuilder result = new StringBuilder();
+        while (matcher.find()) {
+            String found = scope == null ? null : scope.get(matcher.group(1).toLowerCase(Locale.ROOT));
+            matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(found == null ? "0" : Params.stripPlaceholderValue(found)));
+        }
+        matcher.appendTail(result);
+        return result.toString();
+    }
+
+    private static final java.util.regex.Pattern VARIABLE_PLACEHOLDER = java.util.regex.Pattern.compile("<(skill\\.var|skill|caster\\.var|target\\.var|var)\\.([A-Za-z0-9_]{1,32})>");
 
     private static boolean isInlineSkill(String value) {
         String trimmed = value.stripLeading();
         return trimmed.startsWith("[") && trimmed.indexOf('{') > 0;
+    }
+
+    private static String plainNumber(double value) {
+        return value == Math.rint(value) && Math.abs(value) < 1e15 ? String.valueOf((long) value) : String.valueOf(value);
+    }
+
+    public static String withLocationValues(String value, double x, double y, double z, float yaw, float pitch) {
+        if (value.indexOf("<caster.l.") < 0) return value;
+        return value.replace("<caster.l.x>", plainNumber(x)).replace("<caster.l.y>", plainNumber(y))
+                .replace("<caster.l.z>", plainNumber(z)).replace("<caster.l.yaw>", plainNumber(yaw))
+                .replace("<caster.l.pitch>", plainNumber(pitch));
     }
 
     static String withCasterValues(String value, String damage, String name, boolean escapesItself) {

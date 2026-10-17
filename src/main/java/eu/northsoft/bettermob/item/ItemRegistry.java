@@ -1,6 +1,9 @@
 package eu.northsoft.bettermob.item;
 
+import eu.northsoft.bettermob.util.Duplicates;
+import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.mob.ExtraTriggers;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.pack.PackScanner;
 import eu.northsoft.bettermob.pack.YamlFiles;
@@ -41,6 +44,8 @@ public final class ItemRegistry {
     public void load() {
         folder.mkdirs();
         Map<String, ItemDefinition> loaded = new LinkedHashMap<>();
+        Map<String, String> prints = new LinkedHashMap<>();
+        Duplicates duplicates = new Duplicates();
         for (File sourceFolder : packScanner.foldersFor("items")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
@@ -48,16 +53,27 @@ public final class ItemRegistry {
                     ConfigurationSection section = config.getConfigurationSection(id);
                     if (section == null || !section.contains("Id")) continue;
                     if (loaded.containsKey(id.toLowerCase(Locale.ROOT))) {
-                        plugin.messages().warn("item.duplicate", "item", id, "folder", sourceFolder.getPath());
+                        duplicates.add(id, sourceFolder.getPath());
                         continue;
                     }
                     ItemDefinition definition = parse(id, section);
-                    if (definition != null) loaded.put(id.toLowerCase(Locale.ROOT), definition);
+                    if (definition != null) {
+                        loaded.put(id.toLowerCase(Locale.ROOT), definition);
+                        prints.put(id.toLowerCase(Locale.ROOT), ReloadDiff.fingerprint(section));
+                    }
                 }
             }
         }
+        duplicates.report((dup, folder, count) -> plugin.messages().warn("item.duplicate", "item", dup, "folder", folder, "count", count));
         items = loaded;
+        fingerprints = prints;
         plugin.messages().info("item.loaded", "count", loaded.size());
+    }
+
+    private volatile Map<String, String> fingerprints = Map.of();
+
+    public Map<String, String> fingerprints() {
+        return fingerprints;
     }
 
     public ItemDefinition get(String id) {
@@ -106,7 +122,7 @@ public final class ItemRegistry {
         List<MobDefinition.SkillTrigger> triggers = new ArrayList<>();
         for (String line : section.getStringList("Skills")) {
             MobDefinition.SkillTrigger trigger = MobDefinition.SkillTrigger.parse(line);
-            if (trigger == null) plugin.messages().warn("item.skillLineInvalid", "item", id, "line", line);
+            if (trigger == null) ExtraTriggers.warnUnparsed(line, () -> plugin.messages().warn("item.skillLineInvalid", "item", id, "line", line));
             else triggers.add(trigger);
         }
         return new ItemDefinition(id, material, section.getInt("Model", -1), section.getString("Display", id),

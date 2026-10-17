@@ -15,6 +15,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class KillStats {
     public record Row(UUID id, String name, int kills) {}
@@ -27,7 +28,7 @@ public final class KillStats {
     public void record(UUID player, String name, String mobId) {
         kills.computeIfAbsent(player, id -> new ConcurrentHashMap<>()).merge(mobId.toLowerCase(Locale.ROOT), 1, Integer::sum);
         names.put(player, name);
-        ranked.clear();
+        version.incrementAndGet();
         dirty = true;
     }
 
@@ -41,10 +42,20 @@ public final class KillStats {
         return own == null ? 0 : own.getOrDefault(mobId.toLowerCase(Locale.ROOT), 0);
     }
 
-    private final Map<String, List<Row>> ranked = new ConcurrentHashMap<>();
+    private record Ranking(int version, List<Row> rows) {}
+
+    private final AtomicInteger version = new AtomicInteger();
+    private final Map<String, Ranking> ranked = new ConcurrentHashMap<>();
 
     public List<Row> top(String mobId, int limit) {
-        List<Row> all = ranked.computeIfAbsent(mobId == null ? "" : mobId.toLowerCase(Locale.ROOT), key -> rank(mobId));
+        String key = mobId == null ? "" : mobId.toLowerCase(Locale.ROOT);
+        int current = version.get();
+        Ranking cached = ranked.get(key);
+        if (cached == null || cached.version() != current) {
+            cached = new Ranking(current, rank(mobId));
+            ranked.put(key, cached);
+        }
+        List<Row> all = cached.rows();
         return all.size() > limit ? List.copyOf(all.subList(0, Math.max(0, limit))) : all;
     }
 
@@ -99,7 +110,7 @@ public final class KillStats {
     public void load(YamlConfiguration config) {
         kills.clear();
         names.clear();
-        ranked.clear();
+        version.incrementAndGet();
         ConfigurationSection players = config.getConfigurationSection("players");
         if (players == null) return;
         for (String key : players.getKeys(false)) {

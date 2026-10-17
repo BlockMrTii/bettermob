@@ -166,6 +166,23 @@ MaxHomeDistance: 60
 - `MaxHomeDistance` teleports a mob that got further than this many blocks from its spawn point back there (checked every 2 seconds).
 - The spawn point is stored on the mob, so it survives restarts. Invalid points are skipped with a warning, and `/bettermob validate` checks them.
 
+## Groups and leaders
+
+```yaml
+Group: orcs
+AlertRadius: 20
+Leader:
+  Mob: orc_chief
+  Distance: 4
+  Range: 32
+  OnLeaderDeath: HOME
+```
+
+- `Group` puts the mob into a pack. When one member is damaged by a living entity, the other members of the same group within `AlertRadius` blocks (default 16, `0` turns it off, at most 128) that have no target yet take the attacker as target. A member alerts at most once per second, and mobs of the attacker's faction are not alerted against it.
+- `Leader` makes the mob walk to the nearest living mob with the id `Mob` within `Range` blocks (default 32) while it has no target, and stop when it is within `Distance` blocks (default 4). `Leader: orc_chief` is the short form.
+- `OnLeaderDeath` decides what happens when the leader is gone: `FIND` (default) looks for another leader, `STAY` stops following, `HOME` walks back to the spawn point.
+- Only `Leader` is a Paper goal; it looks for its leader once per second. The group alert runs when a member is damaged. Neither scans every tick, and invalid options are skipped with a warning.
+
 ## Models
 
 BetterMob attaches a model in three ways:

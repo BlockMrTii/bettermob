@@ -1,5 +1,7 @@
 package eu.northsoft.bettermob.mob;
 
+import eu.northsoft.bettermob.util.Duplicates;
+import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.drop.DropEntry;
 import eu.northsoft.bettermob.drop.DropTable;
@@ -45,20 +47,27 @@ public final class MobRegistry {
         }
 
         Map<String, MobDefinition> loaded = new LinkedHashMap<>();
+        Map<String, String> prints = new LinkedHashMap<>();
+        Duplicates duplicates = new Duplicates();
         for (File sourceFolder : packScanner.foldersFor("mobs")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
                 for (Map.Entry<String, ConfigurationSection> entry : extractMobSections(file).entrySet()) {
                     String id = entry.getKey();
                     if (loaded.containsKey(id.toLowerCase(Locale.ROOT))) {
-                        plugin.messages().warn("mob.duplicate", "mob", id, "folder", sourceFolder.getPath());
+                        duplicates.add(id, sourceFolder.getPath());
                         continue;
                     }
                     MobDefinition definition = parse(id, entry.getValue());
-                    if (definition != null) loaded.put(id.toLowerCase(Locale.ROOT), definition);
+                    if (definition != null) {
+                        loaded.put(id.toLowerCase(Locale.ROOT), definition);
+                        prints.put(id.toLowerCase(Locale.ROOT), ReloadDiff.fingerprint(entry.getValue()));
+                    }
                 }
             }
         }
+        duplicates.report((dup, folder, count) -> plugin.messages().warn("mob.duplicate", "mob", dup, "folder", folder, "count", count));
         mobs = loaded;
+        fingerprints = prints;
         plugin.messages().info("mob.loaded", "count", loaded.size());
     }
 
@@ -101,6 +110,12 @@ public final class MobRegistry {
             if (nested != null) result.put(key, nested);
         }
         return result;
+    }
+
+    private volatile Map<String, String> fingerprints = Map.of();
+
+    public Map<String, String> fingerprints() {
+        return fingerprints;
     }
 
     public MobDefinition get(String id) {
@@ -230,7 +245,7 @@ public final class MobRegistry {
         List<MobDefinition.SkillTrigger> triggers = new ArrayList<>();
         for (String entry : entries) {
             MobDefinition.SkillTrigger trigger = MobDefinition.SkillTrigger.parse(entry);
-            if (trigger == null) plugin.messages().warn("mob.skillLineInvalid", "mob", id, "line", entry);
+            if (trigger == null) ExtraTriggers.warnUnparsed(entry, () -> plugin.messages().warn("mob.skillLineInvalid", "mob", id, "line", entry));
             else triggers.add(trigger);
         }
         return triggers;

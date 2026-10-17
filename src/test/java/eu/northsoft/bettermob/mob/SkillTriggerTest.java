@@ -51,6 +51,38 @@ class SkillTriggerTest {
     }
 
     @Test
+    void signalTriggersNeedANameAndAreCaseInsensitive() {
+        SkillTrigger trigger = SkillTrigger.parse("skill{s=hit} @self ~onSignal:HIT");
+        assertEquals(Trigger.SIGNAL, trigger.trigger());
+        assertEquals("hit", trigger.signal());
+        assertEquals("iron-golem", SkillTrigger.parse("skill{s=x} @trigger ~onSignal:Iron-Golem ?sneaking").signal());
+        assertNull(SkillTrigger.parse("skill{s=hit} @self ~onSignal"));
+        assertNull(SkillTrigger.parse("skill{s=hit} @self ~onDamaged:HIT"));
+        assertEquals(40, SkillTrigger.parse("skill{s=hit} @self ~onTimer:40").timerTicks());
+    }
+
+    @Test
+    void despawnAndMoveParseAndMoveHasAFiveTickDefault() {
+        assertEquals(Trigger.DESPAWN, SkillTrigger.parse("unsetvar{var=x} @Owner ~onDespawn").trigger());
+        assertEquals(Trigger.MOVE, SkillTrigger.parse("animation{a=walk} @self ~onMove").trigger());
+        assertEquals(5, SkillTrigger.parse("animation{a=walk} @self ~onMove").timerTicks());
+        assertEquals(10, SkillTrigger.parse("animation{a=walk} @self ~onMove:10").timerTicks());
+    }
+
+    @Test
+    void theDefinitionIndexesDespawnAndMoveTriggers() {
+        java.util.List<SkillTrigger> parsed = java.util.List.of(
+                SkillTrigger.parse("remove @self ~onDespawn"), SkillTrigger.parse("remove @self ~onMove:10"), SkillTrigger.parse("remove @self ~onSpawn"));
+        MobDefinition definition = new MobDefinition("m", org.bukkit.entity.EntityType.PIG, "m", null, 10, 1, false,
+                java.util.List.of(), java.util.List.of(), MobDefinition.Options.DEFAULT, false, java.util.Map.of(),
+                parsed, null, null, null, java.util.List.of(), null, null, null);
+        assertEquals(1, definition.triggersOf(Trigger.DESPAWN).size());
+        assertEquals(10, definition.triggersOf(Trigger.MOVE).get(0).timerTicks());
+        assertEquals(1, definition.triggersOf(Trigger.SPAWN).size());
+        assertEquals(0, definition.triggersOf(Trigger.TIMER).size());
+    }
+
+    @Test
     void rejectsUnknownTriggersAndLinesWithoutOne() {
         assertNull(SkillTrigger.parse("remove @self ~onNothing"));
         assertNull(SkillTrigger.parse("remove @self"));

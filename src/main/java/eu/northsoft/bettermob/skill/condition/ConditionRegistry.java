@@ -31,7 +31,26 @@ public final class ConditionRegistry {
         conditions.put("biome", new BiomeCondition());
         conditions.put("time", new TimeCondition());
         conditions.put("variable", new VariableCondition(engine));
+        conditions.put("varequals", new VariableCondition(engine));
+        conditions.put("variableequals", new VariableCondition(engine));
+        conditions.put("variableisset", new VariableCondition(engine, VariableCondition.Test.IS_SET));
+        conditions.put("variableinrange", new VariableCondition(engine, VariableCondition.Test.IN_RANGE));
+        conditions.put("stringeq", new StringEqualsCondition(engine));
+        conditions.put("stringequals", new StringEqualsCondition(engine));
         conditions.put("sneaking", new SneakingCondition());
+        conditions.put("crouching", new SneakingCondition());
+        conditions.put("day", new DayCondition());
+        conditions.put("gamemode", new GameModeCondition());
+        conditions.put("outside", new OutsideCondition());
+        conditions.put("holding", new HoldingCondition(engine));
+        conditions.put("moving", new MovingCondition());
+        conditions.put("ismoving", new MovingCondition());
+        conditions.put("playerwithin", new PlayerWithinCondition());
+        conditions.put("playersinradius", new PlayerWithinCondition());
+        conditions.put("fieldofview", new FieldOfViewCondition());
+        conditions.put("score", new ScoreCondition(engine));
+        conditions.put("killedmob", new KillCondition(engine, false));
+        conditions.put("killedmobs", new KillCondition(engine, true));
     }
 
     private final Map<String, CustomEntry> customs = new java.util.concurrent.ConcurrentHashMap<>();

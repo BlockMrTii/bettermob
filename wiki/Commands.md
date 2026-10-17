@@ -13,7 +13,7 @@ Alias: `/bmob`. Every subcommand has its own permission node, all default to op:
 | `bettermob.killall` | `/bettermob killall` |
 | `bettermob.spawner` | `/bettermob spawner` |
 | `bettermob.top` | `/bettermob top` |
-| `bettermob.debug` | `/bettermob debug` and `/bettermob stats` |
+| `bettermob.debug` | `/bettermob debug`, `/bettermob test`, `/bettermob aggro`, `/bettermob threat` and `/bettermob stats` |
 
 Without a node the subcommand is refused and left out of the help and out of tab completion. `bettermob.faction.<name>` is unrelated to commands, see [Mobs](Mobs#player-factions).
 
@@ -28,18 +28,21 @@ Without a node the subcommand is refused and left out of the help and out of tab
 | `/bettermob info <mob>` | Show a mob's type, health, damage, faction, model, equipment, number of drop entries, skills by trigger and how many are alive |
 | `/bettermob top [mob]` | The 10 players with the most kills, of all BetterMob mobs or of one mob, see [Kill counters](#kill-counters) |
 | `/bettermob debug [off\|info\|verbose\|filter <id>\|filter clear\|chat]` | Show or change the debug output. Permission `bettermob.debug` (included in `bettermob.admin`) |
+| `/bettermob aggro` | Toggle particle lines from nearby BetterMob mobs (within 48 blocks, at most 30) to their current targets. Only you see them; nothing runs while nobody has it on. Permission `bettermob.debug` |
+| `/bettermob threat` | Show the top 5 threat entries of the BetterMob mob you look at (up to 30 blocks). Needs `Modules: ThreatTable: true` on that mob. Permission `bettermob.debug` |
+| `/bettermob test <mob>\|stop` | Spawn the mob at you and send its debug output (triggers, skills, conditions, cooldowns, at verbose detail) only to you. It ends when that mob is removed, after 5 minutes or with `/bettermob test stop`; global debug settings are not changed. Permission `bettermob.debug` |
 | `/bettermob stats [on\|off\|reset]` | Show living mobs per type, running timers, loaded skills and packs; `on`/`off` switch the skill timing, `reset` clears it. Permission `bettermob.debug` |
 | `/bettermob killall [mob\|*] [world]` | Remove all living BetterMob mobs, or only one type and/or one world, and report how many |
 | `/bettermob spawner create <id> <mob> [radius] [interval] [max]` | Create a spawner at your position; `remove <id>` and `list` manage them, see [Spawners](Spawners) |
 | `/bettermob validate [pack]` | Check packs for unsupported lines without spawning anything, see [Packs](Packs#checking-a-pack) |
-| `/bettermob reload` | Reload config, language files, mobs, skills, items and packs |
+| `/bettermob reload [verbose]` | Reload config, language files, mobs, skills, items and packs, then list what is new, removed or changed |
 
 All IDs tab-complete. `/bettermob skill` is the quickest way to test a skill without
 reproducing the trigger that normally fires it.
 
 ## Reload
 
-`/bettermob reload` also updates mobs that are already alive. Each one is bound to the new definition of the same id:
+`/bettermob reload` prints, per kind (mobs, skills, items, droptables), how many ids are new, removed or changed compared with the previous load, the first five ids of each and how many living mobs use a changed mob definition; `verbose` lists every id. A definition counts as changed when its YAML section differs. It also updates mobs that are already alive. Each one is bound to the new definition of the same id:
 
 - name, health cap, attack, speed and the options are applied again
 - its timers are restarted (the old ones are cancelled, so nothing runs twice), its auras and global cooldown are cleared

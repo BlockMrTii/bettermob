@@ -27,13 +27,20 @@ public final class ParticleLineMechanic implements Mechanic {
     }
 
     @Override
+    public boolean runsOnTarget() {
+        return false;
+    }
+
+    @Override
     public void execute(MechanicCall call) {
         Map<String, String> p = call.params();
         Particle particle = ParticleSupport.parse(engine.plugin(), firstParam(p, "particle", "p"));
         if (particle == null) return;
         LivingEntity caster = call.context().caster();
         Location from = caster.getLocation().add(0, caster.getHeight() * 0.6 + parseFloat(p.get("fy"), 0f), 0);
-        Location to = call.target().location().clone();
+        Location target = call.target().ownedLocation();
+        if (target == null) return;
+        Location to = target.clone();
         Entity entity = call.target().entity();
         to.add(0, (entity == null ? 0 : entity.getHeight() * 0.6) + parseFloat(firstParam(p, "y", "ty"), 0f), 0);
         if (from.getWorld() == null || !from.getWorld().equals(to.getWorld())) return;

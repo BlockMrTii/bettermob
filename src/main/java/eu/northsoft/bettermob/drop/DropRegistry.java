@@ -1,5 +1,7 @@
 package eu.northsoft.bettermob.drop;
 
+import eu.northsoft.bettermob.util.Duplicates;
+import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.item.ItemDefinition;
 import eu.northsoft.bettermob.item.ItemRegistry;
@@ -43,6 +45,8 @@ public final class DropRegistry {
     public void load() {
         folder.mkdirs();
         Map<String, DropTable> loaded = new LinkedHashMap<>();
+        Map<String, String> prints = new LinkedHashMap<>();
+        Duplicates duplicates = new Duplicates();
         warned.clear();
         for (File sourceFolder : packScanner.foldersFor("droptables")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
@@ -51,17 +55,20 @@ public final class DropRegistry {
                     ConfigurationSection section = config.getConfigurationSection(id);
                     if (section == null || !section.isList("Drops")) continue;
                     if (loaded.containsKey(id.toLowerCase(Locale.ROOT))) {
-                        plugin.messages().warn("drop.duplicate", "table", id, "folder", sourceFolder.getPath());
+                        duplicates.add(id, sourceFolder.getPath());
                         continue;
                     }
                     loaded.put(id.toLowerCase(Locale.ROOT), new DropTable(id,
                             Math.max(0, section.getInt("MinItems", 0)),
                             section.getInt("MaxItems", Integer.MAX_VALUE),
                             parseLines(id, section.getStringList("Drops"))));
+                    prints.put(id.toLowerCase(Locale.ROOT), ReloadDiff.fingerprint(section));
                 }
             }
         }
+        duplicates.report((dup, folder, count) -> plugin.messages().warn("drop.duplicate", "table", dup, "folder", folder, "count", count));
         tables = loaded;
+        fingerprints = prints;
         plugin.messages().info("drop.loaded", "count", loaded.size());
     }
 
@@ -73,6 +80,12 @@ public final class DropRegistry {
             else entries.add(entry);
         }
         return entries;
+    }
+
+    private volatile Map<String, String> fingerprints = Map.of();
+
+    public Map<String, String> fingerprints() {
+        return fingerprints;
     }
 
     public DropTable get(String id) {

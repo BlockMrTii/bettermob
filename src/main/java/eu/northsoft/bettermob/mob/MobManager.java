@@ -14,6 +14,7 @@ import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillStep;
 import eu.northsoft.bettermob.skill.SkillTags;
+import eu.northsoft.bettermob.util.RegionEntities;
 import eu.northsoft.bettermob.util.Tasks;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
@@ -34,7 +35,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -43,6 +43,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 
 public final class MobManager {
     private final BetterMobPlugin plugin;
@@ -75,7 +77,12 @@ public final class MobManager {
     }
 
     public LivingEntity spawn(MobDefinition definition, Location location) {
+        return spawn(definition, location, null);
+    }
+
+    public LivingEntity spawn(MobDefinition definition, Location location, java.util.function.Consumer<LivingEntity> created) {
         LivingEntity entity = (LivingEntity) location.getWorld().spawnEntity(location, definition.type);
+        if (created != null) created.accept(entity);
         applyDefinition(entity, definition, true);
 
         if (entity instanceof Mob mob) AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
@@ -140,13 +147,34 @@ public final class MobManager {
         }
     }
 
+    private final Map<UUID, Long> lastAlert = new ConcurrentHashMap<>();
+    private static final long ALERT_COOLDOWN_MILLIS = 1000L;
+
+    public void alertGroup(LivingEntity victim, MobDefinition definition, LivingEntity attacker) {
+        Behaviour behaviour = definition.behaviour;
+        if (behaviour == null || !behaviour.hasGroup() || attacker == null || !Bukkit.isOwnedByCurrentRegion(attacker) || !attacker.isValid() || attacker.equals(victim)) return;
+        long now = System.currentTimeMillis();
+        Long previous = lastAlert.get(victim.getUniqueId());
+        if (previous != null && now - previous < ALERT_COOLDOWN_MILLIS) return;
+        lastAlert.put(victim.getUniqueId(), now);
+        for (Entity entity : RegionEntities.near(victim.getLocation(), behaviour.alertRadius())) {
+            if (!(entity instanceof Mob member) || member.equals(victim) || member.equals(attacker) || member.getTarget() != null) continue;
+            MobDefinition other = definitions.get(member.getUniqueId());
+            if (other == null || other.behaviour == null || !behaviour.group().equals(other.behaviour.group()) || sameFaction(member, attacker)) continue;
+            member.setTarget(attacker);
+        }
+    }
+
     private void applyBehaviour(LivingEntity entity, MobDefinition definition) {
         Behaviour behaviour = definition.behaviour;
         if (behaviour != null && behaviour.needsHome() && homeOf(entity) == null) {
             Location at = entity.getLocation();
             entity.getPersistentDataContainer().set(homeKey(), PersistentDataType.STRING, at.getWorld().getUID() + ";" + at.getX() + ";" + at.getY() + ";" + at.getZ());
         }
-        if (entity instanceof Mob mob) BehaviourGoals.apply(plugin, mob, behaviour, () -> homeOf(entity));
+        if (entity instanceof Mob mob) BehaviourGoals.apply(plugin, mob, behaviour, () -> homeOf(entity), other -> {
+            MobDefinition found = definitions.get(other.getUniqueId());
+            return found == null ? null : found.id;
+        });
     }
 
     private void applyEquipment(LivingEntity entity, MobDefinition definition) {
@@ -225,6 +253,8 @@ public final class MobManager {
         definitions.remove(entity.getUniqueId());
         inCombat.remove(entity.getUniqueId());
         exitCombatToken.remove(entity.getUniqueId());
+        lastAlert.remove(entity.getUniqueId());
+        plugin.debug().endSessionsOf(entity.getUniqueId());
         List<Runnable> cancellers = timers.remove(entity.getUniqueId());
         if (cancellers != null) cancellers.forEach(Runnable::run);
     }
@@ -292,6 +322,16 @@ public final class MobManager {
 
     private void fireTriggers(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
                               List<MobDefinition.SkillTrigger> triggers, LivingEntity trigger, Cancellable event) {
+        Runnable leave = plugin.debug().enter(entity.getUniqueId());
+        try {
+            fireTriggersScoped(entity, definition, type, triggers, trigger, event);
+        } finally {
+            leave.run();
+        }
+    }
+
+    private void fireTriggersScoped(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
+                                    List<MobDefinition.SkillTrigger> triggers, LivingEntity trigger, Cancellable event) {
         if (skillEngine == null) return;
         if (!Bukkit.isOwnedByCurrentRegion(entity)) {
             LivingEntity original = trigger;
@@ -299,6 +339,20 @@ public final class MobManager {
             return;
         }
         if (trigger != null && !Bukkit.isOwnedByCurrentRegion(trigger)) trigger = null;
+        String firing = entity.getUniqueId() + ":" + type + (type == MobDefinition.SkillTrigger.Trigger.SIGNAL && !triggers.isEmpty() ? ":" + triggers.get(0).signal() : "");
+        if (!FIRING.get().add(firing)) {
+            if (plugin.debug().info()) plugin.debug().info("trigger " + type + " on " + definition.id + " skipped: it is already running", definition.id);
+            return;
+        }
+        try {
+            runTriggers(entity, definition, type, triggers, trigger, event);
+        } finally {
+            FIRING.get().remove(firing);
+        }
+    }
+
+    private void runTriggers(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
+                             List<MobDefinition.SkillTrigger> triggers, LivingEntity trigger, Cancellable event) {
         if (plugin.debug().info()) plugin.debug().info("trigger " + type + " on " + definition.id + (trigger != null ? " (by " + trigger.getName() + ")" : ""), definition.id);
         String auraKind = switch (type) {
             case DAMAGED -> "ondamaged";
@@ -315,9 +369,22 @@ public final class MobManager {
         if (event != null && event.isCancelled()) plugin.debug().info("trigger " + type + " on " + definition.id + ": event cancelled", definition.id);
     }
 
+    private static final ThreadLocal<Set<String>> FIRING = ThreadLocal.withInitial(HashSet::new);
     private final Map<UUID, Object> exitCombatToken = new ConcurrentHashMap<>();
     private final Set<UUID> inCombat = ConcurrentHashMap.newKeySet();
+    private static final double MOVE_EPSILON_SQUARED = 0.0025;
     private static final long EXIT_COMBAT_TICKS = 100L;
+
+    public boolean signal(LivingEntity entity, String name, LivingEntity sender) {
+        MobDefinition definition = definitions.get(entity.getUniqueId());
+        if (definition == null || name == null) return false;
+        List<MobDefinition.SkillTrigger> matching = definition.triggersOf(MobDefinition.SkillTrigger.Trigger.SIGNAL).stream()
+                .filter(trigger -> name.equalsIgnoreCase(trigger.signal()))
+                .toList();
+        if (matching.isEmpty()) return false;
+        fireTriggers(entity, definition, MobDefinition.SkillTrigger.Trigger.SIGNAL, matching, sender, null);
+        return true;
+    }
 
     public boolean hasHealthTriggers(MobDefinition definition) {
         return !definition.triggersOf(MobDefinition.SkillTrigger.Trigger.HEALTH).isEmpty();
@@ -357,25 +424,54 @@ public final class MobManager {
 
     private void scheduleTimers(LivingEntity entity, MobDefinition definition) {
         if (definition.threatTable && entity instanceof Mob mob) {
-            timers.computeIfAbsent(mob.getUniqueId(), key -> new ArrayList<>())
-                    .add(Tasks.runTimer(plugin, mob, 20L, 20L, () -> retarget(mob)));
+            addTimer(mob.getUniqueId(), () -> Tasks.runTimer(plugin, mob, 20L, 20L, () -> retarget(mob)));
         }
         if (definition.behaviour != null && definition.behaviour.hasHomeLimit()) {
             double limit = definition.behaviour.maxHomeDistance();
-            timers.computeIfAbsent(entity.getUniqueId(), key -> new ArrayList<>()).add(Tasks.runTimer(plugin, entity, HOME_CHECK_TICKS, HOME_CHECK_TICKS, () -> {
+            addTimer(entity.getUniqueId(), () -> Tasks.runTimer(plugin, entity, HOME_CHECK_TICKS, HOME_CHECK_TICKS, () -> {
                 Location home = homeOf(entity);
                 if (home == null || !home.getWorld().equals(entity.getWorld()) || entity.getLocation().distanceSquared(home) <= limit * limit) return;
                 if (plugin.debug().info()) plugin.debug().info("mob " + definition.id + " is further than " + limit + " blocks from home, teleporting it back", definition.id);
                 entity.teleportAsync(home);
             }));
         }
+        for (MobDefinition.SkillTrigger trigger : definition.triggersOf(MobDefinition.SkillTrigger.Trigger.MOVE)) {
+            double[] last = {Double.NaN, 0, 0};
+            addTimer(entity.getUniqueId(), () -> Tasks.runTimer(plugin, entity, trigger.timerTicks(), trigger.timerTicks(), () -> {
+                if (!entity.isValid()) return;
+                Location at = entity.getLocation();
+                double dx = at.getX() - last[0];
+                double dy = at.getY() - last[1];
+                double dz = at.getZ() - last[2];
+                boolean moved = !Double.isNaN(last[0]) && dx * dx + dy * dy + dz * dz > MOVE_EPSILON_SQUARED;
+                last[0] = at.getX();
+                last[1] = at.getY();
+                last[2] = at.getZ();
+                if (moved) fireTriggers(entity, definition, MobDefinition.SkillTrigger.Trigger.MOVE, List.of(trigger), null, null);
+            }));
+        }
         for (MobDefinition.SkillTrigger trigger : definition.triggersOf(MobDefinition.SkillTrigger.Trigger.TIMER)) {
-            Runnable cancel = Tasks.runTimer(plugin, entity, trigger.timerTicks(), trigger.timerTicks(), () -> {
+            addTimer(entity.getUniqueId(), () -> Tasks.runTimer(plugin, entity, trigger.timerTicks(), trigger.timerTicks(), () -> {
                 if (!entity.isValid()) return;
                 skillEngine.runStep(trigger.step(), SkillContext.of(entity));
-            });
-            timers.computeIfAbsent(entity.getUniqueId(), key -> new ArrayList<>()).add(cancel);
+            }));
         }
+    }
+
+    private void addTimer(UUID id, Supplier<Runnable> schedule) {
+        timers.compute(id, (key, cancellers) -> {
+            List<Runnable> list = cancellers == null ? new CopyOnWriteArrayList<>() : cancellers;
+            list.add(schedule.get());
+            return list;
+        });
+    }
+
+    public int livingOf(Set<String> mobIds) {
+        int count = 0;
+        for (MobDefinition definition : definitions.values()) {
+            if (mobIds.contains(definition.id.toLowerCase(java.util.Locale.ROOT))) count++;
+        }
+        return count;
     }
 
     public int reloadLiving() {
@@ -527,8 +623,14 @@ public final class MobManager {
 
     private String factionPermission(String faction) {
         String node = "bettermob.faction." + faction;
-        if (registeredFactionPermissions.add(node) && Bukkit.getPluginManager().getPermission(node) == null) {
-            Bukkit.getPluginManager().addPermission(new org.bukkit.permissions.Permission(node, org.bukkit.permissions.PermissionDefault.FALSE));
+        if (registeredFactionPermissions.contains(node)) return node;
+        synchronized (registeredFactionPermissions) {
+            if (!registeredFactionPermissions.contains(node)) {
+                if (Bukkit.getPluginManager().getPermission(node) == null) {
+                    Bukkit.getPluginManager().addPermission(new org.bukkit.permissions.Permission(node, org.bukkit.permissions.PermissionDefault.FALSE));
+                }
+                registeredFactionPermissions.add(node);
+            }
         }
         return node;
     }
@@ -542,6 +644,16 @@ public final class MobManager {
 
     public MobDefinition definitionOf(UUID entityId) {
         return definitions.get(entityId);
+    }
+
+    public void handleCopied(LivingEntity entity) {
+        MobDefinition definition = definitions.get(entity.getUniqueId());
+        if (definition == null) return;
+        if (entity instanceof Mob mob) {
+            AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
+        }
+        applyBehaviour(entity, definition);
+        preventSunburn(entity, definition);
     }
 
     public void handleLoad(LivingEntity entity) {
@@ -586,11 +698,24 @@ public final class MobManager {
 
     private static final class Threat {
         public final WeakReference<LivingEntity> attacker;
+        public final String name;
         public double amount;
 
         public Threat(LivingEntity attacker) {
             this.attacker = new WeakReference<>(attacker);
+            this.name = attacker.getName();
         }
+    }
+
+    public List<Map.Entry<String, Double>> threatOf(UUID mobId, int limit) {
+        Map<UUID, Threat> table = threatTables.get(mobId);
+        if (table == null) return List.of();
+        List<Map.Entry<String, Double>> rows = new java.util.ArrayList<>();
+        for (Threat threat : table.values()) {
+            if (threat.attacker.get() != null) rows.add(Map.entry(threat.name, threat.amount));
+        }
+        rows.sort(Map.Entry.<String, Double>comparingByValue().reversed());
+        return rows.size() > limit ? List.copyOf(rows.subList(0, limit)) : rows;
     }
 
     public void registerThreat(UUID mobId, LivingEntity attacker, double amount) {
@@ -608,7 +733,12 @@ public final class MobManager {
         while (iterator.hasNext()) {
             Threat threat = iterator.next();
             LivingEntity attacker = threat.attacker.get();
-            if (attacker == null || attacker.isDead() || !attacker.getWorld().equals(mob.getWorld())) {
+            if (attacker == null) {
+                iterator.remove();
+                continue;
+            }
+            if (!Bukkit.isOwnedByCurrentRegion(attacker)) continue;
+            if (attacker.isDead() || !attacker.getWorld().equals(mob.getWorld())) {
                 iterator.remove();
                 continue;
             }

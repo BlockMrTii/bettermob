@@ -27,10 +27,10 @@ public final class ModelEngineHook {
 
     private final BetterMobPlugin plugin;
 
-    private Method getOrCreateModeledEntityMethod;
-    private Method createActiveModelMethod;
-    private Method addModelMethod;
-    private Method destroyMethod;
+    private volatile Method getOrCreateModeledEntityMethod;
+    private volatile Method createActiveModelMethod;
+    private volatile Method addModelMethod;
+    private volatile Method destroyMethod;
 
     public ModelEngineHook(BetterMobPlugin plugin) {
         this.plugin = plugin;

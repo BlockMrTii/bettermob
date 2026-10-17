@@ -10,6 +10,7 @@ import eu.northsoft.bettermob.item.EggListener;
 import eu.northsoft.bettermob.item.ItemListener;
 import eu.northsoft.bettermob.item.ItemRegistry;
 import eu.northsoft.bettermob.lang.Messages;
+import eu.northsoft.bettermob.mob.ExtraTriggers;
 import eu.northsoft.bettermob.mob.MobListener;
 import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.mob.MobRegistry;
@@ -23,6 +24,7 @@ import eu.northsoft.bettermob.spawner.SpawnerListener;
 import eu.northsoft.bettermob.spawner.SpawnerManager;
 import eu.northsoft.bettermob.stats.KillStats;
 import eu.northsoft.bettermob.stats.SkillStats;
+import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.util.Tasks;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.entity.ArmorStand;
@@ -31,6 +33,8 @@ import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.Map;
+import java.util.List;
 
 public final class BetterMobPlugin extends JavaPlugin {
     private static final long KILLS_SAVE_TICKS = 6000L;
@@ -38,6 +42,7 @@ public final class BetterMobPlugin extends JavaPlugin {
     private DebugManager debug;
     private SkillStats stats;
     private KillStats kills;
+    private eu.northsoft.bettermob.debug.AggroView aggroView;
     private File killsFile;
     private Messages messages;
     private BetterMobExpansion expansion;
@@ -133,8 +138,11 @@ public final class BetterMobPlugin extends JavaPlugin {
         spawners.load();
         getServer().getPluginManager().registerEvents(new SpawnerListener(spawners), this);
         spawners.start();
+        Tasks.runGlobal(this, ExtraTriggers::ready);
 
-        BetterMobCommand commandHandler = new BetterMobCommand(this, manager, skillRegistry, packScanner, skillEngine, itemRegistry, dropRegistry, spawners, eggItems);
+        aggroView = new eu.northsoft.bettermob.debug.AggroView(this, manager);
+        getServer().getPluginManager().registerEvents(aggroView, this);
+        BetterMobCommand commandHandler = new BetterMobCommand(this, manager, skillRegistry, packScanner, skillEngine, itemRegistry, dropRegistry, spawners, eggItems, aggroView);
         PluginCommand command = getCommand("bettermob");
         if (command == null) {
             messages.severe("plugin.commandMissing");
@@ -154,22 +162,34 @@ public final class BetterMobPlugin extends JavaPlugin {
         }
     }
 
-    public int reloadAll() {
+    public record ReloadReport(int updated, Map<String, ReloadDiff> diffs, int affectedLiving) {}
+
+    public ReloadReport reloadAll() {
         reloadConfig();
         messages.reload();
         debug.reload();
         stats.reload(getConfig());
+        var before = List.of(manager.registry().fingerprints(), skillRegistry.fingerprints(), itemRegistry.fingerprints(), dropRegistry.fingerprints());
         skillRegistry.load();
         itemRegistry.load();
         dropRegistry.load();
         manager.registry().load();
         spawners.load();
-        return manager.reloadLiving();
+        Map<String, ReloadDiff> diffs = new java.util.LinkedHashMap<>();
+        diffs.put("mobs", ReloadDiff.of(before.get(0), manager.registry().fingerprints()));
+        diffs.put("skills", ReloadDiff.of(before.get(1), skillRegistry.fingerprints()));
+        diffs.put("items", ReloadDiff.of(before.get(2), itemRegistry.fingerprints()));
+        diffs.put("droptables", ReloadDiff.of(before.get(3), dropRegistry.fingerprints()));
+        ReloadDiff mobs = diffs.get("mobs");
+        int affected = manager.livingOf(new java.util.HashSet<>(mobs.changed()));
+        return new ReloadReport(manager.reloadLiving(), diffs, affected);
     }
 
     @Override
     public void onDisable() {
+        ExtraTriggers.reset();
         saveKills(false);
+        if (aggroView != null) aggroView.stopAll();
         if (spawners != null) spawners.stop();
         if (expansion != null) expansion.unregister();
         if (manager != null) manager.shutdown();

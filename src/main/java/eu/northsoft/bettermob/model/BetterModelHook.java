@@ -16,12 +16,12 @@ public final class BetterModelHook {
 
     private final BetterMobPlugin plugin;
 
-    private Method modelOrNullMethod;
-    private Method adaptMethod;
-    private Class<?> platformEntityClass;
-    private Object playOnceModifier;
-    private Method animateMethod;
-    private Class<?> modifierClass;
+    private volatile Method modelOrNullMethod;
+    private volatile Method adaptMethod;
+    private volatile Class<?> platformEntityClass;
+    private volatile Object playOnceModifier;
+    private volatile Method animateMethod;
+    private volatile Class<?> modifierClass;
 
     public BetterModelHook(BetterMobPlugin plugin) {
         this.plugin = plugin;

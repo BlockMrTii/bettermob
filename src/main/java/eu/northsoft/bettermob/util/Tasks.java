@@ -10,6 +10,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 public final class Tasks {
     public static final boolean FOLIA = detectFolia();
+    private static final long NANOS_PER_TICK = 50_000_000L;
 
     private Tasks() {
     }
@@ -25,13 +26,21 @@ public final class Tasks {
 
     public static void runLater(Plugin plugin, Entity entity, long ticks, Runnable task) {
         if (FOLIA) {
-            entity.getScheduler().runDelayed(plugin, scheduled -> task.run(), null, Math.max(1, ticks));
+            long delay = Math.max(1, ticks);
+            long startedAt = System.nanoTime();
+            entity.getScheduler().runDelayed(plugin, scheduled -> task.run(), () -> runAfterDeath(plugin, entity, delay, startedAt, task), delay);
             return;
         }
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (Bukkit.getEntity(entity.getUniqueId()) != null || isDeadLiving(entity)) task.run();
         }, ticks);
+    }
+
+    private static void runAfterDeath(Plugin plugin, Entity entity, long delay, long startedAt, Runnable task) {
+        if (!(entity instanceof LivingEntity living) || !Bukkit.isOwnedByCurrentRegion(living) || living.getHealth() > 0) return;
+        long elapsed = (System.nanoTime() - startedAt) / NANOS_PER_TICK;
+        Bukkit.getRegionScheduler().runDelayed(plugin, living.getLocation(), scheduled -> task.run(), Math.max(1, delay - elapsed));
     }
 
     private static boolean isDeadLiving(Entity entity) {

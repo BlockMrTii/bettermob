@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.mob;
 
+import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import eu.northsoft.bettermob.api.event.BetterMobDamageEvent;
 import eu.northsoft.bettermob.api.event.BetterMobDeathEvent;
 import eu.northsoft.bettermob.drop.DropRegistry;
@@ -33,6 +34,9 @@ import org.bukkit.projectiles.ProjectileSource;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class MobListener implements Listener {
+    private static final java.util.Set<EntityRemoveEvent.Cause> REMOVED_WITHOUT_DYING = java.util.EnumSet.of(
+            EntityRemoveEvent.Cause.DESPAWN, EntityRemoveEvent.Cause.DISCARD, EntityRemoveEvent.Cause.PLUGIN);
+
     private final MobManager manager;
     private final DropRegistry drops;
     private final KillStats kills;
@@ -85,7 +89,16 @@ public final class MobListener implements Listener {
 
     @EventHandler
     public void onRemove(EntityRemoveEvent event) {
+        if (event.getEntity() instanceof LivingEntity living && REMOVED_WITHOUT_DYING.contains(event.getCause())) {
+            MobDefinition definition = manager.definitionOf(living.getUniqueId());
+            if (definition != null) manager.fireTrigger(living, definition, MobDefinition.SkillTrigger.Trigger.DESPAWN, null, null);
+        }
         manager.release(event.getEntity());
+    }
+
+    @EventHandler
+    public void onAddToWorld(EntityAddToWorldEvent event) {
+        if (event.getEntity() instanceof LivingEntity living) manager.handleCopied(living);
     }
 
     @EventHandler
@@ -179,7 +192,7 @@ public final class MobListener implements Listener {
         Entity source = event.getDamager();
         if (source instanceof Projectile projectile) {
             ProjectileSource shooter = projectile.getShooter();
-            source = shooter instanceof Entity shooterEntity ? shooterEntity : null;
+            source = shooter instanceof Entity shooterEntity && Bukkit.isOwnedByCurrentRegion(shooterEntity) ? shooterEntity : null;
         }
 
         if (event.getEntity() instanceof LivingEntity victimMob) {
@@ -188,6 +201,7 @@ public final class MobListener implements Listener {
                 if (definition.threatTable && source instanceof LivingEntity attacker) {
                     manager.registerThreat(victimMob.getUniqueId(), attacker, event.getFinalDamage());
                 }
+                if (source instanceof LivingEntity attacker) manager.alertGroup(victimMob, definition, attacker);
                 manager.fireTrigger(victimMob, definition, MobDefinition.SkillTrigger.Trigger.DAMAGED,
                         source instanceof LivingEntity living ? living : null, event);
             }
