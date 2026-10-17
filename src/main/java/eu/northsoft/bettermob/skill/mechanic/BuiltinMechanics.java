@@ -92,5 +92,18 @@ public final class BuiltinMechanics {
         registry.register(new TeleportYMechanic(), "teleporty", "tpy");
         registry.register(new PullMechanic(engine, false), "pull");
         registry.register(new PullMechanic(engine, true), "propel");
+        registry.register(new HeldItemMechanic(HeldItemMechanic.Kind.NBT), "setitemnbt");
+        registry.register(new HeldItemMechanic(HeldItemMechanic.Kind.LORE), "setlore");
+        registry.register(new HeldItemMechanic(HeldItemMechanic.Kind.CONSUME), "consumeslot", "consumehelditem");
+        registry.register(new OnChatMechanic(engine), "onchat");
+        registry.register(new JsonMessageMechanic(), "jsonmessage", "jsonmsg");
+        registry.register(new SpeakMechanic(engine), "speak");
+        registry.register(new BlackScreenMechanic(), "blackscreen");
+        registry.register(new SetScoreMechanic(), "settargetscore");
+        registry.register(new FireworkMechanic(engine), "effect:firework", "firework");
+        registry.register(new BlockMaskMechanic(engine), "effect:blockmask", "blockmask");
+        registry.register(new ChunkForceLoadMechanic(), "setchunkforceloaded");
+        registry.register(new DisplayTransformMechanic(), "displaytransformation");
+        registry.register(new RayTraceToMechanic(engine), "raytraceto");
     }
 }
