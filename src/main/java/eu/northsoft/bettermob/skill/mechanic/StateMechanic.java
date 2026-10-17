@@ -18,7 +18,7 @@ public final class StateMechanic implements Mechanic {
 
     @Override
     public void execute(MechanicCall call) {
-        String stateName = firstParam(call.params(), "state", "s");
+        String stateName = firstParam(call.params(), "state", "s", "animation", "a");
         if (stateName == null) return;
         java.util.UUID id = call.context().caster().getUniqueId();
         Object tracker = engine.mobManager().trackerFor(id);

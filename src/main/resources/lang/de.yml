@@ -59,6 +59,11 @@ command:
       signal: "Signal empfangen"
       despawn: "Despawn"
       move: "Bewegung"
+      swing: "Schwingen"
+      pressf: "F-Taste"
+      pickup: "Aufheben"
+      drop: "Fallenlassen"
+      equip: "Ausrüsten"
   validate:
     unknownPack: "&cPack '{pack}' wurde in packs/ nicht gefunden."
     header: "&7{lines} Zeilen in &f{sources} &7Ordner(n) geprueft:"
@@ -232,6 +237,8 @@ drop:
   unresolvable: "Drop '{drop}' ist weder EXP, Drop-Table, Item noch Material - wird übersprungen."
 
 betterModel:
+  callFailed: "BetterModel: {action} fehlgeschlagen: {error}"
+  unsupported: "BetterModel kennt kein '{action}' - die Zeile wird übersprungen."
   inactive: "BetterModel ist beim Spawn von '{model}' nicht aktiv - kein Modell angehängt."
   apiClassMissing: "BetterModel-API-Klasse '{class}' nicht gefunden - passt die installierte BetterModel-Version?"
   modelMissing: "BetterModel-Modell '{model}' existiert nicht."

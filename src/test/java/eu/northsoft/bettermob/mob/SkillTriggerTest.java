@@ -51,6 +51,17 @@ class SkillTriggerTest {
     }
 
     @Test
+    void itemTriggersAndTriggerConditionsParse() {
+        assertEquals(Trigger.SWING, SkillTrigger.parse("skill{s=reset} @self ~onSwing").trigger());
+        assertEquals(Trigger.PRESSF, SkillTrigger.parse("skill{s=reset} @self ~onPressF").trigger());
+        assertEquals(Trigger.PICKUP, SkillTrigger.parse("skill{s=reset} @self ~onItemPickup").trigger());
+        assertEquals(Trigger.DROP, SkillTrigger.parse("skill{s=reset} @self ~onItemDrop").trigger());
+        assertEquals(Trigger.EQUIP, SkillTrigger.parse("skill{s=reset} @self ~onEquip").trigger());
+        SkillTrigger owner = SkillTrigger.parse("state{mid=cubee-<caster.var.cubeemodel>;s=pet} @self ~onInteract ?~owner");
+        assertEquals("~owner", ((eu.northsoft.bettermob.skill.SkillStep.Mechanic) owner.step()).inlineCondition());
+    }
+
+    @Test
     void signalTriggersNeedANameAndAreCaseInsensitive() {
         SkillTrigger trigger = SkillTrigger.parse("skill{s=hit} @self ~onSignal:HIT");
         assertEquals(Trigger.SIGNAL, trigger.trigger());

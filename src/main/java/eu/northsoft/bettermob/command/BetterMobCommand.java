@@ -198,6 +198,11 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             case SIGNAL -> "command.info.trigger.signal";
             case DESPAWN -> "command.info.trigger.despawn";
             case MOVE -> "command.info.trigger.move";
+            case SWING -> "command.info.trigger.swing";
+            case PRESSF -> "command.info.trigger.pressf";
+            case PICKUP -> "command.info.trigger.pickup";
+            case DROP -> "command.info.trigger.drop";
+            case EQUIP -> "command.info.trigger.equip";
         };
     }
 

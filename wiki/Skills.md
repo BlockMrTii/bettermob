@@ -57,6 +57,11 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `~onDeath` | The mob dies (the body still exists, so sounds and effects work) |
 | `~onTimer:<ticks>` | Repeatedly, default every 20 ticks |
 | `~onUse` | Items only: right-click with the item in the main hand |
+| `~onSwing` (`~onLeftClick`) | Items only: the player swings the arm with the item in the main hand |
+| `~onPressF` (`~onSwapHands`) | Items only: the player presses F (swap hands) with the item in the main hand. `cancelevent` stops the swap |
+| `~onPickup` (`~onItemPickup`) | Items only: the player picks the item up. `cancelevent` stops it |
+| `~onDrop` (`~onItemDrop`) | Items only: the player drops the item. `cancelevent` stops it |
+| `~onEquip` | Items only: the player switches the hotbar to the item |
 
 ## Mechanics
 
@@ -68,9 +73,17 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `sound` | `s` sound key, `p` pitch, `v` volume | Play a sound at the target |
 | `model` | `mid` | Attach a BetterModel model |
 | `modelengine` | `mid` | Attach a ModelEngine model |
-| `state` | `state` (`s`) | Play a model animation: once for BetterModel; for ModelEngine also `lerpIn`, `lerpOut` (default 0.1), `speed` (1) and `force` (true) |
+| `state` (`animation`) | `state` (`s`, `a`) | Play a model animation: once for BetterModel; for ModelEngine also `lerpIn`, `lerpOut` (default 0.1), `speed` (1) and `force` (true) |
+| `modifystate` | `s`, `sp` (speed, may be a calculation), `l` (`LOOP`, `ONCE`, `HOLD`) | Change speed and loop mode of an animation that is playing on the target's model (BetterModel replaces it with the new settings) |
+| `defaultstate` | `t` (state: `idle`, `walk`, `death`, ...), `s` (animation), `li`, `lo`, `sp` | ModelEngine only: play animation `s` instead of the default one for state `t`. BetterModel has no default states, the line is logged and skipped |
+| `tint` | `c` (hex `ff7c00` or `r,g,b`, default white), `p` (part), `em` | Tint the target's model, or only the parts named `p`. `em=false` matches every part whose name contains `p` |
+| `glowbone` | `c`, `g` (default true), `p`, `em` | Let the model (or parts `p`) glow in color `c`; `g=false` turns it off |
+| `partvis` (`partvisibility`) | `p`, `v` (default false), `em` | Hide (`v=false`) or show (`v=true`) the parts `p` of the model |
+| `meg:setitemmodel` (`setitemmodel`) | `bone` (`p`), `i` (material or BetterMob item id, `air` clears) | Show an item on that bone (ModelEngine; BetterModel item bones) |
+| `lockmodel` | `l` (default true) | Stop the model from turning with the entity; `l=false` unlocks it |
 | `mountmodel` | `seat` (`p`, default `mount`), `controller` | Seat the target on a model's seat. BetterModel handles steering; with ModelEngine `controller` is `walking` (default), `flying`, `walking_force` or `flying_force`, and the driver seat is used when `seat` is not a passenger seat |
 | `dismountallmodel` | | Take everyone BetterMob seated on the target's model (with `mountmodel`) off it. A rider is forgotten only after it really left (a plugin that cancels the dismount keeps the record) |
+| `dismount` | | The target leaves the vehicle it rides |
 | `dismountall` | | Take every passenger off the target, seated by a model or not: plain passengers are ejected and the riders BetterMob seated on its model are taken off too |
 | `mounttarget` | `repeat`, `repeati` | Seat the target on the caster (plain vehicle passenger). `repeat` tries again that many more times (up to 40) every `repeati` ticks, and stops as soon as one try worked |
 | `setrotation` | `yaw`, `pitch`, `relative` | Turn the target to that yaw/pitch (pitch is limited to -90..90). With `relative=true` the numbers are added to the current ones. `<caster.l.yaw>` / `<caster.l.pitch>` insert the caster's own, `<caster.l.x>` `<caster.l.y>` `<caster.l.z>` its position |
@@ -80,6 +93,7 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `brightness` | `b`, `s` | Block and sky light level 0-15 of a display entity |
 | `setdisplayentityitem` | `i` | Put a BetterMob item id or a material on an item display |
 | `potion` | `type`, `duration` (ticks), `level` | Apply an effect |
+| `potionclear` (`removepotion`) | `type` | Remove the effects in `type` (a list with `,`), or all effects when `type` is missing |
 | `look` | - | Turn the caster toward the target |
 | `summon` | `type` (also `t`, `mob`) | Spawn another registered mob at the target |
 | `remove` | - | Remove the target |
@@ -121,9 +135,13 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `variableunset` (`unsetvar`, `unsetvariable`) | `var` | Remove the variable |
 | `addvariable` (`variableadd`) | `var`, `value` | Add a number to a variable (a missing one counts as 0) |
 | `heal` | `a` | Heal the target by `a` health, capped at its max health |
+| `teleportto` (`tpt`) | `location` (`x,y,z[,world]`, calculations allowed, or a targeter like `@TriggerLocation{fo=6;yo=0.25}`) | Move the target there; it keeps its facing |
+| `teleporty` (`tpy`) | `y` (calculation allowed, e.g. `<caster.l.y>+5`) | Move the target to that height, same x and z |
+| `pull` | `velocity` (`v`, default 1), `origin` (a targeter like `@Forward{...}`) | Pull the target towards the caster, or towards `origin`. The speed grows with the distance (`v/10` per block) and is capped at 4 blocks per tick |
+| `propel` | `velocity` (`v`, default 10) | Push the caster towards the target at `v/10` blocks per tick (at most 4); when the target is the caster itself, along its facing |
 | `teleport` | - | Move the caster to the targeted location or entity (for example `@Target`, `@Location{...}`, `@Forward{...}`); the caster keeps its facing |
 | `explosion` | `yield`, `bd`, `fire` | Explosion at the target. `yield` is the power (default 2), `bd=true` breaks blocks, `fire=true` sets fires. Off by default |
-| `lightning` | `damage` | Lightning at the target; only the visual effect unless `damage=true` |
+| `lightning` (`fakelightning`) | `damage` | Lightning at the target; only the visual effect unless `damage=true` (`fakelightning` never damages) |
 | `setspeed` | `s` | Set the target's movement speed attribute (zombie default is about 0.23) |
 | `setai` | `ai` | `ai=false` switches the target mob's AI off, `ai=true` back on |
 | `stun` | `d`, `ai`, `g`, `f`, `state` | Stun the target mob for `d` ticks: `ai` (default true) turns its AI off, `g=true` also turns gravity off, `f=true` holds it still (velocity 0 every tick), `state=<animation>` plays that BetterModel animation once (same as the `state` mechanic) |
@@ -149,7 +167,7 @@ A line of its own, `delay 20`, pauses the rest of the skill for 20 ticks.
 |---|---|
 | `@self`, `@Caster`, `@Mob` | The caster (default) |
 | `@trigger`, `@target` | The entity that caused the trigger (falls back to the caster) |
-| `@Forward{f=1.5;uel=true;yoffset=-1;rotate=-22}` | A point in front of the caster. `f` distance, `uel` start at eye height, `yoffset` vertical shift, `rotate` degrees sideways (positive = right) |
+| `@Forward{f=1.5;uel=true;yoffset=-1;rotate=-22}` | A point in front of the caster. `f` distance, `uel` start at eye height, `yoffset` (`y`) vertical shift, `rotate` degrees sideways (positive = right), `sideoffset` (`so`) blocks sideways |
 | `@SelfLocation{x=0;y=-1;z=0}` | The caster's position, optionally shifted |
 | `@ObstructingBlock` | The block the caster is looking at (up to 2.5 blocks) |
 | `@EntitiesNearOrigin{r=4;Conditions=[ - isPlayer{} true - isCaster{} false]}` (`@ENO`) | Every entity within `r` of a totem's location, closest first. Conditions: `isPlayer`, `isCaster`, `isMob`, `hasTag{t=...}`, `faction{faction=...}` and every skill condition (see below). Skill conditions test the candidate, not the caster: `health{h=<50%}` is the candidate's health, `distance{d=<3}` and `lineofsight` measure between the candidate and the caster |
@@ -160,7 +178,7 @@ A line of its own, `delay 20`, pauses the rest of the skill for 20 ticks.
 | `@PIR{r=2}` | The nearest player within `r` blocks (`limit` defaults to 1). If nobody is there, the line is skipped |
 | `@Origin` | A totem's location, or the caster's location outside a totem |
 | `@Location{x=0;y=64;z=0;w=world}` | A fixed location; `w` (or `world`) is the world, default the caster's |
-| `@TargetLocation` (`@TL`) | The location of the trigger/target entity |
+| `@TargetLocation` (`@TL`, `@TriggerLocation`) | The location of the trigger/target entity, optionally moved by `fo` (forward), `so` (sideways, positive = right) and `yo` (up) along its facing |
 | `@Owner`, `@Parent` | The entity whose `summon` created the caster. If there is none, the line is skipped |
 | `@ModelPassengers{p=driver;mid=model;conditions=[...]}` | The entities BetterMob seated on the caster's model with `mountmodel`, optionally only one seat `p` and only when the caster's mob uses model `mid`. Riders seated some other way (for example by the model plugin itself) are not known |
 | `@mountedmodel` | The model owner the caster was seated on with `mountmodel` |
@@ -241,12 +259,25 @@ Skills:
 | `onblock{b=GRASS_BLOCK}` | The block under the caster is one of these |
 | `skillOnCooldown{skill=x}` | That skill's `Cooldown:` is still running for the caster |
 | `distance{d=0-6}` | Distance to the trigger/target is in range (also `>3`, `<=5`) |
+| `owner` | The target (or trigger) is the caster's owner: the entity whose `summon` created it, or the owner of a tamed caster. Usually written as `?~owner` |
+| `mythicmobtype{t=goblin,orc}` (`mobtype`) | The target (or the caster) is a BetterMob mob with one of these ids; inside targeter `conditions=[...]` it tests the candidate |
+| `boundingboxesoverlap` | The hitboxes of the caster and the target (or trigger) overlap; inside targeter `conditions=[...]` it tests the candidate against the caster |
 | `blocktype{type=OAK_LOG,SPRUCE_LOG}` | The obstructing block is one of these (used in `TargetConditions`) |
 
-A skill can have `Cooldown: <seconds>` (per caster). A `Conditions`/`TargetConditions` entry ending in `castinstead <skill>` casts that skill instead when it holds. A line without a targeter uses the target of the line that called its skill. In parameters, `<caster.damage>` and `<caster.name>` are replaced.
+A skill can have `Cooldown: <seconds>` (per caster). A `Conditions`/`TargetConditions` entry ending in `castinstead <skill>` casts that skill instead when it holds. A line without a targeter uses the target of the line that called its skill. In parameters, `<caster.damage>`, `<caster.name>` and `<caster.mythic_type>` (the caster's BetterMob id, or its entity type) are replaced.
 
 Write `onground{} true` or `onground{} false` to require a value. Any mechanic line can end
-with `?condition{...}`, or `?!condition{...}` to negate it.
+with `?condition{...}`, or `?!condition{...}` to negate it. `?~condition{...}` (and `?!~condition{...}`) tests the trigger instead
+of the caster; without a trigger the line is skipped.
+
+Conditions can be combined in brackets with `||` (or) and `&&` (and, binds stronger), also nested, and the whole group can take
+`true`/`false` and `castinstead`:
+
+```yaml
+Conditions:
+  - ( varequals{var=caster.item;val=banana} || varequals{var=caster.item;val=shell} ) true
+  - ( variableisset{var=caster.speed} false || variableisset{var=caster.top} false ) false
+```
 
 Conditions BetterMob doesn't know are logged and treated as
 **true**, so the line still runs.
@@ -257,6 +288,6 @@ Several MythicMobs mechanics, conditions and targeters. Mechanics inside aura
 effects that aren't supported (for example `velocity`) produce a warning like
 `Skill-Mechanic 'velocity' wird nicht unterstuetzt` and are skipped.
 
-Not supported: the mechanics `teleportto`, `teleporty`, `propel`, `speak`, `blackscreen` and `jsonmessage`; they have no clear equivalent yet. `effect:particle` is an alias of `effect:particles`.
+Not supported: the mechanics `speak`, `blackscreen` and `jsonmessage`; they have no clear equivalent yet. `effect:particle` is an alias of `effect:particles`.
 
-Also not supported: `tint` and `lockmodel` (model plugin specific, no stable call to reflect on) and `meg:setitemmodel` (ModelEngine only).
+Also not supported: `segment` (ModelEngine segment bones; its options are not clear enough).

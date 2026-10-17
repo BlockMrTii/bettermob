@@ -14,7 +14,7 @@ public final class BuiltinMechanics {
         registry.register(new ActionBarMechanic(engine), "actionbar", "actionmessage");
         registry.register(new TitleMechanic(), "title", "sendtitle");
         registry.register(new BossBarMechanic(engine), "bossbar");
-        registry.register(new StateMechanic(engine), "state");
+        registry.register(new StateMechanic(engine), "state", "animation");
         registry.register(new PotionMechanic(engine), "potion");
         registry.register(new BreakBlockMechanic(), "breakblock");
         registry.register(new GcdMechanic(engine), "gcd");
@@ -66,7 +66,7 @@ public final class BuiltinMechanics {
         registry.register(new HealMechanic(), "heal");
         registry.register(new TeleportMechanic(), "teleport");
         registry.register(new ExplosionMechanic(), "explosion");
-        registry.register(new LightningMechanic(), "lightning");
+        registry.register(new LightningMechanic(), "lightning", "fakelightning");
         registry.register(new SetSpeedMechanic(), "setspeed");
         registry.register(new SetAiMechanic(), "setai");
         registry.register(new RotationMechanic(false), "setrotation");
@@ -79,5 +79,18 @@ public final class BuiltinMechanics {
         registry.register(new GiveItemMechanic(engine), "giveitem");
         registry.register(new FakeExplosionMechanic(), "fakeexplosion");
         registry.register(new RecoilMechanic(), "recoil");
+        registry.register(new LeaveVehicleMechanic(), "dismount");
+        registry.register(new PotionClearMechanic(), "potionclear", "removepotion");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.TINT), "tint");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.GLOW), "glowbone");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.PART), "partvis", "partvisibility");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.ITEM), "meg:setitemmodel", "setitemmodel");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.LOCK), "lockmodel");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.MODIFY), "modifystate");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.DEFAULT), "defaultstate");
+        registry.register(new TeleportToMechanic(engine), "teleportto", "tpt");
+        registry.register(new TeleportYMechanic(), "teleporty", "tpy");
+        registry.register(new PullMechanic(engine, false), "pull");
+        registry.register(new PullMechanic(engine, true), "propel");
     }
 }

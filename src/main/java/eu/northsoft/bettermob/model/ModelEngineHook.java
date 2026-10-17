@@ -200,6 +200,105 @@ public final class ModelEngineHook {
         return fallback;
     }
 
+    private static final String MODEL_BONE = "com.ticxo.modelengine.api.model.bone.ModelBone";
+    private static final String ANIMATION_PROPERTY = "com.ticxo.modelengine.api.animation.property.IAnimationProperty";
+    private static final String LOOP_MODE = "com.ticxo.modelengine.api.animation.BlueprintAnimation$LoopMode";
+    private static final String DEFAULT_PROPERTY = "com.ticxo.modelengine.api.animation.handler.AnimationHandler$DefaultProperty";
+    private static final String MODEL_STATE = "com.ticxo.modelengine.api.animation.ModelState";
+
+    private interface BoneCall {
+        void apply(Class<?> boneType, Object bone) throws ReflectiveOperationException;
+    }
+
+    private boolean eachBone(Object activeModel, String action, String part, boolean exact, BoneCall call) {
+        if (activeModel == null) return false;
+        try {
+            Class<?> boneType = Class.forName(MODEL_BONE);
+            Object bones = Reflection.method(Class.forName(ACTIVE_MODEL), "getBones").invoke(activeModel);
+            boolean any = false;
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) bones).entrySet()) {
+                if (!ModelParts.matches(String.valueOf(entry.getKey()), part, exact)) continue;
+                call.apply(boneType, entry.getValue());
+                any = true;
+            }
+            if (!any && part != null && !part.isBlank()) plugin.messages().warn("modelEngine.boneMissing", "bone", part);
+            return any;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("modelEngine.callFailed", "action", action, "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    private boolean onModel(Object activeModel, String action, BoneCall call) {
+        if (activeModel == null) return false;
+        try {
+            call.apply(Class.forName(ACTIVE_MODEL), activeModel);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("modelEngine.callFailed", "action", action, "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    public boolean tint(Object activeModel, String part, boolean exact, int rgb) {
+        org.bukkit.Color color = org.bukkit.Color.fromRGB(rgb & 0xFFFFFF);
+        if (part == null || part.isBlank()) {
+            return onModel(activeModel, "tint", (type, model) -> Reflection.method(type, "setDefaultTint", org.bukkit.Color.class).invoke(model, color));
+        }
+        return eachBone(activeModel, "tint", part, exact, (type, bone) -> Reflection.method(type, "setDefaultTint", org.bukkit.Color.class).invoke(bone, color));
+    }
+
+    public boolean glow(Object activeModel, String part, boolean exact, boolean glowing, int rgb) {
+        BoneCall call = (type, target) -> {
+            Reflection.method(type, "setGlowing", Boolean.class).invoke(target, glowing);
+            Reflection.method(type, "setGlowColor", Integer.class).invoke(target, rgb & 0xFFFFFF);
+        };
+        if (part == null || part.isBlank()) return onModel(activeModel, "glow", call);
+        return eachBone(activeModel, "glow", part, exact, call);
+    }
+
+    public boolean partVisible(Object activeModel, String part, boolean exact, boolean visible) {
+        return eachBone(activeModel, "partvis", part, exact, (type, bone) -> Reflection.method(type, "setVisible", boolean.class).invoke(bone, visible));
+    }
+
+    public boolean setItem(Object activeModel, String part, boolean exact, org.bukkit.inventory.ItemStack item) {
+        org.bukkit.inventory.ItemStack stack = item == null ? new org.bukkit.inventory.ItemStack(org.bukkit.Material.AIR) : item;
+        return eachBone(activeModel, "setitemmodel", part, exact, (type, bone) -> Reflection.method(type, "setModel", org.bukkit.inventory.ItemStack.class).invoke(bone, stack));
+    }
+
+    public boolean lockRotation(Object activeModel, boolean locked) {
+        return onModel(activeModel, "lockmodel", (type, model) -> {
+            Object modeled = Reflection.method(type, "getModeledEntity").invoke(model);
+            if (modeled != null) Reflection.method(Class.forName(MODELED_ENTITY), "setModelRotationLocked", boolean.class).invoke(modeled, locked);
+        });
+    }
+
+    public boolean modifyAnimation(Object activeModel, String animation, Float speed, String loop) {
+        return onModel(activeModel, "modifystate " + animation, (type, model) -> {
+            Object handler = Reflection.method(type, "getAnimationHandler").invoke(model);
+            Object property = Reflection.method(Class.forName(ANIMATION_HANDLER), "getAnimation", String.class).invoke(handler, animation);
+            if (property == null) return;
+            Class<?> propertyType = Class.forName(ANIMATION_PROPERTY);
+            if (speed != null) Reflection.method(propertyType, "setSpeed", double.class).invoke(property, speed.doubleValue());
+            if (loop != null) {
+                Class<?> loopType = Class.forName(LOOP_MODE);
+                Object mode = Reflection.method(loopType, "getOrNull", String.class).invoke(null, loop.trim().toUpperCase(Locale.ROOT));
+                if (mode != null) Reflection.method(propertyType, "setForceLoopMode", loopType).invoke(property, mode);
+            }
+        });
+    }
+
+    public boolean defaultState(Object activeModel, String state, String animation, double lerpIn, double lerpOut, double speed) {
+        return onModel(activeModel, "defaultstate " + state, (type, model) -> {
+            Class<?> stateType = Class.forName(MODEL_STATE);
+            Object modelState = Reflection.field(stateType, state.trim().toUpperCase(Locale.ROOT)).get(null);
+            Object property = Class.forName(DEFAULT_PROPERTY).getConstructor(stateType, String.class, double.class, double.class, double.class)
+                    .newInstance(modelState, animation, lerpIn, lerpOut, speed);
+            Object handler = Reflection.method(type, "getAnimationHandler").invoke(model);
+            Reflection.method(Class.forName(ANIMATION_HANDLER), "setDefaultProperty", Class.forName(DEFAULT_PROPERTY)).invoke(handler, property);
+        });
+    }
+
     public void close(Object tracker) {
         if (tracker == null) return;
         try {

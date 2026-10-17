@@ -4,6 +4,7 @@ import eu.northsoft.bettermob.BetterMobPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.Map;
 
@@ -286,6 +287,123 @@ public final class BetterModelHook {
             if (method.getName().equals(name) && method.getParameterCount() == paramCount) return method;
         }
         return null;
+    }
+
+    private static final String UPDATE_ACTION = "kr.toxicity.model.api.tracker.TrackerUpdateAction";
+    private static final String ITEM = "kr.toxicity.model.api.util.TransformedItemStack";
+    private static final String ROTATOR = "kr.toxicity.model.api.tracker.ModelRotator";
+
+    private Object action(String name, Class<?>[] types, Object... args) throws ReflectiveOperationException {
+        return Reflection.method(Class.forName(UPDATE_ACTION), name, types).invoke(null, args);
+    }
+
+    private boolean update(Object tracker, String action, Object update, String part, boolean exact) {
+        if (tracker == null || update == null) return false;
+        try {
+            java.util.function.Predicate<Object> bones = bone -> ModelParts.matches(boneName(bone), part, exact);
+            Reflection.method(tracker.getClass(), "update", Class.forName(UPDATE_ACTION), java.util.function.Predicate.class).invoke(tracker, update, bones);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", action, "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    private String boneName(Object bone) {
+        try {
+            Object name = Reflection.method(bone.getClass(), "name").invoke(bone);
+            return name == null ? null : String.valueOf(Reflection.method(name.getClass(), "name").invoke(name));
+        } catch (ReflectiveOperationException | RuntimeException exception) {
+            return null;
+        }
+    }
+
+    public boolean tint(Object tracker, String part, boolean exact, int rgb) {
+        try {
+            return update(tracker, "tint", action("tint", new Class<?>[]{int.class}, rgb), part, exact);
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "tint", "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    public boolean glow(Object tracker, String part, boolean exact, boolean glowing, int rgb) {
+        try {
+            Object glow = action("glow", new Class<?>[]{boolean.class}, glowing);
+            Object color = action("glowColor", new Class<?>[]{int.class}, rgb);
+            Class<?> type = Class.forName(UPDATE_ACTION);
+            Object both = Array.newInstance(type, 2);
+            Array.set(both, 0, glow);
+            Array.set(both, 1, color);
+            return update(tracker, "glow", action("composite", new Class<?>[]{both.getClass()}, both), part, exact);
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "glow", "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    public boolean partVisible(Object tracker, String part, boolean exact, boolean visible) {
+        try {
+            return update(tracker, "partvis", action("togglePart", new Class<?>[]{boolean.class}, visible), part, exact);
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "partvis", "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    public boolean setItem(Object tracker, String part, boolean exact, org.bukkit.inventory.ItemStack item) {
+        try {
+            Class<?> type = Class.forName(ITEM);
+            Object stack = item == null ? Reflection.method(type, "empty").invoke(null)
+                    : Reflection.method(type, "of", org.bukkit.inventory.ItemStack.class).invoke(null, item);
+            return update(tracker, "setitemmodel", action("itemStack", new Class<?>[]{type}, stack), part, exact);
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "setitemmodel", "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    public boolean lockRotation(Object tracker, boolean locked) {
+        if (tracker == null) return false;
+        try {
+            Class<?> type = Class.forName(ROTATOR);
+            Object rotator = Reflection.field(type, locked ? "EMPTY" : "DEFAULT").get(null);
+            Reflection.method(tracker.getClass(), "rotator", type).invoke(tracker, rotator);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "lockmodel", "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    public boolean modifyAnimation(Object tracker, String animation, Float speed, String loop) {
+        if (tracker == null) return false;
+        try {
+            Class<?> modifier = modifierClass();
+            Class<?> typeClass = Class.forName(ITERATOR_TYPE);
+            Object builder = modifier.getMethod("builder").invoke(null);
+            Object type = loopType(typeClass, loop);
+            if (type != null) builder.getClass().getMethod("type", typeClass).invoke(builder, type);
+            if (speed != null) builder.getClass().getMethod("speed", float.class).invoke(builder, speed);
+            Object built = builder.getClass().getMethod("build").invoke(builder);
+            Object result = Reflection.method(tracker.getClass(), "replace", String.class, String.class, modifier).invoke(tracker, animation, animation, built);
+            return result instanceof Boolean bool && bool;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "modifystate " + animation, "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Object loopType(Class<?> typeClass, String loop) {
+        if (loop == null) return null;
+        String name = switch (loop.trim().toUpperCase(java.util.Locale.ROOT)) {
+            case "LOOP" -> "LOOP";
+            case "HOLD", "HOLD_ON_LAST" -> "HOLD_ON_LAST";
+            case "ONCE", "PLAY_ONCE" -> "PLAY_ONCE";
+            default -> null;
+        };
+        return name == null ? null : Enum.valueOf((Class<? extends Enum>) typeClass, name);
     }
 
     public void close(Object tracker) {

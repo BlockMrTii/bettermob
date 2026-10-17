@@ -219,9 +219,34 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private static boolean needsBlock(List<String> conditions) {
         for (String raw : conditions) {
             Condition condition = Condition.parse(raw);
-            if (condition != null && condition.name().equals("blocktype")) return true;
+            if (condition != null && condition.mentions("blocktype")) return true;
         }
         return false;
+    }
+
+    public org.bukkit.Location locationParam(String value, SkillContext context) {
+        if (value == null || value.isBlank()) return null;
+        String text = Params.stripQuotes(value);
+        if (text.startsWith("@")) {
+            SkillStep.Cursor cursor = new SkillStep.Cursor(text.substring(1));
+            String name = cursor.readWord().toLowerCase(Locale.ROOT);
+            Map<String, String> params = cursor.peek() == '{' ? SkillStep.parseParams(cursor.readBraced()) : Map.of();
+            List<Target> found = targeters.resolveAll(name, params, context);
+            return found.isEmpty() || found.get(0).location() == null ? null : found.get(0).location().clone();
+        }
+        String[] parts = text.split(",");
+        if (parts.length < 3) return null;
+        double x = Params.parseNumber(parts[0].trim(), Double.NaN);
+        double y = Params.parseNumber(parts[1].trim(), Double.NaN);
+        double z = Params.parseNumber(parts[2].trim(), Double.NaN);
+        if (Double.isNaN(x) || Double.isNaN(y) || Double.isNaN(z)) return null;
+        org.bukkit.World world = parts.length > 3 ? org.bukkit.Bukkit.getWorld(parts[3].trim()) : context.caster().getWorld();
+        return world == null ? null : new org.bukkit.Location(world, x, y, z);
+    }
+
+    public String mobType(org.bukkit.entity.Entity entity) {
+        MobDefinition definition = mobManager.definitionOf(entity.getUniqueId());
+        return definition != null ? definition.id : entity.getType().getKey().getKey();
     }
 
     public String subject(LivingEntity entity) {
@@ -292,7 +317,15 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         Map<String, String> p = mechanic.params();
 
         if (mechanic.inlineCondition() != null) {
-            boolean passes = conditionPasses(mechanic.inlineCondition(), context, null);
+            String inline = mechanic.inlineCondition();
+            boolean onTrigger = inline.startsWith("~");
+            if (onTrigger && context.trigger() == null) {
+                if (debug.verbose()) debug.verbose("mechanic '" + mechanic.name() + "' skipped: trigger condition without a trigger", subject(context.caster()));
+                return false;
+            }
+            boolean passes = onTrigger
+                    ? conditionPasses(inline.substring(1), context, Target.ofEntity(context.trigger()))
+                    : conditionPasses(inline, context, null);
             if (mechanic.negated() == passes) {
                 if (debug.verbose()) debug.verbose("mechanic '" + mechanic.name() + "' skipped: inline condition", subject(context.caster()));
                 return false;
@@ -467,6 +500,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : p.entrySet()) {
             String value = at == null ? entry.getValue() : withLocationValues(entry.getValue(), at.getX(), at.getY(), at.getZ(), at.getYaw(), at.getPitch());
+            if (value.indexOf("<caster.mythic_type>") >= 0) value = value.replace("<caster.mythic_type>", mobType(context.caster()));
             result.put(entry.getKey(), withCasterValues(value, damage, name, escapesItself));
         }
         return result;

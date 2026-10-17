@@ -128,10 +128,10 @@ Skills:
 
 ## Custom triggers
 
-An addon that runs `~onSwing`-style lines itself can tell BetterMob about the trigger so it stops warning "could not be parsed" for those lines. This needs **BetterMob 1.1.9 or newer**.
+An addon that runs `~onWave`-style lines itself can tell BetterMob about the trigger so it stops warning "could not be parsed" for those lines. This needs **BetterMob 1.1.9 or newer**.
 
 ```java
-api.registerTrigger(this, "onSwing");
+api.registerTrigger(this, "onWave");
 ```
 
 - `registerTrigger(owner, name)` takes the name with or without `on` and returns `false` for a built-in trigger or a name that is already taken. `unregisterTrigger(name)` removes one; an addon's triggers are removed when it is disabled.
