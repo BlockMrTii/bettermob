@@ -17,7 +17,7 @@ Everything public is in `eu.northsoft.bettermob.api`.
 <dependency>
     <groupId>com.github.HyperGaming99</groupId>
     <artifactId>bettermob</artifactId>
-    <version>v1.1.8</version> <!-- a release tag -->
+    <version>v1.1.9</version> <!-- a release tag -->
     <scope>provided</scope>
 </dependency>
 ```
@@ -33,7 +33,7 @@ Everything public is in `eu.northsoft.bettermob.api`.
 <dependency>
     <groupId>eu.northsoft</groupId>
     <artifactId>bettermob</artifactId>
-    <version>1.1.8</version>
+    <version>1.1.9</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -146,7 +146,7 @@ api.registerTrigger(this, "onSwing");
 mvn -f examples/api-example/pom.xml package
 ```
 
-This resolves `com.github.HyperGaming99:bettermob:v1.1.8` from JitPack. To compile it against your own checkout instead:
+This resolves `com.github.HyperGaming99:bettermob:v1.1.9` from JitPack. To compile it against your own checkout instead:
 
 ```bash
 mvn install -DskipTests
