@@ -7,6 +7,8 @@ import eu.northsoft.bettermob.skill.SkillStep;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -56,8 +58,8 @@ public final class MobDefinition {
         this.threatTable = threatTable;
         this.damageModifiers = damageModifiers;
         this.skillTriggers = skillTriggers;
-        Map<SkillTrigger.Trigger, List<SkillTrigger>> byType = new java.util.EnumMap<>(SkillTrigger.Trigger.class);
-        for (SkillTrigger trigger : skillTriggers) byType.computeIfAbsent(trigger.trigger(), key -> new java.util.ArrayList<>()).add(trigger);
+        Map<SkillTrigger.Trigger, List<SkillTrigger>> byType = new EnumMap<>(SkillTrigger.Trigger.class);
+        for (SkillTrigger trigger : skillTriggers) byType.computeIfAbsent(trigger.trigger(), key -> new ArrayList<>()).add(trigger);
         byType.replaceAll((key, list) -> List.copyOf(list));
         this.triggersByType = byType;
         this.drops = drops;

@@ -2,11 +2,17 @@ package eu.northsoft.bettermob.model;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Entity;
+import org.bukkit.inventory.ItemStack;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public final class BetterModelHook {
     private static final String API = "kr.toxicity.model.api.BetterModel";
@@ -130,11 +136,11 @@ public final class BetterModelHook {
         return animateMethod;
     }
 
-    private final Map<Class<?>, Map<String, Method>> methodCache = new java.util.concurrent.ConcurrentHashMap<>();
-    private final Map<Class<?>, Map<String, java.lang.reflect.Field>> fieldCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<Class<?>, Map<String, Method>> methodCache = new ConcurrentHashMap<>();
+    private final Map<Class<?>, Map<String, java.lang.reflect.Field>> fieldCache = new ConcurrentHashMap<>();
 
     private Method cachedMethod(Class<?> type, String name, Class<?>... parameters) throws NoSuchMethodException {
-        Map<String, Method> methods = methodCache.computeIfAbsent(type, key -> new java.util.concurrent.ConcurrentHashMap<>());
+        Map<String, Method> methods = methodCache.computeIfAbsent(type, key -> new ConcurrentHashMap<>());
         String key = name + "/" + parameters.length;
         Method method = methods.get(key);
         if (method == null) {
@@ -145,7 +151,7 @@ public final class BetterModelHook {
     }
 
     private java.lang.reflect.Field cachedField(Class<?> type, String name) throws NoSuchFieldException {
-        Map<String, java.lang.reflect.Field> fields = fieldCache.computeIfAbsent(type, key -> new java.util.concurrent.ConcurrentHashMap<>());
+        Map<String, java.lang.reflect.Field> fields = fieldCache.computeIfAbsent(type, key -> new ConcurrentHashMap<>());
         java.lang.reflect.Field field = fields.get(name);
         if (field == null) {
             field = type.getField(name);
@@ -154,7 +160,7 @@ public final class BetterModelHook {
         return field;
     }
 
-    public org.bukkit.Location bonePosition(Object tracker, String boneName, org.bukkit.Location origin) {
+    public Location bonePosition(Object tracker, String boneName, Location origin) {
         if (tracker == null) return null;
         try {
             Object bone = cachedMethod(tracker.getClass(), "bone", String.class).invoke(tracker, boneName);
@@ -184,8 +190,8 @@ public final class BetterModelHook {
         if (tracker == null) return false;
         try {
             Object rotator = cachedMethod(tracker.getClass(), "bodyRotator").invoke(tracker);
-            Method setValue = cachedMethod(rotator.getClass(), "setValue", java.util.function.Consumer.class);
-            setValue.invoke(rotator, (java.util.function.Consumer<Object>) data -> {
+            Method setValue = cachedMethod(rotator.getClass(), "setValue", Consumer.class);
+            setValue.invoke(rotator, (Consumer<Object>) data -> {
                 for (Map.Entry<String, String> entry : params.entrySet()) {
                     String setter = ROTATION_SETTERS.get(entry.getKey());
                     if (setter != null) applySetter(data, setter, entry.getValue());
@@ -198,10 +204,10 @@ public final class BetterModelHook {
         }
     }
 
-    private final Map<Class<?>, Map<String, Method>> setterCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<Class<?>, Map<String, Method>> setterCache = new ConcurrentHashMap<>();
 
     private Method setterOf(Class<?> type, String name) {
-        return setterCache.computeIfAbsent(type, key -> new java.util.concurrent.ConcurrentHashMap<>()).computeIfAbsent(name, key -> {
+        return setterCache.computeIfAbsent(type, key -> new ConcurrentHashMap<>()).computeIfAbsent(name, key -> {
             for (Method method : type.getMethods()) {
                 if (method.getName().equals(name) && method.getParameterCount() == 1) return method;
             }
@@ -300,8 +306,8 @@ public final class BetterModelHook {
     private boolean update(Object tracker, String action, Object update, String part, boolean exact) {
         if (tracker == null || update == null) return false;
         try {
-            java.util.function.Predicate<Object> bones = bone -> ModelParts.matches(boneName(bone), part, exact);
-            Reflection.method(tracker.getClass(), "update", Class.forName(UPDATE_ACTION), java.util.function.Predicate.class).invoke(tracker, update, bones);
+            Predicate<Object> bones = bone -> ModelParts.matches(boneName(bone), part, exact);
+            Reflection.method(tracker.getClass(), "update", Class.forName(UPDATE_ACTION), Predicate.class).invoke(tracker, update, bones);
             return true;
         } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
             plugin.messages().warn("betterModel.callFailed", "action", action, "error", rootMessage(exception));
@@ -351,11 +357,11 @@ public final class BetterModelHook {
         }
     }
 
-    public boolean setItem(Object tracker, String part, boolean exact, org.bukkit.inventory.ItemStack item) {
+    public boolean setItem(Object tracker, String part, boolean exact, ItemStack item) {
         try {
             Class<?> type = Class.forName(ITEM);
             Object stack = item == null ? Reflection.method(type, "empty").invoke(null)
-                    : Reflection.method(type, "of", org.bukkit.inventory.ItemStack.class).invoke(null, item);
+                    : Reflection.method(type, "of", ItemStack.class).invoke(null, item);
             return update(tracker, "setitemmodel", action("itemStack", new Class<?>[]{type}, stack), part, exact);
         } catch (ReflectiveOperationException | LinkageError exception) {
             plugin.messages().warn("betterModel.callFailed", "action", "setitemmodel", "error", rootMessage(exception));
@@ -397,7 +403,7 @@ public final class BetterModelHook {
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static Object loopType(Class<?> typeClass, String loop) {
         if (loop == null) return null;
-        String name = switch (loop.trim().toUpperCase(java.util.Locale.ROOT)) {
+        String name = switch (loop.trim().toUpperCase(Locale.ROOT)) {
             case "LOOP" -> "LOOP";
             case "HOLD", "HOLD_ON_LAST" -> "HOLD_ON_LAST";
             case "ONCE", "PLAY_ONCE" -> "PLAY_ONCE";

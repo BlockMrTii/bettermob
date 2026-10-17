@@ -6,6 +6,7 @@ import eu.northsoft.bettermob.skill.Target;
 import org.bukkit.Location;
 
 import java.util.Map;
+import java.util.UUID;
 
 import static eu.northsoft.bettermob.skill.Params.firstParam;
 
@@ -18,7 +19,7 @@ public final class ModelPartTargeter implements SingleTargeter {
 
     @Override
     public Target target(Map<String, String> params, SkillContext context) {
-        java.util.UUID id = context.caster().getUniqueId();
+        UUID id = context.caster().getUniqueId();
         String name = firstParam(params, "p", "part", "bone");
         Location bone = engine.betterModel().bonePosition(engine.mobManager().trackerFor(id), name, context.caster().getLocation());
         if (bone == null) bone = engine.modelEngine().bonePosition(engine.mobManager().modelEngineTrackerFor(id), name);

@@ -15,6 +15,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Predicate;
 
 public final class PackValidator {
@@ -67,7 +68,7 @@ public final class PackValidator {
         this.known = known;
     }
 
-    public static Knowledge knowledgeOf(SkillEngine engine, java.util.function.Predicate<String> skill) {
+    public static Knowledge knowledgeOf(SkillEngine engine, Predicate<String> skill) {
         return new Knowledge(
                 name -> engine.mechanics().get(name) != null || name.equals("cancelskill") || name.equals("delay"),
                 name -> engine.conditionRegistry().has(name),
@@ -259,7 +260,7 @@ public final class PackValidator {
         }
     }
 
-    private static String firstOf(java.util.Map<String, String> params, String... keys) {
+    private static String firstOf(Map<String, String> params, String... keys) {
         for (String key : keys) {
             if (params.containsKey(key)) return params.get(key);
         }

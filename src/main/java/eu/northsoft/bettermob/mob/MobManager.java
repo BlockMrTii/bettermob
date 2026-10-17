@@ -22,28 +22,36 @@ import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.Zombie;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class MobManager {
@@ -58,7 +66,7 @@ public final class MobManager {
     private final Map<UUID, Map<UUID, Threat>> threatTables = new ConcurrentHashMap<>();
     private final Map<UUID, Map<DamageCause, Double>> damageModifiers = new ConcurrentHashMap<>();
     private final Map<UUID, MobDefinition> definitions = new ConcurrentHashMap<>();
-    private final java.util.Set<String> healthCapWarned = ConcurrentHashMap.newKeySet();
+    private final Set<String> healthCapWarned = ConcurrentHashMap.newKeySet();
     private final Map<UUID, List<Runnable>> timers = new ConcurrentHashMap<>();
     private final BossBarManager bossBars;
     private SkillEngine skillEngine;
@@ -81,7 +89,7 @@ public final class MobManager {
         return spawn(definition, location, null);
     }
 
-    public LivingEntity spawn(MobDefinition definition, Location location, java.util.function.Consumer<LivingEntity> created) {
+    public LivingEntity spawn(MobDefinition definition, Location location, Consumer<LivingEntity> created) {
         LivingEntity entity = (LivingEntity) location.getWorld().spawnEntity(location, definition.type);
         if (created != null) created.accept(entity);
         applyDefinition(entity, definition, true);
@@ -474,7 +482,7 @@ public final class MobManager {
     public int livingOf(Set<String> mobIds) {
         int count = 0;
         for (MobDefinition definition : definitions.values()) {
-            if (mobIds.contains(definition.id.toLowerCase(java.util.Locale.ROOT))) count++;
+            if (mobIds.contains(definition.id.toLowerCase(Locale.ROOT))) count++;
         }
         return count;
     }
@@ -588,34 +596,34 @@ public final class MobManager {
 
     public String factionOf(Entity entity) {
         MobDefinition definition = definitions.get(entity.getUniqueId());
-        return definition == null || definition.faction == null ? null : definition.faction.toLowerCase(java.util.Locale.ROOT);
+        return definition == null || definition.faction == null ? null : definition.faction.toLowerCase(Locale.ROOT);
     }
 
     public boolean inFaction(Entity entity, String faction) {
         if (faction == null) return false;
         String own = factionOf(entity);
         if (own != null) return own.equals(faction);
-        if (!(entity instanceof org.bukkit.entity.Player player)) return false;
+        if (!(entity instanceof Player player)) return false;
         if (player.hasPermission(factionPermission(faction))) return true;
         Set<String> members = factionMembers().get(faction);
-        return members != null && (members.contains(player.getName().toLowerCase(java.util.Locale.ROOT)) || members.contains(player.getUniqueId().toString()));
+        return members != null && (members.contains(player.getName().toLowerCase(Locale.ROOT)) || members.contains(player.getUniqueId().toString()));
     }
 
-    private record FactionCache(org.bukkit.configuration.file.FileConfiguration source, Map<String, Set<String>> members) {}
+    private record FactionCache(FileConfiguration source, Map<String, Set<String>> members) {}
 
     private volatile FactionCache factionCache = new FactionCache(null, Map.of());
 
     private Map<String, Set<String>> factionMembers() {
-        org.bukkit.configuration.file.FileConfiguration config = plugin.getConfig();
+        FileConfiguration config = plugin.getConfig();
         FactionCache cache = factionCache;
         if (config != cache.source()) {
-            Map<String, Set<String>> loaded = new java.util.HashMap<>();
+            Map<String, Set<String>> loaded = new HashMap<>();
             var section = config.getConfigurationSection("factions");
             if (section != null) {
                 for (String name : section.getKeys(false)) {
                     Set<String> names = new HashSet<>();
-                    for (String entry : section.getStringList(name)) names.add(entry.toLowerCase(java.util.Locale.ROOT));
-                    loaded.put(name.toLowerCase(java.util.Locale.ROOT), names);
+                    for (String entry : section.getStringList(name)) names.add(entry.toLowerCase(Locale.ROOT));
+                    loaded.put(name.toLowerCase(Locale.ROOT), names);
                 }
             }
             cache = new FactionCache(config, loaded);
@@ -624,7 +632,7 @@ public final class MobManager {
         return cache.members();
     }
 
-    private final java.util.Set<String> registeredFactionPermissions = ConcurrentHashMap.newKeySet();
+    private final Set<String> registeredFactionPermissions = ConcurrentHashMap.newKeySet();
 
     private String factionPermission(String faction) {
         String node = "bettermob.faction." + faction;
@@ -632,7 +640,7 @@ public final class MobManager {
         synchronized (registeredFactionPermissions) {
             if (!registeredFactionPermissions.contains(node)) {
                 if (Bukkit.getPluginManager().getPermission(node) == null) {
-                    Bukkit.getPluginManager().addPermission(new org.bukkit.permissions.Permission(node, org.bukkit.permissions.PermissionDefault.FALSE));
+                    Bukkit.getPluginManager().addPermission(new Permission(node, PermissionDefault.FALSE));
                 }
                 registeredFactionPermissions.add(node);
             }
@@ -715,7 +723,7 @@ public final class MobManager {
     public List<Map.Entry<String, Double>> threatOf(UUID mobId, int limit) {
         Map<UUID, Threat> table = threatTables.get(mobId);
         if (table == null) return List.of();
-        List<Map.Entry<String, Double>> rows = new java.util.ArrayList<>();
+        List<Map.Entry<String, Double>> rows = new ArrayList<>();
         for (Threat threat : table.values()) {
             if (threat.attacker.get() != null) rows.add(Map.entry(threat.name, threat.amount));
         }

@@ -8,6 +8,7 @@ import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.entity.Entity;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static eu.northsoft.bettermob.skill.Params.firstParam;
 import static eu.northsoft.bettermob.skill.Params.parseInt;
@@ -20,7 +21,7 @@ public final class VariableMechanic implements Mechanic {
 
     private final SkillEngine engine;
     private final Mode mode;
-    private final java.util.concurrent.ConcurrentHashMap<String, Object> expiries = new java.util.concurrent.ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Object> expiries = new ConcurrentHashMap<>();
 
     public VariableMechanic(SkillEngine engine, boolean add) {
         this(engine, add ? Mode.ADD : Mode.SET);

@@ -1,11 +1,11 @@
 package eu.northsoft.bettermob.skill;
 
-import static eu.northsoft.bettermob.skill.Params.*;
-
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.api.CustomMechanic;
 import eu.northsoft.bettermob.api.event.BetterMobSkillEvent;
 import eu.northsoft.bettermob.debug.DebugManager;
+import eu.northsoft.bettermob.drop.DropRegistry;
+import eu.northsoft.bettermob.item.ItemNbt;
 import eu.northsoft.bettermob.item.ItemRegistry;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.mob.MobManager;
@@ -20,9 +20,17 @@ import eu.northsoft.bettermob.skill.target.TargeterRegistry;
 import eu.northsoft.bettermob.stats.SkillStats;
 import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 
@@ -31,10 +39,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public final class SkillEngine implements org.bukkit.event.Listener {
+import static eu.northsoft.bettermob.skill.Params.*;
+
+public final class SkillEngine implements Listener {
     private final BetterMobPlugin plugin;
     private final SkillRegistry registry;
     private final MobManager mobManager;
@@ -68,7 +81,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
         plugin.getServer().getPluginManager().registerEvents(modelPassengers, plugin);
         for (Mechanic mechanic : mechanics.builtins()) {
-            if (mechanic instanceof org.bukkit.event.Listener listener) plugin.getServer().getPluginManager().registerEvents(listener, plugin);
+            if (mechanic instanceof Listener listener) plugin.getServer().getPluginManager().registerEvents(listener, plugin);
         }
     }
 
@@ -92,13 +105,13 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return modelEngine;
     }
 
-    private eu.northsoft.bettermob.drop.DropRegistry drops;
+    private DropRegistry drops;
 
-    public void setDrops(eu.northsoft.bettermob.drop.DropRegistry drops) {
+    public void setDrops(DropRegistry drops) {
         this.drops = drops;
     }
 
-    public eu.northsoft.bettermob.drop.DropRegistry drops() {
+    public DropRegistry drops() {
         return drops;
     }
 
@@ -136,8 +149,8 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return targeters;
     }
 
-    @org.bukkit.event.EventHandler
-    public void onRespawn(org.bukkit.event.player.PlayerRespawnEvent event) {
+    @EventHandler
+    public void onRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
         player.setVelocity(new Vector());
         Tasks.runLater(plugin, player, 1L, () -> player.setVelocity(new Vector()));
@@ -230,7 +243,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return false;
     }
 
-    public org.bukkit.Location locationParam(String value, SkillContext context) {
+    public Location locationParam(String value, SkillContext context) {
         if (value == null || value.isBlank()) return null;
         String text = Params.stripQuotes(value);
         if (text.startsWith("@")) {
@@ -246,11 +259,11 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         double y = Params.parseNumber(parts[1].trim(), Double.NaN);
         double z = Params.parseNumber(parts[2].trim(), Double.NaN);
         if (Double.isNaN(x) || Double.isNaN(y) || Double.isNaN(z)) return null;
-        org.bukkit.World world = parts.length > 3 ? org.bukkit.Bukkit.getWorld(parts[3].trim()) : context.caster().getWorld();
-        return world == null ? null : new org.bukkit.Location(world, x, y, z);
+        World world = parts.length > 3 ? Bukkit.getWorld(parts[3].trim()) : context.caster().getWorld();
+        return world == null ? null : new Location(world, x, y, z);
     }
 
-    public String mobType(org.bukkit.entity.Entity entity) {
+    public String mobType(Entity entity) {
         MobDefinition definition = mobManager.definitionOf(entity.getUniqueId());
         return definition != null ? definition.id : entity.getType().getKey().getKey();
     }
@@ -416,7 +429,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         if (lines != null) executeSteps(inline(lines), 0, context);
     }
 
-    public void fireAuras(LivingEntity entity, String kind, LivingEntity trigger, org.bukkit.event.Cancellable event) {
+    public void fireAuras(LivingEntity entity, String kind, LivingEntity trigger, Cancellable event) {
         Map<String, Aura> active = state.activeAuras(entity.getUniqueId());
         if (active == null) return;
         for (Aura aura : active.values()) {
@@ -496,7 +509,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         String damage = String.valueOf(attackDamage == null ? 1.0 : attackDamage.getValue());
         String name = stripSkillSyntax(context.caster().getName());
         boolean escapesItself = mechanicName.equals("command") || mechanicName.equals("message");
-        org.bukkit.Location at = null;
+        Location at = null;
         for (String value : p.values()) {
             if (value.indexOf("<caster.l.") >= 0) {
                 at = context.caster().getLocation();
@@ -507,13 +520,13 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         for (Map.Entry<String, String> entry : p.entrySet()) {
             String value = at == null ? entry.getValue() : withLocationValues(entry.getValue(), at.getX(), at.getY(), at.getZ(), at.getYaw(), at.getPitch());
             if (value.indexOf("<caster.mythic_type>") >= 0) value = value.replace("<caster.mythic_type>", mobType(context.caster()));
-            if (value.indexOf("<caster.itemnbt.") >= 0) value = withItemNbt(value, eu.northsoft.bettermob.item.ItemNbt.heldItem(context.caster()));
+            if (value.indexOf("<caster.itemnbt.") >= 0) value = withItemNbt(value, ItemNbt.heldItem(context.caster()));
             result.put(entry.getKey(), withCasterValues(value, damage, name, escapesItself));
         }
         return result;
     }
 
-    private final java.util.Set<String> missingArguments = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private final Set<String> missingArguments = ConcurrentHashMap.newKeySet();
 
     private String argumentValue(String value, SkillContext context) {
         if (value == null || value.indexOf("<arg.") < 0) return value;
@@ -564,26 +577,26 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     private static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope, Map<String, String> targetScope, boolean keepTarget) {
-        java.util.regex.Matcher matcher = VARIABLE_PLACEHOLDER.matcher(value);
+        Matcher matcher = VARIABLE_PLACEHOLDER.matcher(value);
         StringBuilder result = new StringBuilder();
         while (matcher.find()) {
             String kind = matcher.group(1);
             if (keepTarget && kind.startsWith("target")) {
-                matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(matcher.group()));
+                matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group()));
                 continue;
             }
             Map<String, String> scope = kind.startsWith("skill") ? skillScope : kind.startsWith("target") ? targetScope : casterScope;
             String found = scope == null ? null : scope.get(matcher.group(2).toLowerCase(Locale.ROOT));
-            matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(found == null ? "0" : Params.stripPlaceholderValue(found)));
+            matcher.appendReplacement(result, Matcher.quoteReplacement(found == null ? "0" : Params.stripPlaceholderValue(found)));
         }
         matcher.appendTail(result);
         return result.toString();
     }
 
-    private static final java.util.regex.Pattern TARGET_VARIABLE = java.util.regex.Pattern.compile("<target\\.var\\.([A-Za-z0-9_]{1,32})>");
+    private static final Pattern TARGET_VARIABLE = Pattern.compile("<target\\.var\\.([A-Za-z0-9_]{1,32})>");
 
     private Map<String, String> withTargetVariables(Map<String, String> params, Target target, SkillContext context) {
-        org.bukkit.entity.Entity entity = target.entity() != null ? target.entity() : context.trigger();
+        Entity entity = target.entity() != null ? target.entity() : context.trigger();
         Map<String, String> scope = entity == null ? null : state.existingVariablesOf(entity.getUniqueId());
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : params.entrySet()) {
@@ -593,31 +606,31 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     }
 
     static String replaceTargetVariables(String value, Map<String, String> scope) {
-        java.util.regex.Matcher matcher = TARGET_VARIABLE.matcher(value);
+        Matcher matcher = TARGET_VARIABLE.matcher(value);
         StringBuilder result = new StringBuilder();
         while (matcher.find()) {
             String found = scope == null ? null : scope.get(matcher.group(1).toLowerCase(Locale.ROOT));
-            matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(found == null ? "0" : Params.stripPlaceholderValue(found)));
+            matcher.appendReplacement(result, Matcher.quoteReplacement(found == null ? "0" : Params.stripPlaceholderValue(found)));
         }
         matcher.appendTail(result);
         return result.toString();
     }
 
-    private static final java.util.regex.Pattern VARIABLE_PLACEHOLDER = java.util.regex.Pattern.compile("<(skill\\.var|skill|caster\\.var|target\\.var|var)\\.([A-Za-z0-9_]{1,32})>");
+    private static final Pattern VARIABLE_PLACEHOLDER = Pattern.compile("<(skill\\.var|skill|caster\\.var|target\\.var|var)\\.([A-Za-z0-9_]{1,32})>");
 
     private static boolean isInlineSkill(String value) {
         String trimmed = value.stripLeading();
         return trimmed.startsWith("[") && trimmed.indexOf('{') > 0;
     }
 
-    private static final java.util.regex.Pattern ITEM_NBT = java.util.regex.Pattern.compile("<caster\\.itemnbt\\.([A-Za-z0-9_.-]{1,64})>");
+    private static final Pattern ITEM_NBT = Pattern.compile("<caster\\.itemnbt\\.([A-Za-z0-9_.-]{1,64})>");
 
-    static String withItemNbt(String value, org.bukkit.inventory.ItemStack held) {
-        java.util.regex.Matcher matcher = ITEM_NBT.matcher(value);
+    static String withItemNbt(String value, ItemStack held) {
+        Matcher matcher = ITEM_NBT.matcher(value);
         StringBuilder result = new StringBuilder();
         while (matcher.find()) {
-            String found = eu.northsoft.bettermob.item.ItemNbt.get(held, matcher.group(1));
-            matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(found == null ? "" : Params.stripPlaceholderValue(found)));
+            String found = ItemNbt.get(held, matcher.group(1));
+            matcher.appendReplacement(result, Matcher.quoteReplacement(found == null ? "" : Params.stripPlaceholderValue(found)));
         }
         matcher.appendTail(result);
         return result.toString();

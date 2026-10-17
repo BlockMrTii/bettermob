@@ -2,6 +2,7 @@ package eu.northsoft.bettermob;
 
 import eu.northsoft.bettermob.api.BetterMobAPI;
 import eu.northsoft.bettermob.command.BetterMobCommand;
+import eu.northsoft.bettermob.debug.AggroView;
 import eu.northsoft.bettermob.debug.DebugManager;
 import eu.northsoft.bettermob.drop.DropRegistry;
 import eu.northsoft.bettermob.integration.BetterMobExpansion;
@@ -27,14 +28,18 @@ import eu.northsoft.bettermob.stats.SkillStats;
 import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.util.Tasks;
 import org.bstats.bukkit.Metrics;
-import org.bukkit.entity.ArmorStand;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class BetterMobPlugin extends JavaPlugin {
     private static final long KILLS_SAVE_TICKS = 6000L;
@@ -42,7 +47,7 @@ public final class BetterMobPlugin extends JavaPlugin {
     private DebugManager debug;
     private SkillStats stats;
     private KillStats kills;
-    private eu.northsoft.bettermob.debug.AggroView aggroView;
+    private AggroView aggroView;
     private File killsFile;
     private Messages messages;
     private BetterMobExpansion expansion;
@@ -94,10 +99,10 @@ public final class BetterMobPlugin extends JavaPlugin {
         killsFile = new File(getDataFolder(), "kills.yml");
         if (killsFile.isFile()) {
             try {
-                var loaded = new org.bukkit.configuration.file.YamlConfiguration();
+                var loaded = new YamlConfiguration();
                 loaded.load(killsFile);
                 kills.load(loaded);
-            } catch (java.io.IOException | org.bukkit.configuration.InvalidConfigurationException exception) {
+            } catch (java.io.IOException | InvalidConfigurationException exception) {
                 kills.protect();
                 messages.warn("kills.loadFailed", "error", exception);
             }
@@ -141,7 +146,7 @@ public final class BetterMobPlugin extends JavaPlugin {
         spawners.start();
         Tasks.runGlobal(this, ExtraTriggers::ready);
 
-        aggroView = new eu.northsoft.bettermob.debug.AggroView(this, manager);
+        aggroView = new AggroView(this, manager);
         getServer().getPluginManager().registerEvents(aggroView, this);
         BetterMobCommand commandHandler = new BetterMobCommand(this, manager, skillRegistry, packScanner, skillEngine, itemRegistry, dropRegistry, spawners, eggItems, aggroView);
         PluginCommand command = getCommand("bettermob");
@@ -176,13 +181,13 @@ public final class BetterMobPlugin extends JavaPlugin {
         dropRegistry.load();
         manager.registry().load();
         spawners.load();
-        Map<String, ReloadDiff> diffs = new java.util.LinkedHashMap<>();
+        Map<String, ReloadDiff> diffs = new LinkedHashMap<>();
         diffs.put("mobs", ReloadDiff.of(before.get(0), manager.registry().fingerprints()));
         diffs.put("skills", ReloadDiff.of(before.get(1), skillRegistry.fingerprints()));
         diffs.put("items", ReloadDiff.of(before.get(2), itemRegistry.fingerprints()));
         diffs.put("droptables", ReloadDiff.of(before.get(3), dropRegistry.fingerprints()));
         ReloadDiff mobs = diffs.get("mobs");
-        int affected = manager.livingOf(new java.util.HashSet<>(mobs.changed()));
+        int affected = manager.livingOf(new HashSet<>(mobs.changed()));
         return new ReloadReport(manager.reloadLiving(), diffs, affected);
     }
 

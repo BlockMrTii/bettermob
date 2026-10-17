@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,7 +42,7 @@ public final class ExtraTriggers {
     }
 
     public static void unregister(Plugin owner) {
-        TRIGGERS.values().removeIf(entry -> java.util.Objects.equals(entry.owner(), owner));
+        TRIGGERS.values().removeIf(entry -> Objects.equals(entry.owner(), owner));
     }
 
     public static boolean accepts(String line) {

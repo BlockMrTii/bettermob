@@ -1,6 +1,7 @@
 package eu.northsoft.bettermob.command;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.debug.AggroView;
 import eu.northsoft.bettermob.debug.DebugManager;
 import eu.northsoft.bettermob.drop.DropRegistry;
 import eu.northsoft.bettermob.item.EggItems;
@@ -17,9 +18,9 @@ import eu.northsoft.bettermob.skill.SkillRegistry;
 import eu.northsoft.bettermob.skill.SkillStep;
 import eu.northsoft.bettermob.spawner.Spawner;
 import eu.northsoft.bettermob.spawner.SpawnerManager;
-import eu.northsoft.bettermob.util.Tasks;
 import eu.northsoft.bettermob.stats.KillStats;
 import eu.northsoft.bettermob.stats.SkillStats;
+import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -74,9 +75,9 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
     private final SpawnerManager spawners;
     private final EggItems eggItems;
 
-    private final eu.northsoft.bettermob.debug.AggroView aggroView;
+    private final AggroView aggroView;
 
-    public BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry, DropRegistry dropRegistry, SpawnerManager spawners, EggItems eggItems, eu.northsoft.bettermob.debug.AggroView aggroView) {
+    public BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry, DropRegistry dropRegistry, SpawnerManager spawners, EggItems eggItems, AggroView aggroView) {
         this.plugin = plugin;
         this.aggroView = aggroView;
         this.messages = plugin.messages();

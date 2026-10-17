@@ -1,5 +1,8 @@
 package eu.northsoft.bettermob.skill;
 
+import eu.northsoft.bettermob.skill.condition.RangeSpec;
+import org.bukkit.entity.Entity;
+
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -91,13 +94,13 @@ public final class Variables {
                 return false;
             }
         }
-        return eu.northsoft.bettermob.skill.condition.RangeSpec.matches(text, number);
+        return RangeSpec.matches(text, number);
     }
 
-    public static Map<String, String> scopeOf(String variable, SkillContext context, org.bukkit.entity.Entity target, SkillState state, boolean create) {
+    public static Map<String, String> scopeOf(String variable, SkillContext context, Entity target, SkillState state, boolean create) {
         if (isCasterScope(variable)) return create ? state.variablesOf(context.caster().getUniqueId()) : state.existingVariablesOf(context.caster().getUniqueId());
         if (isTargetScope(variable)) {
-            org.bukkit.entity.Entity entity = target != null ? target : context.trigger();
+            Entity entity = target != null ? target : context.trigger();
             if (entity == null) return null;
             return create ? state.variablesOf(entity.getUniqueId()) : state.existingVariablesOf(entity.getUniqueId());
         }
@@ -127,7 +130,7 @@ public final class Variables {
                 number = null;
             }
         }
-        if (number != null && eu.northsoft.bettermob.skill.condition.RangeSpec.matches(spec, number)) return true;
+        if (number != null && RangeSpec.matches(spec, number)) return true;
         return stored != null && stored.trim().equalsIgnoreCase(spec.trim());
     }
 

@@ -11,7 +11,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Mob;
 import org.bukkit.plugin.Plugin;
-
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 

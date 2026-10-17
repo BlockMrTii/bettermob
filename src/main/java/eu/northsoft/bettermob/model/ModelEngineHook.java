@@ -2,8 +2,11 @@ package eu.northsoft.bettermob.model;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Entity;
+import org.bukkit.inventory.ItemStack;
 
 import java.lang.reflect.Method;
 import java.util.Locale;
@@ -241,11 +244,11 @@ public final class ModelEngineHook {
     }
 
     public boolean tint(Object activeModel, String part, boolean exact, int rgb) {
-        org.bukkit.Color color = org.bukkit.Color.fromRGB(rgb & 0xFFFFFF);
+        Color color = Color.fromRGB(rgb & 0xFFFFFF);
         if (part == null || part.isBlank()) {
-            return onModel(activeModel, "tint", (type, model) -> Reflection.method(type, "setDefaultTint", org.bukkit.Color.class).invoke(model, color));
+            return onModel(activeModel, "tint", (type, model) -> Reflection.method(type, "setDefaultTint", Color.class).invoke(model, color));
         }
-        return eachBone(activeModel, "tint", part, exact, (type, bone) -> Reflection.method(type, "setDefaultTint", org.bukkit.Color.class).invoke(bone, color));
+        return eachBone(activeModel, "tint", part, exact, (type, bone) -> Reflection.method(type, "setDefaultTint", Color.class).invoke(bone, color));
     }
 
     public boolean glow(Object activeModel, String part, boolean exact, boolean glowing, int rgb) {
@@ -261,9 +264,9 @@ public final class ModelEngineHook {
         return eachBone(activeModel, "partvis", part, exact, (type, bone) -> Reflection.method(type, "setVisible", boolean.class).invoke(bone, visible));
     }
 
-    public boolean setItem(Object activeModel, String part, boolean exact, org.bukkit.inventory.ItemStack item) {
-        org.bukkit.inventory.ItemStack stack = item == null ? new org.bukkit.inventory.ItemStack(org.bukkit.Material.AIR) : item;
-        return eachBone(activeModel, "setitemmodel", part, exact, (type, bone) -> Reflection.method(type, "setModel", org.bukkit.inventory.ItemStack.class).invoke(bone, stack));
+    public boolean setItem(Object activeModel, String part, boolean exact, ItemStack item) {
+        ItemStack stack = item == null ? new ItemStack(Material.AIR) : item;
+        return eachBone(activeModel, "setitemmodel", part, exact, (type, bone) -> Reflection.method(type, "setModel", ItemStack.class).invoke(bone, stack));
     }
 
     public boolean lockRotation(Object activeModel, boolean locked) {

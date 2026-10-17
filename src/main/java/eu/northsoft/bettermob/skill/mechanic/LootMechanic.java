@@ -17,6 +17,7 @@ import org.bukkit.loot.LootTable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -87,7 +88,7 @@ public final class LootMechanic implements Mechanic {
     }
 
     private Collection<ItemStack> rollVanilla(String id, MechanicCall call, Player player, Location at, int looting) {
-        NamespacedKey key = NamespacedKey.fromString(id.trim().toLowerCase(java.util.Locale.ROOT));
+        NamespacedKey key = NamespacedKey.fromString(id.trim().toLowerCase(Locale.ROOT));
         LootTable table = key == null ? null : Bukkit.getLootTable(key);
         if (table == null) {
             warnOnce("skill.lootUnknownVanilla", "table", id);

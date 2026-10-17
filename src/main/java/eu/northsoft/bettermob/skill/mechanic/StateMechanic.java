@@ -2,6 +2,8 @@ package eu.northsoft.bettermob.skill.mechanic;
 
 import eu.northsoft.bettermob.skill.SkillEngine;
 
+import java.util.UUID;
+
 import static eu.northsoft.bettermob.skill.Params.firstParam;
 
 public final class StateMechanic implements Mechanic {
@@ -20,7 +22,7 @@ public final class StateMechanic implements Mechanic {
     public void execute(MechanicCall call) {
         String stateName = firstParam(call.params(), "state", "s", "animation", "a");
         if (stateName == null) return;
-        java.util.UUID id = call.context().caster().getUniqueId();
+        UUID id = call.context().caster().getUniqueId();
         Object tracker = engine.mobManager().trackerFor(id);
         if (tracker != null) {
             engine.betterModel().play(tracker, stateName);

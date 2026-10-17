@@ -8,14 +8,16 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
 import java.util.List;
+import java.util.Set;
+import java.util.function.Predicate;
 
 import static eu.northsoft.bettermob.skill.Params.conditionParam;
 import static eu.northsoft.bettermob.skill.SkillTags.TAG_PREFIX;
 
 public final class CandidateFilters {
-    public static final java.util.Set<String> SPECIAL = java.util.Set.of("isplayer", "iscaster", "ismob", "hastag", "faction");
+    public static final Set<String> SPECIAL = Set.of("isplayer", "iscaster", "ismob", "hastag", "faction");
 
-    public static boolean knows(String name, java.util.function.Predicate<String> registryHas) {
+    public static boolean knows(String name, Predicate<String> registryHas) {
         return SPECIAL.contains(name) || registryHas.test(name);
     }
 
