@@ -1,0 +1,85 @@
+name: Release tracking
+
+on:
+  pull_request_target:
+    types: [opened, reopened, closed]
+    branches: [dev]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: release-tracking
+  cancel-in-progress: false
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update the tracking issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+            const merged = context.payload.action === 'closed' && pr.merged;
+            const dropped = context.payload.action === 'closed' && !pr.merged;
+
+            const tracking = (await github.rest.issues.listForRepo({
+              owner, repo, labels: 'tracking', state: 'open', sort: 'created', direction: 'desc', per_page: 1,
+            })).data[0];
+            if (!tracking) {
+              core.info('No open tracking issue.');
+              return;
+            }
+            if (tracking.number === pr.number) return;
+
+            const version = tracking.labels.map(l => l.name).find(n => /^v\d/.test(n));
+
+            const closing = merged ? (await github.graphql(`
+              query($owner: String!, $repo: String!, $number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $number) {
+                    closingIssuesReferences(first: 50) { nodes { number } }
+                  }
+                }
+              }`, { owner, repo, number: pr.number })).repository.pullRequest.closingIssuesReferences.nodes.map(n => n.number) : [];
+
+            const lineOf = (lines, number) => lines.findIndex(l => new RegExp(`^- \\[[ x]\\] #${number}\\b`).test(l));
+            const addTo = (lines, section, entry) => {
+              let start = lines.findIndex(l => l.trim() === `## ${section}`);
+              if (start === -1) {
+                lines.push('', `## ${section}`);
+                start = lines.length - 1;
+              }
+              let end = start + 1;
+              while (end < lines.length && !lines[end].startsWith('## ')) end++;
+              while (end > start + 1 && lines[end - 1].trim() === '') end--;
+              lines.splice(end, 0, entry);
+            };
+            const mark = (lines, section, number, done) => {
+              const index = lineOf(lines, number);
+              const entry = `- [${done ? 'x' : ' '}] #${number}`;
+              if (index === -1) addTo(lines, section, entry);
+              else lines[index] = lines[index].replace(/^- \[[ x]\]/, `- [${done ? 'x' : ' '}]`);
+            };
+
+            const lines = (tracking.body || '').split('\n');
+            if (dropped) {
+              const index = lineOf(lines, pr.number);
+              if (index !== -1 && lines[index].startsWith('- [ ]')) lines.splice(index, 1);
+            } else {
+              mark(lines, 'Pull Requests', pr.number, merged);
+              for (const number of closing) mark(lines, 'Planned', number, true);
+            }
+
+            const body = lines.join('\n');
+            if (body !== tracking.body) {
+              await github.rest.issues.update({ owner, repo, issue_number: tracking.number, body });
+            }
+            if (version && !dropped) {
+              for (const number of [pr.number, ...closing]) {
+                await github.rest.issues.addLabels({ owner, repo, issue_number: number, labels: [version] });
+              }
+            }
