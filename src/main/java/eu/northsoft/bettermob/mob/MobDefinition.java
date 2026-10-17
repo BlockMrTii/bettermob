@@ -97,7 +97,7 @@ public final class MobDefinition {
             this(step, trigger, timerTicks, null, null);
         }
 
-        private static final Pattern PATTERN = Pattern.compile("^(.*\\S)\\s+~on(\\w+?)(?::([A-Za-z0-9_-]+))?(?:(<=|>=|<|>)(\\d+(?:\\.\\d+)?)(%)?)?(?:\\s+(\\?!?\\w+(?:\\{.*})?))?\\s*$", Pattern.CASE_INSENSITIVE);
+        private static final Pattern PATTERN = Pattern.compile("^(.*\\S)\\s+~on(\\w+?)(?::([A-Za-z0-9_-]+))?(?:(<=|>=|<|>)(\\d+(?:\\.\\d+)?)(%)?)?(?:\\s+(\\?!?~?\\w+(?:\\{.*})?))?\\s*$", Pattern.CASE_INSENSITIVE);
 
         public static SkillTrigger parse(String line) {
             Matcher matcher = PATTERN.matcher(line.trim());
@@ -122,7 +122,7 @@ public final class MobDefinition {
         }
 
         public enum Trigger {
-            SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT, HEALTH, TARGET, LOSETARGET, ENTERCOMBAT, EXITCOMBAT, KILL, SIGNAL, DESPAWN, MOVE;
+            SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT, HEALTH, TARGET, LOSETARGET, ENTERCOMBAT, EXITCOMBAT, KILL, SIGNAL, DESPAWN, MOVE, SWING, PRESSF, PICKUP, DROP, EQUIP;
 
             static Trigger parse(String value) {
                 return switch (value.toLowerCase(Locale.ROOT)) {
@@ -144,6 +144,11 @@ public final class MobDefinition {
                     case "signal" -> SIGNAL;
                     case "despawn" -> DESPAWN;
                     case "move" -> MOVE;
+                    case "swing", "leftclick" -> SWING;
+                    case "pressf", "swaphands" -> PRESSF;
+                    case "pickup", "itempickup" -> PICKUP;
+                    case "drop", "itemdrop" -> DROP;
+                    case "equip" -> EQUIP;
                     default -> null;
                 };
             }

@@ -57,6 +57,11 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `~onDeath` | The mob dies (the body still exists, so sounds and effects work) |
 | `~onTimer:<ticks>` | Repeatedly, default every 20 ticks |
 | `~onUse` | Items only: right-click with the item in the main hand |
+| `~onSwing` (`~onLeftClick`) | Items only: the player swings the arm with the item in the main hand |
+| `~onPressF` (`~onSwapHands`) | Items only: the player presses F (swap hands) with the item in the main hand. `cancelevent` stops the swap |
+| `~onPickup` (`~onItemPickup`) | Items only: the player picks the item up. `cancelevent` stops it |
+| `~onDrop` (`~onItemDrop`) | Items only: the player drops the item. `cancelevent` stops it |
+| `~onEquip` | Items only: the player switches the hotbar to the item |
 
 ## Mechanics
 
@@ -68,9 +73,10 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `sound` | `s` sound key, `p` pitch, `v` volume | Play a sound at the target |
 | `model` | `mid` | Attach a BetterModel model |
 | `modelengine` | `mid` | Attach a ModelEngine model |
-| `state` | `state` (`s`) | Play a model animation: once for BetterModel; for ModelEngine also `lerpIn`, `lerpOut` (default 0.1), `speed` (1) and `force` (true) |
+| `state` (`animation`) | `state` (`s`, `a`) | Play a model animation: once for BetterModel; for ModelEngine also `lerpIn`, `lerpOut` (default 0.1), `speed` (1) and `force` (true) |
 | `mountmodel` | `seat` (`p`, default `mount`), `controller` | Seat the target on a model's seat. BetterModel handles steering; with ModelEngine `controller` is `walking` (default), `flying`, `walking_force` or `flying_force`, and the driver seat is used when `seat` is not a passenger seat |
 | `dismountallmodel` | | Take everyone BetterMob seated on the target's model (with `mountmodel`) off it. A rider is forgotten only after it really left (a plugin that cancels the dismount keeps the record) |
+| `dismount` | | The target leaves the vehicle it rides |
 | `dismountall` | | Take every passenger off the target, seated by a model or not: plain passengers are ejected and the riders BetterMob seated on its model are taken off too |
 | `mounttarget` | `repeat`, `repeati` | Seat the target on the caster (plain vehicle passenger). `repeat` tries again that many more times (up to 40) every `repeati` ticks, and stops as soon as one try worked |
 | `setrotation` | `yaw`, `pitch`, `relative` | Turn the target to that yaw/pitch (pitch is limited to -90..90). With `relative=true` the numbers are added to the current ones. `<caster.l.yaw>` / `<caster.l.pitch>` insert the caster's own, `<caster.l.x>` `<caster.l.y>` `<caster.l.z>` its position |
@@ -80,6 +86,7 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `brightness` | `b`, `s` | Block and sky light level 0-15 of a display entity |
 | `setdisplayentityitem` | `i` | Put a BetterMob item id or a material on an item display |
 | `potion` | `type`, `duration` (ticks), `level` | Apply an effect |
+| `potionclear` (`removepotion`) | `type` | Remove the effects in `type` (a list with `,`), or all effects when `type` is missing |
 | `look` | - | Turn the caster toward the target |
 | `summon` | `type` (also `t`, `mob`) | Spawn another registered mob at the target |
 | `remove` | - | Remove the target |
@@ -123,7 +130,7 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `heal` | `a` | Heal the target by `a` health, capped at its max health |
 | `teleport` | - | Move the caster to the targeted location or entity (for example `@Target`, `@Location{...}`, `@Forward{...}`); the caster keeps its facing |
 | `explosion` | `yield`, `bd`, `fire` | Explosion at the target. `yield` is the power (default 2), `bd=true` breaks blocks, `fire=true` sets fires. Off by default |
-| `lightning` | `damage` | Lightning at the target; only the visual effect unless `damage=true` |
+| `lightning` (`fakelightning`) | `damage` | Lightning at the target; only the visual effect unless `damage=true` (`fakelightning` never damages) |
 | `setspeed` | `s` | Set the target's movement speed attribute (zombie default is about 0.23) |
 | `setai` | `ai` | `ai=false` switches the target mob's AI off, `ai=true` back on |
 | `stun` | `d`, `ai`, `g`, `f`, `state` | Stun the target mob for `d` ticks: `ai` (default true) turns its AI off, `g=true` also turns gravity off, `f=true` holds it still (velocity 0 every tick), `state=<animation>` plays that BetterModel animation once (same as the `state` mechanic) |
@@ -241,12 +248,25 @@ Skills:
 | `onblock{b=GRASS_BLOCK}` | The block under the caster is one of these |
 | `skillOnCooldown{skill=x}` | That skill's `Cooldown:` is still running for the caster |
 | `distance{d=0-6}` | Distance to the trigger/target is in range (also `>3`, `<=5`) |
+| `owner` | The target (or trigger) is the caster's owner: the entity whose `summon` created it, or the owner of a tamed caster. Usually written as `?~owner` |
+| `mythicmobtype{t=goblin,orc}` (`mobtype`) | The target (or the caster) is a BetterMob mob with one of these ids; inside targeter `conditions=[...]` it tests the candidate |
+| `boundingboxesoverlap` | The hitboxes of the caster and the target (or trigger) overlap; inside targeter `conditions=[...]` it tests the candidate against the caster |
 | `blocktype{type=OAK_LOG,SPRUCE_LOG}` | The obstructing block is one of these (used in `TargetConditions`) |
 
-A skill can have `Cooldown: <seconds>` (per caster). A `Conditions`/`TargetConditions` entry ending in `castinstead <skill>` casts that skill instead when it holds. A line without a targeter uses the target of the line that called its skill. In parameters, `<caster.damage>` and `<caster.name>` are replaced.
+A skill can have `Cooldown: <seconds>` (per caster). A `Conditions`/`TargetConditions` entry ending in `castinstead <skill>` casts that skill instead when it holds. A line without a targeter uses the target of the line that called its skill. In parameters, `<caster.damage>`, `<caster.name>` and `<caster.mythic_type>` (the caster's BetterMob id, or its entity type) are replaced.
 
 Write `onground{} true` or `onground{} false` to require a value. Any mechanic line can end
-with `?condition{...}`, or `?!condition{...}` to negate it.
+with `?condition{...}`, or `?!condition{...}` to negate it. `?~condition{...}` (and `?!~condition{...}`) tests the trigger instead
+of the caster; without a trigger the line is skipped.
+
+Conditions can be combined in brackets with `||` (or) and `&&` (and, binds stronger), also nested, and the whole group can take
+`true`/`false` and `castinstead`:
+
+```yaml
+Conditions:
+  - ( varequals{var=caster.item;val=banana} || varequals{var=caster.item;val=shell} ) true
+  - ( variableisset{var=caster.speed} false || variableisset{var=caster.top} false ) false
+```
 
 Conditions BetterMob doesn't know are logged and treated as
 **true**, so the line still runs.

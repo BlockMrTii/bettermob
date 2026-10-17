@@ -195,9 +195,19 @@ public final class PackValidator {
     }
 
     private void checkCondition(String raw, String line, String file, Report report) {
-        Condition condition = Condition.parse(raw);
-        if (condition == null) report.issues.add(new Issue(file, line, Reason.UNPARSEABLE, ""));
-        else if (!known.condition().test(condition.name())) report.issues.add(new Issue(file, line, Reason.CONDITION, condition.name()));
+        checkCondition(Condition.parse(raw.startsWith("~") ? raw.substring(1) : raw), known.condition(), Reason.CONDITION, line, file, report);
+    }
+
+    private void checkCondition(Condition condition, Predicate<String> knows, Reason reason, String line, String file, Report report) {
+        if (condition == null) {
+            report.issues.add(new Issue(file, line, Reason.UNPARSEABLE, ""));
+        } else if (condition.composite()) {
+            for (List<String> all : Condition.alternatives(condition.params())) {
+                for (String atom : all) checkCondition(Condition.parse(atom), knows, reason, line, file, report);
+            }
+        } else if (!knows.test(condition.name())) {
+            report.issues.add(new Issue(file, line, reason, condition.name()));
+        }
     }
 
     private void checkStep(SkillStep step, String line, String file, Report report) {
@@ -217,11 +227,7 @@ public final class PackValidator {
         String conditions = mechanic.targeterParams().get("conditions");
         if (conditions != null) {
             for (String raw : SkillEngine.splitInline(conditions)) {
-                Condition condition = Condition.parse(raw);
-                if (condition == null) report.issues.add(new Issue(file, line, Reason.UNPARSEABLE, ""));
-                else if (!known.targeterCondition().test(condition.name())) {
-                    report.issues.add(new Issue(file, line, Reason.TARGETER_CONDITION, condition.name()));
-                }
+                checkCondition(Condition.parse(raw), known.targeterCondition(), Reason.TARGETER_CONDITION, line, file, report);
             }
         }
 

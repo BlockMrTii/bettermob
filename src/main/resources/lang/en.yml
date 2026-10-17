@@ -59,6 +59,11 @@ command:
       signal: "Signal received"
       despawn: "Despawn"
       move: "Move"
+      swing: "Swing"
+      pressf: "Press F"
+      pickup: "Pickup"
+      drop: "Drop"
+      equip: "Equip"
   validate:
     unknownPack: "&cPack '{pack}' was not found in packs/."
     header: "&7Checked &f{lines} &7lines in &f{sources} &7place(s):"

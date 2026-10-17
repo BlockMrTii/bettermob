@@ -219,9 +219,14 @@ public final class SkillEngine implements org.bukkit.event.Listener {
     private static boolean needsBlock(List<String> conditions) {
         for (String raw : conditions) {
             Condition condition = Condition.parse(raw);
-            if (condition != null && condition.name().equals("blocktype")) return true;
+            if (condition != null && (condition.name().equals("blocktype") || condition.composite() && condition.params().contains("blocktype"))) return true;
         }
         return false;
+    }
+
+    public String mobType(org.bukkit.entity.Entity entity) {
+        MobDefinition definition = mobManager.definitionOf(entity.getUniqueId());
+        return definition != null ? definition.id : entity.getType().getKey().getKey();
     }
 
     public String subject(LivingEntity entity) {
@@ -292,7 +297,11 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         Map<String, String> p = mechanic.params();
 
         if (mechanic.inlineCondition() != null) {
-            boolean passes = conditionPasses(mechanic.inlineCondition(), context, null);
+            String inline = mechanic.inlineCondition();
+            boolean onTrigger = inline.startsWith("~");
+            boolean passes = onTrigger
+                    ? context.trigger() != null && conditionPasses(inline.substring(1), context, Target.ofEntity(context.trigger()))
+                    : conditionPasses(inline, context, null);
             if (mechanic.negated() == passes) {
                 if (debug.verbose()) debug.verbose("mechanic '" + mechanic.name() + "' skipped: inline condition", subject(context.caster()));
                 return false;
@@ -467,6 +476,7 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : p.entrySet()) {
             String value = at == null ? entry.getValue() : withLocationValues(entry.getValue(), at.getX(), at.getY(), at.getZ(), at.getYaw(), at.getPitch());
+            if (value.indexOf("<caster.mythic_type>") >= 0) value = value.replace("<caster.mythic_type>", mobType(context.caster()));
             result.put(entry.getKey(), withCasterValues(value, damage, name, escapesItself));
         }
         return result;

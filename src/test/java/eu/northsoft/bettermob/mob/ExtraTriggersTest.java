@@ -25,44 +25,44 @@ class ExtraTriggersTest {
 
     @Test
     void registeredNamesAreAcceptedWithOrWithoutTheOnPrefix() {
-        assertTrue(ExtraTriggers.register(OWNER, "onSwing"));
-        assertTrue(ExtraTriggers.register(OWNER, "PressF"));
-        assertFalse(ExtraTriggers.register(OWNER, "swing"));
-        assertTrue(ExtraTriggers.accepts("sound{s=x} @self ~onSwing"));
-        assertTrue(ExtraTriggers.accepts("skill{s=x} @self ~onPressF ?sneaking"));
-        assertTrue(ExtraTriggers.accepts("skill{s=x} @self ~onSwing:5"));
+        assertTrue(ExtraTriggers.register(OWNER, "onWave"));
+        assertTrue(ExtraTriggers.register(OWNER, "Whistle"));
+        assertFalse(ExtraTriggers.register(OWNER, "wave"));
+        assertTrue(ExtraTriggers.accepts("sound{s=x} @self ~onWave"));
+        assertTrue(ExtraTriggers.accepts("skill{s=x} @self ~onWhistle ?sneaking"));
+        assertTrue(ExtraTriggers.accepts("skill{s=x} @self ~onWave:5"));
         assertFalse(ExtraTriggers.accepts("skill{s=x} @self ~onDrop"));
     }
 
     @Test
     void aLineWithoutASkillStepIsNotAccepted() {
-        ExtraTriggers.register(OWNER, "swing");
-        assertFalse(ExtraTriggers.accepts("~onSwing"));
-        assertFalse(ExtraTriggers.accepts("   ~onSwing ?sneaking"));
+        ExtraTriggers.register(OWNER, "wave");
+        assertFalse(ExtraTriggers.accepts("~onWave"));
+        assertFalse(ExtraTriggers.accepts("   ~onWave ?sneaking"));
     }
 
     @Test
     void builtInNamesAndMissingOwnersAreRefusedAndUnregisterRemoves() {
         assertFalse(ExtraTriggers.register(OWNER, "onDamaged"));
         assertFalse(ExtraTriggers.register(OWNER, ""));
-        assertFalse(ExtraTriggers.register(null, "swing"));
-        ExtraTriggers.register(OWNER, "swing");
-        ExtraTriggers.unregister("onSwing");
-        assertFalse(ExtraTriggers.accepts("sound{s=x} @self ~onSwing"));
-        ExtraTriggers.register(OWNER, "swing");
+        assertFalse(ExtraTriggers.register(null, "wave"));
+        ExtraTriggers.register(OWNER, "wave");
+        ExtraTriggers.unregister("onWave");
+        assertFalse(ExtraTriggers.accepts("sound{s=x} @self ~onWave"));
+        ExtraTriggers.register(OWNER, "wave");
         ExtraTriggers.unregister(OWNER);
-        assertFalse(ExtraTriggers.accepts("sound{s=x} @self ~onSwing"));
+        assertFalse(ExtraTriggers.accepts("sound{s=x} @self ~onWave"));
     }
 
     @Test
     void unparsedLinesAreHeldUntilReadyAndResetStartsOver() {
         AtomicInteger warnings = new AtomicInteger();
-        ExtraTriggers.register(OWNER, "swing");
+        ExtraTriggers.register(OWNER, "wave");
         ExtraTriggers.warnUnparsed("sound{s=x} @self ~onNothing", warnings::incrementAndGet);
         assertEquals(0, warnings.get());
         ExtraTriggers.ready();
         assertEquals(1, warnings.get());
-        ExtraTriggers.warnUnparsed("sound{s=x} @self ~onSwing", warnings::incrementAndGet);
+        ExtraTriggers.warnUnparsed("sound{s=x} @self ~onWave", warnings::incrementAndGet);
         assertEquals(1, warnings.get());
         ExtraTriggers.warnUnparsed("sound{s=x} @self ~onOther", warnings::incrementAndGet);
         assertEquals(2, warnings.get());

@@ -29,23 +29,30 @@ public final class CandidateFilters {
         for (String raw : conditions) {
             Condition condition = Condition.parse(raw);
             if (condition == null) continue;
-            boolean actual = switch (condition.name()) {
-                case "isplayer" -> candidate instanceof Player;
-                case "iscaster" -> candidate.equals(context.caster());
-                case "ismob" -> !(candidate instanceof Player);
-                case "hastag" -> candidate.getScoreboardTags().contains(TAG_PREFIX + conditionParam(condition.params(), "t", "tag", "n"));
-                case "faction" -> Factions.has(engine.mobManager(), candidate, conditionParam(condition.params(), "faction", "f", "name"));
-                default -> {
-                    if (!engine.conditionRegistry().has(condition.name())) {
-                        engine.plugin().messages().warn("skill.targeterConditionUnsupported", "condition", condition.name());
-                        yield true;
-                    }
-                    SkillContext asCandidate = new SkillContext(candidate, context.caster(), null, context.origin(), false);
-                    yield engine.conditionRegistry().evaluate(condition, asCandidate, null);
-                }
-            };
-            if (actual != (condition.expected() == null || condition.expected())) return false;
+            if (!holds(candidate, condition, context)) return false;
         }
         return true;
+    }
+
+    private boolean holds(LivingEntity candidate, Condition condition, SkillContext context) {
+        if (condition.composite()) {
+            return Condition.holds(condition.params(), atom -> holds(candidate, atom, context)) == (condition.expected() == null || condition.expected());
+        }
+        boolean actual = switch (condition.name()) {
+            case "isplayer" -> candidate instanceof Player;
+            case "iscaster" -> candidate.equals(context.caster());
+            case "ismob" -> !(candidate instanceof Player);
+            case "hastag" -> candidate.getScoreboardTags().contains(TAG_PREFIX + conditionParam(condition.params(), "t", "tag", "n"));
+            case "faction" -> Factions.has(engine.mobManager(), candidate, conditionParam(condition.params(), "faction", "f", "name"));
+            default -> {
+                if (!engine.conditionRegistry().has(condition.name())) {
+                    engine.plugin().messages().warn("skill.targeterConditionUnsupported", "condition", condition.name());
+                    yield true;
+                }
+                SkillContext asCandidate = new SkillContext(candidate, context.caster(), null, context.origin(), false);
+                yield engine.conditionRegistry().evaluate(condition, asCandidate, null);
+            }
+        };
+        return actual == (condition.expected() == null || condition.expected());
     }
 }

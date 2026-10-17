@@ -52,6 +52,10 @@ public final class ConditionRegistry {
         conditions.put("modelhaspassengers", new ModelRideCondition(engine, ModelRideCondition.Kind.HAS_PASSENGERS));
         conditions.put("ridingmodel", new ModelRideCondition(engine, ModelRideCondition.Kind.RIDING_MODEL));
         conditions.put("mounted", new ModelRideCondition(engine, ModelRideCondition.Kind.MOUNTED));
+        conditions.put("owner", new OwnerCondition());
+        conditions.put("mythicmobtype", new MobTypeCondition(engine));
+        conditions.put("mobtype", new MobTypeCondition(engine));
+        conditions.put("boundingboxesoverlap", new BoundingBoxesOverlapCondition());
         conditions.put("killedmob", new KillCondition(engine, false));
         conditions.put("killedmobs", new KillCondition(engine, true));
     }
@@ -80,6 +84,9 @@ public final class ConditionRegistry {
     }
 
     public boolean evaluate(Condition condition, SkillContext context, Target targetOverride) {
+        if (condition.composite()) {
+            return Condition.holds(condition.params(), atom -> evaluate(atom, context, targetOverride) == (atom.expected() == null || atom.expected()));
+        }
         SkillCondition found = conditions.get(condition.name());
         if (found == null) {
             CustomEntry custom = customs.get(condition.name());
