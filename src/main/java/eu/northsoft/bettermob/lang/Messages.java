@@ -12,6 +12,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 public final class Messages {
     private static final List<String> BUNDLED = List.of("en", "de");
@@ -67,8 +68,10 @@ public final class Messages {
         plugin.getLogger().severe(plain(get(key, placeholders)));
     }
 
+    private static final Pattern COLOR_CODE = Pattern.compile("§[0-9a-fk-or]");
+
     private static String plain(String text) {
-        return text.replaceAll("§[0-9a-fk-or]", "");
+        return COLOR_CODE.matcher(text).replaceAll("");
     }
 
     private YamlConfiguration loadBundledEnglish() {

@@ -9,12 +9,15 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 public final class ItemNbt {
+    private static final Pattern INVALID = Pattern.compile("[^a-z0-9_.-]");
+
     private ItemNbt() {}
 
     public static NamespacedKey key(String name) {
-        String clean = name == null ? "" : name.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_.-]", "_");
+        String clean = name == null ? "" : INVALID.matcher(name.trim().toLowerCase(Locale.ROOT)).replaceAll("_");
         return clean.isEmpty() ? null : new NamespacedKey("bettermob", "nbt_" + clean);
     }
 
