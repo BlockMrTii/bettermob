@@ -27,6 +27,15 @@ class ConditionRegistryTest {
     }
 
     @Test
+    void theMythicMobsCompatibilityConditionsAreRegistered() {
+        for (String name : new String[] {"varequals", "variableequals", "variableisset", "variableinrange", "stringeq",
+                "modelhaspassengers", "ridingmodel", "mounted", "crouching", "day", "gamemode", "outside", "holding",
+                "moving", "ismoving", "playerwithin", "playersinradius", "fieldofview", "score"}) {
+            assertTrue(registry.has(name), name);
+        }
+    }
+
+    @Test
     void aCustomConditionReceivesTheTargetOverride() {
         AtomicReference<Double> x = new AtomicReference<>();
         registry.registerCustom(null, "atx", context -> {

@@ -49,6 +49,9 @@ public final class ConditionRegistry {
         conditions.put("playersinradius", new PlayerWithinCondition());
         conditions.put("fieldofview", new FieldOfViewCondition());
         conditions.put("score", new ScoreCondition(engine));
+        conditions.put("modelhaspassengers", new ModelRideCondition(engine, ModelRideCondition.Kind.HAS_PASSENGERS));
+        conditions.put("ridingmodel", new ModelRideCondition(engine, ModelRideCondition.Kind.RIDING_MODEL));
+        conditions.put("mounted", new ModelRideCondition(engine, ModelRideCondition.Kind.MOUNTED));
         conditions.put("killedmob", new KillCondition(engine, false));
         conditions.put("killedmobs", new KillCondition(engine, true));
     }
