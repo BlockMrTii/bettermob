@@ -33,8 +33,8 @@ public final class TargeterRegistry {
         register((SingleTargeter) (params, context) -> Target.ofEntity(context.caster()), "self", "caster", "mob");
         register((SingleTargeter) (params, context) -> Target.ofLocation(
                 context.origin() != null ? context.origin() : context.caster().getLocation()), "origin");
-        register((SingleTargeter) (params, context) -> Target.ofLocation(
-                (context.trigger() != null ? context.trigger() : context.caster()).getLocation()), "targetlocation", "tl");
+        register((SingleTargeter) (params, context) -> Target.ofLocation(LocationOffsets.apply(
+                (context.trigger() != null ? context.trigger() : context.caster()).getLocation(), params)), "targetlocation", "tl", "triggerlocation");
         register(new FixedLocationTargeter(), "location");
         register(new OwnerTargeter(), "owner", "parent");
         register(new ModelPassengersTargeter(engine, filters), "modelpassengers");
