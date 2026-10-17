@@ -20,6 +20,7 @@ class ConditionRegistryTest {
         assertTrue(registry.registerCustom(null, "pettaming", context -> true));
         assertFalse(registry.registerCustom(null, "PetTaming", context -> true));
         assertFalse(registry.registerCustom(null, "health", context -> true));
+        assertFalse(registry.registerCustom(null, "score", context -> true));
         assertTrue(registry.has("pettaming"));
         registry.unregisterCustom("pettaming");
         assertFalse(registry.has("pettaming"));

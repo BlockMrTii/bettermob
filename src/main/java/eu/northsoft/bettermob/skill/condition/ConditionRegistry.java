@@ -48,6 +48,7 @@ public final class ConditionRegistry {
         conditions.put("playerwithin", new PlayerWithinCondition());
         conditions.put("playersinradius", new PlayerWithinCondition());
         conditions.put("fieldofview", new FieldOfViewCondition());
+        conditions.put("score", new ScoreCondition(engine));
         conditions.put("killedmob", new KillCondition(engine, false));
         conditions.put("killedmobs", new KillCondition(engine, true));
     }
