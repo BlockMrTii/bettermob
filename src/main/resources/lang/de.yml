@@ -172,6 +172,7 @@ ai:
   goalUnavailable: "AI-Goal '{goal}' ist für Mob-Typ '{type}' nicht verfügbar."
 
 mob:
+  healthCapped: "Mob '{mob}': Health {health} liegt über dem Server-Limit, begrenzt auf {max}. Erhöhe attribute.maxHealth.max in spigot.yml."
   behaviourInvalid: "Mob '{mob}': ungueltige Bewegungsoption '{option}'."
   eggMaterialInvalid: "Mob '{mob}': Egg-Material '{value}' ist kein Material, es wird das Ei des Mob-Typs verwendet."
   loaded: "{count} Mobs geladen."

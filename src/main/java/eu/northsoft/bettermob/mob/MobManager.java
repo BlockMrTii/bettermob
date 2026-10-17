@@ -58,6 +58,7 @@ public final class MobManager {
     private final Map<UUID, Map<UUID, Threat>> threatTables = new ConcurrentHashMap<>();
     private final Map<UUID, Map<DamageCause, Double>> damageModifiers = new ConcurrentHashMap<>();
     private final Map<UUID, MobDefinition> definitions = new ConcurrentHashMap<>();
+    private final java.util.Set<String> healthCapWarned = ConcurrentHashMap.newKeySet();
     private final Map<UUID, List<Runnable>> timers = new ConcurrentHashMap<>();
     private final BossBarManager bossBars;
     private SkillEngine skillEngine;
@@ -109,7 +110,11 @@ public final class MobManager {
         var maxHealth = entity.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealth != null) {
             maxHealth.setBaseValue(definition.health);
-            entity.setHealth(spawning ? definition.health : Math.min(entity.getHealth(), definition.health));
+            double health = Math.min(definition.health, maxHealth.getValue());
+            if (health < definition.health && maxHealth.getModifiers().isEmpty() && healthCapWarned.add(definition.id)) {
+                plugin.messages().warn("mob.healthCapped", "mob", definition.id, "health", definition.health, "max", health);
+            }
+            entity.setHealth(spawning ? health : Math.min(entity.getHealth(), health));
         }
         var damage = entity.getAttribute(Attribute.ATTACK_DAMAGE);
         if (damage != null) damage.setBaseValue(definition.damage);
