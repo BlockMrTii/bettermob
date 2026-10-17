@@ -224,6 +224,26 @@ public final class SkillEngine implements org.bukkit.event.Listener {
         return false;
     }
 
+    public org.bukkit.Location locationParam(String value, SkillContext context) {
+        if (value == null || value.isBlank()) return null;
+        String text = Params.stripQuotes(value);
+        if (text.startsWith("@")) {
+            SkillStep.Cursor cursor = new SkillStep.Cursor(text.substring(1));
+            String name = cursor.readWord().toLowerCase(Locale.ROOT);
+            Map<String, String> params = cursor.peek() == '{' ? SkillStep.parseParams(cursor.readBraced()) : Map.of();
+            List<Target> found = targeters.resolveAll(name, params, context);
+            return found.isEmpty() || found.get(0).location() == null ? null : found.get(0).location().clone();
+        }
+        String[] parts = text.split(",");
+        if (parts.length < 3) return null;
+        double x = Params.parseNumber(parts[0].trim(), Double.NaN);
+        double y = Params.parseNumber(parts[1].trim(), Double.NaN);
+        double z = Params.parseNumber(parts[2].trim(), Double.NaN);
+        if (Double.isNaN(x) || Double.isNaN(y) || Double.isNaN(z)) return null;
+        org.bukkit.World world = parts.length > 3 ? org.bukkit.Bukkit.getWorld(parts[3].trim()) : context.caster().getWorld();
+        return world == null ? null : new org.bukkit.Location(world, x, y, z);
+    }
+
     public String mobType(org.bukkit.entity.Entity entity) {
         MobDefinition definition = mobManager.definitionOf(entity.getUniqueId());
         return definition != null ? definition.id : entity.getType().getKey().getKey();

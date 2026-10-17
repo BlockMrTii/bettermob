@@ -135,6 +135,10 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `variableunset` (`unsetvar`, `unsetvariable`) | `var` | Remove the variable |
 | `addvariable` (`variableadd`) | `var`, `value` | Add a number to a variable (a missing one counts as 0) |
 | `heal` | `a` | Heal the target by `a` health, capped at its max health |
+| `teleportto` (`tpt`) | `location` (`x,y,z[,world]`, calculations allowed, or a targeter like `@TriggerLocation{fo=6;yo=0.25}`) | Move the target there; it keeps its facing |
+| `teleporty` (`tpy`) | `y` (calculation allowed, e.g. `<caster.l.y>+5`) | Move the target to that height, same x and z |
+| `pull` | `velocity` (`v`, default 1), `origin` (a targeter like `@Forward{...}`) | Pull the target towards the caster, or towards `origin`. The speed grows with the distance (`v/10` per block) and is capped at 4 blocks per tick |
+| `propel` | `velocity` (`v`, default 10) | Push the caster towards the target at `v/10` blocks per tick (at most 4); when the target is the caster itself, along its facing |
 | `teleport` | - | Move the caster to the targeted location or entity (for example `@Target`, `@Location{...}`, `@Forward{...}`); the caster keeps its facing |
 | `explosion` | `yield`, `bd`, `fire` | Explosion at the target. `yield` is the power (default 2), `bd=true` breaks blocks, `fire=true` sets fires. Off by default |
 | `lightning` (`fakelightning`) | `damage` | Lightning at the target; only the visual effect unless `damage=true` (`fakelightning` never damages) |
@@ -163,7 +167,7 @@ A line of its own, `delay 20`, pauses the rest of the skill for 20 ticks.
 |---|---|
 | `@self`, `@Caster`, `@Mob` | The caster (default) |
 | `@trigger`, `@target` | The entity that caused the trigger (falls back to the caster) |
-| `@Forward{f=1.5;uel=true;yoffset=-1;rotate=-22}` | A point in front of the caster. `f` distance, `uel` start at eye height, `yoffset` vertical shift, `rotate` degrees sideways (positive = right) |
+| `@Forward{f=1.5;uel=true;yoffset=-1;rotate=-22}` | A point in front of the caster. `f` distance, `uel` start at eye height, `yoffset` (`y`) vertical shift, `rotate` degrees sideways (positive = right), `sideoffset` (`so`) blocks sideways |
 | `@SelfLocation{x=0;y=-1;z=0}` | The caster's position, optionally shifted |
 | `@ObstructingBlock` | The block the caster is looking at (up to 2.5 blocks) |
 | `@EntitiesNearOrigin{r=4;Conditions=[ - isPlayer{} true - isCaster{} false]}` (`@ENO`) | Every entity within `r` of a totem's location, closest first. Conditions: `isPlayer`, `isCaster`, `isMob`, `hasTag{t=...}`, `faction{faction=...}` and every skill condition (see below). Skill conditions test the candidate, not the caster: `health{h=<50%}` is the candidate's health, `distance{d=<3}` and `lineofsight` measure between the candidate and the caster |
@@ -174,7 +178,7 @@ A line of its own, `delay 20`, pauses the rest of the skill for 20 ticks.
 | `@PIR{r=2}` | The nearest player within `r` blocks (`limit` defaults to 1). If nobody is there, the line is skipped |
 | `@Origin` | A totem's location, or the caster's location outside a totem |
 | `@Location{x=0;y=64;z=0;w=world}` | A fixed location; `w` (or `world`) is the world, default the caster's |
-| `@TargetLocation` (`@TL`) | The location of the trigger/target entity |
+| `@TargetLocation` (`@TL`, `@TriggerLocation`) | The location of the trigger/target entity, optionally moved by `fo` (forward), `so` (sideways, positive = right) and `yo` (up) along its facing |
 | `@Owner`, `@Parent` | The entity whose `summon` created the caster. If there is none, the line is skipped |
 | `@ModelPassengers{p=driver;mid=model;conditions=[...]}` | The entities BetterMob seated on the caster's model with `mountmodel`, optionally only one seat `p` and only when the caster's mob uses model `mid`. Riders seated some other way (for example by the model plugin itself) are not known |
 | `@mountedmodel` | The model owner the caster was seated on with `mountmodel` |
@@ -284,6 +288,6 @@ Several MythicMobs mechanics, conditions and targeters. Mechanics inside aura
 effects that aren't supported (for example `velocity`) produce a warning like
 `Skill-Mechanic 'velocity' wird nicht unterstuetzt` and are skipped.
 
-Not supported: the mechanics `teleportto`, `teleporty`, `propel`, `speak`, `blackscreen` and `jsonmessage`; they have no clear equivalent yet. `effect:particle` is an alias of `effect:particles`.
+Not supported: the mechanics `speak`, `blackscreen` and `jsonmessage`; they have no clear equivalent yet. `effect:particle` is an alias of `effect:particles`.
 
 Also not supported: `segment` (ModelEngine segment bones; its options are not clear enough).

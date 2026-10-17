@@ -88,5 +88,9 @@ public final class BuiltinMechanics {
         registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.LOCK), "lockmodel");
         registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.MODIFY), "modifystate");
         registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.DEFAULT), "defaultstate");
+        registry.register(new TeleportToMechanic(engine), "teleportto", "tpt");
+        registry.register(new TeleportYMechanic(), "teleporty", "tpy");
+        registry.register(new PullMechanic(engine, false), "pull");
+        registry.register(new PullMechanic(engine, true), "propel");
     }
 }
