@@ -109,6 +109,11 @@ public final class MobListener implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onEffectDamage(org.bukkit.event.entity.EntityDamageByEntityEvent event) {
+        if (event.getDamager().getScoreboardTags().contains(eu.northsoft.bettermob.skill.SkillTags.EFFECT_TAG)) event.setCancelled(true);
+    }
+
     @EventHandler(priority = EventPriority.LOW)
     public void onDamageModifier(EntityDamageEvent event) {
         if (event.getEntity() instanceof LivingEntity victim) {

@@ -20,6 +20,7 @@ maintainers have tried, how far they run, and how to check your own.
 | **Trading cards** (NorthSoft trading cards pack) | Lines read, reported fixed in 1.1.1 | `_parse` / `_activate` skills with nested braces, `takeitem`, `spin`, `~onUse` item skills. Commands such as `/nstc givecard` need the plugin that owns them. A cut-down copy is in `src/test/resources/packs/trading_cards`. |
 | **Cubees** (ModelEngine) | Reported working | Attach the model with `modelengine{mid=...}`; ModelEngine mobs get no BetterModel features (`state`, seats, `@ModelPart`, `bodyrotation`). |
 | **Mustang and kart packs** | `mountmodel` supported, lines read | Rideable seats work through BetterModel only (WASD control on the seat bone). Nested braces in the kart skills parse since 1.1.1. |
+| **littleroom minekarts**, **nogs_menagerie**, **Cubees v2** | Lines read | Every line validates except one `segment` line in nogs_menagerie (offline check of the local copies against the dev build). Not re-tested in-game. |
 
 "Played in-game" means a maintainer ran the pack on a server. "Lines read" means the pack's lines parse and
 validate, but it was not re-tested in-game for the current version. If you find a difference, please open a
@@ -31,6 +32,6 @@ Every pack under `src/test/resources/packs/` is parsed on every pull request and
 
 ## Known gaps
 
-- Variables, factions as a MythicMobs system and several MythicMobs mechanics and conditions are not implemented, they are reported by `/bettermob validate`. See [Skills](Skills) for what exists.
+- Factions as a MythicMobs system and some MythicMobs mechanics and conditions are not implemented, they are reported by `/bettermob validate`. See [Skills](Skills) for what exists.
 - AI goals are matched against the goals the mob type really has; names without a match are skipped with a warning.
 - Things a pack gets from other plugins (commands, items, models) need those plugins.

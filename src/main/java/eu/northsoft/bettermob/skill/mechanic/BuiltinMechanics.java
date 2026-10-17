@@ -100,5 +100,10 @@ public final class BuiltinMechanics {
         registry.register(new SpeakMechanic(engine), "speak");
         registry.register(new BlackScreenMechanic(), "blackscreen");
         registry.register(new SetScoreMechanic(), "settargetscore");
+        registry.register(new FireworkMechanic(engine), "effect:firework", "firework");
+        registry.register(new BlockMaskMechanic(engine), "effect:blockmask", "blockmask");
+        registry.register(new ChunkForceLoadMechanic(), "setchunkforceloaded");
+        registry.register(new DisplayTransformMechanic(), "displaytransformation");
+        registry.register(new RayTraceToMechanic(engine), "raytraceto");
     }
 }

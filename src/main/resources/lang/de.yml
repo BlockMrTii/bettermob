@@ -193,6 +193,7 @@ mob:
   migrationFailed: "Migration von '{mob}' fehlgeschlagen: {error}"
 
 skill:
+  blockMaskUnknown: "effect:blockmask: '{material}' ist kein Block - übersprungen."
   loaded: "{count} Skills geladen."
   duplicate: "Skill '{skill}' ist mehrfach definiert ({count} weitere, zuerst wiederholt in {folder}). Die erste Definition bleibt, die anderen werden ignoriert."
   lineInvalid: "Skill '{skill}': Zeile '{line}' konnte nicht geparst werden."
