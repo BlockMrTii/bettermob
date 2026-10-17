@@ -23,6 +23,7 @@ public final class TargeterRegistry {
         register(new EntitiesInRadiusTargeter(filters, false, Integer.MAX_VALUE, false), "entitiesinradius", "eir", "livingentitiesinradius", "leir");
         register(new EntitiesInRadiusTargeter(filters, true, Integer.MAX_VALUE, false), "playersinradius");
         register(new EntitiesInRadiusTargeter(filters, true, 1, false), "pir");
+        register(new EntitiesInRadiusTargeter(filters, false, Integer.MAX_VALUE, false, true), "livingincone", "lic");
         register((SingleTargeter) (params, context) -> context.trigger() != null
                 ? Target.ofEntity(context.trigger()) : Target.ofEntity(context.caster()), "trigger", "target");
         register(new ObstructingBlockTargeter(), "obstructingblock");

@@ -156,6 +156,7 @@ A line of its own, `delay 20`, pauses the rest of the skill for 20 ticks.
 | `@EntitiesInRadius{r=4}` (`@EIR`, `@LivingEntitiesInRadius`, `@LEIR`) | Same, around the caster |
 | `@PlayersInRadius{r=10}` | Every player within `r` of the caster |
 | `@ModelPart{p=tnt2}` | The position of that bone of the mob's BetterModel or ModelEngine model (falls back to chest height) |
+| `@LivingInCone{a=90;r=16;rot=0;targetplayers=true}` (`@LIC`) | Every living entity except the caster within `r` blocks (default 16) and within a horizontal cone of `a` degrees (default 90) around the caster's facing, turned by `rot` degrees. `targetplayers=false` leaves players out. `y` is accepted and ignored, since the cone is horizontal |
 | `@PIR{r=2}` | The nearest player within `r` blocks (`limit` defaults to 1). If nobody is there, the line is skipped |
 | `@Origin` | A totem's location, or the caster's location outside a totem |
 | `@Location{x=0;y=64;z=0;w=world}` | A fixed location; `w` (or `world`) is the world, default the caster's |
@@ -165,7 +166,7 @@ A line of its own, `delay 20`, pauses the rest of the skill for 20 ticks.
 | `@mountedmodel` | The model owner the caster was seated on with `mountmodel` |
 | `@children{target=MARKER;r=32}` | Entities summoned by the caster (`summon`) within `r` blocks (default 32), optionally only of that entity type |
 
-All multi-target targeters (`@EntitiesNearOrigin`, `@EntitiesInRadius`, `@PlayersInRadius`, `@PIR`) also take `limit=<n>` and `sort=nearest|farthest|random`, and run the mechanic once per target. An unknown targeter is logged once and the line targets the default target.
+All multi-target targeters (`@EntitiesNearOrigin`, `@EntitiesInRadius`, `@PlayersInRadius`, `@LivingInCone`, `@PIR`) also take `limit=<n>` and `sort=nearest|farthest|random`, and run the mechanic once per target. An unknown targeter is logged once and the line targets the default target.
 
 ## Arguments
 
@@ -229,6 +230,7 @@ Skills:
 | `moving` (`ismoving`) | The caster's velocity is above a small limit; players often report no velocity, so use it for mobs |
 | `playerwithin{d=10;count=2}` (`playersinradius`) | At least `count` players (default 1) are within `d` blocks; `count` also takes `<3` or `1-2` |
 | `fieldofview{a=90}` | The target (or trigger) is within a cone of `a` degrees in front of the caster |
+| `score{o=objective;v=3}` | The target's (or trigger's) score in that main-scoreboard objective matches `v` (also `>3`, `<=5`, `1-3`). Players are looked up by name, other entities by UUID. `o` and `v` take variable placeholders. Always false on Folia, which has no main scoreboard |
 | `killedmob{mob=goblin;count=10}` | The player has killed at least 10 of that mob (the kill counters, see `/bettermob top`). `count` is a number (at least), a comparison (`<5`) or a range (`3-6`); default 1. The player is the checked target, otherwise the trigger, otherwise the caster |
 | `killedmobs{count=50}` | The same for the kills of all BetterMob mobs together |
 | `time{t=day}` | `day` or `night` of the caster's world; also a tick or range, e.g. `time{t=0-6000}` |
@@ -255,6 +257,6 @@ Several MythicMobs mechanics, conditions and targeters. Mechanics inside aura
 effects that aren't supported (for example `velocity`) produce a warning like
 `Skill-Mechanic 'velocity' wird nicht unterstuetzt` and are skipped.
 
-Not supported: the targeter `@LivingInCone`, and the mechanics `teleportto`, `teleporty`, `propel`, `speak`, `blackscreen` and `jsonmessage`; they have no clear equivalent yet. `effect:particle` is an alias of `effect:particles`.
+Not supported: the mechanics `teleportto`, `teleporty`, `propel`, `speak`, `blackscreen` and `jsonmessage`; they have no clear equivalent yet. `effect:particle` is an alias of `effect:particles`.
 
 Also not supported: `tint` and `lockmodel` (model plugin specific, no stable call to reflect on) and `meg:setitemmodel` (ModelEngine only).
