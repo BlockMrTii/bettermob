@@ -31,7 +31,8 @@ class MechanicRegistryTest {
             "animation", "fakelightning", "dismount", "potionclear", "removepotion",
             "tint", "glowbone", "partvis", "partvisibility", "meg:setitemmodel", "setitemmodel", "lockmodel", "modifystate", "defaultstate",
             "teleportto", "tpt", "teleporty", "tpy", "pull", "propel",
-            "setitemnbt", "setlore", "consumeslot", "consumehelditem", "onchat", "jsonmessage", "jsonmsg", "speak", "blackscreen", "settargetscore");
+            "setitemnbt", "setlore", "consumeslot", "consumehelditem", "onchat", "jsonmessage", "jsonmsg", "speak", "blackscreen", "settargetscore",
+            "effect:firework", "firework", "effect:blockmask", "blockmask", "setchunkforceloaded", "displaytransformation", "raytraceto");
 
     private static final Set<String> HANDLED_BY_ENGINE = Set.of("cancelskill", "delay");
 
