@@ -62,6 +62,7 @@ public final class MobManager {
 
     private final Map<UUID, Object> modelEngineTrackers = new ConcurrentHashMap<>();
     private final ThreatTables threats = new ThreatTables();
+    private final MobHome home;
     private final Map<UUID, Map<DamageCause, Double>> damageModifiers = new ConcurrentHashMap<>();
     private final Map<UUID, MobDefinition> definitions = new ConcurrentHashMap<>();
     private final Set<String> healthCapWarned = ConcurrentHashMap.newKeySet();
@@ -81,6 +82,7 @@ public final class MobManager {
         this.items = items;
         this.mobIdKey = new NamespacedKey(plugin, "mob_id");
         this.bossBars = new BossBarManager(plugin);
+        this.home = new MobHome(plugin);
     }
 
     public LivingEntity spawn(MobDefinition definition, Location location) {
@@ -139,23 +141,8 @@ public final class MobManager {
         applyEquipment(entity, definition);
     }
 
-    private NamespacedKey homeKey() {
-        return new NamespacedKey(plugin, "home");
-    }
-
     public Location homeOf(Entity entity) {
-        String stored = entity.getPersistentDataContainer().get(homeKey(), PersistentDataType.STRING);
-        if (stored == null) return null;
-        String[] parts = stored.split(";");
-        if (parts.length != 3 && parts.length != 4) return null;
-        try {
-            int offset = parts.length - 3;
-            World world = offset == 0 ? entity.getWorld() : Bukkit.getWorld(UUID.fromString(parts[0]));
-            if (world == null) return null;
-            return new Location(world, Double.parseDouble(parts[offset]), Double.parseDouble(parts[offset + 1]), Double.parseDouble(parts[offset + 2]));
-        } catch (IllegalArgumentException exception) {
-            return null;
-        }
+        return home.of(entity);
     }
 
     private final Map<UUID, Long> lastAlert = new ConcurrentHashMap<>();
@@ -178,10 +165,7 @@ public final class MobManager {
 
     private void applyBehaviour(LivingEntity entity, MobDefinition definition) {
         Behaviour behaviour = definition.behaviour;
-        if (behaviour != null && behaviour.needsHome() && homeOf(entity) == null) {
-            Location at = entity.getLocation();
-            entity.getPersistentDataContainer().set(homeKey(), PersistentDataType.STRING, at.getWorld().getUID() + ";" + at.getX() + ";" + at.getY() + ";" + at.getZ());
-        }
+        if (behaviour != null && behaviour.needsHome()) home.storeIfMissing(entity);
         if (entity instanceof Mob mob) BehaviourGoals.apply(plugin, mob, behaviour, () -> homeOf(entity), other -> {
             MobDefinition found = definitions.get(other.getUniqueId());
             return found == null ? null : found.id;
