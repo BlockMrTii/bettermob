@@ -11,6 +11,7 @@ import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.model.BetterModelHook;
 import eu.northsoft.bettermob.model.ModelEngineHook;
+import eu.northsoft.bettermob.model.ModelRider;
 import eu.northsoft.bettermob.skill.condition.ConditionRegistry;
 import eu.northsoft.bettermob.skill.mechanic.BuiltinMechanics;
 import eu.northsoft.bettermob.skill.mechanic.Mechanic;
@@ -83,6 +84,16 @@ public final class SkillEngine implements Listener {
         for (Mechanic mechanic : mechanics.builtins()) {
             if (mechanic instanceof Listener listener) plugin.getServer().getPluginManager().registerEvents(listener, plugin);
         }
+    }
+
+    public List<UUID> modelRiders(UUID owner, String seat) {
+        List<ModelRider> riders = new ArrayList<>();
+        for (UUID id : modelPassengers.riders(owner, seat)) riders.add(new ModelRider(id, seat));
+        Object betterTracker = mobManager.trackerFor(owner);
+        if (betterTracker != null) riders.addAll(betterModel.riders(betterTracker));
+        Object engineTracker = mobManager.modelEngineTrackerFor(owner);
+        if (engineTracker != null) riders.addAll(modelEngine.riders(engineTracker));
+        return ModelRider.select(riders, seat);
     }
 
     public ModelPassengers modelPassengers() {
@@ -325,10 +336,13 @@ public final class SkillEngine implements Listener {
 
     private boolean runMechanic(SkillStep.Mechanic mechanic, SkillContext context, Deferral deferral) {
         Runnable leave = debug.enter(context.caster().getUniqueId());
+        SkillStats stats = plugin.stats();
+        long start = stats.enabled() && !mechanic.params().containsKey("delay") ? System.nanoTime() : 0L;
         try {
             return runMechanicScoped(mechanic, context, deferral);
         } finally {
             leave.run();
+            if (start != 0L) stats.recordMechanic(mechanic.name(), System.nanoTime() - start);
         }
     }
 

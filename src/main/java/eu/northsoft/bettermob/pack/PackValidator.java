@@ -4,6 +4,8 @@ import eu.northsoft.bettermob.drop.DropEntry;
 import eu.northsoft.bettermob.mob.Behaviour;
 import eu.northsoft.bettermob.mob.ExtraTriggers;
 import eu.northsoft.bettermob.mob.MobDefinition;
+import eu.northsoft.bettermob.mob.MobPhase;
+import org.bukkit.Material;
 import eu.northsoft.bettermob.skill.Condition;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillStep;
@@ -22,7 +24,12 @@ public final class PackValidator {
     public record Models(Predicate<String> betterModel, Predicate<String> modelEngine) {}
 
     public record Knowledge(Predicate<String> mechanic, Predicate<String> condition, Predicate<String> targeter, Predicate<String> skill,
-                            Predicate<String> targeterCondition, Models models, Predicate<String> dropTable) {
+                            Predicate<String> targeterCondition, Models models, Predicate<String> dropTable, Predicate<String> item) {
+        public Knowledge(Predicate<String> mechanic, Predicate<String> condition, Predicate<String> targeter, Predicate<String> skill,
+                         Predicate<String> targeterCondition, Models models, Predicate<String> dropTable) {
+            this(mechanic, condition, targeter, skill, targeterCondition, models, dropTable, null);
+        }
+
         public Knowledge(Predicate<String> mechanic, Predicate<String> condition, Predicate<String> targeter, Predicate<String> skill,
                          Predicate<String> targeterCondition, Models models) {
             this(mechanic, condition, targeter, skill, targeterCondition, models, null);
@@ -77,7 +84,8 @@ public final class PackValidator {
                 name -> CandidateFilters.knows(name, engine.conditionRegistry()::has),
                 new Models(engine.betterModel().available() ? engine.betterModel()::hasModel : null,
                         engine.modelEngine().available() ? engine.modelEngine()::hasModel : null),
-                name -> engine.drops() == null || engine.drops().get(name) != null);
+                name -> engine.drops() == null || engine.drops().get(name) != null,
+                name -> engine.items() != null && engine.items().get(name) != null);
     }
 
     public boolean checksModels() {
@@ -102,7 +110,9 @@ public final class PackValidator {
 
     void walkTriggerLists(ConfigurationSection section, String file, Report report) {
         for (String key : section.getKeys(false)) {
-            if (key.equalsIgnoreCase("Patrol")) {
+            if (key.equalsIgnoreCase("Phases")) {
+                validatePhases(section, file, report);
+            } else if (key.equalsIgnoreCase("Patrol")) {
                 List<String> points = section.isList(key) ? section.getStringList(key)
                         : section.isConfigurationSection(key) ? section.getConfigurationSection(key).getStringList("Points") : List.of();
                 Object shape = section.get(key);
@@ -124,6 +134,35 @@ public final class PackValidator {
                 for (String line : section.getStringList(key)) validateDropLine(line, file, report);
             } else if (section.isConfigurationSection(key)) {
                 walkTriggerLists(section.getConfigurationSection(key), file, report);
+            }
+        }
+    }
+
+    private void validatePhases(ConfigurationSection mob, String file, Report report) {
+        MobPhase.parse(mob, message -> {
+            if (message.contains(": Skills ") || message.contains(": OnStart ")) return;
+            report.lines++;
+            report.issues.add(new Issue(file, message, Reason.UNPARSEABLE, ""));
+        });
+        List<?> entries = mob.getList("Phases", List.of());
+        for (int i = 0; i < entries.size(); i++) {
+            if (!(entries.get(i) instanceof Map<?, ?> entry)) continue;
+            YamlConfiguration config = new YamlConfiguration();
+            ConfigurationSection phase = config.createSection("phase", entry);
+            String label = file + " Phases[" + i + "]";
+            walkTriggerLists(phase, label, report);
+            for (String line : phase.getStringList("OnStart")) validateStepLine(line, label, report);
+            for (String line : phase.getStringList("Equipment")) {
+                report.lines++;
+                String item = line.trim().split(":", 2)[0];
+                Material material = Material.matchMaterial(item);
+                if (known.item() != null && !known.item().test(item) && (material == null || !material.isItem())) {
+                    report.issues.add(new Issue(label, "Equipment: " + line, Reason.UNPARSEABLE, item));
+                }
+            }
+            String head = phase.getString("Options.ItemHead");
+            if (head != null && known.item() != null && !known.item().test(head)) {
+                report.issues.add(new Issue(label, "Options.ItemHead: " + head, Reason.UNPARSEABLE, head));
             }
         }
     }

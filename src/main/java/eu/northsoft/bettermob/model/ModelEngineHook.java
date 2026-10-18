@@ -9,6 +9,9 @@ import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -137,6 +140,50 @@ public final class ModelEngineHook {
             return mounted;
         } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
             plugin.messages().warn("modelEngine.callFailed", "action", "mount " + seat, "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    public List<ModelRider> riders(Object activeModel) {
+        if (activeModel == null) return List.of();
+        try {
+            Object manager = optional(Reflection.method(Class.forName(ACTIVE_MODEL), "getMountManager").invoke(activeModel));
+            if (manager == null) return List.of();
+            Class<?> managerType = Class.forName(MOUNT_MANAGER);
+            Class<?> mountType = Class.forName("com.ticxo.modelengine.api.model.bone.type.Mount");
+            List<ModelRider> riders = new ArrayList<>();
+            Map<?, ?> seats = (Map<?, ?>) Reflection.method(managerType, "getSeats").invoke(manager);
+            for (Map.Entry<?, ?> seat : seats.entrySet()) {
+                Collection<?> passengers = (Collection<?>) Reflection.method(mountType, "getPassengers").invoke(seat.getValue());
+                for (Object passenger : passengers) {
+                    if (passenger instanceof Entity entity) riders.add(new ModelRider(entity.getUniqueId(), String.valueOf(seat.getKey())));
+                }
+            }
+            if (Reflection.method(managerType, "getDriver").invoke(manager) instanceof Entity driver) {
+                riders.add(new ModelRider(driver.getUniqueId(), "driver"));
+                Object driverBone = optional(Reflection.method(managerType, "getDriverBone").invoke(manager));
+                if (driverBone != null) {
+                    Object bone = Reflection.method(Class.forName("com.ticxo.modelengine.api.model.bone.behavior.BoneBehavior"), "getBone").invoke(driverBone);
+                    String boneId = (String) Reflection.method(Class.forName(MODEL_BONE), "getBoneId").invoke(bone);
+                    if (boneId != null) riders.add(new ModelRider(driver.getUniqueId(), boneId));
+                }
+            }
+            return riders;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("modelEngine.callFailed", "action", "riders", "error", rootMessage(exception));
+            return List.of();
+        }
+    }
+
+    public boolean dismount(Object activeModel, Entity rider) {
+        if (activeModel == null) return false;
+        try {
+            Object manager = optional(Reflection.method(Class.forName(ACTIVE_MODEL), "getMountManager").invoke(activeModel));
+            if (manager == null) return false;
+            Reflection.method(Class.forName(MOUNT_MANAGER), "dismountRider", Entity.class).invoke(manager, rider);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("modelEngine.callFailed", "action", "dismount", "error", rootMessage(exception));
             return false;
         }
     }

@@ -135,27 +135,7 @@ public final class MobRegistry {
             plugin.messages().warn("mob.unknownType", "mob", id, "type", section.getString("Type"));
             return null;
         }
-        ConfigurationSection optionsSection = section.getConfigurationSection("Options");
-        MobDefinition.Options options = optionsSection == null ? MobDefinition.Options.DEFAULT : new MobDefinition.Options(
-                optionsSection.getBoolean("Collidable", true),
-                optionsSection.contains("MovementSpeed") ? optionsSection.getDouble("MovementSpeed") : -1,
-                optionsSection.getBoolean("PreventOtherDrops", false),
-                optionsSection.getBoolean("Silent", false),
-                optionsSection.getBoolean("PreventRenaming", false),
-                optionsSection.getBoolean("PreventLeashing", false),
-                optionsSection.getBoolean("AlwaysShowName", false),
-                optionsSection.getBoolean("PreventSunburn", true),
-                optionsSection.getBoolean("Invincible", false),
-                optionsSection.getBoolean("Invisible", false),
-                optionsSection.getBoolean("CanMove", true),
-                optionsSection.getBoolean("Interactable", true),
-                optionsSection.getBoolean("Marker", false),
-                optionsSection.getString("ItemHead"),
-                optionsSection.contains("KnockbackResistance") ? optionsSection.getDouble("KnockbackResistance") : -1,
-                optionsSection.contains("FollowRange") ? optionsSection.getDouble("FollowRange") : -1,
-                optionsSection.getBoolean("PreventItemPickup", false),
-                optionsSection.contains("Scale") ? optionsSection.getDouble("Scale") : -1
-        );
+        MobDefinition.Options options = MobDefinition.Options.parse(section.getConfigurationSection("Options"), MobDefinition.Options.DEFAULT);
         ConfigurationSection modulesSection = section.getConfigurationSection("Modules");
         boolean threatTable = modulesSection != null && modulesSection.getBoolean("ThreatTable", false);
 
@@ -179,7 +159,8 @@ public final class MobRegistry {
                 List.copyOf(section.getStringList("Equipment")),
                 parseSpawnRule(id, section.getConfigurationSection("Spawn")),
                 parseEgg(id, section.getConfigurationSection("Egg")),
-                Behaviour.parse(section, option -> plugin.messages().warn("mob.behaviourInvalid", "mob", id, "option", option))
+                Behaviour.parse(section, option -> plugin.messages().warn("mob.behaviourInvalid", "mob", id, "option", option)),
+                MobPhase.parse(section, option -> plugin.messages().warn("mob.phaseInvalid", "mob", id, "option", option))
         );
     }
 

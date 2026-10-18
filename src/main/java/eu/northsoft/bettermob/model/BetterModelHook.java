@@ -8,6 +8,9 @@ import org.bukkit.inventory.ItemStack;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,6 +20,7 @@ import java.util.function.Predicate;
 public final class BetterModelHook {
     private static final String API = "kr.toxicity.model.api.BetterModel";
     private static final String ADAPTER = "kr.toxicity.model.api.bukkit.platform.BukkitAdapter";
+    private static final String HIT_BOX = "kr.toxicity.model.api.nms.HitBox";
     private static final String PLATFORM_ENTITY = "kr.toxicity.model.api.platform.PlatformEntity";
     private static final String MODIFIER = "kr.toxicity.model.api.animation.AnimationModifier";
     private static final String ITERATOR_TYPE = "kr.toxicity.model.api.animation.AnimationIterator$Type";
@@ -226,6 +230,45 @@ public final class BetterModelHook {
             method.invoke(data, parsed);
         } catch (ReflectiveOperationException | NumberFormatException exception) {
             plugin.messages().warn("betterModel.bodyRotationInvalid", "value", value, "name", name);
+        }
+    }
+
+    public List<ModelRider> riders(Object tracker) {
+        if (tracker == null) return List.of();
+        try {
+            Object registry = Reflection.method(tracker.getClass(), "registry").invoke(tracker);
+            if (registry == null) return List.of();
+            Map<?, ?> mounted = (Map<?, ?>) Reflection.method(registry.getClass(), "mountedHitBox").invoke(registry);
+            Class<?> hitBoxType = Class.forName(HIT_BOX);
+            List<ModelRider> riders = new ArrayList<>();
+            for (Object entry : mounted.values()) {
+                Object entity = Reflection.method(entry.getClass(), "entity").invoke(entry);
+                Object hitBox = Reflection.method(entry.getClass(), "hitBox").invoke(entry);
+                Object id = Reflection.method(Class.forName(PLATFORM_ENTITY), "uuid").invoke(entity);
+                Object group = Reflection.method(hitBoxType, "groupName").invoke(hitBox);
+                String seat = group == null ? null : String.valueOf(Reflection.method(group.getClass(), "name").invoke(group));
+                if (id instanceof UUID uuid) riders.add(new ModelRider(uuid, seat));
+            }
+            return riders;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "riders", "error", rootMessage(exception));
+            return List.of();
+        }
+    }
+
+    public boolean dismount(Object tracker, Entity rider) {
+        if (tracker == null) return false;
+        try {
+            Object registry = Reflection.method(tracker.getClass(), "registry").invoke(tracker);
+            if (registry == null) return false;
+            Map<?, ?> mounted = (Map<?, ?>) Reflection.method(registry.getClass(), "mountedHitBox").invoke(registry);
+            Object entry = mounted.get(rider.getUniqueId());
+            if (entry == null) return false;
+            Reflection.method(entry.getClass(), "dismount").invoke(entry);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "dismount", "error", rootMessage(exception));
+            return false;
         }
     }
 

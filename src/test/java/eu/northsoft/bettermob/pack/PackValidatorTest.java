@@ -24,6 +24,33 @@ class PackValidatorTest {
             MECHANICS::contains, CONDITIONS::contains, TARGETERS::contains, SKILLS::contains,
             name -> CandidateFilters.knows(name, CONDITIONS::contains)));
 
+    @Test
+    void phasesAreValidatedWithTheirIndex(@TempDir Path root) throws IOException {
+        write(root, "Mobs/phases.yml", """
+                Type: ZOMBIE
+                Phases:
+                  - Health: '<70%'
+                    Model: missing_model
+                    Options:
+                      Silent: loud
+                    Equipment: [IRON_SWORD:WRONG]
+                    OnStart:
+                      - skill{s=missing_start} @self
+                    Skills:
+                      - skill{s=missing_phase} @self ~onPhase
+                      - sound{s=x} @unknown ~onTimer:5
+                  - Health: broken
+                """);
+        PackValidator.Report report = withModels(Set.of(), null).validatePack("phases", root.toFile());
+        assertTrue(report.issues().stream().anyMatch(issue -> issue.name().equals("missing_start")));
+        assertTrue(report.issues().stream().anyMatch(issue -> issue.name().equals("missing_phase")));
+        assertTrue(report.issues().stream().anyMatch(issue -> issue.name().equals("missing_model")));
+        assertTrue(report.issues().stream().anyMatch(issue -> issue.name().equals("unknown")));
+        assertTrue(report.issues().stream().anyMatch(issue -> issue.line().contains("Options.Silent")));
+        assertTrue(report.issues().stream().anyMatch(issue -> issue.line().contains("Equipment")));
+        assertTrue(report.issues().stream().anyMatch(issue -> issue.line().contains("Phases[1]")));
+    }
+
     private static void write(Path root, String file, String content) throws IOException {
         Path path = root.resolve(file);
         Files.createDirectories(path.getParent());

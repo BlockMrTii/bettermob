@@ -41,6 +41,17 @@ class SchemasTest {
     }
 
     @Test
+    void phaseFieldsFollowTheMobSchema() throws IOException {
+        String prefix = "Type: ZOMBIE\nPhases:\n  - Health: ";
+        assertTrue(schema("mob").validate(YAML.readTree(prefix + "'<70%'\n    Options: {Silent: true, Scale: 2}\n    Equipment: [IRON_SWORD:HAND]\n    Skills: ['sound{s=x} @self ~onPhase']\n")).isEmpty());
+        assertTrue(schema("mob").validate(YAML.readTree(prefix + "' <= 30.5 % '\n")).isEmpty());
+        assertFalse(schema("mob").validate(YAML.readTree(prefix + "'half'\n")).isEmpty());
+        assertFalse(schema("mob").validate(YAML.readTree(prefix + "'<40'\n    Options: {Scale: small}\n")).isEmpty());
+        assertFalse(schema("mob").validate(YAML.readTree(prefix + "'<40'\n    Equipment: sword\n")).isEmpty());
+        assertFalse(schema("mob").validate(YAML.readTree(prefix + "'<40'\n    Skills: ['sound{s=x} @self']\n")).isEmpty());
+    }
+
+    @Test
     void everyShippedAndSampleFileMatchesItsSchema() throws IOException {
         List<String> failures = new ArrayList<>();
         int checked = 0;

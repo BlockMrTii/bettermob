@@ -33,7 +33,7 @@ public final class ModelPassengersTargeter implements Targeter {
         }
         List<String> conditions = params.containsKey("conditions") ? SkillEngine.splitInline(params.get("conditions")) : List.of();
         List<Target> targets = new ArrayList<>();
-        for (UUID id : engine.modelPassengers().riders(context.caster().getUniqueId(), firstParam(params, "p", "seat"))) {
+        for (UUID id : engine.modelRiders(context.caster().getUniqueId(), firstParam(params, "p", "seat"))) {
             Entity rider = Bukkit.getEntity(id);
             if (rider instanceof LivingEntity living && Bukkit.isOwnedByCurrentRegion(living)
                     && filters.matches(living, conditions, context)) {
