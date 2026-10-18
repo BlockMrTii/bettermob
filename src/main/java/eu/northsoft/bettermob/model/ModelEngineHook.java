@@ -9,6 +9,9 @@ import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -138,6 +141,29 @@ public final class ModelEngineHook {
         } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
             plugin.messages().warn("modelEngine.callFailed", "action", "mount " + seat, "error", rootMessage(exception));
             return false;
+        }
+    }
+
+    public List<ModelRider> riders(Object activeModel) {
+        if (activeModel == null) return List.of();
+        try {
+            Object manager = optional(Reflection.method(Class.forName(ACTIVE_MODEL), "getMountManager").invoke(activeModel));
+            if (manager == null) return List.of();
+            Class<?> managerType = Class.forName(MOUNT_MANAGER);
+            Class<?> mountType = Class.forName("com.ticxo.modelengine.api.model.bone.type.Mount");
+            List<ModelRider> riders = new ArrayList<>();
+            Map<?, ?> seats = (Map<?, ?>) Reflection.method(managerType, "getSeats").invoke(manager);
+            for (Map.Entry<?, ?> seat : seats.entrySet()) {
+                Collection<?> passengers = (Collection<?>) Reflection.method(mountType, "getPassengers").invoke(seat.getValue());
+                for (Object passenger : passengers) {
+                    if (passenger instanceof Entity entity) riders.add(new ModelRider(entity.getUniqueId(), String.valueOf(seat.getKey())));
+                }
+            }
+            if (Reflection.method(managerType, "getDriver").invoke(manager) instanceof Entity driver) riders.add(new ModelRider(driver.getUniqueId(), "driver"));
+            return riders;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("modelEngine.callFailed", "action", "riders", "error", rootMessage(exception));
+            return List.of();
         }
     }
 
