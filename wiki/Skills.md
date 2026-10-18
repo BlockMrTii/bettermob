@@ -193,8 +193,8 @@ A line of its own, `delay 20`, pauses the rest of the skill for 20 ticks.
 | `@Location{x=0;y=64;z=0;w=world}` | A fixed location; `w` (or `world`) is the world, default the caster's |
 | `@TargetLocation` (`@TL`, `@TriggerLocation`) | The location of the trigger/target entity, optionally moved by `fo` (forward), `so` (sideways, positive = right) and `yo` (up) along its facing |
 | `@Owner`, `@Parent` | The entity whose `summon` created the caster. If there is none, the line is skipped |
-| `@ModelPassengers{p=driver;mid=model;conditions=[...]}` | The entities BetterMob seated on the caster's model with `mountmodel`, optionally only one seat `p` and only when the caster's mob uses model `mid`. Riders seated some other way (for example by the model plugin itself) are not known |
-| `@mountedmodel` | The model owner the caster was seated on with `mountmodel` |
+| `@ModelPassengers{p=driver;mid=model;conditions=[...]}` | The entities BetterMob seated on the caster's model with `mountmodel`, optionally only one seat `p` and only when the caster's mob uses model `mid`. Riders the model plugin seated itself are found too: the mount manager's seats with ModelEngine, the mounted hit boxes with BetterModel (seat name = the bone group name) |
+| `@mountedmodel` | The model owner the caster was seated on with `mountmodel`. The reverse lookup only knows riders seated with `mountmodel` |
 | `@children{target=MARKER;r=32}` | Entities summoned by the caster (`summon`) within `r` blocks (default 32), optionally only of that entity type |
 
 All multi-target targeters (`@EntitiesNearOrigin`, `@EntitiesInRadius`, `@PlayersInRadius`, `@LivingInCone`, `@PIR`) also take `limit=<n>` and `sort=nearest|farthest|random`, and run the mechanic once per target. An unknown targeter is logged once and the line targets the default target.
