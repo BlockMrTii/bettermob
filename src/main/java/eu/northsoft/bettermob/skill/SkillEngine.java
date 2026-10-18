@@ -447,6 +447,22 @@ public final class SkillEngine implements Listener {
         return inlineSkills.get(raw);
     }
 
+    public static List<String> splitInline(String raw) {
+        return InlineSkills.splitInline(raw);
+    }
+
+    public static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope) {
+        return Substitutions.replaceVariables(value, skillScope, casterScope);
+    }
+
+    public static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope, Map<String, String> targetScope) {
+        return Substitutions.replaceVariables(value, skillScope, casterScope, targetScope);
+    }
+
+    public static String withLocationValues(String value, double x, double y, double z, float yaw, float pitch) {
+        return Substitutions.withLocationValues(value, x, y, z, yaw, pitch);
+    }
+
     private Map<String, String> substitute(String mechanicName, Map<String, String> params, SkillContext context) {
         Map<String, String> p = withArguments(withVariables(params, context), context);
         if (!placeholders.isEmpty()) {

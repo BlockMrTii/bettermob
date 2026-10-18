@@ -100,9 +100,9 @@ class VariablesTest {
     void placeholdersReadTheRightScopeAndDefaultToZero() {
         Map<String, String> skillScope = Map.of("hits", "3");
         Map<String, String> casterScope = Map.of("phase", "2");
-        assertEquals("a=3 b=2 c=0 d=0", Substitutions.replaceVariables("a=<skill.hits> b=<var.phase> c=<skill.none> d=<var.hits>", skillScope, casterScope));
-        assertEquals("0", Substitutions.replaceVariables("<var.phase>", skillScope, null));
-        assertEquals("<caster.name>", Substitutions.replaceVariables("<caster.name>", skillScope, casterScope));
+        assertEquals("a=3 b=2 c=0 d=0", SkillEngine.replaceVariables("a=<skill.hits> b=<var.phase> c=<skill.none> d=<var.hits>", skillScope, casterScope));
+        assertEquals("0", SkillEngine.replaceVariables("<var.phase>", skillScope, null));
+        assertEquals("<caster.name>", SkillEngine.replaceVariables("<caster.name>", skillScope, casterScope));
     }
 
     @Test
@@ -125,8 +125,8 @@ class VariablesTest {
         Map<String, String> skill = Map.of("a", "1");
         Map<String, String> caster = Map.of("b", "2");
         Map<String, String> target = Map.of("c", "3");
-        assertEquals("1 2 3 2", Substitutions.replaceVariables("<skill.var.a> <caster.var.b> <target.var.c> <var.b>", skill, caster, target));
-        assertEquals("0", Substitutions.replaceVariables("<target.var.c>", skill, caster, null));
+        assertEquals("1 2 3 2", SkillEngine.replaceVariables("<skill.var.a> <caster.var.b> <target.var.c> <var.b>", skill, caster, target));
+        assertEquals("0", SkillEngine.replaceVariables("<target.var.c>", skill, caster, null));
     }
 
     @Test
