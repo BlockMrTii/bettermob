@@ -194,7 +194,7 @@ A line of its own, `delay 20`, pauses the rest of the skill for 20 ticks.
 | `@TargetLocation` (`@TL`, `@TriggerLocation`) | The location of the trigger/target entity, optionally moved by `fo` (forward), `so` (sideways, positive = right) and `yo` (up) along its facing |
 | `@Owner`, `@Parent` | The entity whose `summon` created the caster. If there is none, the line is skipped |
 | `@ModelPassengers{p=driver;mid=model;conditions=[...]}` | The entities BetterMob seated on the caster's model with `mountmodel`, optionally only one seat `p` and only when the caster's mob uses model `mid`. Riders the model plugin seated itself are found too: the mount manager's seats with ModelEngine, the mounted hit boxes with BetterModel (seat name = the bone group name) |
-| `@mountedmodel` | The model owner the caster was seated on with `mountmodel`. The reverse lookup only knows riders seated with `mountmodel` |
+| `@mountedmodel` | The model owner the caster rides: seated with `mountmodel`, or by the model plugin itself (ModelEngine's mount pairs, BetterModel's mounted hit boxes; BetterModel is searched once per second at most per rider) |
 | `@children{target=MARKER;r=32}` | Entities summoned by the caster (`summon`) within `r` blocks (default 32), optionally only of that entity type |
 
 All multi-target targeters (`@EntitiesNearOrigin`, `@EntitiesInRadius`, `@PlayersInRadius`, `@LivingInCone`, `@PIR`) also take `limit=<n>` and `sort=nearest|farthest|random`, and run the mechanic once per target. An unknown targeter is logged once and the line targets the default target.
@@ -251,8 +251,8 @@ Skills:
 | `stringeq{val1;val2}` (`stringequals`) | Both texts are equal after the placeholders are inserted (see "Placeholders in condition parameters" below) |
 | `sneaking` | The caster is a player and is sneaking |
 | `modelhaspassengers{p=driver}` | BetterMob seated someone on the entity's model (on seat `p`, if given) |
-| `ridingmodel{mid=model}` | The entity was seated on a model with `mountmodel` (of mob model `mid`, if given) |
-| `mounted` | The entity was seated with `mountmodel` or rides any vehicle |
+| `ridingmodel{mid=model}` | The entity rides a model, seated by `mountmodel` or by the model plugin (of mob model `mid`, if given) |
+| `mounted` | The entity rides a model or any other vehicle |
 | `crouching` | Same as `sneaking` (also usable in targeter `conditions=[...]`) |
 | `day` | It is day in the caster's world |
 | `gamemode{gm=SURVIVAL,ADVENTURE}` | The caster is a player in one of these game modes |

@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 public final class ModelEngineHook {
     private static final String API = "com.ticxo.modelengine.api.ModelEngineAPI";
@@ -141,6 +142,22 @@ public final class ModelEngineHook {
         } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
             plugin.messages().warn("modelEngine.callFailed", "action", "mount " + seat, "error", rootMessage(exception));
             return false;
+        }
+    }
+
+    public UUID ownerOf(UUID rider) {
+        if (!Bukkit.getPluginManager().isPluginEnabled("ModelEngine")) return null;
+        try {
+            Object pairs = Reflection.method(Class.forName(API), "getMountPairManager").invoke(null);
+            Object model = Reflection.method(pairs.getClass(), "getMountedPair", UUID.class).invoke(pairs, rider);
+            if (model == null) return null;
+            Object modeled = Reflection.method(Class.forName(ACTIVE_MODEL), "getModeledEntity").invoke(model);
+            if (modeled == null) return null;
+            Object base = Reflection.method(Class.forName(MODELED_ENTITY), "getBase").invoke(modeled);
+            Object id = base == null ? null : Reflection.method(Class.forName(BASE_ENTITY), "getUUID").invoke(base);
+            return id instanceof UUID uuid ? uuid : null;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            return null;
         }
     }
 

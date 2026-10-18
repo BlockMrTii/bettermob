@@ -14,7 +14,11 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 class BetterModelApiTest {
     private static final String BM = "kr.toxicity.model.api.";
 
-    private record Call(String type, String method) {}
+    private record Call(String type, String method, int parameters) {
+        Call(String type, String method) {
+            this(type, method, 0);
+        }
+    }
 
     private static final List<Call> CALLS = List.of(
             new Call(BM + "tracker.EntityTracker", "registry"),
@@ -24,7 +28,10 @@ class BetterModelApiTest {
             new Call(BM + "tracker.EntityTrackerRegistry$MountedHitBox", "dismount"),
             new Call(BM + "nms.HitBox", "groupName"),
             new Call(BM + "bone.BoneName", "name"),
-            new Call(BM + "platform.PlatformEntity", "uuid"));
+            new Call(BM + "platform.PlatformEntity", "uuid"),
+            new Call(BM + "tracker.EntityTrackerRegistry", "registries"),
+            new Call(BM + "tracker.EntityTrackerRegistry", "uuid"),
+            new Call(BM + "tracker.EntityTrackerRegistry", "registry", 1));
 
     @Test
     void everyBetterModelCallTheRiderLookupMakesExistsInTheInstalledJars() throws Exception {
@@ -41,7 +48,7 @@ class BetterModelApiTest {
                 try {
                     boolean found = false;
                     for (java.lang.reflect.Method method : Class.forName(call.type(), false, loader).getMethods()) {
-                        if (method.getName().equals(call.method()) && method.getParameterCount() == 0) found = true;
+                        if (method.getName().equals(call.method()) && method.getParameterCount() == call.parameters()) found = true;
                     }
                     if (!found) missing.add(call.type() + "#" + call.method());
                 } catch (ReflectiveOperationException | LinkageError exception) {
