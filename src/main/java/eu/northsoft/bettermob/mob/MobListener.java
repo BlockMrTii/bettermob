@@ -161,7 +161,7 @@ public final class MobListener implements Listener {
     public void onHealthLoss(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof LivingEntity mob)) return;
         MobDefinition definition = manager.definitionOf(mob.getUniqueId());
-        if (definition != null && manager.hasHealthTriggers(definition)) {
+        if (definition != null && (manager.hasHealthTriggers(definition) || definition.hasPhases())) {
             manager.checkHealth(mob, definition, mob.getHealth(), Math.max(0, mob.getHealth() - event.getFinalDamage()));
         }
     }
@@ -170,7 +170,7 @@ public final class MobListener implements Listener {
     public void onHealthGain(EntityRegainHealthEvent event) {
         if (!(event.getEntity() instanceof LivingEntity mob)) return;
         MobDefinition definition = manager.definitionOf(mob.getUniqueId());
-        if (definition != null && manager.hasHealthTriggers(definition)) {
+        if (definition != null && (manager.hasHealthTriggers(definition) || definition.hasPhases())) {
             manager.checkHealth(mob, definition, mob.getHealth(), mob.getHealth() + event.getAmount());
         }
     }

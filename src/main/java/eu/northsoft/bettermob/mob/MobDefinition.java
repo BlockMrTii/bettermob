@@ -36,6 +36,7 @@ public final class MobDefinition {
     public final BossBarSettings bossBar;
     public final EggSettings egg;
     public final Behaviour behaviour;
+    public final List<MobPhase> phases;
     public final List<String> equipment;
     public final SpawnRule spawnRule;
 
@@ -45,6 +46,17 @@ public final class MobDefinition {
                   Options options, boolean threatTable, Map<DamageCause, Double> damageModifiers,
                   List<SkillTrigger> skillTriggers, DropTable drops, String faction,
                   BossBarSettings bossBar, List<String> equipment, SpawnRule spawnRule, EggSettings egg, Behaviour behaviour) {
+        this(id, type, displayName, modelId, health, damage, removeAi, aiGoalSelectors, aiTargetSelectors, options, threatTable,
+                damageModifiers, skillTriggers, drops, faction, bossBar, equipment, spawnRule, egg, behaviour, List.of());
+    }
+
+    public MobDefinition(String id, EntityType type, String displayName, String modelId,
+                  double health, double damage, boolean removeAi,
+                  List<String> aiGoalSelectors, List<String> aiTargetSelectors,
+                  Options options, boolean threatTable, Map<DamageCause, Double> damageModifiers,
+                  List<SkillTrigger> skillTriggers, DropTable drops, String faction,
+                  BossBarSettings bossBar, List<String> equipment, SpawnRule spawnRule, EggSettings egg, Behaviour behaviour,
+                  List<MobPhase> phases) {
         this.id = id;
         this.type = type;
         this.displayName = displayName;
@@ -67,8 +79,13 @@ public final class MobDefinition {
         this.bossBar = bossBar;
         this.egg = egg;
         this.behaviour = behaviour;
+        this.phases = phases;
         this.equipment = equipment;
         this.spawnRule = spawnRule;
+    }
+
+    public boolean hasPhases() {
+        return !phases.isEmpty();
     }
 
     public List<SkillTrigger> triggersOf(SkillTrigger.Trigger type) {

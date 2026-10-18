@@ -111,8 +111,12 @@ public final class MobManager {
         return entity;
     }
 
+    private void applyName(LivingEntity entity, String displayName) {
+        entity.customName(LegacyComponentSerializer.legacyAmpersand().deserialize(PlaceholderHook.apply(null, displayName)));
+    }
+
     private void applyDefinition(LivingEntity entity, MobDefinition definition, boolean spawning) {
-        entity.customName(LegacyComponentSerializer.legacyAmpersand().deserialize(PlaceholderHook.apply(null, definition.displayName)));
+        applyName(entity, definition.displayName);
         entity.setCustomNameVisible(definition.options.alwaysShowName());
 
         var maxHealth = entity.getAttribute(Attribute.MAX_HEALTH);
@@ -265,6 +269,7 @@ public final class MobManager {
         damageModifiers.remove(entity.getUniqueId());
         definitions.remove(entity.getUniqueId());
         inCombat.remove(entity.getUniqueId());
+        phaseOf.remove(entity.getUniqueId());
         exitCombatToken.remove(entity.getUniqueId());
         lastAlert.remove(entity.getUniqueId());
         plugin.debug().endSessionsOf(entity.getUniqueId());
@@ -330,7 +335,68 @@ public final class MobManager {
 
     public void fireTrigger(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
                       LivingEntity trigger, Cancellable event) {
-        fireTriggers(entity, definition, type, definition.triggersOf(type), trigger, event);
+        fireTriggers(entity, definition, type, effectiveTriggers(entity, definition, type), trigger, event);
+    }
+
+    private List<MobDefinition.SkillTrigger> effectiveTriggers(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type) {
+        List<MobDefinition.SkillTrigger> base = definition.triggersOf(type);
+        if (!definition.hasPhases()) return base;
+        int index = phaseOf.getOrDefault(entity.getUniqueId(), -1);
+        if (index < 0 || index >= definition.phases.size()) return base;
+        MobPhase phase = definition.phases.get(index);
+        List<MobDefinition.SkillTrigger> own = phase.triggersOf(type);
+        if (own.isEmpty()) return phase.replace() ? List.of() : base;
+        if (phase.replace() || base.isEmpty()) return own;
+        List<MobDefinition.SkillTrigger> both = new ArrayList<>(base);
+        both.addAll(own);
+        return both;
+    }
+
+    private NamespacedKey phaseKey() {
+        return new NamespacedKey(plugin, "phase");
+    }
+
+    public int phaseIndex(UUID entityId) {
+        return phaseOf.getOrDefault(entityId, -1);
+    }
+
+    private void updatePhase(LivingEntity entity, MobDefinition definition, double health) {
+        if (!definition.hasPhases() || health <= 0) return;
+        var attribute = entity.getAttribute(Attribute.MAX_HEALTH);
+        double max = attribute == null ? health : attribute.getValue();
+        int target = MobPhase.select(definition.phases, health, max);
+        int current = phaseOf.getOrDefault(entity.getUniqueId(), -1);
+        if (target == current) return;
+        enterPhase(entity, definition, target, true);
+    }
+
+    private void enterPhase(LivingEntity entity, MobDefinition definition, int index, boolean runStart) {
+        phaseOf.put(entity.getUniqueId(), index);
+        entity.getPersistentDataContainer().set(phaseKey(), PersistentDataType.INTEGER, index);
+        if (plugin.debug().info()) plugin.debug().info("mob " + definition.id + " enters phase " + index + (runStart ? "" : " (restored)") + ", health " + entity.getHealth(), definition.id);
+        MobPhase phase = index < 0 ? null : definition.phases.get(index);
+        String display = phase != null && phase.display() != null ? phase.display() : definition.displayName;
+        String model = phase != null && phase.model() != null ? phase.model() : definition.modelId;
+        applyName(entity, display);
+        if (model != null && phaseModelChanged(definition)) attachModelField(entity, model);
+        if (runStart && phase != null && skillEngine != null) {
+            SkillContext context = SkillContext.of(entity);
+            for (SkillStep step : phase.start()) skillEngine.runStep(step, context);
+        }
+    }
+
+    private static boolean phaseModelChanged(MobDefinition definition) {
+        for (MobPhase phase : definition.phases) {
+            if (phase.model() != null) return true;
+        }
+        return false;
+    }
+
+    private void restorePhase(LivingEntity entity, MobDefinition definition) {
+        if (!definition.hasPhases()) return;
+        Integer stored = entity.getPersistentDataContainer().get(phaseKey(), PersistentDataType.INTEGER);
+        if (stored == null || stored < 0 || stored >= definition.phases.size()) return;
+        enterPhase(entity, definition, stored, false);
     }
 
     private void fireTriggers(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
@@ -383,6 +449,7 @@ public final class MobManager {
     }
 
     private static final ThreadLocal<Set<String>> FIRING = ThreadLocal.withInitial(HashSet::new);
+    private final Map<UUID, Integer> phaseOf = new ConcurrentHashMap<>();
     private final Map<UUID, Object> exitCombatToken = new ConcurrentHashMap<>();
     private final Set<UUID> inCombat = ConcurrentHashMap.newKeySet();
     private static final double MOVE_EPSILON_SQUARED = 0.0025;
@@ -404,6 +471,7 @@ public final class MobManager {
     }
 
     public void checkHealth(LivingEntity mob, MobDefinition definition, double before, double health) {
+        updatePhase(mob, definition, health);
         List<MobDefinition.SkillTrigger> triggers = definition.triggersOf(MobDefinition.SkillTrigger.Trigger.HEALTH);
         if (triggers.isEmpty() || health <= 0) return;
         var attribute = mob.getAttribute(Attribute.MAX_HEALTH);
@@ -689,6 +757,7 @@ public final class MobManager {
         if (!hasModelSkill(definition, MobDefinition.SkillTrigger.Trigger.LOAD)) {
             attachModelField(entity, definition.modelId);
         }
+        restorePhase(entity, definition);
 
         scheduleTimers(entity, definition);
         bossBars.attach(entity, definition);

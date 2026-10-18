@@ -179,7 +179,8 @@ public final class MobRegistry {
                 List.copyOf(section.getStringList("Equipment")),
                 parseSpawnRule(id, section.getConfigurationSection("Spawn")),
                 parseEgg(id, section.getConfigurationSection("Egg")),
-                Behaviour.parse(section, option -> plugin.messages().warn("mob.behaviourInvalid", "mob", id, "option", option))
+                Behaviour.parse(section, option -> plugin.messages().warn("mob.behaviourInvalid", "mob", id, "option", option)),
+                MobPhase.parse(section, option -> plugin.messages().warn("mob.phaseInvalid", "mob", id, "option", option))
         );
     }
 
