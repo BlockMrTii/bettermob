@@ -84,7 +84,7 @@ class VariablesTest {
         params.put("value", "<skill.hits>");
         params.put("var", "caster.total");
         params.put("m", "phase <var.phase> of <skill.hits>");
-        Map<String, String> resolved = SkillEngine.resolveVariables(params, Map.of("hits", "3"), Map.of("phase", "2"));
+        Map<String, String> resolved = Substitutions.resolveVariables(params, Map.of("hits", "3"), Map.of("phase", "2"));
         assertEquals("3", resolved.get("value"));
         assertEquals("caster.total", resolved.get("var"));
         assertEquals("phase 2 of 3", resolved.get("m"));
@@ -93,16 +93,16 @@ class VariablesTest {
     @Test
     void parametersWithoutVariablePlaceholdersAreReturnedAsTheyAre() {
         Map<String, String> params = Map.of("a", "<caster.damage>");
-        assertTrue(params == SkillEngine.resolveVariables(params, Map.of(), Map.of()));
+        assertTrue(params == Substitutions.resolveVariables(params, Map.of(), Map.of()));
     }
 
     @Test
     void placeholdersReadTheRightScopeAndDefaultToZero() {
         Map<String, String> skillScope = Map.of("hits", "3");
         Map<String, String> casterScope = Map.of("phase", "2");
-        assertEquals("a=3 b=2 c=0 d=0", SkillEngine.replaceVariables("a=<skill.hits> b=<var.phase> c=<skill.none> d=<var.hits>", skillScope, casterScope));
-        assertEquals("0", SkillEngine.replaceVariables("<var.phase>", skillScope, null));
-        assertEquals("<caster.name>", SkillEngine.replaceVariables("<caster.name>", skillScope, casterScope));
+        assertEquals("a=3 b=2 c=0 d=0", Substitutions.replaceVariables("a=<skill.hits> b=<var.phase> c=<skill.none> d=<var.hits>", skillScope, casterScope));
+        assertEquals("0", Substitutions.replaceVariables("<var.phase>", skillScope, null));
+        assertEquals("<caster.name>", Substitutions.replaceVariables("<caster.name>", skillScope, casterScope));
     }
 
     @Test
@@ -125,20 +125,20 @@ class VariablesTest {
         Map<String, String> skill = Map.of("a", "1");
         Map<String, String> caster = Map.of("b", "2");
         Map<String, String> target = Map.of("c", "3");
-        assertEquals("1 2 3 2", SkillEngine.replaceVariables("<skill.var.a> <caster.var.b> <target.var.c> <var.b>", skill, caster, target));
-        assertEquals("0", SkillEngine.replaceVariables("<target.var.c>", skill, caster, null));
+        assertEquals("1 2 3 2", Substitutions.replaceVariables("<skill.var.a> <caster.var.b> <target.var.c> <var.b>", skill, caster, target));
+        assertEquals("0", Substitutions.replaceVariables("<target.var.c>", skill, caster, null));
     }
 
     @Test
     void targetVariablesAreReplacedPerScopeWithAZeroFallback() {
-        assertEquals("3 0", SkillEngine.replaceTargetVariables("<target.var.c> <target.var.none>", Map.of("c", "3")));
-        assertEquals("0", SkillEngine.replaceTargetVariables("<target.var.c>", null));
-        assertEquals("<var.b>", SkillEngine.replaceTargetVariables("<var.b>", Map.of("b", "1")));
+        assertEquals("3 0", Substitutions.replaceTargetVariables("<target.var.c> <target.var.none>", Map.of("c", "3")));
+        assertEquals("0", Substitutions.replaceTargetVariables("<target.var.c>", null));
+        assertEquals("<var.b>", Substitutions.replaceTargetVariables("<var.b>", Map.of("b", "1")));
     }
 
     @Test
     void theEnginePathLeavesTargetPlaceholdersForTheDispatch() {
-        Map<String, String> resolved = SkillEngine.resolveVariables(Map.of("m", "<var.b> <target.var.c>"), Map.of(), Map.of("b", "2"));
+        Map<String, String> resolved = Substitutions.resolveVariables(Map.of("m", "<var.b> <target.var.c>"), Map.of(), Map.of("b", "2"));
         assertEquals("2 <target.var.c>", resolved.get("m"));
     }
 }

@@ -10,7 +10,7 @@ class ChatPromptsTest {
         assertEquals("Rainbow Road", ChatPrompts.input("  Rainbow Road "));
         assertEquals("abc", ChatPrompts.input("a{b};c"));
         assertEquals(256, ChatPrompts.input("x".repeat(400)).length());
-        assertEquals("", SkillEngine.withItemNbt("<caster.itemnbt.trackname>", null));
-        assertEquals("Track ", SkillEngine.withItemNbt("Track <caster.itemnbt.checkpoint>", null));
+        assertEquals("", Substitutions.withItemNbt("<caster.itemnbt.trackname>", null));
+        assertEquals("Track ", Substitutions.withItemNbt("Track <caster.itemnbt.checkpoint>", null));
     }
 }
