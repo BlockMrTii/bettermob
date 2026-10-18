@@ -9,7 +9,6 @@ import org.bukkit.entity.Player;
 
 import static eu.northsoft.bettermob.skill.Params.conditionParam;
 import static eu.northsoft.bettermob.skill.Params.parseFloat;
-import static eu.northsoft.bettermob.skill.Params.parseInt;
 
 public final class PlayerWithinCondition implements SkillCondition {
     @Override
@@ -21,10 +20,6 @@ public final class PlayerWithinCondition implements SkillCondition {
             if (entity instanceof Player player && !player.isDead() && player.getLocation().distanceSquared(at) <= distance * distance) found++;
         }
         String count = conditionParam(paramsRaw, "count", "amount", "a");
-        return count.isEmpty() ? found > 0 : RangeSpec.matches(countSpec(count), found);
-    }
-
-    private static String countSpec(String count) {
-        return !count.isEmpty() && Character.isDigit(count.charAt(0)) && count.indexOf('-', 1) < 0 ? ">=" + count : count;
+        return count.isEmpty() ? found > 0 : RangeSpec.matches(RangeSpec.atLeast(count), found);
     }
 }

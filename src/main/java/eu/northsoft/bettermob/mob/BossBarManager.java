@@ -12,8 +12,10 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -75,6 +77,7 @@ final class BossBarManager {
         double max = maxHealth(entity);
         double progress = max <= 0 ? 0 : Math.max(0, Math.min(1, health / max));
         String title = title(definition, health, max);
+        Set<Player> viewers;
         synchronized (bar) {
             if (progress != shown.progress) {
                 bar.setProgress(progress);
@@ -87,11 +90,13 @@ final class BossBarManager {
             for (Player viewer : bar.getPlayers()) {
                 if (!viewer.isOnline()) bar.removePlayer(viewer);
             }
+            viewers = new HashSet<>(bar.getPlayers());
         }
 
         double range = definition.bossBar.range();
         Location location = entity.getLocation();
-        for (Player player : Bukkit.getOnlinePlayers()) {
+        viewers.addAll(location.getWorld().getPlayers());
+        for (Player player : viewers) {
             Tasks.runOwned(plugin, player, () -> updateViewer(entity.getUniqueId(), bar, player, location, range));
         }
     }

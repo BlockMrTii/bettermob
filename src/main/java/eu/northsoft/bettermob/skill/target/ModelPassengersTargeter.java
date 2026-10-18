@@ -6,6 +6,7 @@ import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.Target;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +35,7 @@ public final class ModelPassengersTargeter implements Targeter {
         List<Target> targets = new ArrayList<>();
         for (UUID id : engine.modelPassengers().riders(context.caster().getUniqueId(), firstParam(params, "p", "seat"))) {
             Entity rider = Bukkit.getEntity(id);
-            if (rider instanceof org.bukkit.entity.LivingEntity living && Bukkit.isOwnedByCurrentRegion(living)
+            if (rider instanceof LivingEntity living && Bukkit.isOwnedByCurrentRegion(living)
                     && filters.matches(living, conditions, context)) {
                 targets.add(Target.ofEntity(living));
             }

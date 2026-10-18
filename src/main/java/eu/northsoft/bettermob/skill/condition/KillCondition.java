@@ -26,11 +26,6 @@ public final class KillCondition implements SkillCondition {
         return conditionParam(paramsRaw, "mob", "id", "m");
     }
 
-    static String atLeast(String spec) {
-        String text = spec.trim();
-        return !text.isEmpty() && Character.isDigit(text.charAt(0)) && text.indexOf('-', 1) < 0 ? ">=" + text : text;
-    }
-
     @Override
     public boolean test(SkillContext context, String paramsRaw, Target targetOverride) {
         Player player = playerOf(context, targetOverride);
@@ -39,6 +34,6 @@ public final class KillCondition implements SkillCondition {
         if (!total && mob.isEmpty()) return false;
         int kills = total || mob.isEmpty() ? engine.plugin().kills().total(player.getUniqueId()) : engine.plugin().kills().count(player.getUniqueId(), mob);
         String count = conditionParam(paramsRaw, "count", "amount", "a", "value");
-        return RangeSpec.matches(atLeast(count.isEmpty() ? "1" : count), kills);
+        return RangeSpec.matches(RangeSpec.atLeast(count.isEmpty() ? "1" : count), kills);
     }
 }

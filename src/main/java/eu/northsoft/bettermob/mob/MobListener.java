@@ -1,10 +1,11 @@
 package eu.northsoft.bettermob.mob;
 
-import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import eu.northsoft.bettermob.api.event.BetterMobDamageEvent;
 import eu.northsoft.bettermob.api.event.BetterMobDeathEvent;
 import eu.northsoft.bettermob.drop.DropRegistry;
+import eu.northsoft.bettermob.skill.SkillTags;
 import eu.northsoft.bettermob.stats.KillStats;
+import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -31,10 +32,12 @@ import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.projectiles.ProjectileSource;
 
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class MobListener implements Listener {
-    private static final java.util.Set<EntityRemoveEvent.Cause> REMOVED_WITHOUT_DYING = java.util.EnumSet.of(
+    private static final Set<EntityRemoveEvent.Cause> REMOVED_WITHOUT_DYING = EnumSet.of(
             EntityRemoveEvent.Cause.DESPAWN, EntityRemoveEvent.Cause.DISCARD, EntityRemoveEvent.Cause.PLUGIN);
 
     private final MobManager manager;
@@ -110,8 +113,8 @@ public final class MobListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onEffectDamage(org.bukkit.event.entity.EntityDamageByEntityEvent event) {
-        if (event.getDamager().getScoreboardTags().contains(eu.northsoft.bettermob.skill.SkillTags.EFFECT_TAG)) event.setCancelled(true);
+    public void onEffectDamage(EntityDamageByEntityEvent event) {
+        if (event.getDamager().getScoreboardTags().contains(SkillTags.EFFECT_TAG)) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.LOW)

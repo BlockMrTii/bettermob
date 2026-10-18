@@ -1,12 +1,13 @@
 package eu.northsoft.bettermob.mob;
 
-import eu.northsoft.bettermob.util.Duplicates;
-import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.drop.DropEntry;
 import eu.northsoft.bettermob.drop.DropTable;
 import eu.northsoft.bettermob.pack.PackScanner;
 import eu.northsoft.bettermob.pack.YamlFiles;
+import eu.northsoft.bettermob.util.Duplicates;
+import eu.northsoft.bettermob.util.ReloadDiff;
+import org.bukkit.Material;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.configuration.ConfigurationSection;
@@ -185,11 +186,11 @@ public final class MobRegistry {
     private MobDefinition.EggSettings parseEgg(String id, ConfigurationSection egg) {
         if (egg == null) return null;
         String material = egg.getString("Material");
-        if (material != null && org.bukkit.Material.getMaterial(material.trim().toUpperCase(java.util.Locale.ROOT)) == null) {
+        if (material != null && Material.getMaterial(material.trim().toUpperCase(Locale.ROOT)) == null) {
             plugin.messages().warn("mob.eggMaterialInvalid", "mob", id, "value", material);
             material = null;
         }
-        return new MobDefinition.EggSettings(material == null ? null : material.trim().toUpperCase(java.util.Locale.ROOT), egg.getString("Name"));
+        return new MobDefinition.EggSettings(material == null ? null : material.trim().toUpperCase(Locale.ROOT), egg.getString("Name"));
     }
 
     private SpawnRule parseSpawnRule(String id, ConfigurationSection spawn) {

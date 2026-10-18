@@ -7,6 +7,8 @@ import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.util.regex.Pattern;
+
 import static eu.northsoft.bettermob.skill.Params.stripQuotes;
 
 public final class CommandMechanic implements Mechanic {
@@ -33,8 +35,10 @@ public final class CommandMechanic implements Mechanic {
         Tasks.runGlobal(engine.plugin(), () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command));
     }
 
+    private static final Pattern UNSAFE = Pattern.compile("[^A-Za-z0-9_.]");
+
     static String asArgument(String name) {
-        return name.replace(' ', '_').replaceAll("[^A-Za-z0-9_.]", "");
+        return UNSAFE.matcher(name.replace(' ', '_')).replaceAll("");
     }
 
     private static Player placeholderPlayer(SkillContext context) {

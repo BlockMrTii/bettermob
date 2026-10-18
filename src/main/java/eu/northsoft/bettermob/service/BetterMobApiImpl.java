@@ -1,10 +1,13 @@
 package eu.northsoft.bettermob.service;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
-import eu.northsoft.bettermob.mob.ExtraTriggers;
 import eu.northsoft.bettermob.api.BetterMobAPI;
+import eu.northsoft.bettermob.api.CustomCondition;
 import eu.northsoft.bettermob.api.CustomMechanic;
+import eu.northsoft.bettermob.api.CustomPlaceholder;
+import eu.northsoft.bettermob.api.CustomTargeter;
 import eu.northsoft.bettermob.api.MobInfo;
+import eu.northsoft.bettermob.mob.ExtraTriggers;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.skill.SkillContext;
@@ -21,6 +24,7 @@ import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -80,7 +84,7 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
 
     @Override
     public Collection<String> getSkillIds() {
-        return java.util.List.copyOf(skillRegistry.ids());
+        return List.copyOf(skillRegistry.ids());
     }
 
     @Override
@@ -109,7 +113,7 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
     }
 
     @Override
-    public boolean registerCondition(Plugin owner, String name, eu.northsoft.bettermob.api.CustomCondition condition) {
+    public boolean registerCondition(Plugin owner, String name, CustomCondition condition) {
         return skillEngine.conditionRegistry().registerCustom(owner, name, condition);
     }
 
@@ -119,7 +123,7 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
     }
 
     @Override
-    public boolean registerTargeter(Plugin owner, String name, eu.northsoft.bettermob.api.CustomTargeter targeter) {
+    public boolean registerTargeter(Plugin owner, String name, CustomTargeter targeter) {
         return skillEngine.targeters().registerCustom(owner, name, targeter);
     }
 
@@ -129,7 +133,7 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
     }
 
     @Override
-    public boolean registerPlaceholder(Plugin owner, String namespace, eu.northsoft.bettermob.api.CustomPlaceholder placeholder) {
+    public boolean registerPlaceholder(Plugin owner, String namespace, CustomPlaceholder placeholder) {
         return skillEngine.placeholders().register(owner, namespace, placeholder);
     }
 

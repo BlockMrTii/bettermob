@@ -1,9 +1,10 @@
 package eu.northsoft.bettermob.skill;
 
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.entity.EntityDismountEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -63,7 +64,7 @@ public final class ModelPassengers implements Listener {
         return riders;
     }
 
-    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDismount(EntityDismountEvent event) {
         remove(event.getEntity().getUniqueId());
     }
