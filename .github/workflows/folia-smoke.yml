@@ -1,0 +1,78 @@
+name: Folia smoke test
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [main, dev, 'fixes/**']
+  workflow_dispatch: {}
+
+concurrency:
+  group: folia-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  folia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FOLIA_VERSION: '1.21.11'
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build the plugin and the smoke plugin
+        run: |
+          mvn -B install -DskipTests
+          version=$(mvn -B -q help:evaluate -Dexpression=project.version -DforceStdout)
+          mvn -B -f examples/folia-smoke/pom.xml -Plocal -Dbettermob.version="$version" package
+
+      - name: Download Folia
+        run: |
+          mkdir -p server
+          url=$(curl -fsS "https://fill.papermc.io/v3/projects/folia/versions/$FOLIA_VERSION/builds/latest" | python3 -c "import sys,json; print(json.load(sys.stdin)['downloads']['server:default']['url'])")
+          curl -fsSL "$url" -o server/folia.jar
+
+      - name: Set up the server
+        run: |
+          cd server
+          echo "eula=true" > eula.txt
+          printf 'online-mode=false\nlevel-type=minecraft\\:flat\nview-distance=4\nsimulation-distance=4\nspawn-protection=0\nenable-rcon=false\nmax-tick-time=-1\n' > server.properties
+          mkdir -p plugins/BetterMob/mobs plugins/BetterMob/skills
+          cp ../target/bettermob-*.jar plugins/
+          cp ../examples/folia-smoke/target/bettermob-folia-smoke-*.jar plugins/
+          cp ../examples/folia-smoke/content/mobs/*.yml plugins/BetterMob/mobs/
+          cp ../examples/folia-smoke/content/skills/*.yml plugins/BetterMob/skills/
+
+      - name: Run Folia
+        run: |
+          cd server
+          timeout 300 java -Xmx2G -jar folia.jar nogui > server.log 2>&1 || true
+          tail -n 40 server.log
+
+      - name: Check the log
+        run: |
+          cd server
+          grep -q "SMOKE-SPAWNED" server.log || { echo "the smoke mob was not spawned"; exit 1; }
+          grep -q "SMOKE-SKILL true" server.log || { echo "the smoke skill did not run"; exit 1; }
+          grep -q "SMOKE-DONE" server.log || { echo "the smoke plugin did not finish"; exit 1; }
+          if grep -nE "SMOKE-FAIL|off owning region|Error occurred while|Could not pass event|Exception" server.log; then
+            echo "the server log has errors"
+            exit 1
+          fi
+
+      - name: Keep the server log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: folia-server-log
+          path: server/server.log
+          if-no-files-found: ignore

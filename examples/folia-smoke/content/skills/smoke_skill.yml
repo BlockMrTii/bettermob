@@ -1,0 +1,9 @@
+smoke_skill:
+  Skills:
+    - effect:particles{particle=flame;amount=3} @self
+    - effect:particlering{particle=flame;radius=1} @self
+    - potion{t=SPEED;d=40;l=1} @self
+    - damage{amount=1} @EntitiesInRadius{r=4;Conditions=[ - isPlayer true ]}
+    - setvariable{var=caster.phase;value=2} @self
+    - delay 5
+    - sound{s=entity.zombie.hurt} @self
