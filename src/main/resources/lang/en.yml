@@ -38,10 +38,12 @@ command:
     model: "&7Model: &f{model}"
     equipment: "&7Equipment: &f{equipment}"
     drops: "&7Drop entries: &f{count}"
+    phase: "&7Phase {index}: &f{definition}"
     phases: "&7Phases: &f{count}"
     skills: "&7On {trigger}: &f{skills}"
     delay: "delay"
     trigger:
+      phase: "Phase"
       spawn: "spawn"
       load: "load"
       interact: "interact"

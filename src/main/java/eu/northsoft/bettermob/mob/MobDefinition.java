@@ -5,6 +5,7 @@ import eu.northsoft.bettermob.drop.DropTable;
 import eu.northsoft.bettermob.skill.Params;
 import eu.northsoft.bettermob.skill.SkillStep;
 import org.bukkit.entity.EntityType;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ public final class MobDefinition {
     public final List<String> equipment;
     public final SpawnRule spawnRule;
 
+    /** Creates a mob definition and indexes its base triggers; omitted phases default to empty. */
     public MobDefinition(String id, EntityType type, String displayName, String modelId,
                   double health, double damage, boolean removeAi,
                   List<String> aiGoalSelectors, List<String> aiTargetSelectors,
@@ -50,6 +52,7 @@ public final class MobDefinition {
                 damageModifiers, skillTriggers, drops, faction, bossBar, equipment, spawnRule, egg, behaviour, List.of());
     }
 
+    /** Creates a mob definition and indexes its base triggers; omitted phases default to empty. */
     public MobDefinition(String id, EntityType type, String displayName, String modelId,
                   double health, double damage, boolean removeAi,
                   List<String> aiGoalSelectors, List<String> aiTargetSelectors,
@@ -84,6 +87,7 @@ public final class MobDefinition {
         this.spawnRule = spawnRule;
     }
 
+    /** Reports whether this mob defines health phases. */
     public boolean hasPhases() {
         return !phases.isEmpty();
     }
@@ -98,6 +102,7 @@ public final class MobDefinition {
         return new MobInfo(id, type, displayName, modelId, health, damage);
     }
 
+    /** Values controlling mob appearance, attributes and interaction behavior. */
     public record Options(boolean collidable, double movementSpeed, boolean preventOtherDrops, boolean silent,
                    boolean preventRenaming, boolean preventLeashing, boolean alwaysShowName, boolean preventSunburn,
                    boolean invincible, boolean invisible, boolean canMove, boolean interactable, boolean marker,
@@ -105,8 +110,43 @@ public final class MobDefinition {
                    double scale) {
         static final Options DEFAULT = new Options(true, -1, false, false, false, false, false, true, false,
                 false, true, true, false, null, -1, -1, false, -1);
+
+        /** Reads option overrides, inheriting omitted values from the supplied base. */
+        public static Options parse(ConfigurationSection optionsSection, Options fallback) {
+            return optionsSection == null ? fallback : new Options(
+                    flag(optionsSection, "Collidable", fallback.collidable()),
+                    optionsSection.getDouble("MovementSpeed", fallback.movementSpeed()),
+                    flag(optionsSection, "PreventOtherDrops", fallback.preventOtherDrops()),
+                    flag(optionsSection, "Silent", fallback.silent()),
+                    flag(optionsSection, "PreventRenaming", fallback.preventRenaming()),
+                    flag(optionsSection, "PreventLeashing", fallback.preventLeashing()),
+                    flag(optionsSection, "AlwaysShowName", fallback.alwaysShowName()),
+                    flag(optionsSection, "PreventSunburn", fallback.preventSunburn()),
+                    flag(optionsSection, "Invincible", fallback.invincible()),
+                    flag(optionsSection, "Invisible", fallback.invisible()),
+                    flag(optionsSection, "CanMove", fallback.canMove()),
+                    flag(optionsSection, "Interactable", fallback.interactable()),
+                    flag(optionsSection, "Marker", fallback.marker()),
+                    optionsSection.getString("ItemHead", fallback.itemHead()),
+                    optionsSection.getDouble("KnockbackResistance", fallback.knockbackResistance()),
+                    optionsSection.getDouble("FollowRange", fallback.followRange()),
+                    flag(optionsSection, "PreventItemPickup", fallback.preventItemPickup()),
+                    optionsSection.getDouble("Scale", fallback.scale())
+            );
+        }
+
+        /** Reads native YAML booleans and the textual booleans allowed by the schema. */
+        private static boolean flag(ConfigurationSection section, String key, boolean fallback) {
+            Object value = section.get(key);
+            if (value instanceof Boolean flag) return flag;
+            if (value instanceof String text && (text.equalsIgnoreCase("true") || text.equalsIgnoreCase("false"))) {
+                return Boolean.parseBoolean(text);
+            }
+            return fallback;
+        }
     }
 
+    /** A parsed skill step and the event, interval or threshold that runs it. */
     public record SkillTrigger(SkillStep step, Trigger trigger, int timerTicks, HealthSpec health, String signal) {
         public SkillTrigger(SkillStep step, Trigger trigger, int timerTicks, HealthSpec health) {
             this(step, trigger, timerTicks, health, null);
@@ -141,10 +181,12 @@ public final class MobDefinition {
         }
 
         public enum Trigger {
-            SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT, HEALTH, TARGET, LOSETARGET, ENTERCOMBAT, EXITCOMBAT, KILL, SIGNAL, DESPAWN, MOVE, SWING, PRESSF, PICKUP, DROP, EQUIP;
+            PHASE, SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT, HEALTH, TARGET, LOSETARGET, ENTERCOMBAT, EXITCOMBAT, KILL, SIGNAL, DESPAWN, MOVE, SWING, PRESSF, PICKUP, DROP, EQUIP;
 
+            /** Parses trigger names and aliases. */
             static Trigger parse(String value) {
                 return switch (value.toLowerCase(Locale.ROOT)) {
+                    case "phase" -> PHASE;
                     case "spawn" -> SPAWN;
                     case "load" -> LOAD;
                     case "interact", "rightclick" -> INTERACT;

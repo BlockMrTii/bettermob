@@ -68,6 +68,7 @@ public final class MobManager {
     private final Map<UUID, MobDefinition> definitions = new ConcurrentHashMap<>();
     private final Set<String> healthCapWarned = ConcurrentHashMap.newKeySet();
     private final Map<UUID, List<Runnable>> timers = new ConcurrentHashMap<>();
+    private final Map<UUID, List<Runnable>> triggerTimers = new ConcurrentHashMap<>();
     private final BossBarManager bossBars;
     private SkillEngine skillEngine;
 
@@ -111,10 +112,12 @@ public final class MobManager {
         return entity;
     }
 
+    /** Sets a mob display name with placeholders and legacy colors. */
     private void applyName(LivingEntity entity, String displayName) {
         entity.customName(LegacyComponentSerializer.legacyAmpersand().deserialize(PlaceholderHook.apply(null, displayName)));
     }
 
+    /** Applies base attributes, appearance and equipment while preserving health on reload. */
     private void applyDefinition(LivingEntity entity, MobDefinition definition, boolean spawning) {
         applyName(entity, definition.displayName);
         entity.setCustomNameVisible(definition.options.alwaysShowName());
@@ -142,7 +145,7 @@ public final class MobManager {
         if (definition.removeAi) entity.setAI(false);
 
         preventSunburn(entity, definition);
-        applyEquipment(entity, definition);
+        applyEquipment(entity, definition, definition.equipment);
     }
 
     private NamespacedKey homeKey() {
@@ -194,9 +197,10 @@ public final class MobManager {
         });
     }
 
-    private void applyEquipment(LivingEntity entity, MobDefinition definition) {
-        if (definition.equipment.isEmpty() || entity.getEquipment() == null) return;
-        for (String line : definition.equipment) {
+    /** Equips the requested item lines using the same slot rules as the base mob. */
+    private void applyEquipment(LivingEntity entity, MobDefinition definition, List<String> equipment) {
+        if (equipment.isEmpty() || entity.getEquipment() == null) return;
+        for (String line : equipment) {
             String[] parts = line.trim().split(":", 2);
             ItemStack stack = EquipmentSupport.itemFor(items, parts[0]);
             if (stack == null) {
@@ -213,10 +217,11 @@ public final class MobManager {
         if (entity instanceof Mob mob && !definition.aiGoalSelectors.isEmpty()) AiGoalApplier.promoteRanged(mob);
     }
 
-    private static void preventSunburn(LivingEntity entity, MobDefinition definition) {
-        if (!definition.options.preventSunburn()) return;
-        if (entity instanceof Zombie zombie) zombie.setShouldBurnInDay(false);
-        if (entity instanceof AbstractSkeleton skeleton) skeleton.setShouldBurnInDay(false);
+    /** Applies the active options to zombie and skeleton daylight burning. */
+    private void preventSunburn(LivingEntity entity, MobDefinition definition) {
+        boolean burn = !optionsOf(entity, definition).preventSunburn();
+        if (entity instanceof Zombie zombie) zombie.setShouldBurnInDay(burn);
+        if (entity instanceof AbstractSkeleton skeleton) skeleton.setShouldBurnInDay(burn);
     }
 
     private void applyAppearanceOptions(LivingEntity entity, MobDefinition definition) {
@@ -253,11 +258,13 @@ public final class MobManager {
         }
     }
 
+    /** Checks whether the active options require invisibility without a model. */
     private boolean staysInvisible(Entity entity) {
         MobDefinition definition = definitions.get(entity.getUniqueId());
-        return definition != null && definition.options.invisible();
+        return definition != null && optionsOf(entity, definition).invisible();
     }
 
+    /** Releases entity state and cancels its background and phase trigger tasks. */
     public void release(Entity entity) {
         if (skillEngine != null) skillEngine.forget(entity.getUniqueId());
         bossBars.detach(entity.getUniqueId());
@@ -270,6 +277,7 @@ public final class MobManager {
         definitions.remove(entity.getUniqueId());
         inCombat.remove(entity.getUniqueId());
         phaseOf.remove(entity.getUniqueId());
+        cancelTriggerTimers(entity.getUniqueId());
         exitCombatToken.remove(entity.getUniqueId());
         lastAlert.remove(entity.getUniqueId());
         plugin.debug().endSessionsOf(entity.getUniqueId());
@@ -333,33 +341,35 @@ public final class MobManager {
         entity.setInvisible(hasModel(entity) || staysInvisible(entity));
     }
 
+    /** Runs only the active phase trigger set, falling back to the base outside phases. */
     public void fireTrigger(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
                       LivingEntity trigger, Cancellable event) {
         fireTriggers(entity, definition, type, effectiveTriggers(entity, definition, type), trigger, event);
     }
 
+    /** Selects the complete active trigger set for an event kind. */
     private List<MobDefinition.SkillTrigger> effectiveTriggers(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type) {
-        List<MobDefinition.SkillTrigger> base = definition.triggersOf(type);
-        if (!definition.hasPhases()) return base;
-        int index = phaseOf.getOrDefault(entity.getUniqueId(), -1);
-        if (index < 0 || index >= definition.phases.size()) return base;
-        MobPhase phase = definition.phases.get(index);
-        List<MobDefinition.SkillTrigger> own = phase.triggersOf(type);
-        if (own.isEmpty()) return phase.replace() ? List.of() : base;
-        if (phase.replace() || base.isEmpty()) return own;
-        List<MobDefinition.SkillTrigger> both = new ArrayList<>(base);
-        both.addAll(own);
-        return both;
+        int index = phaseIndex(entity.getUniqueId());
+        return index < 0 || index >= definition.phases.size() ? definition.triggersOf(type) : definition.phases.get(index).triggersOf(type);
     }
 
+    /** Returns the active phase options, inheriting omitted fields from the base mob. */
+    public MobDefinition.Options optionsOf(Entity entity, MobDefinition definition) {
+        int index = phaseIndex(entity.getUniqueId());
+        return index < 0 || index >= definition.phases.size() ? definition.options : definition.phases.get(index).options();
+    }
+
+    /** Returns the persistent entity key used to store its phase index. */
     private NamespacedKey phaseKey() {
         return new NamespacedKey(plugin, "phase");
     }
 
+    /** Returns the active phase index, or minus one for the base mob. */
     public int phaseIndex(UUID entityId) {
         return phaseOf.getOrDefault(entityId, -1);
     }
 
+    /** Transitions when health selects a different phase, running entry skills only downward. */
     private void updatePhase(LivingEntity entity, MobDefinition definition, double health) {
         if (!definition.hasPhases() || health <= 0) return;
         var attribute = entity.getAttribute(Attribute.MAX_HEALTH);
@@ -367,9 +377,10 @@ public final class MobManager {
         int target = MobPhase.select(definition.phases, health, max);
         int current = phaseOf.getOrDefault(entity.getUniqueId(), -1);
         if (target == current) return;
-        enterPhase(entity, definition, target, true);
+        enterPhase(entity, definition, target, target > current);
     }
 
+    /** Persists and applies a phase and optionally runs its entry skills. */
     private void enterPhase(LivingEntity entity, MobDefinition definition, int index, boolean runStart) {
         phaseOf.put(entity.getUniqueId(), index);
         entity.getPersistentDataContainer().set(phaseKey(), PersistentDataType.INTEGER, index);
@@ -378,13 +389,56 @@ public final class MobManager {
         String display = phase != null && phase.display() != null ? phase.display() : definition.displayName;
         String model = phase != null && phase.model() != null ? phase.model() : definition.modelId;
         applyName(entity, display);
-        if (model != null && phaseModelChanged(definition)) attachModelField(entity, model);
+        applyPhaseValues(entity, definition, phase);
+        if (phaseModelChanged(definition)) {
+            replaceTracker(entity, null);
+            replaceModelEngineTracker(entity, null);
+            if (model != null) attachModelField(entity, model);
+        }
+        if (triggerTimers.containsKey(entity.getUniqueId())) scheduleTriggerTimers(entity, definition);
         if (runStart && phase != null && skillEngine != null) {
             SkillContext context = SkillContext.of(entity);
             for (SkillStep step : phase.start()) skillEngine.runStep(step, context);
+            fireTrigger(entity, definition, MobDefinition.SkillTrigger.Trigger.PHASE, null, null);
         }
     }
 
+    /** Applies reversible phase options and replaces equipment when a phase defines it. */
+    private void applyPhaseValues(LivingEntity entity, MobDefinition definition, MobPhase phase) {
+        MobDefinition.Options options = optionsOf(entity, definition);
+        entity.setCollidable(options.collidable());
+        entity.setSilent(options.silent());
+        entity.setInvulnerable(options.invincible());
+        entity.setCustomNameVisible(options.alwaysShowName());
+        entity.setInvisible(hasModel(entity) || options.invisible());
+        entity.setAI(!definition.removeAi && options.canMove());
+        entity.setGravity(options.canMove());
+        entity.setCanPickupItems(!options.preventItemPickup());
+        if (entity instanceof ArmorStand stand) stand.setMarker(options.marker());
+        resetPhaseAttribute(entity, Attribute.MOVEMENT_SPEED, options.movementSpeed());
+        resetPhaseAttribute(entity, Attribute.KNOCKBACK_RESISTANCE, options.knockbackResistance());
+        resetPhaseAttribute(entity, Attribute.FOLLOW_RANGE, options.followRange());
+        resetPhaseAttribute(entity, Attribute.SCALE, options.scale());
+        preventSunburn(entity, definition);
+        boolean equipmentChanges = definition.phases.stream().anyMatch(value -> value.equipment() != null
+                || !java.util.Objects.equals(value.options().itemHead(), definition.options.itemHead()));
+        if (equipmentChanges && entity.getEquipment() != null) {
+            entity.getEquipment().clear();
+            if (options.itemHead() != null) {
+                ItemDefinition head = items.get(options.itemHead());
+                if (head != null) EquipmentSupport.equip(entity, org.bukkit.inventory.EquipmentSlot.HEAD, items.create(head, 1));
+            }
+            applyEquipment(entity, definition, phase != null && phase.equipment() != null ? phase.equipment() : definition.equipment);
+        }
+    }
+
+    /** Restores the vanilla attribute default when neither the mob nor its phase overrides it. */
+    private static void resetPhaseAttribute(LivingEntity entity, Attribute attribute, double value) {
+        var instance = entity.getAttribute(attribute);
+        if (instance != null) instance.setBaseValue(value >= 0 ? value : instance.getDefaultValue());
+    }
+
+    /** Reports whether phase transitions may require replacing the attached model. */
     private static boolean phaseModelChanged(MobDefinition definition) {
         for (MobPhase phase : definition.phases) {
             if (phase.model() != null) return true;
@@ -392,11 +446,16 @@ public final class MobManager {
         return false;
     }
 
+    /** Reconciles persisted state with current health and definitions without entry skills. */
     private void restorePhase(LivingEntity entity, MobDefinition definition) {
-        if (!definition.hasPhases()) return;
+        if (!definition.hasPhases() && !phaseOf.containsKey(entity.getUniqueId())
+                && !entity.getPersistentDataContainer().has(phaseKey(), PersistentDataType.INTEGER)) return;
+        var attribute = entity.getAttribute(Attribute.MAX_HEALTH);
+        double max = attribute == null ? entity.getHealth() : attribute.getValue();
+        int selected = MobPhase.select(definition.phases, entity.getHealth(), max);
         Integer stored = entity.getPersistentDataContainer().get(phaseKey(), PersistentDataType.INTEGER);
-        if (stored == null || stored < 0 || stored >= definition.phases.size()) return;
-        enterPhase(entity, definition, stored, false);
+        int index = stored != null && stored == selected ? stored : selected;
+        enterPhase(entity, definition, index, false);
     }
 
     private void fireTriggers(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
@@ -455,10 +514,11 @@ public final class MobManager {
     private static final double MOVE_EPSILON_SQUARED = 0.0025;
     private static final long EXIT_COMBAT_TICKS = 100L;
 
+    /** Runs matching signal skills from the active trigger set. */
     public boolean signal(LivingEntity entity, String name, LivingEntity sender) {
         MobDefinition definition = definitions.get(entity.getUniqueId());
         if (definition == null || name == null) return false;
-        List<MobDefinition.SkillTrigger> matching = definition.triggersOf(MobDefinition.SkillTrigger.Trigger.SIGNAL).stream()
+        List<MobDefinition.SkillTrigger> matching = effectiveTriggers(entity, definition, MobDefinition.SkillTrigger.Trigger.SIGNAL).stream()
                 .filter(trigger -> name.equalsIgnoreCase(trigger.signal()))
                 .toList();
         if (matching.isEmpty()) return false;
@@ -466,13 +526,15 @@ public final class MobManager {
         return true;
     }
 
+    /** Reports whether health changes need trigger or phase evaluation. */
     public boolean hasHealthTriggers(MobDefinition definition) {
-        return !definition.triggersOf(MobDefinition.SkillTrigger.Trigger.HEALTH).isEmpty();
+        return definition.hasPhases() || !definition.triggersOf(MobDefinition.SkillTrigger.Trigger.HEALTH).isEmpty();
     }
 
+    /** Updates the active phase and runs health skills whose thresholds were crossed. */
     public void checkHealth(LivingEntity mob, MobDefinition definition, double before, double health) {
         updatePhase(mob, definition, health);
-        List<MobDefinition.SkillTrigger> triggers = definition.triggersOf(MobDefinition.SkillTrigger.Trigger.HEALTH);
+        List<MobDefinition.SkillTrigger> triggers = effectiveTriggers(mob, definition, MobDefinition.SkillTrigger.Trigger.HEALTH);
         if (triggers.isEmpty() || health <= 0) return;
         var attribute = mob.getAttribute(Attribute.MAX_HEALTH);
         double max = attribute == null ? Math.max(before, health) : attribute.getValue();
@@ -503,6 +565,7 @@ public final class MobManager {
         });
     }
 
+    /** Starts background tasks and the current phase timer and movement skills. */
     private void scheduleTimers(LivingEntity entity, MobDefinition definition) {
         if (definition.threatTable && entity instanceof Mob mob) {
             addTimer(mob.getUniqueId(), () -> Tasks.runTimer(plugin, mob, 20L, 20L, () -> retarget(mob)));
@@ -516,9 +579,17 @@ public final class MobManager {
                 entity.teleportAsync(home);
             }));
         }
-        for (MobDefinition.SkillTrigger trigger : definition.triggersOf(MobDefinition.SkillTrigger.Trigger.MOVE)) {
+        scheduleTriggerTimers(entity, definition);
+    }
+
+    /** Replaces phase timer and movement tasks without restarting threat or home tasks. */
+    private void scheduleTriggerTimers(LivingEntity entity, MobDefinition definition) {
+        cancelTriggerTimers(entity.getUniqueId());
+        List<Runnable> cancellers = new CopyOnWriteArrayList<>();
+        triggerTimers.put(entity.getUniqueId(), cancellers);
+        for (MobDefinition.SkillTrigger trigger : effectiveTriggers(entity, definition, MobDefinition.SkillTrigger.Trigger.MOVE)) {
             double[] last = {Double.NaN, 0, 0};
-            addTimer(entity.getUniqueId(), () -> Tasks.runTimer(plugin, entity, trigger.timerTicks(), trigger.timerTicks(), () -> {
+            cancellers.add(Tasks.runTimer(plugin, entity, trigger.timerTicks(), trigger.timerTicks(), () -> {
                 if (!entity.isValid()) return;
                 Location at = entity.getLocation();
                 double dx = at.getX() - last[0];
@@ -531,12 +602,18 @@ public final class MobManager {
                 if (moved) fireTriggers(entity, definition, MobDefinition.SkillTrigger.Trigger.MOVE, List.of(trigger), null, null);
             }));
         }
-        for (MobDefinition.SkillTrigger trigger : definition.triggersOf(MobDefinition.SkillTrigger.Trigger.TIMER)) {
-            addTimer(entity.getUniqueId(), () -> Tasks.runTimer(plugin, entity, trigger.timerTicks(), trigger.timerTicks(), () -> {
+        for (MobDefinition.SkillTrigger trigger : effectiveTriggers(entity, definition, MobDefinition.SkillTrigger.Trigger.TIMER)) {
+            cancellers.add(Tasks.runTimer(plugin, entity, trigger.timerTicks(), trigger.timerTicks(), () -> {
                 if (!entity.isValid()) return;
-                skillEngine.runStep(trigger.step(), SkillContext.of(entity));
+                fireTriggers(entity, definition, MobDefinition.SkillTrigger.Trigger.TIMER, List.of(trigger), null, null);
             }));
         }
+    }
+
+    /** Cancels only the active skill timer and movement tasks. */
+    private void cancelTriggerTimers(UUID id) {
+        List<Runnable> cancellers = triggerTimers.remove(id);
+        if (cancellers != null) cancellers.forEach(Runnable::run);
     }
 
     private void addTimer(UUID id, Supplier<Runnable> schedule) {
@@ -573,11 +650,13 @@ public final class MobManager {
         return updated;
     }
 
+    /** Reapplies a reloaded definition and restores its phase without entry skills. */
     private void rebind(LivingEntity entity, MobDefinition fresh) {
         UUID id = entity.getUniqueId();
         MobDefinition old = definitions.get(id);
         if (old == null || !entity.isValid()) return;
 
+        cancelTriggerTimers(id);
         List<Runnable> cancellers = timers.remove(id);
         if (cancellers != null) cancellers.forEach(Runnable::run);
         if (skillEngine != null) skillEngine.forget(id);
@@ -594,6 +673,10 @@ public final class MobManager {
             entity.setAI(true);
             entity.setGravity(true);
         }
+        if (old.phases.stream().anyMatch(phase -> phase.equipment() != null
+                || !java.util.Objects.equals(phase.options().itemHead(), old.options.itemHead())) && entity.getEquipment() != null) {
+            entity.getEquipment().clear();
+        }
         applyDefinition(entity, fresh, false);
         entity.setInvisible(trackers.containsKey(id) || modelEngineTrackers.containsKey(id) || fresh.options.invisible());
         if (entity instanceof Mob mob) {
@@ -602,9 +685,14 @@ public final class MobManager {
         }
         applyBehaviour(entity, fresh);
 
+        if (phaseModelChanged(old)) {
+            replaceTracker(entity, null);
+            replaceModelEngineTracker(entity, null);
+        }
         if (!hasModelSkill(fresh, MobDefinition.SkillTrigger.Trigger.LOAD)) {
             attachModelField(entity, fresh.modelId);
         }
+        restorePhase(entity, fresh);
         scheduleTimers(entity, fresh);
         bossBars.attach(entity, fresh);
         fireTrigger(entity, fresh, MobDefinition.SkillTrigger.Trigger.LOAD, null, null);
@@ -646,8 +734,9 @@ public final class MobManager {
         return counts;
     }
 
+    /** Counts background tasks and active phase timer and movement tasks. */
     public int timerCount() {
-        return timers.values().stream().mapToInt(List::size).sum();
+        return timers.values().stream().mapToInt(List::size).sum() + triggerTimers.values().stream().mapToInt(List::size).sum();
     }
 
     public int aliveCount() {
@@ -737,6 +826,7 @@ public final class MobManager {
         preventSunburn(entity, definition);
     }
 
+    /** Restores a persisted mob and its phase before scheduling tasks and load skills. */
     public void handleLoad(LivingEntity entity) {
         if (definitions.containsKey(entity.getUniqueId())) return;
         String id = entity.getPersistentDataContainer().get(mobIdKey, PersistentDataType.STRING);

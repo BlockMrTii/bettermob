@@ -67,6 +67,7 @@ public final class MobListener implements Listener {
         }
     }
 
+    /** Applies active drop options and runs death triggers before releasing the mob. */
     @EventHandler
     public void onDeath(EntityDeathEvent event) {
         fireKill(event.getEntity());
@@ -76,7 +77,7 @@ public final class MobListener implements Listener {
         Player killer = event.getEntity().getKiller();
         if (killer != null) kills.record(killer.getUniqueId(), killer.getName(), definition.id);
 
-        if (definition.options.preventOtherDrops() || definition.drops != null) {
+        if (manager.optionsOf(event.getEntity(), definition).preventOtherDrops() || definition.drops != null) {
             event.getDrops().clear();
             event.setDroppedExp(0);
         }
@@ -157,6 +158,7 @@ public final class MobListener implements Listener {
         if (definition != null) manager.fireTrigger(killer, definition, MobDefinition.SkillTrigger.Trigger.KILL, victim, null);
     }
 
+    /** Evaluates health triggers and phase thresholds using health after damage. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onHealthLoss(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof LivingEntity mob)) return;
@@ -166,6 +168,7 @@ public final class MobListener implements Listener {
         }
     }
 
+    /** Reselects the active phase and health triggers using health after healing. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onHealthGain(EntityRegainHealthEvent event) {
         if (!(event.getEntity() instanceof LivingEntity mob)) return;
@@ -230,32 +233,35 @@ public final class MobListener implements Listener {
         manager.fireTrigger(event.getEntity(), definition, MobDefinition.SkillTrigger.Trigger.SHOOT, target, event);
     }
 
+    /** Applies active interaction and renaming options and fires interaction skills. */
     @EventHandler
     public void onInteract(PlayerInteractEntityEvent event) {
         MobDefinition definition = manager.definitionOf(event.getRightClicked().getUniqueId());
         if (definition == null) return;
 
-        if (!definition.options.interactable()) {
+        if (!manager.optionsOf(event.getRightClicked(), definition).interactable()) {
             event.setCancelled(true);
             return;
         }
         if (event.getHand() == EquipmentSlot.HAND && event.getRightClicked() instanceof LivingEntity living) {
             manager.fireTrigger(living, definition, MobDefinition.SkillTrigger.Trigger.INTERACT, event.getPlayer(), event);
         }
-        if (definition.options.preventRenaming() && event.getPlayer().getInventory().getItem(event.getHand()).getType() == Material.NAME_TAG) {
+        if (manager.optionsOf(event.getRightClicked(), definition).preventRenaming() && event.getPlayer().getInventory().getItem(event.getHand()).getType() == Material.NAME_TAG) {
             event.setCancelled(true);
         }
     }
 
+    /** Prevents equipment manipulation when the active options disable interaction. */
     @EventHandler
     public void onArmorStandManipulate(PlayerArmorStandManipulateEvent event) {
         MobDefinition definition = manager.definitionOf(event.getRightClicked().getUniqueId());
-        if (definition != null && !definition.options.interactable()) event.setCancelled(true);
+        if (definition != null && !manager.optionsOf(event.getRightClicked(), definition).interactable()) event.setCancelled(true);
     }
 
+    /** Applies the active phase restriction on leashing. */
     @EventHandler
     public void onLeash(PlayerLeashEntityEvent event) {
         MobDefinition definition = manager.definitionOf(event.getEntity().getUniqueId());
-        if (definition != null && definition.options.preventLeashing()) event.setCancelled(true);
+        if (definition != null && manager.optionsOf(event.getEntity(), definition).preventLeashing()) event.setCancelled(true);
     }
 }

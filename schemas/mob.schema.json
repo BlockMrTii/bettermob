@@ -566,7 +566,7 @@
             "properties": {
               "Health": {
                 "type": "string",
-                "pattern": "^\\\\s*(<=|>=|<|>)\\\\s*[0-9]+(\\\\.[0-9]+)?\\\\s*%?\\\\s*$",
+                "pattern": "^\\s*(<=|>=|<|>)\\s*[0-9]+(\\.[0-9]+)?\\s*%?\\s*$",
                 "description": "Like <70% or <=30%, an absolute number without %."
               },
               "Display": {
@@ -583,18 +583,21 @@
                 "description": "Skill lines that run once when the phase starts."
               },
               "Skills": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "description": "Trigger lines active while the phase is on."
+                "$ref": "#/definitions/mob/properties/Skills",
+                "description": "Replaces all active trigger lines; ~onPhase runs once on downward entry."
               },
               "Replace": {
                 "type": [
                   "boolean",
                   "string"
                 ],
-                "description": "The phase's Skills replace the mob's own Skills of the same trigger."
+                "description": "Deprecated compatibility field. Phase skills always replace the entire active trigger set."
+              },
+              "Options": {
+                "$ref": "#/definitions/mob/properties/Options"
+              },
+              "Equipment": {
+                "$ref": "#/definitions/mob/properties/Equipment"
               }
             },
             "additionalProperties": false
