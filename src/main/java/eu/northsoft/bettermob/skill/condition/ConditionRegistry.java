@@ -102,7 +102,7 @@ public final class ConditionRegistry {
             engine.plugin().messages().warn("skill.conditionUnsupported", "condition", condition.name());
             return true;
         }
-        return found.test(context, condition.params(), targetOverride);
+        return found.test(context, ConditionParams.resolve(engine, condition.params(), context, targetOverride), targetOverride);
     }
 
     private boolean testCustom(CustomEntry custom, Condition condition, SkillContext context, Target targetOverride) {
