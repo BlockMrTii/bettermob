@@ -248,7 +248,7 @@ Skills:
 | `varequals{var;val}` (`variableequals`) | Same test as `variable` |
 | `variableisset{var}` | The variable exists |
 | `variableinrange{var;range=0.5to2}` | The number is in the range (`0.5to2`, `>3`, `<=5`, `2-4`); a text value never matches |
-| `stringeq{val1;val2}` (`stringequals`) | Both texts are equal after `<var.x>`, `<skill.x>`, `<caster.var.x>` and `<target.var.x>` are inserted; other placeholders in condition parameters are not resolved |
+| `stringeq{val1;val2}` (`stringequals`) | Both texts are equal after `<var.x>`, `<skill.x>`, `<caster.var.x>` and `<target.var.x>` are inserted; |
 | `sneaking` | The caster is a player and is sneaking |
 | `modelhaspassengers{p=driver}` | BetterMob seated someone on the entity's model (on seat `p`, if given) |
 | `ridingmodel{mid=model}` | The entity was seated on a model with `mountmodel` (of mob model `mid`, if given) |
@@ -306,3 +306,7 @@ effects that aren't supported (for example `velocity`) produce a warning like
 Particles that need data take it from the same line: `material` (`m`) for `block`, `falling_dust`, `block_marker` and `item`; `color` (`#rrggbb` or `r,g,b`) and `size` for `dust`, plus `toColor` for `dust_color_transition`; `color` for `entity_effect`; `color` and `power` for `effect` and `instant_effect`. A `material` that is not a block falls back to stone for block particles. `spread` sets `hS` and `vS` at once, `hSpread` and `vSpread` are aliases. Legacy names like `block_crack`, `reddust` and `spell_mob` are mapped to the current particles.
 
 Also not supported: `segment` (ModelEngine segment bones; its options are not clear enough).
+
+## Placeholders in condition parameters
+
+Condition parameters take the same text placeholders as mechanic parameters: `<var.x>`, `<skill.x>`, `<caster.var.x>`, `<target.var.x>`, `<caster.name>`, `<target.name>`, the placeholders other plugins register through the API, and `<placeholder.name>`, which reads the PlaceholderAPI value `%name%` for the checked player (the target if it is a player, otherwise the trigger, otherwise the caster). So `stringEQ{val1="<placeholder.Cubees-Extension-1>";val2="Yes"}` compares what PlaceholderAPI returns. Values are inserted as plain text (braces, brackets, `;`, `=`, quotes and `%` are removed); an unknown or empty placeholder becomes an empty text. Parameters without a `<` are not touched.
