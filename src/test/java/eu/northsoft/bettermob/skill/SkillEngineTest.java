@@ -7,21 +7,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class SkillEngineTest {
     @Test
     void commandAndMessageKeepTheCasterNamePlaceholderForTheirOwnEscaping() {
-        assertEquals("lp user <caster.name> 5", SkillEngine.withCasterValues("lp user <caster.name> <caster.damage>", "5", "Bob parent add admin", true));
+        assertEquals("lp user <caster.name> 5", Substitutions.withCasterValues("lp user <caster.name> <caster.damage>", "5", "Bob parent add admin", true));
     }
 
     @Test
     void inlineSkillsKeepTheCasterNamePlaceholderForTheNestedMechanic() {
-        assertEquals("[ - command{c=kill <caster.name>}]", SkillEngine.withCasterValues("[ - command{c=kill <caster.name>}]", "5", "@a", false));
+        assertEquals("[ - command{c=kill <caster.name>}]", Substitutions.withCasterValues("[ - command{c=kill <caster.name>}]", "5", "@a", false));
     }
 
     @Test
     void aLiteralBraceOutsideAnInlineSkillStillGetsTheCasterName() {
-        assertEquals("{Bob} says hi", SkillEngine.withCasterValues("{<caster.name>} says hi", "5", "Bob", false));
+        assertEquals("{Bob} says hi", Substitutions.withCasterValues("{<caster.name>} says hi", "5", "Bob", false));
     }
 
     @Test
     void otherMechanicsGetTheCasterName() {
-        assertEquals("Hello Bob", SkillEngine.withCasterValues("Hello <caster.name>", "5", "Bob", false));
+        assertEquals("Hello Bob", Substitutions.withCasterValues("Hello <caster.name>", "5", "Bob", false));
     }
 }

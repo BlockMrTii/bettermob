@@ -38,8 +38,6 @@ import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,7 +61,8 @@ public final class MobManager {
     private final Map<UUID, Object> trackers = new ConcurrentHashMap<>();
 
     private final Map<UUID, Object> modelEngineTrackers = new ConcurrentHashMap<>();
-    private final Map<UUID, Map<UUID, Threat>> threatTables = new ConcurrentHashMap<>();
+    private final ThreatTables threats = new ThreatTables();
+    private final MobHome home;
     private final Map<UUID, Map<DamageCause, Double>> damageModifiers = new ConcurrentHashMap<>();
     private final Map<UUID, MobDefinition> definitions = new ConcurrentHashMap<>();
     private final Set<String> healthCapWarned = ConcurrentHashMap.newKeySet();
@@ -84,6 +83,7 @@ public final class MobManager {
         this.items = items;
         this.mobIdKey = new NamespacedKey(plugin, "mob_id");
         this.bossBars = new BossBarManager(plugin);
+        this.home = new MobHome(plugin);
     }
 
     public LivingEntity spawn(MobDefinition definition, Location location) {
@@ -97,7 +97,7 @@ public final class MobManager {
 
         if (entity instanceof Mob mob) AiGoalApplier.apply(mob, definition.aiGoalSelectors, definition.aiTargetSelectors, plugin, other -> definitions.containsKey(other.getUniqueId()));
         applyBehaviour(entity, definition);
-        if (definition.threatTable) threatTables.put(entity.getUniqueId(), new ConcurrentHashMap<>());
+        if (definition.threatTable) threats.track(entity.getUniqueId());
         if (!definition.damageModifiers.isEmpty()) damageModifiers.put(entity.getUniqueId(), definition.damageModifiers);
 
         if (!hasModelSkill(definition, MobDefinition.SkillTrigger.Trigger.SPAWN)) {
@@ -146,23 +146,8 @@ public final class MobManager {
         applyEquipment(entity, definition, definition.equipment);
     }
 
-    private NamespacedKey homeKey() {
-        return new NamespacedKey(plugin, "home");
-    }
-
     public Location homeOf(Entity entity) {
-        String stored = entity.getPersistentDataContainer().get(homeKey(), PersistentDataType.STRING);
-        if (stored == null) return null;
-        String[] parts = stored.split(";");
-        if (parts.length != 3 && parts.length != 4) return null;
-        try {
-            int offset = parts.length - 3;
-            World world = offset == 0 ? entity.getWorld() : Bukkit.getWorld(UUID.fromString(parts[0]));
-            if (world == null) return null;
-            return new Location(world, Double.parseDouble(parts[offset]), Double.parseDouble(parts[offset + 1]), Double.parseDouble(parts[offset + 2]));
-        } catch (IllegalArgumentException exception) {
-            return null;
-        }
+        return home.of(entity);
     }
 
     private final Map<UUID, Long> lastAlert = new ConcurrentHashMap<>();
@@ -185,10 +170,7 @@ public final class MobManager {
 
     private void applyBehaviour(LivingEntity entity, MobDefinition definition) {
         Behaviour behaviour = definition.behaviour;
-        if (behaviour != null && behaviour.needsHome() && homeOf(entity) == null) {
-            Location at = entity.getLocation();
-            entity.getPersistentDataContainer().set(homeKey(), PersistentDataType.STRING, at.getWorld().getUID() + ";" + at.getX() + ";" + at.getY() + ";" + at.getZ());
-        }
+        if (behaviour != null && behaviour.needsHome()) home.storeIfMissing(entity);
         if (entity instanceof Mob mob) BehaviourGoals.apply(plugin, mob, behaviour, () -> homeOf(entity), other -> {
             MobDefinition found = definitions.get(other.getUniqueId());
             return found == null ? null : found.id;
@@ -266,7 +248,7 @@ public final class MobManager {
         if (tracker != null) betterModel.close(tracker);
         Object modelEngineTracker = modelEngineTrackers.remove(entity.getUniqueId());
         if (modelEngineTracker != null) modelEngine.close(modelEngineTracker);
-        threatTables.remove(entity.getUniqueId());
+        threats.untrack(entity.getUniqueId());
         damageModifiers.remove(entity.getUniqueId());
         definitions.remove(entity.getUniqueId());
         inCombat.remove(entity.getUniqueId());
@@ -547,7 +529,7 @@ public final class MobManager {
 
     private void scheduleTimers(LivingEntity entity, MobDefinition definition) {
         if (definition.threatTable && entity instanceof Mob mob) {
-            addTimer(mob.getUniqueId(), () -> Tasks.runTimer(plugin, mob, 20L, 20L, () -> retarget(mob)));
+            addTimer(mob.getUniqueId(), () -> Tasks.runTimer(plugin, mob, 20L, 20L, () -> threats.retarget(mob)));
         }
         if (definition.behaviour != null && definition.behaviour.hasHomeLimit()) {
             double limit = definition.behaviour.maxHomeDistance();
@@ -640,8 +622,8 @@ public final class MobManager {
         exitCombatToken.remove(id);
 
         definitions.put(id, fresh);
-        if (fresh.threatTable) threatTables.putIfAbsent(id, new ConcurrentHashMap<>());
-        else threatTables.remove(id);
+        if (fresh.threatTable) threats.track(id);
+        else threats.untrack(id);
         if (fresh.damageModifiers.isEmpty()) damageModifiers.remove(id);
         else damageModifiers.put(id, fresh.damageModifiers);
 
@@ -809,7 +791,7 @@ public final class MobManager {
         if (definition == null) return;
 
         definitions.put(entity.getUniqueId(), definition);
-        if (definition.threatTable) threatTables.put(entity.getUniqueId(), new ConcurrentHashMap<>());
+        if (definition.threatTable) threats.track(entity.getUniqueId());
         if (!definition.damageModifiers.isEmpty()) damageModifiers.put(entity.getUniqueId(), definition.damageModifiers);
 
         if (entity instanceof Mob mob) {
@@ -842,58 +824,12 @@ public final class MobManager {
         return modifiers == null ? 1.0 : modifiers.getOrDefault(cause, 1.0);
     }
 
-    private static final class Threat {
-        public final WeakReference<LivingEntity> attacker;
-        public final String name;
-        public double amount;
-
-        public Threat(LivingEntity attacker) {
-            this.attacker = new WeakReference<>(attacker);
-            this.name = attacker.getName();
-        }
-    }
-
     public List<Map.Entry<String, Double>> threatOf(UUID mobId, int limit) {
-        Map<UUID, Threat> table = threatTables.get(mobId);
-        if (table == null) return List.of();
-        List<Map.Entry<String, Double>> rows = new ArrayList<>();
-        for (Threat threat : table.values()) {
-            if (threat.attacker.get() != null) rows.add(Map.entry(threat.name, threat.amount));
-        }
-        rows.sort(Map.Entry.<String, Double>comparingByValue().reversed());
-        return rows.size() > limit ? List.copyOf(rows.subList(0, limit)) : rows;
+        return threats.top(mobId, limit);
     }
 
     public void registerThreat(UUID mobId, LivingEntity attacker, double amount) {
-        Map<UUID, Threat> table = threatTables.get(mobId);
-        if (table != null) table.computeIfAbsent(attacker.getUniqueId(), id -> new Threat(attacker)).amount += amount;
-    }
-
-    private void retarget(Mob mob) {
-        Map<UUID, Threat> table = threatTables.get(mob.getUniqueId());
-        if (table == null || !mob.isValid()) return;
-
-        LivingEntity top = null;
-        double best = -1;
-        var iterator = table.values().iterator();
-        while (iterator.hasNext()) {
-            Threat threat = iterator.next();
-            LivingEntity attacker = threat.attacker.get();
-            if (attacker == null) {
-                iterator.remove();
-                continue;
-            }
-            if (!Bukkit.isOwnedByCurrentRegion(attacker)) continue;
-            if (attacker.isDead() || !attacker.getWorld().equals(mob.getWorld())) {
-                iterator.remove();
-                continue;
-            }
-            if (threat.amount > best) {
-                best = threat.amount;
-                top = attacker;
-            }
-        }
-        if (top != null) mob.setTarget(top);
+        threats.register(mobId, attacker, amount);
     }
 
     public MobRegistry registry() {

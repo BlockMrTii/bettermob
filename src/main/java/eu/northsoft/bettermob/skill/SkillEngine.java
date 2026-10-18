@@ -31,7 +31,6 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerRespawnEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 
@@ -43,8 +42,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static eu.northsoft.bettermob.skill.Params.*;
 
@@ -58,8 +55,7 @@ public final class SkillEngine implements Listener {
     private final DebugManager debug;
     private final SkillState state = new SkillState();
     private final ModelPassengers modelPassengers = new ModelPassengers();
-    private static final int INLINE_CACHE_LIMIT = 4096;
-    private final Map<String, List<SkillStep>> inlineSkills = new ConcurrentHashMap<>();
+    private final InlineSkills inlineSkills;
     private final TargeterRegistry targeters;
     private final ConditionRegistry conditionRegistry;
     private final MechanicRegistry mechanics;
@@ -73,6 +69,7 @@ public final class SkillEngine implements Listener {
         this.modelEngine = modelEngine;
         this.items = items;
         this.debug = plugin.debug();
+        this.inlineSkills = new InlineSkills(plugin);
         this.placeholders = new CustomPlaceholders((namespace, owner, exception) -> plugin.messages().warn("skill.customPlaceholderFailed",
                 "namespace", namespace, "plugin", owner == null ? "?" : owner.getName(), "error", exception));
         this.targeters = new TargeterRegistry(this);
@@ -462,46 +459,23 @@ public final class SkillEngine implements Listener {
     }
 
     public List<SkillStep> inline(String raw) {
-        List<SkillStep> cached = inlineSkills.get(raw);
-        if (cached != null) return cached;
-        if (inlineSkills.size() >= INLINE_CACHE_LIMIT) inlineSkills.clear();
-        return inlineSkills.computeIfAbsent(raw, this::parseInline);
-    }
-
-    private List<SkillStep> parseInline(String raw) {
-        List<SkillStep> steps = new ArrayList<>();
-        for (String line : splitInline(raw)) {
-            SkillStep step = SkillStep.parse(line);
-            if (step == null) plugin.messages().warn("skill.inlineLineInvalid", "line", line);
-            else steps.add(step);
-        }
-        return List.copyOf(steps);
+        return inlineSkills.get(raw);
     }
 
     public static List<String> splitInline(String raw) {
-        String body = raw.trim();
-        if (body.startsWith("[")) body = body.substring(1);
-        if (body.endsWith("]")) body = body.substring(0, body.length() - 1);
+        return InlineSkills.splitInline(raw);
+    }
 
-        List<String> lines = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        int depth = 0;
-        for (int i = 0; i < body.length(); i++) {
-            char c = body.charAt(i);
-            if (c == '{' || c == '[') depth++;
-            else if (c == '}' || c == ']') depth--;
-            boolean separator = c == '-' && depth == 0 && (i == 0 || Character.isWhitespace(body.charAt(i - 1)))
-                    && i + 1 < body.length() && Character.isWhitespace(body.charAt(i + 1));
-            if (separator) {
-                lines.add(current.toString().trim());
-                current.setLength(0);
-            } else {
-                current.append(c);
-            }
-        }
-        lines.add(current.toString().trim());
-        lines.removeIf(String::isBlank);
-        return lines;
+    public static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope) {
+        return Substitutions.replaceVariables(value, skillScope, casterScope);
+    }
+
+    public static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope, Map<String, String> targetScope) {
+        return Substitutions.replaceVariables(value, skillScope, casterScope, targetScope);
+    }
+
+    public static String withLocationValues(String value, double x, double y, double z, float yaw, float pitch) {
+        return Substitutions.withLocationValues(value, x, y, z, yaw, pitch);
     }
 
     private Map<String, String> substitute(String mechanicName, Map<String, String> params, SkillContext context) {
@@ -532,10 +506,10 @@ public final class SkillEngine implements Listener {
         }
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : p.entrySet()) {
-            String value = at == null ? entry.getValue() : withLocationValues(entry.getValue(), at.getX(), at.getY(), at.getZ(), at.getYaw(), at.getPitch());
+            String value = at == null ? entry.getValue() : Substitutions.withLocationValues(entry.getValue(), at.getX(), at.getY(), at.getZ(), at.getYaw(), at.getPitch());
             if (value.indexOf("<caster.mythic_type>") >= 0) value = value.replace("<caster.mythic_type>", mobType(context.caster()));
-            if (value.indexOf("<caster.itemnbt.") >= 0) value = withItemNbt(value, ItemNbt.heldItem(context.caster()));
-            result.put(entry.getKey(), withCasterValues(value, damage, name, escapesItself));
+            if (value.indexOf("<caster.itemnbt.") >= 0) value = Substitutions.withItemNbt(value, ItemNbt.heldItem(context.caster()));
+            result.put(entry.getKey(), Substitutions.withCasterValues(value, damage, name, escapesItself));
         }
         return result;
     }
@@ -559,111 +533,16 @@ public final class SkillEngine implements Listener {
     }
 
     private Map<String, String> withVariables(Map<String, String> params, SkillContext context) {
-        return resolveVariables(params, context.variables(), state.existingVariablesOf(context.caster().getUniqueId()));
+        return Substitutions.resolveVariables(params, context.variables(), state.existingVariablesOf(context.caster().getUniqueId()));
     }
-
-    static Map<String, String> resolveVariables(Map<String, String> params, Map<String, String> skillScope, Map<String, String> casterScope) {
-        return resolveVariables(params, skillScope, casterScope, null);
-    }
-
-    static Map<String, String> resolveVariables(Map<String, String> params, Map<String, String> skillScope, Map<String, String> casterScope, Map<String, String> targetScope) {
-        boolean needed = false;
-        for (String value : params.values()) {
-            if (value.indexOf("<skill.") >= 0 || value.indexOf("<var.") >= 0 || value.indexOf("<caster.var.") >= 0) {
-                needed = true;
-                break;
-            }
-        }
-        if (!needed) return params;
-        Map<String, String> result = new LinkedHashMap<>();
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            result.put(entry.getKey(), replaceVariables(entry.getValue(), skillScope, casterScope, targetScope, targetScope == null));
-        }
-        return result;
-    }
-
-    public static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope) {
-        return replaceVariables(value, skillScope, casterScope, null);
-    }
-
-    public static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope, Map<String, String> targetScope) {
-        return replaceVariables(value, skillScope, casterScope, targetScope, false);
-    }
-
-    private static String replaceVariables(String value, Map<String, String> skillScope, Map<String, String> casterScope, Map<String, String> targetScope, boolean keepTarget) {
-        Matcher matcher = VARIABLE_PLACEHOLDER.matcher(value);
-        StringBuilder result = new StringBuilder();
-        while (matcher.find()) {
-            String kind = matcher.group(1);
-            if (keepTarget && kind.startsWith("target")) {
-                matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group()));
-                continue;
-            }
-            Map<String, String> scope = kind.startsWith("skill") ? skillScope : kind.startsWith("target") ? targetScope : casterScope;
-            String found = scope == null ? null : scope.get(matcher.group(2).toLowerCase(Locale.ROOT));
-            matcher.appendReplacement(result, Matcher.quoteReplacement(found == null ? "0" : Params.stripPlaceholderValue(found)));
-        }
-        matcher.appendTail(result);
-        return result.toString();
-    }
-
-    private static final Pattern TARGET_VARIABLE = Pattern.compile("<target\\.var\\.([A-Za-z0-9_]{1,32})>");
 
     private Map<String, String> withTargetVariables(Map<String, String> params, Target target, SkillContext context) {
         Entity entity = target.entity() != null ? target.entity() : context.trigger();
         Map<String, String> scope = entity == null ? null : state.existingVariablesOf(entity.getUniqueId());
         Map<String, String> result = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : params.entrySet()) {
-            result.put(entry.getKey(), replaceTargetVariables(entry.getValue(), scope));
+            result.put(entry.getKey(), Substitutions.replaceTargetVariables(entry.getValue(), scope));
         }
         return result;
-    }
-
-    static String replaceTargetVariables(String value, Map<String, String> scope) {
-        Matcher matcher = TARGET_VARIABLE.matcher(value);
-        StringBuilder result = new StringBuilder();
-        while (matcher.find()) {
-            String found = scope == null ? null : scope.get(matcher.group(1).toLowerCase(Locale.ROOT));
-            matcher.appendReplacement(result, Matcher.quoteReplacement(found == null ? "0" : Params.stripPlaceholderValue(found)));
-        }
-        matcher.appendTail(result);
-        return result.toString();
-    }
-
-    private static final Pattern VARIABLE_PLACEHOLDER = Pattern.compile("<(skill\\.var|skill|caster\\.var|target\\.var|var)\\.([A-Za-z0-9_]{1,32})>");
-
-    private static boolean isInlineSkill(String value) {
-        String trimmed = value.stripLeading();
-        return trimmed.startsWith("[") && trimmed.indexOf('{') > 0;
-    }
-
-    private static final Pattern ITEM_NBT = Pattern.compile("<caster\\.itemnbt\\.([A-Za-z0-9_.-]{1,64})>");
-
-    static String withItemNbt(String value, ItemStack held) {
-        Matcher matcher = ITEM_NBT.matcher(value);
-        StringBuilder result = new StringBuilder();
-        while (matcher.find()) {
-            String found = ItemNbt.get(held, matcher.group(1));
-            matcher.appendReplacement(result, Matcher.quoteReplacement(found == null ? "" : Params.stripPlaceholderValue(found)));
-        }
-        matcher.appendTail(result);
-        return result.toString();
-    }
-
-    private static String plainNumber(double value) {
-        return value == Math.rint(value) && Math.abs(value) < 1e15 ? String.valueOf((long) value) : String.valueOf(value);
-    }
-
-    public static String withLocationValues(String value, double x, double y, double z, float yaw, float pitch) {
-        if (value.indexOf("<caster.l.") < 0) return value;
-        return value.replace("<caster.l.x>", plainNumber(x)).replace("<caster.l.y>", plainNumber(y))
-                .replace("<caster.l.z>", plainNumber(z)).replace("<caster.l.yaw>", plainNumber(yaw))
-                .replace("<caster.l.pitch>", plainNumber(pitch));
-    }
-
-    static String withCasterValues(String value, String damage, String name, boolean escapesItself) {
-        String replaced = value.replace("<caster.damage>", damage);
-        if (escapesItself || isInlineSkill(value)) return replaced;
-        return replaced.replace("<caster.name>", name);
     }
 }

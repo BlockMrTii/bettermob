@@ -2,6 +2,7 @@ package eu.northsoft.bettermob.skill.condition;
 
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
+import eu.northsoft.bettermob.skill.Substitutions;
 import eu.northsoft.bettermob.skill.Target;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
@@ -27,8 +28,8 @@ public final class ScoreCondition implements SkillCondition {
                 : context.trigger() != null ? context.trigger() : context.caster();
         Map<String, String> caster = engine.state().existingVariablesOf(context.caster().getUniqueId());
         Map<String, String> target = engine.state().existingVariablesOf(entity.getUniqueId());
-        String objectiveName = SkillEngine.replaceVariables(conditionParam(paramsRaw, "o", "objective", "obj"), context.variables(), caster, target);
-        String value = SkillEngine.replaceVariables(conditionParam(paramsRaw, "v", "value", "val"), context.variables(), caster, target);
+        String objectiveName = Substitutions.replaceVariables(conditionParam(paramsRaw, "o", "objective", "obj"), context.variables(), caster, target);
+        String value = Substitutions.replaceVariables(conditionParam(paramsRaw, "v", "value", "val"), context.variables(), caster, target);
         if (objectiveName.isEmpty() || value.isEmpty()) return false;
         try {
             ScoreboardManager manager = Bukkit.getScoreboardManager();
