@@ -37,6 +37,7 @@ import java.util.Map;
 
 public final class BetterMobCommand implements CommandExecutor, TabCompleter {
     private static final int TIMING_ROWS = 10;
+    private static final int MAX_TIMING_ROWS = 50;
     private static final int MAX_SPAWN_AMOUNT = 100;
     private static final int MAX_GIVE_AMOUNT = 64;
 
@@ -296,6 +297,36 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         };
     }
 
+    private void handleStatsTop(CommandSender sender, SkillStats stats, String[] args) {
+        if (!stats.enabled()) {
+            messages.send(sender, "command.stats.profilingOff");
+            return;
+        }
+        int limit = TIMING_ROWS;
+        if (args.length >= 3) {
+            try {
+                limit = Math.max(1, Math.min(MAX_TIMING_ROWS, Integer.parseInt(args[2])));
+            } catch (NumberFormatException exception) {
+                messages.send(sender, "command.stats.usage");
+                return;
+            }
+        }
+        sendTiming(sender, "command.stats.timingHeader", stats.top(limit), limit);
+        sendTiming(sender, "command.stats.mechanicHeader", stats.topMechanics(limit), limit);
+    }
+
+    private void sendTiming(CommandSender sender, String header, List<SkillStats.Row> rows, int limit) {
+        if (rows.isEmpty()) {
+            messages.send(sender, "command.stats.timingNone");
+            return;
+        }
+        messages.send(sender, header, "limit", limit);
+        for (SkillStats.Row row : rows) {
+            messages.send(sender, "command.stats.timingEntry", "skill", row.skill(), "calls", row.calls(),
+                    "avg", millis(row.averageMillis()), "max", millis(row.maxMillis()), "total", millis(row.totalMillis()));
+        }
+    }
+
     private void handleStats(CommandSender sender, String[] args) {
         SkillStats stats = plugin.stats();
         if (args.length >= 2) {
@@ -312,6 +343,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
                     stats.reset();
                     messages.send(sender, "command.stats.reset");
                 }
+                case "top" -> handleStatsTop(sender, stats, args);
                 default -> messages.send(sender, "command.stats.usage");
             }
             return;
@@ -683,7 +715,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             ids.add("clear");
             return ids;
         }
-        if (args.length == 2 && args[0].equalsIgnoreCase("stats")) return List.of("on", "off", "reset");
+        if (args.length == 2 && args[0].equalsIgnoreCase("stats")) return List.of("on", "off", "reset", "top");
         if (args.length == 2 && (args[0].equalsIgnoreCase("spawn") || args[0].equalsIgnoreCase("info") || args[0].equalsIgnoreCase("egg") || args[0].equalsIgnoreCase("top"))) return new ArrayList<>(manager.registry().all().keySet());
         if (args.length == 2 && args[0].equalsIgnoreCase("skill")) return new ArrayList<>(skillRegistry.ids());
         if (args.length == 2 && args[0].equalsIgnoreCase("give")) return new ArrayList<>(itemRegistry.ids());
