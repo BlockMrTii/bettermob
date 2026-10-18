@@ -248,7 +248,7 @@ Skills:
 | `varequals{var;val}` (`variableequals`) | Same test as `variable` |
 | `variableisset{var}` | The variable exists |
 | `variableinrange{var;range=0.5to2}` | The number is in the range (`0.5to2`, `>3`, `<=5`, `2-4`); a text value never matches |
-| `stringeq{val1;val2}` (`stringequals`) | Both texts are equal after `<var.x>`, `<skill.x>`, `<caster.var.x>` and `<target.var.x>` are inserted; |
+| `stringeq{val1;val2}` (`stringequals`) | Both texts are equal after the placeholders are inserted (see "Placeholders in condition parameters" below) |
 | `sneaking` | The caster is a player and is sneaking |
 | `modelhaspassengers{p=driver}` | BetterMob seated someone on the entity's model (on seat `p`, if given) |
 | `ridingmodel{mid=model}` | The entity was seated on a model with `mountmodel` (of mob model `mid`, if given) |
