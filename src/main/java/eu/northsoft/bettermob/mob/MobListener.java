@@ -67,7 +67,6 @@ public final class MobListener implements Listener {
         }
     }
 
-    /** Applies active drop options and runs death triggers before releasing the mob. */
     @EventHandler
     public void onDeath(EntityDeathEvent event) {
         fireKill(event.getEntity());
@@ -158,7 +157,6 @@ public final class MobListener implements Listener {
         if (definition != null) manager.fireTrigger(killer, definition, MobDefinition.SkillTrigger.Trigger.KILL, victim, null);
     }
 
-    /** Evaluates health triggers and phase thresholds using health after damage. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onHealthLoss(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof LivingEntity mob)) return;
@@ -168,7 +166,6 @@ public final class MobListener implements Listener {
         }
     }
 
-    /** Reselects the active phase and health triggers using health after healing. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onHealthGain(EntityRegainHealthEvent event) {
         if (!(event.getEntity() instanceof LivingEntity mob)) return;
@@ -233,7 +230,6 @@ public final class MobListener implements Listener {
         manager.fireTrigger(event.getEntity(), definition, MobDefinition.SkillTrigger.Trigger.SHOOT, target, event);
     }
 
-    /** Applies active interaction and renaming options and fires interaction skills. */
     @EventHandler
     public void onInteract(PlayerInteractEntityEvent event) {
         MobDefinition definition = manager.definitionOf(event.getRightClicked().getUniqueId());
@@ -251,14 +247,12 @@ public final class MobListener implements Listener {
         }
     }
 
-    /** Prevents equipment manipulation when the active options disable interaction. */
     @EventHandler
     public void onArmorStandManipulate(PlayerArmorStandManipulateEvent event) {
         MobDefinition definition = manager.definitionOf(event.getRightClicked().getUniqueId());
         if (definition != null && !manager.optionsOf(event.getRightClicked(), definition).interactable()) event.setCancelled(true);
     }
 
-    /** Applies the active phase restriction on leashing. */
     @EventHandler
     public void onLeash(PlayerLeashEntityEvent event) {
         MobDefinition definition = manager.definitionOf(event.getEntity().getUniqueId());

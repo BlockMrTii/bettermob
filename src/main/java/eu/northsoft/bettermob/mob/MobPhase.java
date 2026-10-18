@@ -14,7 +14,6 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** A health threshold and the values and triggers active while it matches. */
 public record MobPhase(HealthSpec health, String display, String model, List<SkillStep> start,
                        Map<MobDefinition.SkillTrigger.Trigger, List<MobDefinition.SkillTrigger>> triggers,
                        MobDefinition.Options options, List<String> equipment, Map<?, ?> definition) {
@@ -24,19 +23,16 @@ public record MobPhase(HealthSpec health, String display, String model, List<Ski
     private static final Set<String> FLAGS = Set.of("Collidable", "PreventOtherDrops", "Silent", "PreventRenaming", "PreventLeashing",
             "AlwaysShowName", "PreventSunburn", "Invincible", "Invisible", "CanMove", "Interactable", "Marker", "PreventItemPickup");
 
-    /** Returns this phase's triggers of the requested kind. */
     public List<MobDefinition.SkillTrigger> triggersOf(MobDefinition.SkillTrigger.Trigger type) {
         return triggers.getOrDefault(type, List.of());
     }
 
-    /** Parses a comparison against absolute health or a percentage of maximum health. */
     public static HealthSpec parseHealth(String text) {
         if (text == null) return null;
         Matcher matcher = HEALTH.matcher(text);
         return matcher.matches() ? HealthSpec.parse(matcher.group(1), matcher.group(2), matcher.group(3)) : null;
     }
 
-    /** Selects the last matching phase, or the base mob when no threshold matches. */
     public static int select(List<MobPhase> phases, double health, double max) {
         for (int i = phases.size() - 1; i >= 0; i--) {
             if (phases.get(i).health().matches(health, max)) return i;
@@ -44,7 +40,6 @@ public record MobPhase(HealthSpec health, String display, String model, List<Ski
         return -1;
     }
 
-    /** Parses phases, reporting invalid fields and skipping malformed thresholds and skill lines. */
     public static List<MobPhase> parse(ConfigurationSection mob, Consumer<String> invalid) {
         List<MobPhase> phases = new ArrayList<>();
         MobDefinition.Options base = MobDefinition.Options.parse(mob.getConfigurationSection("Options"), MobDefinition.Options.DEFAULT);
@@ -88,7 +83,6 @@ public record MobPhase(HealthSpec health, String display, String model, List<Ski
         return List.copyOf(phases);
     }
 
-    /** Checks phase field names, shapes, option types and equipment slots for loading and validation. */
     private static void validateFields(Map<?, ?> entry, Consumer<String> invalid) {
         for (Object key : entry.keySet()) if (!FIELDS.contains(String.valueOf(key))) invalid.accept("unknown field " + key);
         for (String key : List.of("Display", "Model")) {
@@ -117,17 +111,14 @@ public record MobPhase(HealthSpec health, String display, String model, List<Ski
         }
     }
 
-    /** Accepts YAML booleans and the string booleans supported by the schema. */
     private static boolean isBoolean(Object value) {
         return value instanceof Boolean || "true".equalsIgnoreCase(String.valueOf(value)) || "false".equalsIgnoreCase(String.valueOf(value));
     }
 
-    /** Converts optional display and model fields to nonblank text. */
     private static String text(Object value) {
         return value instanceof String text && !text.isBlank() ? text : null;
     }
 
-    /** Returns only string entries from an optional list. */
     private static List<String> lines(Object value) {
         return value instanceof List<?> list ? list.stream().filter(String.class::isInstance).map(String.class::cast).toList() : List.of();
     }

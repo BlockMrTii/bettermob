@@ -65,7 +65,6 @@ class MobPhaseLifecycleTest {
                 Skills: []
             """;
 
-    /** Supplies stable attribute identities without launching a Minecraft server. */
     @BeforeAll
     static void attributes() {
         RegistryAccess access = mock(RegistryAccess.class, call -> Proxy.newProxyInstance(
@@ -87,7 +86,6 @@ class MobPhaseLifecycleTest {
         }
     }
 
-    /** Builds a mob with mocked entity APIs and real phase parsing and manager logic. */
     @BeforeEach
     void setup() throws Exception {
         plugin = mock(BetterMobPlugin.class);
@@ -117,7 +115,6 @@ class MobPhaseLifecycleTest {
         definition = definition(YAML);
     }
 
-    /** Parses definitions using the same phase and option readers as the registry. */
     private static MobDefinition definition(String yaml) throws Exception {
         YamlConfiguration config = new YamlConfiguration();
         config.loadFromString(yaml);
@@ -129,7 +126,6 @@ class MobPhaseLifecycleTest {
                 config.getStringList("Equipment"), null, null, null, MobPhase.parse(config, message -> fail(message)));
     }
 
-    /** Entry runs once; healing restores base values and a later downward crossing can enter again. */
     @Test
     void entryAndHealingReplaceTriggersAndReverseValues() {
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
@@ -159,7 +155,6 @@ class MobPhaseLifecycleTest {
         }
     }
 
-    /** Equipment replaces the prior set and healing restores the configured base equipment. */
     @Test
     void equipmentIsAppliedAndRestored() throws Exception {
         MobDefinition equipped = definition("""
@@ -183,7 +178,6 @@ class MobPhaseLifecycleTest {
         }
     }
 
-    /** Loading uses persisted state without replaying entry skills, and reload reselects changed definitions. */
     @Test
     void persistenceAndReloadDoNotRepeatStartSkills() throws Exception {
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class); MockedStatic<Tasks> tasks = mockStatic(Tasks.class)) {
@@ -209,7 +203,6 @@ class MobPhaseLifecycleTest {
         }
     }
 
-    /** Timer and movement callbacks use phase lines and transitions cancel the previous schedules. */
     @Test
     void phaseTimersAndMovementAreScheduledAndCancelled() throws Exception {
         List<Runnable> callbacks = new ArrayList<>();
@@ -248,7 +241,6 @@ class MobPhaseLifecycleTest {
         }
     }
 
-    /** Invokes lifecycle boundaries directly so tests do not depend on a global server registry. */
     private static void invoke(MobManager manager, String name, LivingEntity entity, MobDefinition definition) throws Exception {
         Method method = MobManager.class.getDeclaredMethod(name, LivingEntity.class, MobDefinition.class);
         method.setAccessible(true);

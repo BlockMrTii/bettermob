@@ -127,7 +127,6 @@ public final class MobRegistry {
         return mobs;
     }
 
-    /** Parses a mob definition including its base values and health phases. */
     private MobDefinition parse(String id, ConfigurationSection section) {
         EntityType type;
         try {

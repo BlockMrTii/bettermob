@@ -23,10 +23,8 @@ import java.util.function.Predicate;
 public final class PackValidator {
     public record Models(Predicate<String> betterModel, Predicate<String> modelEngine) {}
 
-    /** Predicates for resolving references during pack validation. */
     public record Knowledge(Predicate<String> mechanic, Predicate<String> condition, Predicate<String> targeter, Predicate<String> skill,
                             Predicate<String> targeterCondition, Models models, Predicate<String> dropTable, Predicate<String> item) {
-        /** Creates validator knowledge without an item registry. */
         public Knowledge(Predicate<String> mechanic, Predicate<String> condition, Predicate<String> targeter, Predicate<String> skill,
                          Predicate<String> targeterCondition, Models models, Predicate<String> dropTable) {
             this(mechanic, condition, targeter, skill, targeterCondition, models, dropTable, null);
@@ -77,7 +75,6 @@ public final class PackValidator {
         this.known = known;
     }
 
-    /** Builds validation predicates from the running skill engine and registries. */
     public static Knowledge knowledgeOf(SkillEngine engine, Predicate<String> skill) {
         return new Knowledge(
                 name -> engine.mechanics().get(name) != null || name.equals("cancelskill") || name.equals("delay"),
@@ -111,7 +108,6 @@ public final class PackValidator {
         return report;
     }
 
-    /** Visits nested definitions and phase lists to validate triggers and references. */
     void walkTriggerLists(ConfigurationSection section, String file, Report report) {
         for (String key : section.getKeys(false)) {
             if (key.equalsIgnoreCase("Phases")) {
@@ -142,7 +138,6 @@ public final class PackValidator {
         }
     }
 
-    /** Validates every phase, including nested skill references, models, options and equipment. */
     private void validatePhases(ConfigurationSection mob, String file, Report report) {
         MobPhase.parse(mob, message -> {
             if (message.contains(": Skills ") || message.contains(": OnStart ")) return;

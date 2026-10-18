@@ -24,7 +24,6 @@ class PackValidatorTest {
             MECHANICS::contains, CONDITIONS::contains, TARGETERS::contains, SKILLS::contains,
             name -> CandidateFilters.knows(name, CONDITIONS::contains)));
 
-    /** Phase validation descends into start skills, references, models and typed fields. */
     @Test
     void phasesAreValidatedWithTheirIndex(@TempDir Path root) throws IOException {
         write(root, "Mobs/phases.yml", """

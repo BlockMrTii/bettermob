@@ -155,7 +155,6 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    /** Shows base mob details and every configured phase definition. */
     private void handleInfo(CommandSender sender, String[] args) {
         if (args.length < 2) {
             messages.send(sender, "command.info.usage");
@@ -186,7 +185,6 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    /** Maps a trigger kind to its translated display label. */
     private static String triggerKey(MobDefinition.SkillTrigger.Trigger trigger) {
         return switch (trigger) {
             case PHASE -> "command.info.trigger.phase";

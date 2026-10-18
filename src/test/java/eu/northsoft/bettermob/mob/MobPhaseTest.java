@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MobPhaseTest {
-    /** Parses YAML phase fixtures and collects diagnostics. */
     private static List<MobPhase> parse(String yaml, List<String> invalid) throws Exception {
         YamlConfiguration config = new YamlConfiguration();
         config.loadFromString(yaml);
@@ -34,7 +33,6 @@ class MobPhaseTest {
                   - sound{s=entity.zombie.death} @self ~onDamaged
             """;
 
-    /** Verifies phase thresholds, start steps and event trigger storage. */
     @Test
     void phasesAreParsedWithTheirOptions() throws Exception {
         List<String> invalid = new ArrayList<>();
@@ -49,7 +47,6 @@ class MobPhaseTest {
         assertTrue(phases.get(0).triggersOf(MobDefinition.SkillTrigger.Trigger.DEATH).isEmpty());
     }
 
-    /** Phase values inherit base options while equipment retains explicit empty lists. */
     @Test
     void optionOverridesAndEquipmentAreStored() throws Exception {
         List<String> invalid = new ArrayList<>();
@@ -80,7 +77,6 @@ class MobPhaseTest {
         assertEquals(0.25, phases.get(1).options().movementSpeed());
     }
 
-    /** Malformed fields produce indexed diagnostics without crashing the loader. */
     @Test
     void malformedFieldsAreReported() throws Exception {
         List<String> invalid = new ArrayList<>();
@@ -102,7 +98,6 @@ class MobPhaseTest {
         assertTrue(invalid.stream().allMatch(line -> line.startsWith("Phases[")));
     }
 
-    /** Verifies threshold precedence and healing back to earlier phases or the base. */
     @Test
     void theLastMatchingPhaseWinsAndNoneMatchesAtFullHealth() throws Exception {
         List<MobPhase> phases = parse(TWO_PHASES, new ArrayList<>());
@@ -113,7 +108,6 @@ class MobPhaseTest {
         assertEquals(-1, MobPhase.select(List.of(), 10, 100));
     }
 
-    /** Verifies malformed thresholds and skill lines are reported and skipped. */
     @Test
     void invalidPhasesAndLinesAreReportedAndSkipped() throws Exception {
         List<String> invalid = new ArrayList<>();

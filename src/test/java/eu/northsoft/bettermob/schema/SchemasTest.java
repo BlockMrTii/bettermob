@@ -40,7 +40,6 @@ class SchemasTest {
         return null;
     }
 
-    /** Phase schema accepts actual thresholds and shares option, equipment and trigger types. */
     @Test
     void phaseFieldsFollowTheMobSchema() throws IOException {
         String prefix = "Type: ZOMBIE\nPhases:\n  - Health: ";
