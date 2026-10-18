@@ -27,7 +27,7 @@ command:
     killall: "&7/bettermob killall [mob|*] [world] &8- &7Remove living BetterMob mobs"
     spawner: "&7/bettermob spawner <create|remove|list> &8- &7Manage mob spawners"
     info: "&7/bettermob info <mob> &8- &7Show a mob's details"
-    stats: "&7/bettermob stats [on|off|reset] &8- &7Show mob, timer and skill statistics"
+    stats: "&7/bettermob stats [on|off|reset|top] &8- &7Show mob, timer and skill statistics"
     validate: "&7/bettermob validate [pack] &8- &7Check packs for unsupported lines"
   info:
     usage: "&cUsage: /bettermob info <mob>"
@@ -151,7 +151,7 @@ command:
     worldMissing: "&cWorld '{world}' does not exist."
     done: "&a{count} mobs removed."
   stats:
-    usage: "&cUsage: /bettermob stats [on|off|reset]"
+    usage: "&cUsage: /bettermob stats [on|off|reset|top [n]]"
     enabled: "&aSkill profiling enabled."
     disabled: "&7Skill profiling disabled."
     reset: "&aStatistics reset."
@@ -162,6 +162,8 @@ command:
     profilingOff: "&7Skill profiling is off, enable it with /bettermob stats on."
     timingNone: "&7No skill has run since profiling was enabled."
     timingHeader: "&7Skill timing (top {limit} by total time):"
+    mechanicHeader: "&7Mechanic timing (top {limit} by total time, includes nested skills):"
+    mechanicNone: "&7No mechanic has run since profiling was enabled."
     timingEntry: "&7- &f{skill}&7: &f{calls}&7 calls, avg &f{avg}&7 ms, max &f{max}&7 ms, total &f{total}&7 ms"
 
 pack:
