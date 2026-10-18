@@ -26,9 +26,9 @@ public final class ModelRideCondition implements SkillCondition {
         Entity entity = targetOverride != null && targetOverride.entity() != null ? targetOverride.entity() : context.caster();
         return switch (kind) {
             case HAS_PASSENGERS -> !engine.modelRiders(entity.getUniqueId(), conditionParam(paramsRaw, "p", "seat")).isEmpty();
-            case MOUNTED -> engine.modelPassengers().ownerOf(entity.getUniqueId()) != null || entity.getVehicle() != null;
+            case MOUNTED -> engine.modelOwnerOf(entity.getUniqueId()) != null || entity.getVehicle() != null;
             case RIDING_MODEL -> {
-                UUID owner = engine.modelPassengers().ownerOf(entity.getUniqueId());
+                UUID owner = engine.modelOwnerOf(entity.getUniqueId());
                 if (owner == null) yield false;
                 String model = conditionParam(paramsRaw, "mid", "model");
                 if (model.isEmpty()) yield true;

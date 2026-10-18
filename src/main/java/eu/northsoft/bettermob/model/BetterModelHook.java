@@ -20,6 +20,8 @@ import java.util.function.Predicate;
 public final class BetterModelHook {
     private static final String API = "kr.toxicity.model.api.BetterModel";
     private static final String ADAPTER = "kr.toxicity.model.api.bukkit.platform.BukkitAdapter";
+    private static final String REGISTRY = "kr.toxicity.model.api.tracker.EntityTrackerRegistry";
+    private static final int MAX_OWNER_MISSES = 1024;
     private static final String HIT_BOX = "kr.toxicity.model.api.nms.HitBox";
     private static final String PLATFORM_ENTITY = "kr.toxicity.model.api.platform.PlatformEntity";
     private static final String MODIFIER = "kr.toxicity.model.api.animation.AnimationModifier";
@@ -231,6 +233,56 @@ public final class BetterModelHook {
         } catch (ReflectiveOperationException | NumberFormatException exception) {
             plugin.messages().warn("betterModel.bodyRotationInvalid", "value", value, "name", name);
         }
+    }
+
+    private static final long OWNER_MISS_MILLIS = 1000L;
+    private final Map<UUID, UUID> ownerCache = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> ownerMisses = new ConcurrentHashMap<>();
+
+    public UUID ownerOf(UUID rider) {
+        if (!available()) return null;
+        UUID cached = ownerCache.get(rider);
+        if (cached != null && mountedOn(cached, rider)) return cached;
+        ownerCache.remove(rider);
+        Long missed = ownerMisses.get(rider);
+        long now = System.currentTimeMillis();
+        if (missed != null && now - missed < OWNER_MISS_MILLIS) return null;
+        try {
+            Class<?> registryType = Class.forName(REGISTRY);
+            List<?> registries = (List<?>) Reflection.method(registryType, "registries").invoke(null);
+            for (Object registry : registries) {
+                if (!ridersOf(registry).contains(rider)) continue;
+                UUID owner = (UUID) Reflection.method(registryType, "uuid").invoke(registry);
+                ownerCache.put(rider, owner);
+                ownerMisses.remove(rider);
+                return owner;
+            }
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "owner", "error", rootMessage(exception));
+        }
+        if (ownerMisses.size() > MAX_OWNER_MISSES) ownerMisses.clear();
+        ownerMisses.put(rider, now);
+        return null;
+    }
+
+    private boolean mountedOn(UUID owner, UUID rider) {
+        try {
+            Object registry = Reflection.method(Class.forName(REGISTRY), "registry", UUID.class).invoke(null, owner);
+            return registry != null && ridersOf(registry).contains(rider);
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            return false;
+        }
+    }
+
+    private java.util.Set<UUID> ridersOf(Object registry) throws ReflectiveOperationException {
+        Map<?, ?> mounted = (Map<?, ?>) Reflection.method(registry.getClass(), "mountedHitBox").invoke(registry);
+        java.util.Set<UUID> ids = new java.util.HashSet<>();
+        for (Object entry : mounted.values()) {
+            Object entity = Reflection.method(entry.getClass(), "entity").invoke(entry);
+            Object id = Reflection.method(Class.forName(PLATFORM_ENTITY), "uuid").invoke(entity);
+            if (id instanceof UUID uuid) ids.add(uuid);
+        }
+        return ids;
     }
 
     public List<ModelRider> riders(Object tracker) {

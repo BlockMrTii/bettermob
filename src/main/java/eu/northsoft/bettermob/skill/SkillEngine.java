@@ -96,6 +96,13 @@ public final class SkillEngine implements Listener {
         return ModelRider.select(riders, seat);
     }
 
+    public UUID modelOwnerOf(UUID rider) {
+        UUID owner = modelPassengers.ownerOf(rider);
+        if (owner == null) owner = betterModel.ownerOf(rider);
+        if (owner == null) owner = modelEngine.ownerOf(rider);
+        return owner;
+    }
+
     public ModelPassengers modelPassengers() {
         return modelPassengers;
     }
