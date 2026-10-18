@@ -305,8 +305,4 @@ effects that aren't supported (for example `velocity`) produce a warning like
 
 Particles that need data take it from the same line: `material` (`m`) for `block`, `falling_dust`, `block_marker` and `item`; `color` (`#rrggbb` or `r,g,b`) and `size` for `dust`, plus `toColor` for `dust_color_transition`; `color` for `entity_effect`; `color` and `power` for `effect` and `instant_effect`. A `material` that is not a block falls back to stone for block particles. `spread` sets `hS` and `vS` at once, `hSpread` and `vSpread` are aliases. Legacy names like `block_crack`, `reddust` and `spell_mob` are mapped to the current particles.
 
-Also not supported: `segment` (ModelEngine segment bones; its options are not clear enough).
-
-## Placeholders in condition parameters
-
-Condition parameters take the same text placeholders as mechanic parameters: `<var.x>`, `<skill.x>`, `<caster.var.x>`, `<target.var.x>`, `<caster.name>`, `<target.name>`, the placeholders other plugins register through the API, and `<placeholder.name>`, which reads the PlaceholderAPI value `%name%` for the checked player (the target if it is a player, otherwise the trigger, otherwise the caster). So `stringEQ{val1="<placeholder.Cubees-Extension-1>";val2="Yes"}` compares what PlaceholderAPI returns. Values are inserted as plain text (braces, brackets, `;`, `=`, quotes and `%` are removed); an unknown or empty placeholder becomes an empty text. Parameters without a `<` are not touched.
+BetterMob does not support `segment{m;p;extend}`. In ModelEngine R4, the `segment` mechanic configures existing segment or tail bones and their properties, such as bounds, align rate and elasticity; the model defines the bone chain. `animation{a=walk}` is supported as an alias of `state`.
