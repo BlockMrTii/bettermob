@@ -21,6 +21,7 @@ class BetterModelApiTest {
             new Call(BM + "tracker.EntityTrackerRegistry", "mountedHitBox"),
             new Call(BM + "tracker.EntityTrackerRegistry$MountedHitBox", "entity"),
             new Call(BM + "tracker.EntityTrackerRegistry$MountedHitBox", "hitBox"),
+            new Call(BM + "tracker.EntityTrackerRegistry$MountedHitBox", "dismount"),
             new Call(BM + "nms.HitBox", "groupName"),
             new Call(BM + "bone.BoneName", "name"),
             new Call(BM + "platform.PlatformEntity", "uuid"));

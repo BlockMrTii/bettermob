@@ -28,6 +28,8 @@ public final class DismountMechanic implements Mechanic {
                 continue;
             }
             Tasks.runOwned(engine.plugin(), rider, () -> {
+                engine.betterModel().dismount(engine.mobManager().trackerFor(owner.getUniqueId()), rider);
+                engine.modelEngine().dismount(engine.mobManager().modelEngineTrackerFor(owner.getUniqueId()), rider);
                 if (!rider.isInsideVehicle() || rider.leaveVehicle()) engine.modelPassengers().remove(id);
             });
         }
