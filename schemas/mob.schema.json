@@ -554,6 +554,54 @@
               ]
             }
           ]
+        },
+        "Phases": {
+          "type": "array",
+          "description": "Health thresholds that change the mob: the last phase whose Health matches is active.",
+          "items": {
+            "type": "object",
+            "required": [
+              "Health"
+            ],
+            "properties": {
+              "Health": {
+                "type": "string",
+                "pattern": "^\\s*(<=|>=|<|>)\\s*[0-9]+(\\.[0-9]+)?\\s*%?\\s*$",
+                "description": "Like <70% or <=30%, an absolute number without %."
+              },
+              "Display": {
+                "type": "string"
+              },
+              "Model": {
+                "type": "string"
+              },
+              "OnStart": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Skill lines that run once when the phase starts."
+              },
+              "Skills": {
+                "$ref": "#/definitions/mob/properties/Skills",
+                "description": "Replaces all active trigger lines; ~onPhase runs once on downward entry."
+              },
+              "Replace": {
+                "type": [
+                  "boolean",
+                  "string"
+                ],
+                "description": "Deprecated compatibility field. Phase skills always replace the entire active trigger set."
+              },
+              "Options": {
+                "$ref": "#/definitions/mob/properties/Options"
+              },
+              "Equipment": {
+                "$ref": "#/definitions/mob/properties/Equipment"
+              }
+            },
+            "additionalProperties": false
+          }
         }
       }
     }

@@ -172,6 +172,12 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         messages.send(sender, "command.info.faction", "faction", mob.faction == null || mob.faction.isEmpty() ? none : mob.faction);
         messages.send(sender, "command.info.model", "model", mob.modelId == null || mob.modelId.isEmpty() ? none : mob.modelId);
         messages.send(sender, "command.info.equipment", "equipment", mob.equipment == null || mob.equipment.isEmpty() ? none : String.join(", ", mob.equipment));
+        if (mob.hasPhases()) {
+            messages.send(sender, "command.info.phases", "count", mob.phases.size());
+            for (int i = 0; i < mob.phases.size(); i++) {
+                messages.send(sender, "command.info.phase", "index", i + 1, "definition", mob.phases.get(i).definition());
+            }
+        }
         messages.send(sender, "command.info.drops", "count", mob.drops == null ? 0 : mob.drops.entries().size());
         for (MobDefinition.SkillTrigger.Trigger trigger : MobDefinition.SkillTrigger.Trigger.values()) {
             List<String> names = mob.triggersOf(trigger).stream()
@@ -182,6 +188,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
 
     private static String triggerKey(MobDefinition.SkillTrigger.Trigger trigger) {
         return switch (trigger) {
+            case PHASE -> "command.info.trigger.phase";
             case SPAWN -> "command.info.trigger.spawn";
             case LOAD -> "command.info.trigger.load";
             case INTERACT -> "command.info.trigger.interact";

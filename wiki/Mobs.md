@@ -183,6 +183,36 @@ Leader:
 - `OnLeaderDeath` decides what happens when the leader is gone: `FIND` (default) looks for another leader, `STAY` stops following, `HOME` walks back to the spawn point.
 - Only `Leader` is a Paper goal; it looks for its leader once per second. The group alert runs when a member is damaged. Neither scans every tick, and invalid options are skipped with a warning.
 
+## Phases
+
+```yaml
+Phases:
+  - Health: '<70%'
+    Display: '&cAngry Boss'
+    Options:
+      MovementSpeed: 0.3
+      Silent: true
+    Equipment:
+      - IRON_SWORD:HAND
+    Skills:
+      - sound{s=entity.ender_dragon.growl} @self ~onPhase
+      - skill{s=claw} @target ~onDamaged
+      - skill{s=stomp} @self ~onTimer:40
+  - Health: '<=30%'
+    Model: boss_enraged
+    Skills:
+      - skill{s=rage} @self ~onPhase
+      - skill{s=charge} @target ~onMove:5
+```
+
+- `Health` is a threshold like `<70%`, `<=30%` or an absolute number (`<40`). The **last** matching phase wins, so list phases from high to low health. If none matches, the base mob is active.
+- Entering a later phase on damage runs its `~onPhase` skills once. Staying in that phase does not repeat them. Healing selects the highest matching phase again without running start skills. Crossing down again can start that phase again. `OnStart` remains supported as a list of skill steps without trigger suffixes, with the same entry rules.
+- A phase's `Skills` replace the entire active trigger set, including events, signals, health, timers and movement. An omitted or empty `Skills` list disables all base triggers while that phase is active. `Replace` is a deprecated compatibility field and has no effect.
+- Timer and move tasks are cancelled and restarted with the active phase's intervals on every transition. Returning to the base mob restores its triggers and intervals.
+- `Display`, `Model` and individual `Options` inherit omitted values from the base mob. Phase options support the same fields as base options. `Equipment`, when supplied, replaces all equipment; `[]` clears it. Omitting it restores the base equipment. Healing reverses phase overrides.
+- Phase state is stored on the entity and restored on load without repeating start skills. `/bettermob reload` reapplies the phase selected by current health using the new definitions, including when phases are removed or reordered.
+- `/bettermob info` shows each phase definition. `/bettermob validate` checks phase thresholds, fields, options, equipment slots and items, skill references, and models when the relevant model plugin is installed. Invalid entries are reported with their phase index; malformed thresholds and skill lines are skipped when loading.
+
 ## Models
 
 BetterMob attaches a model in three ways:

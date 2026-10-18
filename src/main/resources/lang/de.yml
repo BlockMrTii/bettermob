@@ -38,9 +38,12 @@ command:
     model: "&7Modell: &f{model}"
     equipment: "&7Ausruestung: &f{equipment}"
     drops: "&7Drop-Eintraege: &f{count}"
+    phase: "&7Phase {index}: &f{definition}"
+    phases: "&7Phasen: &f{count}"
     skills: "&7Bei {trigger}: &f{skills}"
     delay: "Verzoegerung"
     trigger:
+      phase: "Phase"
       spawn: "Spawn"
       load: "Laden"
       interact: "Interaktion"
@@ -175,6 +178,7 @@ ai:
 
 mob:
   healthCapped: "Mob '{mob}': Health {health} liegt über dem Server-Limit, begrenzt auf {max}. Erhöhe attribute.maxHealth.max in spigot.yml."
+  phaseInvalid: "Mob '{mob}': ungueltige Phasen-Option '{option}', sie wird uebersprungen."
   behaviourInvalid: "Mob '{mob}': ungueltige Bewegungsoption '{option}'."
   eggMaterialInvalid: "Mob '{mob}': Egg-Material '{value}' ist kein Material, es wird das Ei des Mob-Typs verwendet."
   loaded: "{count} Mobs geladen."
