@@ -1,7 +1,7 @@
 package eu.northsoft.bettermob.skill.target;
 
+import eu.northsoft.bettermob.skill.InlineSkills;
 import eu.northsoft.bettermob.skill.SkillContext;
-import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.Target;
 import eu.northsoft.bettermob.util.RegionEntities;
 import org.bukkit.Location;
@@ -54,7 +54,7 @@ public final class EntitiesInRadiusTargeter implements Targeter {
         List<String> cached = conditionLines.get(raw);
         if (cached != null) return cached;
         if (conditionLines.size() >= 1024) conditionLines.clear();
-        List<String> parsed = SkillEngine.splitInline(raw);
+        List<String> parsed = InlineSkills.splitInline(raw);
         conditionLines.put(raw, parsed);
         return parsed;
     }

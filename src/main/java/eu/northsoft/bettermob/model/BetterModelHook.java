@@ -308,6 +308,22 @@ public final class BetterModelHook {
         }
     }
 
+    public boolean dismount(Object tracker, Entity rider) {
+        if (tracker == null) return false;
+        try {
+            Object registry = Reflection.method(tracker.getClass(), "registry").invoke(tracker);
+            if (registry == null) return false;
+            Map<?, ?> mounted = (Map<?, ?>) Reflection.method(registry.getClass(), "mountedHitBox").invoke(registry);
+            Object entry = mounted.get(rider.getUniqueId());
+            if (entry == null) return false;
+            Reflection.method(entry.getClass(), "dismount").invoke(entry);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "dismount", "error", rootMessage(exception));
+            return false;
+        }
+    }
+
     public boolean mount(Object tracker, String seat, Entity rider) {
         if (tracker == null) return false;
         try {

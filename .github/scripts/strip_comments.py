@@ -3,6 +3,7 @@ import sys
 
 
 def strip(source):
+    """Remove Java comments while preserving JavaDoc and string literals."""
     out = []
     i = 0
     n = len(source)
@@ -27,7 +28,10 @@ def strip(source):
         elif two == '/*':
             end = source.find('*/', i + 2)
             end = n if end < 0 else end + 2
-            out.append(' ' if '\n' not in source[i:end] else '\n' * source.count('\n', i, end))
+            if source.startswith('/**', i):
+                out.append(source[i:end])
+            else:
+                out.append(' ' if '\n' not in source[i:end] else '\n' * source.count('\n', i, end))
             i = end
         else:
             out.append(source[i])
@@ -36,6 +40,7 @@ def strip(source):
 
 
 def normalise(source):
+    """Normalize whitespace left after ordinary comments are removed."""
     lines = [line.rstrip() for line in source.split('\n')]
     result = []
     for line in lines:
@@ -49,6 +54,7 @@ def normalise(source):
 
 
 def process(path):
+    """Rewrite a Java file only when removable comments were found."""
     with open(path, encoding='utf-8', newline='') as handle:
         original = handle.read()
     text = original.replace('\r\n', '\n')

@@ -1,0 +1,7 @@
+name: BetterMobFoliaSmoke
+version: '1.0.0'
+main: eu.northsoft.bettermob.smoke.FoliaSmokePlugin
+api-version: '1.21'
+folia-supported: true
+depend: [BetterMob]
+description: Spawns, damages and removes a BetterMob mob so a Folia server shows thread errors
