@@ -183,6 +183,29 @@ Leader:
 - `OnLeaderDeath` decides what happens when the leader is gone: `FIND` (default) looks for another leader, `STAY` stops following, `HOME` walks back to the spawn point.
 - Only `Leader` is a Paper goal; it looks for its leader once per second. The group alert runs when a member is damaged. Neither scans every tick, and invalid options are skipped with a warning.
 
+## Phases
+
+```yaml
+Phases:
+  - Health: '<70%'
+    Display: '&cAngry Boss'
+    OnStart:
+      - sound{s=entity.ender_dragon.growl} @self
+    Skills:
+      - skill{s=claw} @target ~onDamaged
+  - Health: '<=30%'
+    Model: boss_enraged
+    Replace: true
+    Skills:
+      - skill{s=rage} @self ~onDamaged
+```
+
+- `Health` is a threshold like `<70%`, `<=30%` or an absolute number (`<40`). The **last** phase in the list whose threshold matches the mob's current health is active, so list them from high to low health. At full health no phase is active.
+- A phase starts when damage or healing moves the mob into it. It then sets its `Display` and `Model` (if given) and runs its `OnStart` lines once. Healing back above a threshold ends the phase: the mob's own name and model come back and the phase before it applies again.
+- `Skills` are trigger lines that are active while the phase is on, in addition to the mob's own `Skills` of the same trigger. With `Replace: true` the mob's own event `Skills` are off while the phase is active and only the phase's lines run.
+- Phase `Skills` work for event triggers (`~onDamaged`, `~onAttack`, `~onDeath`, `~onInteract`, `~onTarget` and so on). `~onTimer` and `~onMove` timers are started when the mob spawns and use the mob's own lines only.
+- The active phase is stored on the mob, so it survives restarts and `/bettermob reload`; on load the phase's `Display` and `Model` are applied again but `OnStart` is not repeated. `/bettermob info` shows the number of phases. Invalid entries are skipped with a warning.
+
 ## Models
 
 BetterMob attaches a model in three ways:
