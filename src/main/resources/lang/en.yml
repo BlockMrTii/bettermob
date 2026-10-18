@@ -163,6 +163,7 @@ command:
     timingNone: "&7No skill has run since profiling was enabled."
     timingHeader: "&7Skill timing (top {limit} by total time):"
     mechanicHeader: "&7Mechanic timing (top {limit} by total time, includes nested skills):"
+    mechanicNone: "&7No mechanic has run since profiling was enabled."
     timingEntry: "&7- &f{skill}&7: &f{calls}&7 calls, avg &f{avg}&7 ms, max &f{max}&7 ms, total &f{total}&7 ms"
 
 pack:

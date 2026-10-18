@@ -163,6 +163,7 @@ command:
     timingNone: "&7Seit dem Einschalten der Messung wurde kein Skill ausgeführt."
     timingHeader: "&7Skill-Zeiten (Top {limit} nach Gesamtzeit):"
     mechanicHeader: "&7Mechanik-Zeiten (Top {limit} nach Gesamtzeit, inklusive verschachtelter Skills):"
+    mechanicNone: "&7Seit dem Einschalten der Messung wurde keine Mechanik ausgeführt."
     timingEntry: "&7- &f{skill}&7: &f{calls}&7 Aufrufe, Ø &f{avg}&7 ms, max &f{max}&7 ms, gesamt &f{total}&7 ms"
 
 pack:

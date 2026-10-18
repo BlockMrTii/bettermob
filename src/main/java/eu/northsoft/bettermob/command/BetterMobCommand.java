@@ -311,13 +311,19 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
                 return;
             }
         }
-        sendTiming(sender, "command.stats.timingHeader", stats.top(limit), limit);
-        sendTiming(sender, "command.stats.mechanicHeader", stats.topMechanics(limit), limit);
+        List<SkillStats.Row> skills = stats.top(limit);
+        List<SkillStats.Row> mechanics = stats.topMechanics(limit);
+        if (skills.isEmpty() && mechanics.isEmpty()) {
+            messages.send(sender, "command.stats.timingNone");
+            return;
+        }
+        sendTiming(sender, "command.stats.timingHeader", "command.stats.timingNone", skills, limit);
+        sendTiming(sender, "command.stats.mechanicHeader", "command.stats.mechanicNone", mechanics, limit);
     }
 
-    private void sendTiming(CommandSender sender, String header, List<SkillStats.Row> rows, int limit) {
+    private void sendTiming(CommandSender sender, String header, String empty, List<SkillStats.Row> rows, int limit) {
         if (rows.isEmpty()) {
-            messages.send(sender, "command.stats.timingNone");
+            messages.send(sender, empty);
             return;
         }
         messages.send(sender, header, "limit", limit);

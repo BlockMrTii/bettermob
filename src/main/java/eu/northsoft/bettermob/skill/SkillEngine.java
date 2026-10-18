@@ -326,7 +326,7 @@ public final class SkillEngine implements Listener {
     private boolean runMechanic(SkillStep.Mechanic mechanic, SkillContext context, Deferral deferral) {
         Runnable leave = debug.enter(context.caster().getUniqueId());
         SkillStats stats = plugin.stats();
-        long start = stats.enabled() ? System.nanoTime() : 0L;
+        long start = stats.enabled() && !mechanic.params().containsKey("delay") ? System.nanoTime() : 0L;
         try {
             return runMechanicScoped(mechanic, context, deferral);
         } finally {
