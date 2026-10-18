@@ -91,11 +91,11 @@ class SkillStepTest {
     void inlineSplittingKeepsNestedSeparatorsTogether() {
         assertEquals(
                 List.of("sound{s=a;p=1} @self", "delay 5", "message{m=hi - there}"),
-                SkillEngine.splitInline("[sound{s=a;p=1} @self - delay 5 - message{m=hi - there}]"));
+                InlineSkills.splitInline("[sound{s=a;p=1} @self - delay 5 - message{m=hi - there}]"));
     }
 
     @Test
     void inlineSplittingDropsLeadingSeparatorAndKeepsHyphenatedWords() {
-        assertEquals(List.of("a{}", "b-c{}"), SkillEngine.splitInline("- a{} - b-c{}"));
+        assertEquals(List.of("a{}", "b-c{}"), InlineSkills.splitInline("- a{} - b-c{}"));
     }
 }

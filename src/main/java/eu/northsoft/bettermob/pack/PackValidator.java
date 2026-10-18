@@ -5,6 +5,7 @@ import eu.northsoft.bettermob.mob.Behaviour;
 import eu.northsoft.bettermob.mob.ExtraTriggers;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.skill.Condition;
+import eu.northsoft.bettermob.skill.InlineSkills;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillStep;
 import eu.northsoft.bettermob.skill.target.CandidateFilters;
@@ -227,7 +228,7 @@ public final class PackValidator {
 
         String conditions = mechanic.targeterParams().get("conditions");
         if (conditions != null) {
-            for (String raw : SkillEngine.splitInline(conditions)) {
+            for (String raw : InlineSkills.splitInline(conditions)) {
                 checkCondition(Condition.parse(raw), known.targeterCondition(), Reason.TARGETER_CONDITION, line, file, report);
             }
         }
@@ -236,7 +237,7 @@ public final class PackValidator {
             String value = mechanic.params().get(key);
             if (value == null) continue;
             if (value.trim().startsWith("[")) {
-                for (String inner : SkillEngine.splitInline(value)) {
+                for (String inner : InlineSkills.splitInline(value)) {
                     report.lines++;
                     SkillStep innerStep = SkillStep.parse(inner);
                     if (innerStep == null) report.issues.add(new Issue(file, inner, Reason.UNPARSEABLE, ""));
@@ -251,7 +252,7 @@ public final class PackValidator {
         for (String key : List.of("os", "oe", "ot", "oh", "onstart", "onend", "ontick", "onhit")) {
             String value = mechanic.params().get(key);
             if (value == null || !value.trim().startsWith("[")) continue;
-            for (String inner : SkillEngine.splitInline(value)) {
+            for (String inner : InlineSkills.splitInline(value)) {
                 report.lines++;
                 SkillStep innerStep = SkillStep.parse(inner);
                 if (innerStep == null) report.issues.add(new Issue(file, inner, Reason.UNPARSEABLE, ""));

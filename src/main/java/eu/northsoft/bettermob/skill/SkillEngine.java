@@ -33,7 +33,6 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -54,8 +53,7 @@ public final class SkillEngine implements Listener {
     private final DebugManager debug;
     private final SkillState state = new SkillState();
     private final ModelPassengers modelPassengers = new ModelPassengers();
-    private static final int INLINE_CACHE_LIMIT = 4096;
-    private final Map<String, List<SkillStep>> inlineSkills = new ConcurrentHashMap<>();
+    private final InlineSkills inlineSkills;
     private final TargeterRegistry targeters;
     private final ConditionRegistry conditionRegistry;
     private final MechanicRegistry mechanics;
@@ -69,6 +67,7 @@ public final class SkillEngine implements Listener {
         this.modelEngine = modelEngine;
         this.items = items;
         this.debug = plugin.debug();
+        this.inlineSkills = new InlineSkills(plugin);
         this.placeholders = new CustomPlaceholders((namespace, owner, exception) -> plugin.messages().warn("skill.customPlaceholderFailed",
                 "namespace", namespace, "plugin", owner == null ? "?" : owner.getName(), "error", exception));
         this.targeters = new TargeterRegistry(this);
@@ -445,46 +444,7 @@ public final class SkillEngine implements Listener {
     }
 
     public List<SkillStep> inline(String raw) {
-        List<SkillStep> cached = inlineSkills.get(raw);
-        if (cached != null) return cached;
-        if (inlineSkills.size() >= INLINE_CACHE_LIMIT) inlineSkills.clear();
-        return inlineSkills.computeIfAbsent(raw, this::parseInline);
-    }
-
-    private List<SkillStep> parseInline(String raw) {
-        List<SkillStep> steps = new ArrayList<>();
-        for (String line : splitInline(raw)) {
-            SkillStep step = SkillStep.parse(line);
-            if (step == null) plugin.messages().warn("skill.inlineLineInvalid", "line", line);
-            else steps.add(step);
-        }
-        return List.copyOf(steps);
-    }
-
-    public static List<String> splitInline(String raw) {
-        String body = raw.trim();
-        if (body.startsWith("[")) body = body.substring(1);
-        if (body.endsWith("]")) body = body.substring(0, body.length() - 1);
-
-        List<String> lines = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        int depth = 0;
-        for (int i = 0; i < body.length(); i++) {
-            char c = body.charAt(i);
-            if (c == '{' || c == '[') depth++;
-            else if (c == '}' || c == ']') depth--;
-            boolean separator = c == '-' && depth == 0 && (i == 0 || Character.isWhitespace(body.charAt(i - 1)))
-                    && i + 1 < body.length() && Character.isWhitespace(body.charAt(i + 1));
-            if (separator) {
-                lines.add(current.toString().trim());
-                current.setLength(0);
-            } else {
-                current.append(c);
-            }
-        }
-        lines.add(current.toString().trim());
-        lines.removeIf(String::isBlank);
-        return lines;
+        return inlineSkills.get(raw);
     }
 
     private Map<String, String> substitute(String mechanicName, Map<String, String> params, SkillContext context) {
