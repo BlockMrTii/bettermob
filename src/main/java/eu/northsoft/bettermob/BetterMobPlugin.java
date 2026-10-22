@@ -48,6 +48,7 @@ public final class BetterMobPlugin extends JavaPlugin {
     private DebugManager debug;
     private SkillStats stats;
     private UpdateChecker updateChecker;
+    private static final int BSTATS_ID = 34490;
     private KillStats kills;
     private AggroView aggroView;
     private File killsFile;
@@ -90,9 +91,8 @@ public final class BetterMobPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        int pluginId = 34490;
-        new Metrics(this, pluginId);
         saveDefaultConfig();
+        if (getConfig().getBoolean("BStats", true)) new Metrics(this, BSTATS_ID);
         messages = new Messages(this);
         debug = new DebugManager(this);
         stats = new SkillStats();
