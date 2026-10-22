@@ -25,6 +25,7 @@ import eu.northsoft.bettermob.spawner.SpawnerListener;
 import eu.northsoft.bettermob.spawner.SpawnerManager;
 import eu.northsoft.bettermob.stats.KillStats;
 import eu.northsoft.bettermob.stats.SkillStats;
+import eu.northsoft.bettermob.update.UpdateChecker;
 import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.util.Tasks;
 import org.bstats.bukkit.Metrics;
@@ -46,6 +47,7 @@ public final class BetterMobPlugin extends JavaPlugin {
 
     private DebugManager debug;
     private SkillStats stats;
+    private UpdateChecker updateChecker;
     private KillStats kills;
     private AggroView aggroView;
     private File killsFile;
@@ -108,6 +110,11 @@ public final class BetterMobPlugin extends JavaPlugin {
             }
         }
         Tasks.runGlobalTimer(this, KILLS_SAVE_TICKS, () -> saveKills(true));
+        if (getConfig().getBoolean("UpdateCheck", true)) {
+            updateChecker = new UpdateChecker(this);
+            getServer().getPluginManager().registerEvents(updateChecker, this);
+            updateChecker.start();
+        }
         PackScanner packScanner = new PackScanner(this);
 
         MobRegistry registry = new MobRegistry(this, packScanner);
@@ -194,6 +201,7 @@ public final class BetterMobPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         ExtraTriggers.reset();
+        if (updateChecker != null) updateChecker.stop();
         saveKills(false);
         if (aggroView != null) aggroView.stopAll();
         if (spawners != null) spawners.stop();

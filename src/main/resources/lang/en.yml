@@ -284,3 +284,6 @@ egg:
 kills:
   saveFailed: "Could not save kills.yml: {error}"
   loadFailed: "Could not read kills.yml, kill counts are not saved until it is fixed: {error}"
+
+update:
+  available: "A new BetterMob version is available: {latest} (you run {current}). Download: {url}"
