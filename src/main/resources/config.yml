@@ -24,6 +24,9 @@ Stats: off
 # With profiling on, warn in the console when one skill run takes longer than this many milliseconds (0 = never).
 StatsWarnMillis: 50
 
+# Update-Hinweis: fragt beim Start und danach alle 6 Stunden bei GitHub die neueste Release-Version ab (nur die Versionsnummer).
+# Ist sie neuer, steht ein Hinweis in der Konsole und Admins (bettermob.admin) sehen ihn beim Beitreten. true oder false, gilt ab dem naechsten Start.
+UpdateCheck: true
 # bStats: anonyme Nutzungsstatistik (Serverzahl, Java- und Serverversion). true oder false.
 # Gilt ab dem naechsten Serverstart. Zusaetzlich gilt die globale Einstellung in plugins/bStats/config.yml.
 BStats: true
