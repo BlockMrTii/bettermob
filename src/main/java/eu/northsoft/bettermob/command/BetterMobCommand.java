@@ -710,6 +710,20 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        List<String> options = complete(sender, args);
+        return args.length == 0 ? options : startingWith(options, args[args.length - 1]);
+    }
+
+    static List<String> startingWith(List<String> options, String typed) {
+        String prefix = typed.toLowerCase(Locale.ROOT);
+        return options.stream()
+                .filter(option -> option.toLowerCase(Locale.ROOT).startsWith(prefix))
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+    }
+
+    private List<String> complete(CommandSender sender, String[] args) {
         if (args.length == 1) {
             return PERMISSIONS.entrySet().stream()
                     .filter(entry -> sender.hasPermission(entry.getValue()))
