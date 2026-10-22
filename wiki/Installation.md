@@ -18,7 +18,7 @@
 
 ```
 plugins/BetterMob/
-├── config.yml        # DisabledPacks, Language, Debug, Stats, factions
+├── config.yml        # DisabledPacks, Language, Debug, Stats, BStats, factions
 ├── lang/             # message files (en.yml, de.yml, your own)
 ├── mobs/             # mob files
 ├── skills/           # skill files
@@ -36,6 +36,10 @@ plugins/BetterMob/
 - Folder names inside a pack are matched case-insensitively (`Mobs`, `mobs`).
 - If two mobs, skills or items share an ID, the one loaded first wins and the console
   logs a warning for the other.
+
+## bStats
+
+BetterMob sends anonymous usage numbers (server count, Java and server version) to [bStats](https://bstats.org/plugin/bukkit/BetterMob/34490). Set `BStats: false` in `config.yml` to switch it off for BetterMob; it applies after the next server start. The global switch in `plugins/bStats/config.yml` turns it off for every plugin.
 
 ## Languages
 
