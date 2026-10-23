@@ -92,6 +92,16 @@ Skills:
 
 `my_model_id` must exist in BetterModel. Test it first with `/bettermodel spawn my_model_id`.
 
+## WorldGuard (optional)
+
+With [WorldGuard](https://enginehub.org/worldguard) installed BetterMob adds:
+
+- the condition `region{r=spawn,arena}` for skills (true when the caster, or the target of the line, stands in one of these regions),
+- `Regions` and `NotRegions` in a mob's `Spawn` block ([Mobs](Mobs#natural-spawns)),
+- the region flag `bettermob-spawn`: `/region flag <region> bettermob-spawn deny` stops BetterMob natural spawn replacements and [spawners](Spawners) from spawning inside that region. Mobs spawned by command, egg, skill or the API are not affected.
+
+Region ids are compared case-insensitively. Without WorldGuard the `region` condition is never true (one warning in the console) and nothing else changes. BetterMob loads after WorldGuard (`softdepend`) and registers the flag while it loads.
+
 ## PlaceholderAPI (optional)
 
 With [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) installed BetterMob registers these placeholders:

@@ -45,6 +45,7 @@ public final class ConditionRegistry {
         conditions.put("stringeq", new StringEqualsCondition(engine));
         conditions.put("stringequals", new StringEqualsCondition(engine));
         conditions.put("sneaking", new SneakingCondition());
+        conditions.put("region", new RegionCondition(engine));
         conditions.put("crouching", new SneakingCondition());
         conditions.put("day", new DayCondition());
         conditions.put("gamemode", new GameModeCondition());

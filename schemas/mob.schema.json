@@ -430,6 +430,20 @@
               "type": "number",
               "minimum": 0,
               "maximum": 1
+            },
+            "Regions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "WorldGuard regions: the rule only applies inside one of them (needs WorldGuard)."
+            },
+            "NotRegions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "WorldGuard regions the rule never applies in."
             }
           }
         },

@@ -133,6 +133,7 @@ public final class SpawnerManager {
         Location spot = groundBelow(candidate);
         if (spot == null) return;
         spawner.nextSpawnAt = System.currentTimeMillis() + spawner.intervalSeconds * 1000L;
+        if (!plugin.regions().spawnAllowed(spot)) return;
         if (BetterMobSpawnerSpawnEvent.getHandlerList().getRegisteredListeners().length > 0) {
             BetterMobSpawnerSpawnEvent api = new BetterMobSpawnerSpawnEvent(spawner.id, spawner.mob, spot);
             plugin.getServer().getPluginManager().callEvent(api);

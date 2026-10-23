@@ -7,6 +7,7 @@ import eu.northsoft.bettermob.debug.AggroView;
 import eu.northsoft.bettermob.debug.DebugManager;
 import eu.northsoft.bettermob.drop.DropRegistry;
 import eu.northsoft.bettermob.integration.BetterMobExpansion;
+import eu.northsoft.bettermob.integration.Regions;
 import eu.northsoft.bettermob.item.EggItems;
 import eu.northsoft.bettermob.item.EggListener;
 import eu.northsoft.bettermob.item.ItemListener;
@@ -48,6 +49,7 @@ public final class BetterMobPlugin extends JavaPlugin {
 
     private DebugManager debug;
     private SkillStats stats;
+    private Regions regions;
     private UpdateChecker updateChecker;
     private static final int BSTATS_ID = 34490;
     private KillStats kills;
@@ -63,6 +65,10 @@ public final class BetterMobPlugin extends JavaPlugin {
 
     public DebugManager debug() {
         return debug;
+    }
+
+    public Regions regions() {
+        return regions;
     }
 
     public KillStats kills() {
@@ -91,7 +97,13 @@ public final class BetterMobPlugin extends JavaPlugin {
     }
 
     @Override
+    public void onLoad() {
+        Regions.registerFlags(this);
+    }
+
+    @Override
     public void onEnable() {
+        regions = new Regions(this);
         saveDefaultConfig();
         if (getConfig().getBoolean("BStats", true)) new Metrics(this, BSTATS_ID);
         messages = new Messages(this);
