@@ -287,3 +287,8 @@ kills:
 
 update:
   available: "Eine neue BetterMob-Version ist verfuegbar: {latest} (installiert: {current}). Download: {url}"
+
+worldguard:
+  enabled: "WorldGuard gefunden: Region-Conditions, Spawn-Regionen und das Flag bettermob-spawn sind aktiv."
+  failed: "WorldGuard konnte nicht genutzt werden: {error}"
+  missing: "Die Condition 'region' braucht WorldGuard, ohne es ist sie nie erfuellt."
