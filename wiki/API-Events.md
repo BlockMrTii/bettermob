@@ -1,6 +1,6 @@
 # API events
 
-All events are in `eu.northsoft.bettermob.api.event`. They are normal Bukkit events: register a `Listener` and use `@EventHandler`. **Cancellable** events stop the thing they describe when you cancel them. BetterMob only creates an event object when a plugin listens to it, so unused events cost nothing. On Folia the events run on the thread that owns the mob.
+All events are in `eu.northsoft.bettermob.api.event`. They are normal Bukkit events: register a `Listener` and use `@EventHandler`. **Cancellable** events stop the thing they describe when you cancel them. BetterMob only creates an event object when a plugin listens to it, so unused events cost nothing. On Folia a mob event runs on the thread of the region that owns the mob; entities from other regions are not handed to listeners (see the notes below), because their state may only be read by their own region. Item, spawner and reload events run on the thread that fired them.
 
 Most mob events have `getEntity()` (the `LivingEntity`) and `getMob()` (a `MobInfo` with `id`, `type`, `displayName`, `modelId`, `health`, `damage`).
 
@@ -15,7 +15,7 @@ Most mob events have `getEntity()` (the `LivingEntity`) and `getMob()` (a `MobIn
 | `BetterMobDropEvent` | A mob died and its drops are known, before the death event | `getKiller()` (may be null), `getDrops()` (a list you can change), `getExp()` / `setExp(int)` |
 | `BetterMobDamageEvent` *(cancellable)* | A mob is hit or hits something; one event per mob involved. `getDamage()` is the damage after the mob's `DamageModifiers` | `getOther()`, `isMobVictim()`, `getCause()`, `getDamage()` / `setDamage(double)` |
 | `BetterMobTargetEvent` *(cancellable)* | A mob picks, changes or drops its target | `getOldTarget()`, `getNewTarget()` (null = target lost) |
-| `BetterMobKillEvent` | A mob killed a living entity | `getVictim()` |
+| `BetterMobKillEvent` | A mob killed a living entity. On Folia it is only fired when killer and victim are in the same region | `getVictim()` |
 | `BetterMobCombatEvent` | A mob enters combat (first target) or leaves it (no target for 5 seconds) | `isEntering()`, `getTarget()` |
 | `BetterMobHealthEvent` | Damage or healing moved a mob across a health threshold of one of its `~onHealth` lines | `getBefore()`, `getAfter()`, `getThreshold()` (like `<50%`) |
 | `BetterMobPhaseEvent` | A mob changes its phase (see [Mobs](Mobs#phases)) | `getFrom()`, `getTo()` (-1 = no phase) |
@@ -28,7 +28,7 @@ Most mob events have `getEntity()` (the `LivingEntity`) and `getMob()` (a `MobIn
 |---|---|---|
 | `BetterMobSkillEvent` *(cancellable)* | A named skill is about to run: after its `Conditions` and `TargetConditions` passed, before its `Cooldown` starts. Inline skills and single mechanic lines are not skills and fire nothing | `getSkillId()`, `getCaster()`, `getTrigger()` (may be null), `getMob()` (null when the caster is not a BetterMob mob) |
 | `BetterMobTriggerEvent` *(cancellable)* | A mob trigger (`~onDamaged`, `~onTimer`, ...) is about to run its lines | `getEntity()`, `getMob()`, `getTrigger()` (name like `DAMAGED`), `getSource()` (the entity that caused it, may be null) |
-| `BetterMobMechanicEvent` *(cancellable)* | One mechanic is about to run on one target, after its parameters were filled in | `getCaster()`, `getMechanic()` (lower case name), `getParams()` (read only), `getTarget()` (may be null), `getMob()` (may be null) |
+| `BetterMobMechanicEvent` *(cancellable)* | One mechanic is about to run on one target, after its parameters were filled in | `getCaster()`, `getMechanic()` (lower case name), `getParams()` (read only), `getTarget()` (null when there is none or, on Folia, when it is in another region), `getMob()` (may be null) |
 
 ## Item events (`api.event.item`)
 

@@ -144,13 +144,13 @@ api.registerTrigger(this, "onWave");
 
 ## Example plugin
 
-[`examples/api-example`](https://github.com/HyperGaming99/bettermob/tree/main/examples/api-example) is a small plugin built on this API: it registers a `heal{amount=4}` mechanic, a `?daytime` condition, a `@NearestPlayer` targeter and an `<example.world>` placeholder, listens to `BetterMobSpawnEvent` and `BetterMobDeathEvent` and has a `/apiexample <mob>` command that spawns a mob. `ModernEvents` listens to `BetterMobDamageEvent` and `BetterMobSkillEvent`; it needs BetterMob 1.1.8 or newer, so the default build (against the published jar) leaves it out and the plugin logs that at start. Build with the `local` profile below to include it.
+[`examples/api-example`](https://github.com/HyperGaming99/bettermob/tree/main/examples/api-example) is a small plugin built on this API: it registers a `heal{amount=4}` mechanic, a `?daytime` condition, a `@NearestPlayer` targeter and an `<example.world>` placeholder, listens to `BetterMobSpawnEvent` and `BetterMobDeathEvent` and has a `/apiexample <mob>` command that spawns a mob. `ModernEvents` listens to `BetterMobDamageEvent` and `BetterMobSkillEvent`.
 
 ```bash
 mvn -f examples/api-example/pom.xml package
 ```
 
-This resolves `com.github.HyperGaming99:bettermob:v1.1.9` from JitPack. To compile it against your own checkout instead:
+This resolves `com.github.HyperGaming99:bettermob:v1.2.0` from JitPack, so it needs the released 1.2.0 (the API packages changed in that version). Before that release exists, or to compile it against your own checkout, use the local profile:
 
 ```bash
 mvn install -DskipTests

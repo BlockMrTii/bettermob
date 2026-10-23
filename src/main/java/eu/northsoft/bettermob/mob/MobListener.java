@@ -169,7 +169,7 @@ public final class MobListener implements Listener {
         if (!(damager instanceof LivingEntity killer) || killer.equals(victim)) return;
         MobDefinition definition = manager.definitionOf(killer.getUniqueId());
         if (definition == null) return;
-        if (BetterMobKillEvent.getHandlerList().getRegisteredListeners().length > 0) {
+        if (BetterMobKillEvent.getHandlerList().getRegisteredListeners().length > 0 && Bukkit.isOwnedByCurrentRegion(killer)) {
             Bukkit.getPluginManager().callEvent(new BetterMobKillEvent(killer, definition.toInfo(), victim));
         }
         manager.fireTrigger(killer, definition, MobDefinition.SkillTrigger.Trigger.KILL, victim, null);

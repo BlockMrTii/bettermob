@@ -411,7 +411,7 @@ public final class SkillEngine implements Listener {
         else {
             if (BetterMobMechanicEvent.getHandlerList().getRegisteredListeners().length > 0) {
                 MobDefinition definition = mobManager.definitionOf(context.caster().getUniqueId());
-                BetterMobMechanicEvent api = new BetterMobMechanicEvent(context.caster(), mechanic.name(), java.util.Collections.unmodifiableMap(p), target.entity(),
+                BetterMobMechanicEvent api = new BetterMobMechanicEvent(context.caster(), mechanic.name(), java.util.Collections.unmodifiableMap(p), target.entity() != null && Bukkit.isOwnedByCurrentRegion(target.entity()) ? target.entity() : null,
                         definition == null ? null : definition.toInfo());
                 Bukkit.getPluginManager().callEvent(api);
                 if (api.isCancelled()) return;
