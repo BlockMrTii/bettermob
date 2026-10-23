@@ -1,4 +1,4 @@
-package eu.northsoft.bettermob.api;
+package eu.northsoft.bettermob.api.custom;
 
 @FunctionalInterface
 public interface CustomCondition {

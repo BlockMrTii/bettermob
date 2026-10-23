@@ -63,6 +63,9 @@ jobs:
           cd server
           grep -q "SMOKE-SPAWNED" server.log || { echo "the smoke mob was not spawned"; exit 1; }
           grep -q "SMOKE-SKILL true" server.log || { echo "the smoke skill did not run"; exit 1; }
+          for event in BetterMobSpawnEvent BetterMobTriggerEvent BetterMobMechanicEvent BetterMobPhaseEvent BetterMobDespawnEvent; do
+            grep -q "SMOKE-EVENT $event" server.log || { echo "the event $event was not fired"; exit 1; }
+          done
           grep -q "SMOKE-DONE" server.log || { echo "the smoke plugin did not finish"; exit 1; }
           if grep -nE "SMOKE-FAIL|off owning region|Error occurred while|Could not pass event|Exception" server.log; then
             echo "the server log has errors"

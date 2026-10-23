@@ -1,7 +1,7 @@
 package eu.northsoft.bettermob.example;
 
-import eu.northsoft.bettermob.api.event.BetterMobDamageEvent;
-import eu.northsoft.bettermob.api.event.BetterMobSkillEvent;
+import eu.northsoft.bettermob.api.event.mob.BetterMobDamageEvent;
+import eu.northsoft.bettermob.api.event.skill.BetterMobSkillEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;

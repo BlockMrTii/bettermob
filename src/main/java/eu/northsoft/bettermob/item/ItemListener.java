@@ -1,8 +1,10 @@
 package eu.northsoft.bettermob.item;
 
+import eu.northsoft.bettermob.api.event.item.BetterMobItemUseEvent;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
@@ -66,6 +68,11 @@ public final class ItemListener implements Listener {
     private void fire(Player player, ItemStack stack, Trigger type, Cancellable event) {
         ItemDefinition definition = items.definitionOf(stack);
         if (definition == null) return;
+        if (type == Trigger.USE && BetterMobItemUseEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            BetterMobItemUseEvent api = new BetterMobItemUseEvent(player, definition.id, stack);
+            Bukkit.getPluginManager().callEvent(api);
+            if (api.isCancelled()) return;
+        }
         SkillContext context = new SkillContext(player, player, event);
         for (MobDefinition.SkillTrigger trigger : definition.skillTriggers) {
             if (trigger.trigger() == type) skillEngine.runStep(trigger.step(), context);

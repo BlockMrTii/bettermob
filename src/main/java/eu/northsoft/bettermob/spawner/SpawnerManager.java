@@ -1,6 +1,7 @@
 package eu.northsoft.bettermob.spawner;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.api.event.spawner.BetterMobSpawnerSpawnEvent;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.util.Tasks;
@@ -133,6 +134,11 @@ public final class SpawnerManager {
         if (spot == null) return;
         spawner.nextSpawnAt = System.currentTimeMillis() + spawner.intervalSeconds * 1000L;
         if (!plugin.regions().spawnAllowed(spot)) return;
+        if (BetterMobSpawnerSpawnEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            BetterMobSpawnerSpawnEvent api = new BetterMobSpawnerSpawnEvent(spawner.id, spawner.mob, spot);
+            plugin.getServer().getPluginManager().callEvent(api);
+            if (api.isCancelled()) return;
+        }
         try {
             LivingEntity entity = manager.spawn(definition, spot);
             entity.addScoreboardTag(spawner.tag());
