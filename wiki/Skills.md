@@ -310,4 +310,4 @@ BetterMob does not support `segment{m;p;extend}`. In ModelEngine R4, the `segmen
 
 ## Calling a skill by its name
 
-A line whose first word is not a mechanic but the id of a skill calls that skill, like MythicMobs: `my_skill @target ~onTimer:100` does the same as `skill{s=my_skill} @target`. Parameters on the line become [skill arguments](#skill-arguments). A line that is neither a mechanic nor a skill logs one warning per name, not one per run, so a broken line can no longer fill the console.
+A line whose first word is not a mechanic but the id of a skill calls that skill, like MythicMobs: `my_skill @target ~onTimer:100` does the same as `skill{s=my_skill} @target`. Parameters on the line become [skill arguments](#arguments). A line that is neither a mechanic nor a skill logs one warning per name, not one per run, so a broken line can no longer fill the console.
