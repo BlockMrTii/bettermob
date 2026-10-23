@@ -78,7 +78,7 @@ public final class PackValidator {
 
     public static Knowledge knowledgeOf(SkillEngine engine, Predicate<String> skill) {
         return new Knowledge(
-                name -> engine.mechanics().get(name) != null || name.equals("cancelskill") || name.equals("delay"),
+                name -> engine.mechanics().get(name) != null || name.equals("cancelskill") || name.equals("delay") || skill.test(name),
                 name -> engine.conditionRegistry().has(name),
                 name -> engine.targeters().has(name),
                 skill,

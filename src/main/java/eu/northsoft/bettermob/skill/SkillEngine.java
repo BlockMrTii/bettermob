@@ -405,10 +405,18 @@ public final class SkillEngine implements Listener {
         return false;
     }
 
+    private void callSkillByName(SkillStep.Mechanic mechanic, SkillContext context, Target target, Map<String, String> p) {
+        boolean forTarget = !mechanic.targeter().isEmpty() && !mechanic.targeter().equals("self") && target.entity() instanceof LivingEntity;
+        SkillContext child = forTarget ? context.withTrigger((LivingEntity) target.entity()) : context;
+        runById(mechanic.name(), child.withArguments(Arguments.from(p)));
+    }
+
     private void dispatch(SkillStep.Mechanic mechanic, SkillContext context, Target target, Map<String, String> p, Deferral deferral) {
         Mechanic handler = mechanics.get(mechanic.name());
-        if (handler == null) plugin.messages().warn("skill.mechanicUnsupported", "mechanic", mechanic.name());
-        else {
+        if (handler == null) {
+            if (registry.get(mechanic.name()) != null) callSkillByName(mechanic, context, target, p);
+            else plugin.messages().warnOnce("skill.mechanicUnsupported", "mechanic", mechanic.name());
+        } else {
             if (BetterMobMechanicEvent.getHandlerList().getRegisteredListeners().length > 0) {
                 MobDefinition definition = mobManager.definitionOf(context.caster().getUniqueId());
                 BetterMobMechanicEvent api = new BetterMobMechanicEvent(context.caster(), mechanic.name(), java.util.Collections.unmodifiableMap(p), target.entity() != null && Bukkit.isOwnedByCurrentRegion(target.entity()) ? target.entity() : null,

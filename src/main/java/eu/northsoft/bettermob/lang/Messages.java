@@ -12,6 +12,8 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 public final class Messages {
@@ -64,10 +66,16 @@ public final class Messages {
         plugin.getLogger().warning(plain(get(key, placeholders)));
     }
 
+    public void warnOnce(String key, Object... placeholders) {
+        String text = get(key, placeholders);
+        if (warned.add(text)) plugin.getLogger().warning(plain(text));
+    }
+
     public void severe(String key, Object... placeholders) {
         plugin.getLogger().severe(plain(get(key, placeholders)));
     }
 
+    private final Set<String> warned = ConcurrentHashMap.newKeySet();
     private static final Pattern COLOR_CODE = Pattern.compile("§[0-9a-fk-or]");
 
     private static String plain(String text) {

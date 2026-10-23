@@ -114,7 +114,7 @@ public final class ModelEffectMechanic implements Mechanic {
                 String animation = firstParam(p, "s", "animation", "a");
                 if (type == null || animation == null) return;
                 if (betterModel != null) {
-                    engine.plugin().messages().warn("betterModel.unsupported", "action", "defaultstate");
+                    engine.plugin().messages().warnOnce("betterModel.unsupported", "action", "defaultstate");
                     return;
                 }
                 me.defaultState(modelEngine, type.toLowerCase(Locale.ROOT), stripQuotes(animation),
