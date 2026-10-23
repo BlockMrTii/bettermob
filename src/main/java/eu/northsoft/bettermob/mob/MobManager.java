@@ -5,6 +5,7 @@ import eu.northsoft.bettermob.ai.AiGoalApplier;
 import eu.northsoft.bettermob.ai.BehaviourGoals;
 import eu.northsoft.bettermob.api.event.BetterMobSpawnEvent;
 import eu.northsoft.bettermob.integration.PlaceholderHook;
+import eu.northsoft.bettermob.integration.Regions;
 import eu.northsoft.bettermob.item.EquipmentSupport;
 import eu.northsoft.bettermob.item.ItemDefinition;
 import eu.northsoft.bettermob.item.ItemRegistry;
@@ -830,6 +831,10 @@ public final class MobManager {
 
     public void registerThreat(UUID mobId, LivingEntity attacker, double amount) {
         threats.register(mobId, attacker, amount);
+    }
+
+    public Regions regions() {
+        return plugin.regions();
     }
 
     public MobRegistry registry() {

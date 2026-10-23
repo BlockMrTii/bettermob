@@ -34,6 +34,7 @@ import org.bukkit.projectiles.ProjectileSource;
 
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class MobListener implements Listener {
@@ -57,10 +58,13 @@ public final class MobListener implements Listener {
         if (manager.definitionOf(entity.getUniqueId()) != null) return;
         Location at = entity.getLocation();
         String biome = at.getWorld().getBiome(at).getKey().toString();
+        Set<String> regionsHere = null;
         for (MobDefinition definition : manager.registry().all().values()) {
             SpawnRule rule = definition.spawnRule;
             if (rule == null || definition.type != entity.getType()) continue;
-            if (!rule.matches(at.getWorld().getName(), biome, at.getWorld().getTime(), ThreadLocalRandom.current().nextDouble())) continue;
+            if (rule.usesRegions() && regionsHere == null) regionsHere = manager.regions().at(at);
+            if (!rule.matches(at.getWorld().getName(), biome, at.getWorld().getTime(), ThreadLocalRandom.current().nextDouble(), regionsHere == null ? Set.of() : regionsHere)) continue;
+            if (!manager.regions().spawnAllowed(at)) return;
             event.setCancelled(true);
             manager.spawn(definition, at);
             return;

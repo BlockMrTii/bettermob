@@ -132,6 +132,7 @@ public final class SpawnerManager {
         Location spot = groundBelow(candidate);
         if (spot == null) return;
         spawner.nextSpawnAt = System.currentTimeMillis() + spawner.intervalSeconds * 1000L;
+        if (!plugin.regions().spawnAllowed(spot)) return;
         try {
             LivingEntity entity = manager.spawn(definition, spot);
             entity.addScoreboardTag(spawner.tag());
