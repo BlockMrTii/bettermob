@@ -22,3 +22,8 @@ smoke_mob:
     - sound{s=entity.zombie.step} @self ~onMove:5
     - sound{s=entity.zombie.ambient} @self ~onDespawn
     - sound{s=entity.zombie.ambient} @self ~onTimer:20
+  Phases:
+    - Health: '<70%'
+      Display: '&cSmoke Angry'
+      OnStart:
+        - sound{s=entity.zombie.ambient} @self

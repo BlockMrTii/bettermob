@@ -2,8 +2,8 @@ package eu.northsoft.bettermob.example;
 
 import eu.northsoft.bettermob.api.BetterMobAPI;
 import eu.northsoft.bettermob.api.MobInfo;
-import eu.northsoft.bettermob.api.event.BetterMobDeathEvent;
-import eu.northsoft.bettermob.api.event.BetterMobSpawnEvent;
+import eu.northsoft.bettermob.api.event.mob.BetterMobDeathEvent;
+import eu.northsoft.bettermob.api.event.mob.BetterMobSpawnEvent;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;

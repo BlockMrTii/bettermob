@@ -11,5 +11,6 @@
 - [Packs](Packs)
 - [Pack compatibility](Pack-Compatibility)
 - [Developer API](Developer-API)
+- [API events](API-Events)
 - [Development](Development)
 - [Troubleshooting](Troubleshooting)

@@ -2,10 +2,10 @@ package eu.northsoft.bettermob.service;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.api.BetterMobAPI;
-import eu.northsoft.bettermob.api.CustomCondition;
-import eu.northsoft.bettermob.api.CustomMechanic;
-import eu.northsoft.bettermob.api.CustomPlaceholder;
-import eu.northsoft.bettermob.api.CustomTargeter;
+import eu.northsoft.bettermob.api.custom.CustomCondition;
+import eu.northsoft.bettermob.api.custom.CustomMechanic;
+import eu.northsoft.bettermob.api.custom.CustomPlaceholder;
+import eu.northsoft.bettermob.api.custom.CustomTargeter;
 import eu.northsoft.bettermob.api.MobInfo;
 import eu.northsoft.bettermob.mob.ExtraTriggers;
 import eu.northsoft.bettermob.mob.MobDefinition;

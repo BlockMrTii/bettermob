@@ -1,7 +1,7 @@
 package eu.northsoft.bettermob.skill.target;
 
-import eu.northsoft.bettermob.api.CustomTargeter;
-import eu.northsoft.bettermob.api.TargeterContext;
+import eu.northsoft.bettermob.api.custom.CustomTargeter;
+import eu.northsoft.bettermob.api.custom.TargeterContext;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.Target;

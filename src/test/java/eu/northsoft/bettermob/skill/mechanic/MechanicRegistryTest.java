@@ -1,6 +1,6 @@
 package eu.northsoft.bettermob.skill.mechanic;
 
-import eu.northsoft.bettermob.api.CustomMechanic;
+import eu.northsoft.bettermob.api.custom.CustomMechanic;
 import org.bukkit.plugin.Plugin;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

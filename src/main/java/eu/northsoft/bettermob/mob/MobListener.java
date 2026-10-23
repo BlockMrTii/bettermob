@@ -1,7 +1,11 @@
 package eu.northsoft.bettermob.mob;
 
-import eu.northsoft.bettermob.api.event.BetterMobDamageEvent;
-import eu.northsoft.bettermob.api.event.BetterMobDeathEvent;
+import eu.northsoft.bettermob.api.event.mob.BetterMobDamageEvent;
+import eu.northsoft.bettermob.api.event.mob.BetterMobDeathEvent;
+import eu.northsoft.bettermob.api.event.mob.BetterMobDespawnEvent;
+import eu.northsoft.bettermob.api.event.mob.BetterMobDropEvent;
+import eu.northsoft.bettermob.api.event.mob.BetterMobKillEvent;
+import eu.northsoft.bettermob.api.event.mob.BetterMobTargetEvent;
 import eu.northsoft.bettermob.drop.DropRegistry;
 import eu.northsoft.bettermob.skill.SkillTags;
 import eu.northsoft.bettermob.stats.KillStats;
@@ -86,6 +90,11 @@ public final class MobListener implements Listener {
             event.setDroppedExp(event.getDroppedExp() + result.exp());
         }
 
+        if (BetterMobDropEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            BetterMobDropEvent dropEvent = new BetterMobDropEvent(event.getEntity(), definition.toInfo(), killer, event.getDrops(), event.getDroppedExp());
+            Bukkit.getPluginManager().callEvent(dropEvent);
+            event.setDroppedExp(Math.max(0, dropEvent.getExp()));
+        }
         Bukkit.getPluginManager().callEvent(new BetterMobDeathEvent(event.getEntity(), definition.toInfo()));
         manager.fireTrigger(event.getEntity(), definition, MobDefinition.SkillTrigger.Trigger.DEATH, null, null);
     }
@@ -94,7 +103,12 @@ public final class MobListener implements Listener {
     public void onRemove(EntityRemoveEvent event) {
         if (event.getEntity() instanceof LivingEntity living && REMOVED_WITHOUT_DYING.contains(event.getCause())) {
             MobDefinition definition = manager.definitionOf(living.getUniqueId());
-            if (definition != null) manager.fireTrigger(living, definition, MobDefinition.SkillTrigger.Trigger.DESPAWN, null, null);
+            if (definition != null) {
+                if (BetterMobDespawnEvent.getHandlerList().getRegisteredListeners().length > 0) {
+                    Bukkit.getPluginManager().callEvent(new BetterMobDespawnEvent(living, definition.toInfo(), event.getCause()));
+                }
+                manager.fireTrigger(living, definition, MobDefinition.SkillTrigger.Trigger.DESPAWN, null, null);
+            }
         }
         manager.release(event.getEntity());
     }
@@ -154,7 +168,11 @@ public final class MobListener implements Listener {
         if (damager instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter) damager = shooter;
         if (!(damager instanceof LivingEntity killer) || killer.equals(victim)) return;
         MobDefinition definition = manager.definitionOf(killer.getUniqueId());
-        if (definition != null) manager.fireTrigger(killer, definition, MobDefinition.SkillTrigger.Trigger.KILL, victim, null);
+        if (definition == null) return;
+        if (BetterMobKillEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            Bukkit.getPluginManager().callEvent(new BetterMobKillEvent(killer, definition.toInfo(), victim));
+        }
+        manager.fireTrigger(killer, definition, MobDefinition.SkillTrigger.Trigger.KILL, victim, null);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -180,6 +198,18 @@ public final class MobListener implements Listener {
         if (!(event.getEntity() instanceof LivingEntity mob)) return;
         MobDefinition definition = manager.definitionOf(mob.getUniqueId());
         if (definition != null) manager.targetChanged(mob, definition, event.getTarget());
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onTargetApi(EntityTargetLivingEntityEvent event) {
+        if (BetterMobTargetEvent.getHandlerList().getRegisteredListeners().length == 0) return;
+        if (!(event.getEntity() instanceof LivingEntity mob)) return;
+        MobDefinition definition = manager.definitionOf(mob.getUniqueId());
+        if (definition == null) return;
+        LivingEntity old = mob instanceof Mob living ? living.getTarget() : null;
+        BetterMobTargetEvent api = new BetterMobTargetEvent(mob, definition.toInfo(), old, event.getTarget());
+        Bukkit.getPluginManager().callEvent(api);
+        if (api.isCancelled()) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

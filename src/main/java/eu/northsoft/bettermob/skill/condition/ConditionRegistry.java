@@ -1,7 +1,7 @@
 package eu.northsoft.bettermob.skill.condition;
 
-import eu.northsoft.bettermob.api.ConditionContext;
-import eu.northsoft.bettermob.api.CustomCondition;
+import eu.northsoft.bettermob.api.custom.ConditionContext;
+import eu.northsoft.bettermob.api.custom.CustomCondition;
 import eu.northsoft.bettermob.skill.Condition;
 import eu.northsoft.bettermob.skill.Params;
 import eu.northsoft.bettermob.skill.SkillContext;

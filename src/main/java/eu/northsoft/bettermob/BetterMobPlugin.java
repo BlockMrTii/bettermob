@@ -1,6 +1,7 @@
 package eu.northsoft.bettermob;
 
 import eu.northsoft.bettermob.api.BetterMobAPI;
+import eu.northsoft.bettermob.api.event.system.BetterMobReloadEvent;
 import eu.northsoft.bettermob.command.BetterMobCommand;
 import eu.northsoft.bettermob.debug.AggroView;
 import eu.northsoft.bettermob.debug.DebugManager;
@@ -195,7 +196,13 @@ public final class BetterMobPlugin extends JavaPlugin {
         diffs.put("droptables", ReloadDiff.of(before.get(3), dropRegistry.fingerprints()));
         ReloadDiff mobs = diffs.get("mobs");
         int affected = manager.livingOf(new HashSet<>(mobs.changed()));
-        return new ReloadReport(manager.reloadLiving(), diffs, affected);
+        int updated = manager.reloadLiving();
+        if (BetterMobReloadEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            Map<String, BetterMobReloadEvent.Changes> changes = new LinkedHashMap<>();
+            diffs.forEach((kind, diff) -> changes.put(kind, new BetterMobReloadEvent.Changes(diff.added(), diff.removed(), diff.changed())));
+            getServer().getPluginManager().callEvent(new BetterMobReloadEvent(changes, updated));
+        }
+        return new ReloadReport(updated, diffs, affected);
     }
 
     @Override

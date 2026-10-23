@@ -1,8 +1,8 @@
 package eu.northsoft.bettermob.skill.mechanic;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
-import eu.northsoft.bettermob.api.CustomMechanic;
-import eu.northsoft.bettermob.api.MechanicContext;
+import eu.northsoft.bettermob.api.custom.CustomMechanic;
+import eu.northsoft.bettermob.api.custom.MechanicContext;
 import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;

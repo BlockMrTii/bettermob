@@ -1,10 +1,19 @@
 package eu.northsoft.bettermob.smoke;
 
 import eu.northsoft.bettermob.api.BetterMobAPI;
+import eu.northsoft.bettermob.api.event.mob.BetterMobDamageEvent;
+import eu.northsoft.bettermob.api.event.mob.BetterMobDespawnEvent;
+import eu.northsoft.bettermob.api.event.mob.BetterMobHealthEvent;
+import eu.northsoft.bettermob.api.event.mob.BetterMobPhaseEvent;
+import eu.northsoft.bettermob.api.event.mob.BetterMobSpawnEvent;
+import eu.northsoft.bettermob.api.event.mob.BetterMobTargetEvent;
+import eu.northsoft.bettermob.api.event.skill.BetterMobMechanicEvent;
+import eu.northsoft.bettermob.api.event.skill.BetterMobTriggerEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityRemoveEvent;
@@ -21,6 +30,52 @@ public final class FoliaSmokePlugin extends JavaPlugin implements Listener {
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getGlobalRegionScheduler().runDelayed(this, task -> start(), 100L);
+    }
+
+    private final java.util.Set<String> seen = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    private void seen(Event event) {
+        if (seen.add(event.getClass().getSimpleName())) getLogger().info("SMOKE-EVENT " + event.getClass().getSimpleName());
+    }
+
+    @EventHandler
+    public void onSpawnEvent(BetterMobSpawnEvent event) {
+        seen(event);
+    }
+
+    @EventHandler
+    public void onDamageEvent(BetterMobDamageEvent event) {
+        seen(event);
+    }
+
+    @EventHandler
+    public void onTriggerEvent(BetterMobTriggerEvent event) {
+        seen(event);
+    }
+
+    @EventHandler
+    public void onMechanicEvent(BetterMobMechanicEvent event) {
+        seen(event);
+    }
+
+    @EventHandler
+    public void onHealthEvent(BetterMobHealthEvent event) {
+        seen(event);
+    }
+
+    @EventHandler
+    public void onPhaseEvent(BetterMobPhaseEvent event) {
+        seen(event);
+    }
+
+    @EventHandler
+    public void onDespawnEvent(BetterMobDespawnEvent event) {
+        seen(event);
+    }
+
+    @EventHandler
+    public void onTargetEvent(BetterMobTargetEvent event) {
+        seen(event);
     }
 
     @EventHandler

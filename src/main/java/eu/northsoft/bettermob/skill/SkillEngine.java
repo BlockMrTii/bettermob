@@ -1,8 +1,9 @@
 package eu.northsoft.bettermob.skill;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
-import eu.northsoft.bettermob.api.CustomMechanic;
-import eu.northsoft.bettermob.api.event.BetterMobSkillEvent;
+import eu.northsoft.bettermob.api.custom.CustomMechanic;
+import eu.northsoft.bettermob.api.event.skill.BetterMobMechanicEvent;
+import eu.northsoft.bettermob.api.event.skill.BetterMobSkillEvent;
 import eu.northsoft.bettermob.debug.DebugManager;
 import eu.northsoft.bettermob.drop.DropRegistry;
 import eu.northsoft.bettermob.item.ItemNbt;
@@ -408,6 +409,13 @@ public final class SkillEngine implements Listener {
         Mechanic handler = mechanics.get(mechanic.name());
         if (handler == null) plugin.messages().warn("skill.mechanicUnsupported", "mechanic", mechanic.name());
         else {
+            if (BetterMobMechanicEvent.getHandlerList().getRegisteredListeners().length > 0) {
+                MobDefinition definition = mobManager.definitionOf(context.caster().getUniqueId());
+                BetterMobMechanicEvent api = new BetterMobMechanicEvent(context.caster(), mechanic.name(), java.util.Collections.unmodifiableMap(p), target.entity(),
+                        definition == null ? null : definition.toInfo());
+                Bukkit.getPluginManager().callEvent(api);
+                if (api.isCancelled()) return;
+            }
             MechanicCall call = new MechanicCall(mechanic, context, target, p);
             if (!handler.runsOnTarget()) {
                 handler.execute(call);

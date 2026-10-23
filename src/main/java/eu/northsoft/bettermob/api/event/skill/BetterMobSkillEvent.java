@@ -1,4 +1,4 @@
-package eu.northsoft.bettermob.api.event;
+package eu.northsoft.bettermob.api.event.skill;
 
 import eu.northsoft.bettermob.api.MobInfo;
 import org.bukkit.entity.LivingEntity;
