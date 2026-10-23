@@ -38,6 +38,23 @@ Everything public is in `eu.northsoft.bettermob.api`.
 </dependency>
 ```
 
+### Dev version
+
+The newest state of the `dev` branch has a Maven artifact too, so you can build against API changes before they are released:
+
+```xml
+<dependency>
+    <groupId>com.github.HyperGaming99</groupId>
+    <artifactId>bettermob</artifactId>
+    <version>dev-SNAPSHOT</version>
+    <scope>provided</scope>
+</dependency>
+```
+
+- `dev-SNAPSHOT` is the head of `dev`. JitPack builds it on the first request, which can take a few minutes. Maven checks snapshots about once a day; `mvn -U` forces a fresh download. For a build that never changes, use the hash of a `dev` commit as the version instead.
+- The matching plugin jar for the test server is the rolling pre-release [`dev-build`](https://github.com/HyperGaming99/bettermob/releases/tag/dev-build): every push to `dev` replaces it. Run your plugin against that jar when you compile against `dev-SNAPSHOT`.
+- The dev API can change between commits. Do not release a plugin that needs `dev-SNAPSHOT`; wait for the tagged release and depend on that.
+
 ## Using the API
 
 ```java

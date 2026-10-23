@@ -80,7 +80,7 @@ It lists every line BetterMob does not understand. The [pack compatibility](http
 
 ## 🔌 For developers
 
-BetterMob registers a service with `BetterMobAPI`, custom mechanics, conditions, targeters and placeholders, and fires events for spawns, damage, targets, phases, drops, skills, mechanics, spawners and reloads. See the [Developer API](https://github.com/HyperGaming99/bettermob/wiki/Developer-API) and the [API events](https://github.com/HyperGaming99/bettermob/wiki/API-Events), or start from the example plugin in [`examples/api-example`](examples/api-example).
+BetterMob registers a service with `BetterMobAPI`, custom mechanics, conditions, targeters and placeholders, and fires events for spawns, damage, targets, phases, drops, skills, mechanics, spawners and reloads. See the [Developer API](https://github.com/HyperGaming99/bettermob/wiki/Developer-API) and the [API events](https://github.com/HyperGaming99/bettermob/wiki/API-Events), or start from the example plugin in [`examples/api-example`](examples/api-example). Releases and the newest `dev` state (`dev-SNAPSHOT`) are on JitPack.
 
 ## 🧱 Addons
 
