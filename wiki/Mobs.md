@@ -271,13 +271,16 @@ Spawn:
   Biomes: [desert, plains]  # optional, empty = every biome
   Time: night               # day | night | any (default)
   Chance: 0.3               # 0-1, rolled per natural spawn, default 1
+  Regions: [wilderness]     # optional, WorldGuard: only inside one of these regions
+  NotRegions: [spawn]       # optional, WorldGuard: never inside these regions
 ```
 
 Whenever the server spawns a vanilla mob of the same `Type` **naturally** (not from spawners, eggs or commands) and the world, biome, time of day and `Chance` all fit, that spawn is replaced by this mob. `Worlds` and `Biomes` take lists (biome ids with or without `minecraft:`).
 
+- `Regions` and `NotRegions` take WorldGuard region ids and need [WorldGuard](Installation#worldguard-optional). Without WorldGuard a rule with `Regions` never matches and a rule with only `NotRegions` is not limited. The flag `bettermob-spawn: deny` of a region also stops BetterMob from replacing natural spawns there.
 - Without a `Spawn` block nothing is replaced.
 - If several mobs match, the first one that passes its chance wins.
-- A `Worlds` or `Biomes` that is not a list, a `Chance` that is not a number or an unknown `Time` logs a warning and the whole `Spawn` block is ignored, so a typo never widens the spawn.
+- A `Worlds`, `Biomes`, `Regions` or `NotRegions` that is not a list, a `Chance` that is not a number or an unknown `Time` logs a warning and the whole `Spawn` block is ignored, so a typo never widens the spawn.
 
 For spawns you place yourself see [Spawners](Spawners).
 

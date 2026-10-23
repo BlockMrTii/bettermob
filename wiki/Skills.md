@@ -250,6 +250,7 @@ Skills:
 | `variableinrange{var;range=0.5to2}` | The number is in the range (`0.5to2`, `>3`, `<=5`, `2-4`); a text value never matches |
 | `stringeq{val1;val2}` (`stringequals`) | Both texts are equal after the placeholders are inserted (see "Placeholders in condition parameters" below) |
 | `sneaking` | The caster is a player and is sneaking |
+| `region{r=spawn,arena}` | WorldGuard: the caster, or the target of the line, stands in one of these regions (ids, case-insensitive). Never true without WorldGuard |
 | `modelhaspassengers{p=driver}` | BetterMob seated someone on the entity's model (on seat `p`, if given) |
 | `ridingmodel{mid=model}` | The entity rides a model, seated by `mountmodel` or by the model plugin (of mob model `mid`, if given) |
 | `mounted` | The entity rides a model or any other vehicle |
