@@ -126,7 +126,7 @@ Made an addon? Open an issue or a pull request to get it listed here.
 
 ## 🏗️ Supported environment
 
-<a href="https://www.minecraft.net/en-us/download/server"><img src="https://img.shields.io/badge/minecraft-1.21.X%7E26.3.x-8FCA5C?style=for-the-badge" alt="Minecraft 1.21.X to 26.3.x"></a>
+<a href="https://www.minecraft.net/en-us/download/server"><img src="https://img.shields.io/badge/minecraft-1.21.X%7E26.4.x-8FCA5C?style=for-the-badge" alt="Minecraft 1.21.X to 26.3.x"></a>
 <a href="https://adoptium.net/"><img src="https://img.shields.io/badge/java-21--25-ED8B00?style=for-the-badge" alt="Java 21-25"></a>
 <a href="https://papermc.io/downloads/folia"><img src="https://img.shields.io/badge/folia-%E2%9C%94-blue?style=for-the-badge" alt="Folia"></a>
 
