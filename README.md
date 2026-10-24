@@ -78,6 +78,40 @@ BetterMob is not a full MythicMobs replacement. It implements the parts that mod
 
 It lists every line BetterMob does not understand. The [pack compatibility](https://github.com/HyperGaming99/bettermob/wiki/Pack-Compatibility) page explains what is supported and what is not.
 
+## Wild spawns
+
+Add a `Spawn` block to a mob file (including a mob inside `packs/<pack>/Mobs/`).
+`REPLACE` is the default and converts natural spawns of the mob's vanilla `Type`.
+`ADD` makes independent land spawn attempts every 20 seconds around players in
+Survival or Adventure mode. It only uses already loaded chunks, at a distance
+of 24–48 blocks from the player.
+
+```yaml
+# In nm_raccoon.yml, below Type: PIG
+Spawn:
+  Action: ADD
+  Worlds: [world]
+  Biomes: [TAIGA, OLD_GROWTH_PINE_TAIGA]
+  Time: ANY
+  Chance: 0.05
+  Cooldown: 60
+  MaxNearby: 3
+```
+
+`Chance` is a probability from 0 to 1 **per attempt**, not a number of mobs
+per day. `Cooldown` is in seconds per player and mob after a successful spawn;
+`MaxNearby` limits that mob to the given count within 48 blocks of the spawn
+point. `Worlds` must use the server's exact world name. Reload with
+`/bettermob reload` after changing the file.
+
+To diagnose `ADD` attempts, use `/bettermob debug chat`. This also works when
+global `Debug` is off and immediately lists the active `ADD` rules. Players
+with the `bettermob.debug` permission see their own attempt results in chat,
+including the location and reason a spawn was skipped. `/bettermob debug info`
+also enables the global debug log. Use
+`/bettermob debug filter nm_raccoon` to limit output to one mob.
+
+
 ## 🔌 For developers
 
 BetterMob registers a service with `BetterMobAPI`, custom mechanics, conditions, targeters and placeholders, and fires events for spawns, damage, targets, phases, drops, skills, mechanics, spawners and reloads. See the [Developer API](https://github.com/HyperGaming99/bettermob/wiki/Developer-API) and the [API events](https://github.com/HyperGaming99/bettermob/wiki/API-Events), or start from the example plugin in [`examples/api-example`](examples/api-example). Releases and the newest `dev` state (`dev-SNAPSHOT`) are on JitPack.

@@ -413,7 +413,16 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
                     messages.send(sender, "command.playersOnly");
                     return;
                 }
-                messages.send(sender, debug.toggleWatcher(player) ? "command.debug.chatOn" : "command.debug.chatOff");
+                boolean enabled = debug.toggleWatcher(player);
+                messages.send(sender, enabled ? "command.debug.chatOn" : "command.debug.chatOff");
+                if (enabled) {
+                    String addRules = manager.registry().all().values().stream()
+                            .filter(definition -> definition.spawnRule != null
+                                    && definition.spawnRule.action() == eu.northsoft.bettermob.mob.SpawnRule.Action.ADD)
+                            .map(definition -> definition.id)
+                            .collect(java.util.stream.Collectors.joining(", "));
+                    messages.send(sender, "command.debug.addRules", "mobs", addRules.isEmpty() ? "-" : addRules);
+                }
                 return;
             }
             default -> {

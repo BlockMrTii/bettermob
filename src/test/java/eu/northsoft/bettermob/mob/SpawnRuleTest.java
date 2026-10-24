@@ -109,4 +109,26 @@ class SpawnRuleTest {
         assertNull(parse("Regions: arena", invalid));
         assertEquals(List.of("Regions"), invalid);
     }
+
+    @Test
+    void addRuleParsesAndKeepsItsLimits() {
+        List<String> invalid = new ArrayList<>();
+        SpawnRule rule = parse("Action: ADD\nWorlds: [world]\nBiomes: [TAIGA]\nChance: 0.05\nCooldown: 120\nMaxNearby: 2", invalid);
+        assertEquals(SpawnRule.Action.ADD, rule.action());
+        assertEquals(120, rule.cooldown());
+        assertEquals(2, rule.maxNearby());
+        assertTrue(rule.matches("world", "minecraft:taiga", NOON, 0.04));
+        assertFalse(rule.matches("world", "plains", NOON, 0));
+        assertTrue(rule.matchesLocation("world", "minecraft:taiga", NOON));
+        assertTrue(invalid.isEmpty());
+    }
+
+    @Test
+    void invalidActionAndLimitsRejectRule() {
+        List<String> invalid = new ArrayList<>();
+        assertNull(parse("Action: RANDOM", invalid));
+        assertNull(parse("Cooldown: later", invalid));
+        assertNull(parse("MaxNearby: many", invalid));
+        assertEquals(List.of("Action", "Cooldown", "MaxNearby"), invalid);
+    }
 }

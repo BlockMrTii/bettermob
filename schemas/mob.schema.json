@@ -399,8 +399,12 @@
         },
         "Spawn": {
           "type": "object",
-          "description": "Replaces natural spawns of the mob's Type.",
+          "description": "REPLACE converts natural spawns of the mob's Type; ADD generates land spawn attempts around survival/adventure players.",
           "properties": {
+            "Action": {
+              "type": "string",
+              "enum": ["REPLACE", "ADD", "replace", "add", "Replace", "Add"]
+            },
             "Worlds": {
               "type": "array",
               "items": {
@@ -444,6 +448,16 @@
                 "type": "string"
               },
               "description": "WorldGuard regions the rule never applies in."
+            },
+            "Cooldown": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Minimum seconds between successful ADD spawns for each player and mob. Default: 60."
+            },
+            "MaxNearby": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum mobs of this id within 48 blocks of an ADD spawn point. Default: 3."
             }
           }
         },
