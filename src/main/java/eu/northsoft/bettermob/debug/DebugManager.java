@@ -111,6 +111,29 @@ public final class DebugManager {
         emitToSessions(message);
     }
 
+    public void randomSpawn(UUID playerId, String mobId, String message) {
+        if (!matches(new String[]{mobId})) return;
+        if (level == Level.OFF) {
+            if (watchers.contains(playerId)) {
+                Player player = Bukkit.getPlayer(playerId);
+                if (player != null) Tasks.runOn(plugin, player, () -> {
+                    if (player.isOnline() && player.hasPermission(WATCH_PERMISSION)) {
+                        player.sendMessage("§8[§7debug§8] §7" + message);
+                    }
+                });
+            }
+            return;
+        }
+        info(message, mobId);
+        if (watchers.contains(playerId)) return;
+        Player player = Bukkit.getPlayer(playerId);
+        if (player != null) Tasks.runOn(plugin, player, () -> {
+            if (player.isOnline() && player.hasPermission(WATCH_PERMISSION)) {
+                player.sendMessage("§8[§7debug§8] §7" + message);
+            }
+        });
+    }
+
     private void emitToSessions(String message) {
         if (sessions.isEmpty()) return;
         UUID source = SOURCE.get();
@@ -145,8 +168,12 @@ public final class DebugManager {
         plugin.getLogger().info("[debug] " + message);
         for (UUID id : watchers) {
             Player player = Bukkit.getPlayer(id);
-            if (player == null || !player.hasPermission(WATCH_PERMISSION)) watchers.remove(id);
-            else player.sendMessage("§8[§7debug§8] §7" + message);
+            if (player == null) watchers.remove(id);
+            else Tasks.runOn(plugin, player, () -> {
+                if (player.isOnline() && player.hasPermission(WATCH_PERMISSION)) {
+                    player.sendMessage("§8[§7debug§8] §7" + message);
+                } else watchers.remove(id);
+            });
         }
     }
 }

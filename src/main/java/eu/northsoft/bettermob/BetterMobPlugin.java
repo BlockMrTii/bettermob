@@ -17,6 +17,7 @@ import eu.northsoft.bettermob.mob.ExtraTriggers;
 import eu.northsoft.bettermob.mob.MobListener;
 import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.mob.MobRegistry;
+import eu.northsoft.bettermob.mob.RandomSpawnManager;
 import eu.northsoft.bettermob.model.BetterModelHook;
 import eu.northsoft.bettermob.model.ModelEngineHook;
 import eu.northsoft.bettermob.pack.PackScanner;
@@ -62,6 +63,7 @@ public final class BetterMobPlugin extends JavaPlugin {
     private ItemRegistry itemRegistry;
     private DropRegistry dropRegistry;
     private SpawnerManager spawners;
+    private RandomSpawnManager randomSpawns;
 
     public DebugManager debug() {
         return debug;
@@ -164,6 +166,8 @@ public final class BetterMobPlugin extends JavaPlugin {
         spawners.load();
         getServer().getPluginManager().registerEvents(new SpawnerListener(spawners), this);
         spawners.start();
+        randomSpawns = new RandomSpawnManager(this, manager);
+        randomSpawns.start();
         Tasks.runGlobal(this, ExtraTriggers::ready);
 
         aggroView = new AggroView(this, manager);
@@ -201,6 +205,7 @@ public final class BetterMobPlugin extends JavaPlugin {
         dropRegistry.load();
         manager.registry().load();
         spawners.load();
+        randomSpawns.reload();
         Map<String, ReloadDiff> diffs = new LinkedHashMap<>();
         diffs.put("mobs", ReloadDiff.of(before.get(0), manager.registry().fingerprints()));
         diffs.put("skills", ReloadDiff.of(before.get(1), skillRegistry.fingerprints()));
@@ -224,6 +229,7 @@ public final class BetterMobPlugin extends JavaPlugin {
         saveKills(false);
         if (aggroView != null) aggroView.stopAll();
         if (spawners != null) spawners.stop();
+        if (randomSpawns != null) randomSpawns.stop();
         if (expansion != null) expansion.unregister();
         if (manager != null) manager.shutdown();
     }

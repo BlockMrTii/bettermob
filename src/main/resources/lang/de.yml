@@ -105,6 +105,7 @@ command:
     filtersAll: "alle"
     chatOn: "&aDebug-Ausgabe im Chat an."
     chatOff: "&7Debug-Ausgabe im Chat aus."
+    addRules: "&7Aktive ADD-Spawnregeln: &f{mobs}"
     usage: "&cNutzung: /bettermob debug [off|info|verbose|filter <id>|filter clear|chat]"
   aggro:
     enabled: "&aAggro-Linien an: Partikellinien von BetterMob-Mobs in der Naehe zu ihren Zielen."

@@ -96,4 +96,10 @@ class SchemasTest {
         assertTrue(schema("mob").validate(YAML.readTree("Type: zombie\nHealth: 30\nSpawn:\n  Time: night\n")).isEmpty());
         assertTrue(schema("mob").validate(YAML.readTree("a:\n  Type: PIG\nb:\n  Type: COW\n  Skills:\n    - sound{s=x} @self ~onSpawn\n")).isEmpty());
     }
+
+    @Test
+    void mobSchemaAcceptsAddSpawnRule() throws IOException {
+        assertTrue(schema("mob").validate(YAML.readTree("Type: PIG\nSpawn:\n  Action: ADD\n  Chance: 0.05\n  Cooldown: 120\n  MaxNearby: 2\n")).isEmpty());
+        assertFalse(schema("mob").validate(YAML.readTree("Type: PIG\nSpawn:\n  Action: RANDOM\n")).isEmpty());
+    }
 }
