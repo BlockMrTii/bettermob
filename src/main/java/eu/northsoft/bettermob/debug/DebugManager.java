@@ -111,7 +111,6 @@ public final class DebugManager {
         emitToSessions(message);
     }
 
-    /** Reports an ADD spawn decision to the debug log and the affected debug-enabled player. */
     public void randomSpawn(UUID playerId, String mobId, String message) {
         if (!matches(new String[]{mobId})) return;
         if (level == Level.OFF) {
@@ -126,7 +125,7 @@ public final class DebugManager {
             return;
         }
         info(message, mobId);
-        if (watchers.contains(playerId)) return; // Already received the global debug message.
+        if (watchers.contains(playerId)) return;
         Player player = Bukkit.getPlayer(playerId);
         if (player != null) Tasks.runOn(plugin, player, () -> {
             if (player.isOnline() && player.hasPermission(WATCH_PERMISSION)) {

@@ -17,7 +17,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-/** Creates independent, land-based spawn attempts around active players. */
 public final class RandomSpawnManager {
     private static final long PERIOD_TICKS = 400;
     private static final int MIN_DISTANCE = 24;
