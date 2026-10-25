@@ -66,6 +66,11 @@ public final class Messages {
         plugin.getLogger().warning(plain(get(key, placeholders)));
     }
 
+    public void infoOnce(String key, Object... placeholders) {
+        String text = get(key, placeholders);
+        if (warned.add(text)) plugin.getLogger().info(plain(text));
+    }
+
     public void warnOnce(String key, Object... placeholders) {
         String text = get(key, placeholders);
         if (warned.add(text)) plugin.getLogger().warning(plain(text));

@@ -3,6 +3,9 @@ package eu.northsoft.bettermob.skill.mechanic;
 import eu.northsoft.bettermob.skill.SkillEngine;
 
 public final class BuiltinMechanics {
+    private static final java.util.List<String> PET_MECHANICS = java.util.List.of("setlivingpet", "setpet", "givepet", "petname", "petfollow",
+            "petbuff", "petdamage", "petdespawn", "petexperience", "evolvepet", "droppetitem", "droppetinventory");
+
     private BuiltinMechanics() {}
 
     public static void registerAll(MechanicRegistry registry, SkillEngine engine) {
@@ -40,6 +43,7 @@ public final class BuiltinMechanics {
         registry.register(new LootMechanic(engine), "loot");
         registry.register(new KillCountMechanic(engine), "killcount");
         registry.register(new SignalMechanic(engine), "signal");
+        for (String pet : PET_MECHANICS) registry.register(new PetMechanic(engine, pet), pet);
         registry.register(new SudoSkillMechanic(engine), "sudoskill");
         registry.register(new DamageMechanic(engine), "damage");
         registry.register(new ThrowMechanic(), "throw");

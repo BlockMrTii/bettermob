@@ -207,6 +207,7 @@ skill:
   lineInvalid: "Skill '{skill}': Zeile '{line}' konnte nicht geparst werden."
   notRegistered: "Skill '{skill}' ist nicht registriert."
   inlineLineInvalid: "Inline-Skill: Zeile '{line}' konnte nicht geparst werden."
+  petMechanicIgnored: "'{mechanic}' gehoert zu MCPets, das nur zusammen mit MythicMobs laeuft. BetterMob ueberspringt diese Zeilen, der Mob selbst funktioniert wie gewohnt."
   mechanicUnsupported: "Skill-Mechanic '{mechanic}' wird nicht unterstützt."
   customMechanicFailed: "Eigene Mechanic '{mechanic}' von {plugin} ist fehlgeschlagen: {error}"
   argumentMissing: "Argument '<arg.{argument}>' wurde diesem Skill nicht uebergeben und hat keinen Standardwert (Arguments:), der Platzhalter bleibt stehen."
