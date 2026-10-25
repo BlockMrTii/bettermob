@@ -86,7 +86,7 @@ The bar is shown to every player within `Range` blocks of the mob (same world) a
 
 | Option | Default | Description |
 |---|---|---|
-| `Title` | `<mob.name>` | Text of the bar. `&` colour codes, `<mob.name>` (the `Display`), `<mob.id>`, `<mob.hp>` and `<mob.maxhp>` (rounded up) and PlaceholderAPI placeholders without a player |
+| `Title` | `<mob.name>` | Text of the bar. `&` colour codes, `<mob.name>` (the `Display` of the active phase, else the mob's), `<mob.id>`, `<mob.hp>` and `<mob.maxhp>` (rounded up) and PlaceholderAPI placeholders without a player |
 | `Range` | 64 | Blocks around the mob in which players see the bar |
 | `Color` | `RED` | `PINK`, `BLUE`, `RED`, `GREEN`, `YELLOW`, `PURPLE` or `WHITE` |
 | `Style` | `SOLID` | `SOLID`, `SEGMENTED_6`, `SEGMENTED_10`, `SEGMENTED_12` or `SEGMENTED_20` |
