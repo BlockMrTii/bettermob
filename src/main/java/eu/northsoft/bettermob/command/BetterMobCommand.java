@@ -705,7 +705,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         int amount = 1;
         if (args.length >= 4) {
             try {
-                amount = Math.max(1, Integer.parseInt(args[3]));
+                amount = Math.max(1, Math.min(MAX_GIVE_AMOUNT, Integer.parseInt(args[3])));
             } catch (NumberFormatException ignored) {
             }
         }
