@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 
 final class BossBarManager {
     private static final long UPDATE_TICKS = 10L;
@@ -30,10 +31,12 @@ final class BossBarManager {
     private record Active(BossBar bar, Runnable cancel, Shown shown) {}
 
     private final BetterMobPlugin plugin;
+    private final BiFunction<LivingEntity, MobDefinition, String> names;
     private final Map<UUID, Active> active = new ConcurrentHashMap<>();
 
-    BossBarManager(BetterMobPlugin plugin) {
+    BossBarManager(BetterMobPlugin plugin, BiFunction<LivingEntity, MobDefinition, String> names) {
         this.plugin = plugin;
+        this.names = names;
     }
 
     static String renderTitle(String template, String id, String name, double health, double maxHealth) {
@@ -49,7 +52,7 @@ final class BossBarManager {
         detach(entity.getUniqueId());
         BossBarSettings settings = definition.bossBar;
         if (settings == null) return;
-        BossBar bar = Bukkit.createBossBar(title(definition, entity.getHealth(), maxHealth(entity)), settings.color(), settings.style(), flags(settings));
+        BossBar bar = Bukkit.createBossBar(title(entity, definition, entity.getHealth(), maxHealth(entity)), settings.color(), settings.style(), flags(settings));
         Shown shown = new Shown();
         Runnable cancel = Tasks.runTimer(plugin, entity, 1L, UPDATE_TICKS, () -> update(entity, definition, bar, shown));
         active.put(entity.getUniqueId(), new Active(bar, cancel, shown));
@@ -76,7 +79,7 @@ final class BossBarManager {
         double health = entity.getHealth();
         double max = maxHealth(entity);
         double progress = max <= 0 ? 0 : Math.max(0, Math.min(1, health / max));
-        String title = title(definition, health, max);
+        String title = title(entity, definition, health, max);
         Set<Player> viewers;
         synchronized (bar) {
             if (progress != shown.progress) {
@@ -112,8 +115,8 @@ final class BossBarManager {
         }
     }
 
-    private String title(MobDefinition definition, double health, double max) {
-        return PlaceholderHook.apply(null, renderTitle(definition.bossBar.title(), definition.id, definition.displayName, health, max));
+    private String title(LivingEntity entity, MobDefinition definition, double health, double max) {
+        return PlaceholderHook.apply(null, renderTitle(definition.bossBar.title(), definition.id, names.apply(entity, definition), health, max));
     }
 
     private static double maxHealth(LivingEntity entity) {

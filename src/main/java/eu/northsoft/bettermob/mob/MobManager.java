@@ -91,7 +91,7 @@ public final class MobManager {
         this.modelEngine = modelEngine;
         this.items = items;
         this.mobIdKey = new NamespacedKey(plugin, "mob_id");
-        this.bossBars = new BossBarManager(plugin);
+        this.bossBars = new BossBarManager(plugin, this::displayOf);
         this.home = new MobHome(plugin);
     }
 
@@ -350,6 +350,12 @@ public final class MobManager {
         return index < 0 || index >= definition.phases.size() ? definition.options : definition.phases.get(index).options();
     }
 
+    String displayOf(Entity entity, MobDefinition definition) {
+        int index = phaseIndex(entity.getUniqueId());
+        String display = index < 0 || index >= definition.phases.size() ? null : definition.phases.get(index).display();
+        return display != null ? display : definition.displayName;
+    }
+
     private NamespacedKey phaseKey() {
         return new NamespacedKey(plugin, "phase");
     }
@@ -376,7 +382,7 @@ public final class MobManager {
         entity.getPersistentDataContainer().set(phaseKey(), PersistentDataType.INTEGER, index);
         if (plugin.debug().info()) plugin.debug().info("mob " + definition.id + " enters phase " + index + (runStart ? "" : " (restored)") + ", health " + entity.getHealth(), definition.id);
         MobPhase phase = index < 0 ? null : definition.phases.get(index);
-        String display = phase != null && phase.display() != null ? phase.display() : definition.displayName;
+        String display = displayOf(entity, definition);
         String model = phase != null && phase.model() != null ? phase.model() : definition.modelId;
         applyName(entity, display);
         applyPhaseValues(entity, definition, phase);

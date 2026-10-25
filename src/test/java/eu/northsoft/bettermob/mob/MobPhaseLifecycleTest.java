@@ -156,6 +156,24 @@ class MobPhaseLifecycleTest {
     }
 
     @Test
+    void displayFollowsTheActivePhase() throws Exception {
+        MobDefinition named = definition("""
+                Phases:
+                  - Health: '<70%'
+                    Display: Angry
+                  - Health: '<=30%'
+                """);
+        try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(() -> Bukkit.isOwnedByCurrentRegion(entity)).thenReturn(true);
+            assertEquals(named.displayName, manager.displayOf(entity, named));
+            manager.checkHealth(entity, named, 100, 60);
+            assertEquals("Angry", manager.displayOf(entity, named));
+            manager.checkHealth(entity, named, 60, 20);
+            assertEquals(named.displayName, manager.displayOf(entity, named));
+        }
+    }
+
+    @Test
     void equipmentIsAppliedAndRestored() throws Exception {
         MobDefinition equipped = definition("""
                 Equipment: [base:HAND]
