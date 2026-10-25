@@ -22,6 +22,8 @@ public final class RandomSpawnManager {
     private static final int MIN_DISTANCE = 24;
     private static final int MAX_DISTANCE = 48;
     private static final int NEARBY_RADIUS = 48;
+    private static final int CEILING_SEARCH = 16;
+    private static final int NO_GROUND = Integer.MIN_VALUE;
 
     private final BetterMobPlugin plugin;
     private final MobManager manager;
@@ -92,14 +94,17 @@ public final class RandomSpawnManager {
             report(key, candidate, "chunk not loaded");
             return;
         }
-        int y = world.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES);
+        int y = world.hasCeiling() ? groundBelowCeiling(world, x, candidate.getBlockY(), z)
+                : world.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES);
+        if (y == NO_GROUND) {
+            report(key, candidate, "no ground below the ceiling");
+            return;
+        }
         if (y < world.getMinHeight() || y + 2 >= world.getMaxHeight()) {
             report(key, candidate, "outside build height");
             return;
         }
-        Block ground = world.getBlockAt(x, y, z);
-        Block feet = world.getBlockAt(x, y + 1, z);
-        if (!ground.getType().isSolid() || !feet.isPassable() || !feet.getRelative(0, 1, 0).isPassable()) {
+        if (!standable(world.getBlockAt(x, y, z))) {
             report(key, candidate, "no safe ground");
             return;
         }
@@ -149,6 +154,20 @@ public final class RandomSpawnManager {
                 .map(definition -> definition.id)
                 .toList();
         plugin.getLogger().info(ids.size() + " ADD spawn rule(s) active" + (ids.isEmpty() ? "." : ": " + String.join(", ", ids)));
+    }
+
+    static int groundBelowCeiling(World world, int x, int around, int z) {
+        int top = Math.min(around + CEILING_SEARCH, world.getMinHeight() + world.getLogicalHeight() - 3);
+        for (int y = top; y >= world.getMinHeight(); y--) {
+            if (standable(world.getBlockAt(x, y, z))) return y;
+        }
+        return NO_GROUND;
+    }
+
+    static boolean standable(Block ground) {
+        Block feet = ground.getRelative(0, 1, 0);
+        Block head = ground.getRelative(0, 2, 0);
+        return ground.isSolid() && feet.isPassable() && !feet.isLiquid() && head.isPassable() && !head.isLiquid();
     }
 
     private static Location randomPoint(Location center) {
