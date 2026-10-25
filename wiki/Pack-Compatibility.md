@@ -33,5 +33,6 @@ Every pack under `src/test/resources/packs/` is parsed on every pull request and
 ## Known gaps
 
 - Factions as a MythicMobs system and some MythicMobs mechanics and conditions are not implemented, they are reported by `/bettermob validate`. See [Skills](Skills) for what exists.
+- Pets from MCPets: its skill lines (`setLivingPet`, `setPet`, `givePet`, `petName`, `petFollow`, `petBuff`, `petDamage`, `petDespawn`, `petExperience`, `evolvePet`, `dropPetItem`, `dropPetInventory`) are accepted and do nothing, with one info line in the console. MCPets itself only runs together with MythicMobs, so taming, following and owners do not exist in BetterMob; the mob and the rest of its skills work as usual.
 - AI goals are matched against the goals the mob type really has; names without a match are skipped with a warning.
 - Things a pack gets from other plugins (commands, items, models) need those plugins.

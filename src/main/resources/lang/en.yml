@@ -207,6 +207,7 @@ skill:
   lineInvalid: "Skill '{skill}': line '{line}' could not be parsed."
   notRegistered: "Skill '{skill}' is not registered."
   inlineLineInvalid: "Inline skill: line '{line}' could not be parsed."
+  petMechanicIgnored: "'{mechanic}' belongs to MCPets, which only runs together with MythicMobs. BetterMob skips these lines; the mob itself works as usual."
   mechanicUnsupported: "Skill mechanic '{mechanic}' is not supported."
   customMechanicFailed: "Custom mechanic '{mechanic}' from {plugin} failed: {error}"
   argumentMissing: "Argument '<arg.{argument}>' was not passed to this skill and has no default (Arguments:), the placeholder stays as it is."
