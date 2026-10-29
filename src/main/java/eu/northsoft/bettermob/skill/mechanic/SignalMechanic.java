@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.skill.mechanic;
 
+import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import org.bukkit.entity.LivingEntity;
 
@@ -18,6 +19,11 @@ public final class SignalMechanic implements Mechanic {
         String name = firstParam(call.params(), "s", "signal", "name");
         if (name == null || name.isBlank()) return;
         boolean fired = engine.mobManager().signal(target, name.trim(), call.context().caster());
-        if (!fired && engine.debug().verbose()) engine.debug().verbose("signal " + name.trim() + " reached no ~onSignal skill on " + target.getName(), engine.subject(call.context().caster()));
+        if (!fired && engine.debug().verbose()) engine.debug().verbose("signal " + name.trim() + " reached no ~onSignal skill on " + target.getName(), subject(call));
+    }
+
+    private String subject(MechanicCall call) {
+        MobDefinition definition = engine.mobManager().definitionOf(call.context().caster().getUniqueId());
+        return definition != null ? definition.id : call.casterName();
     }
 }
