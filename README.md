@@ -23,6 +23,25 @@
 
 ---
 
+## 🎯 Goals & Milestones
+
+<p align="center">
+  <img alt="20 Servers Reached" height="48" src="https://raw.githubusercontent.com/HyperGaming99/bettermob/docs/goals-badges/assets/badges/servers-20_unlocked_vector.svg">
+  <img alt="40 Servers Goal" height="48" src="https://raw.githubusercontent.com/HyperGaming99/bettermob/docs/goals-badges/assets/badges/servers-40_locked_vector.svg">
+  <img alt="100 Servers Goal" height="48" src="https://raw.githubusercontent.com/HyperGaming99/bettermob/docs/goals-badges/assets/badges/servers-100_locked_vector.svg">
+  <img alt="500 Servers Goal" height="48" src="https://raw.githubusercontent.com/HyperGaming99/bettermob/docs/goals-badges/assets/badges/servers-500_locked_vector.svg">
+  <img alt="1k Servers Goal" height="48" src="https://raw.githubusercontent.com/HyperGaming99/bettermob/docs/goals-badges/assets/badges/servers-1k_locked_vector.svg">
+</p>
+
+<p align="center">
+  <img alt="100 Downloads Reached" height="48" src="https://raw.githubusercontent.com/HyperGaming99/bettermob/docs/goals-badges/assets/badges/downloads-100_unlocked_vector.svg">
+  <img alt="200 Downloads Goal" height="48" src="https://raw.githubusercontent.com/HyperGaming99/bettermob/docs/goals-badges/assets/badges/downloads-200_locked_vector.svg">
+  <img alt="500 Downloads Goal" height="48" src="https://raw.githubusercontent.com/HyperGaming99/bettermob/docs/goals-badges/assets/badges/downloads-500_locked_vector.svg">
+  <img alt="1k Downloads Goal" height="48" src="https://raw.githubusercontent.com/HyperGaming99/bettermob/docs/goals-badges/assets/badges/downloads-1k_locked_vector.svg">
+</p>
+
+---
+
 ## ✨ Features
 
 | | |
@@ -143,6 +162,9 @@ Bug reports, pack compatibility reports and pull requests are welcome. Start wit
   <tbody>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://0x79.one"><img src="https://avatars.githubusercontent.com/u/130169800?v=4?s=100" width="100px;" alt="TheNull"/><br /><sub><b>TheNull</b></sub></a><br /><a href="https://github.com/HyperGaming99/bettermob/commits?author=HyperGaming99" title="Code">💻</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://0x79.one"><img src="https://avatars.githubusercontent.com/u/134159440?v=100" width="100px;" alt="BlockMrTii"/><br /><sub><b>BlockMrTii</b></sub></a><br /><a href="https://github.com/HyperGaming99/bettermob/commits?author=BlockMrTii" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
