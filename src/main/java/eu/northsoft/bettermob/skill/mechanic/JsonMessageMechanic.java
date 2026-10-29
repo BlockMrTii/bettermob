@@ -24,11 +24,11 @@ public final class JsonMessageMechanic implements Mechanic {
         if (raw == null || !(call.target().entity() instanceof Player receiver)) return;
         String json = stripQuotes(raw)
                 .replace("<target.name>", jsonString(receiver.getName()))
-                .replace("<caster.name>", jsonString(call.context().caster().getName()));
+                .replace("<caster.name>", jsonString(call.casterName()));
         try {
             receiver.sendMessage(GsonComponentSerializer.gson().deserialize(json));
         } catch (JsonParseException | IllegalStateException | UnsupportedOperationException exception) {
-            receiver.sendMessage(MessageText.render(raw, receiver, call.context().caster().getName()));
+            receiver.sendMessage(MessageText.render(raw, receiver, call.casterName()));
         }
     }
 }
