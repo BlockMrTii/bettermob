@@ -77,12 +77,16 @@ public final class Tasks {
 
     public static void runOn(Plugin plugin, Entity entity, Runnable task) {
         if (FOLIA) entity.getScheduler().run(plugin, scheduled -> task.run(), null);
-        else task.run();
+        else if (!Bukkit.isPrimaryThread()) {
+            if (plugin.isEnabled()) Bukkit.getScheduler().runTask(plugin, task);
+        } else task.run();
     }
 
     public static void runAt(Plugin plugin, Location location, Runnable task) {
         if (FOLIA) Bukkit.getRegionScheduler().run(plugin, location, scheduled -> task.run());
-        else task.run();
+        else if (!Bukkit.isPrimaryThread()) {
+            if (plugin.isEnabled()) Bukkit.getScheduler().runTask(plugin, task);
+        } else task.run();
     }
 
     public static boolean runOwned(Plugin plugin, Entity entity, Runnable task) {
