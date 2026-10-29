@@ -4,8 +4,11 @@ import eu.northsoft.bettermob.BetterMobPlugin;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public final class PackScanner {
     private final BetterMobPlugin plugin;
@@ -30,6 +33,7 @@ public final class PackScanner {
 
         File[] packDirs = packsFolder.listFiles(File::isDirectory);
         if (packDirs == null) return folders;
+        Arrays.sort(packDirs);
         for (File packDir : packDirs) {
             if (disabled.contains(packDir.getName().toLowerCase(Locale.ROOT))) continue;
             File subfolder = findCaseInsensitive(packDir, name);
@@ -45,12 +49,12 @@ public final class PackScanner {
         return null;
     }
 
-    public java.util.Map<String, File> sources() {
-        java.util.Map<String, File> sources = new java.util.LinkedHashMap<>();
+    public Map<String, File> sources() {
+        Map<String, File> sources = new LinkedHashMap<>();
         sources.put("", plugin.getDataFolder());
         File[] packDirs = packsFolder.listFiles(File::isDirectory);
         if (packDirs == null) return sources;
-        java.util.Arrays.sort(packDirs);
+        Arrays.sort(packDirs);
         for (File packDir : packDirs) sources.put(packDir.getName(), packDir);
         return sources;
     }
@@ -66,6 +70,7 @@ public final class PackScanner {
         List<String> result = new ArrayList<>();
         File[] packDirs = packsFolder.listFiles(File::isDirectory);
         if (packDirs == null) return result;
+        Arrays.sort(packDirs);
         List<String> disabled = plugin.getConfig().getStringList("DisabledPacks").stream()
                 .map(value -> value.toLowerCase(Locale.ROOT)).toList();
         for (File packDir : packDirs) {

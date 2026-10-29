@@ -1,7 +1,7 @@
 package eu.northsoft.bettermob.skill;
 
-import eu.northsoft.bettermob.api.CustomPlaceholder;
-import eu.northsoft.bettermob.api.PlaceholderContext;
+import eu.northsoft.bettermob.api.custom.CustomPlaceholder;
+import eu.northsoft.bettermob.api.custom.PlaceholderContext;
 import org.bukkit.plugin.Plugin;
 
 import java.util.Locale;

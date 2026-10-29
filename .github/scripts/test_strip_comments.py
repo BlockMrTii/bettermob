@@ -11,11 +11,17 @@ class StripCommentsTest(unittest.TestCase):
         self.assertEqual('int a = 1;\n', self.clean('int a = 1; // one\n'))
 
     def test_removes_whole_line_and_block_comments(self):
-        source = 'class A {\n    // note\n    /** doc\n     * more */\n    int a;\n}\n'
+        """Ordinary line and block comments are still removed."""
+        source = 'class A {\n    // note\n    /* note\n     * more */\n    int a;\n}\n'
         self.assertEqual('class A {\n    int a;\n}\n', self.clean(source))
 
     def test_keeps_comment_markers_inside_strings_and_chars(self):
         source = 'String s = "http://x /* y */";\nchar c = \'"\';\n'
+        self.assertEqual(source, self.clean(source))
+
+    def test_keeps_javadoc(self):
+        """JavaDoc required by documentation coverage survives cleanup."""
+        source = '/** Describes the method. */\nvoid run() {}\n'
         self.assertEqual(source, self.clean(source))
 
     def test_keeps_text_blocks(self):

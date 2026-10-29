@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,7 +36,7 @@ public final class Arguments {
         return false;
     }
 
-    public static String resolve(String value, Map<String, String> arguments, java.util.function.Consumer<String> missing) {
+    public static String resolve(String value, Map<String, String> arguments, Consumer<String> missing) {
         Matcher matcher = PLACEHOLDER.matcher(value);
         StringBuilder result = new StringBuilder();
         while (matcher.find()) {

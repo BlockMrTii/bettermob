@@ -2,14 +2,27 @@ package eu.northsoft.bettermob.model;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Entity;
+import org.bukkit.inventory.ItemStack;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public final class BetterModelHook {
     private static final String API = "kr.toxicity.model.api.BetterModel";
     private static final String ADAPTER = "kr.toxicity.model.api.bukkit.platform.BukkitAdapter";
+    private static final String REGISTRY = "kr.toxicity.model.api.tracker.EntityTrackerRegistry";
+    private static final int MAX_OWNER_MISSES = 1024;
+    private static final String HIT_BOX = "kr.toxicity.model.api.nms.HitBox";
     private static final String PLATFORM_ENTITY = "kr.toxicity.model.api.platform.PlatformEntity";
     private static final String MODIFIER = "kr.toxicity.model.api.animation.AnimationModifier";
     private static final String ITERATOR_TYPE = "kr.toxicity.model.api.animation.AnimationIterator$Type";
@@ -129,11 +142,11 @@ public final class BetterModelHook {
         return animateMethod;
     }
 
-    private final Map<Class<?>, Map<String, Method>> methodCache = new java.util.concurrent.ConcurrentHashMap<>();
-    private final Map<Class<?>, Map<String, java.lang.reflect.Field>> fieldCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<Class<?>, Map<String, Method>> methodCache = new ConcurrentHashMap<>();
+    private final Map<Class<?>, Map<String, java.lang.reflect.Field>> fieldCache = new ConcurrentHashMap<>();
 
     private Method cachedMethod(Class<?> type, String name, Class<?>... parameters) throws NoSuchMethodException {
-        Map<String, Method> methods = methodCache.computeIfAbsent(type, key -> new java.util.concurrent.ConcurrentHashMap<>());
+        Map<String, Method> methods = methodCache.computeIfAbsent(type, key -> new ConcurrentHashMap<>());
         String key = name + "/" + parameters.length;
         Method method = methods.get(key);
         if (method == null) {
@@ -144,7 +157,7 @@ public final class BetterModelHook {
     }
 
     private java.lang.reflect.Field cachedField(Class<?> type, String name) throws NoSuchFieldException {
-        Map<String, java.lang.reflect.Field> fields = fieldCache.computeIfAbsent(type, key -> new java.util.concurrent.ConcurrentHashMap<>());
+        Map<String, java.lang.reflect.Field> fields = fieldCache.computeIfAbsent(type, key -> new ConcurrentHashMap<>());
         java.lang.reflect.Field field = fields.get(name);
         if (field == null) {
             field = type.getField(name);
@@ -153,7 +166,7 @@ public final class BetterModelHook {
         return field;
     }
 
-    public org.bukkit.Location bonePosition(Object tracker, String boneName, org.bukkit.Location origin) {
+    public Location bonePosition(Object tracker, String boneName, Location origin) {
         if (tracker == null) return null;
         try {
             Object bone = cachedMethod(tracker.getClass(), "bone", String.class).invoke(tracker, boneName);
@@ -183,8 +196,8 @@ public final class BetterModelHook {
         if (tracker == null) return false;
         try {
             Object rotator = cachedMethod(tracker.getClass(), "bodyRotator").invoke(tracker);
-            Method setValue = cachedMethod(rotator.getClass(), "setValue", java.util.function.Consumer.class);
-            setValue.invoke(rotator, (java.util.function.Consumer<Object>) data -> {
+            Method setValue = cachedMethod(rotator.getClass(), "setValue", Consumer.class);
+            setValue.invoke(rotator, (Consumer<Object>) data -> {
                 for (Map.Entry<String, String> entry : params.entrySet()) {
                     String setter = ROTATION_SETTERS.get(entry.getKey());
                     if (setter != null) applySetter(data, setter, entry.getValue());
@@ -197,10 +210,10 @@ public final class BetterModelHook {
         }
     }
 
-    private final Map<Class<?>, Map<String, Method>> setterCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<Class<?>, Map<String, Method>> setterCache = new ConcurrentHashMap<>();
 
     private Method setterOf(Class<?> type, String name) {
-        return setterCache.computeIfAbsent(type, key -> new java.util.concurrent.ConcurrentHashMap<>()).computeIfAbsent(name, key -> {
+        return setterCache.computeIfAbsent(type, key -> new ConcurrentHashMap<>()).computeIfAbsent(name, key -> {
             for (Method method : type.getMethods()) {
                 if (method.getName().equals(name) && method.getParameterCount() == 1) return method;
             }
@@ -219,6 +232,95 @@ public final class BetterModelHook {
             method.invoke(data, parsed);
         } catch (ReflectiveOperationException | NumberFormatException exception) {
             plugin.messages().warn("betterModel.bodyRotationInvalid", "value", value, "name", name);
+        }
+    }
+
+    private static final long OWNER_MISS_MILLIS = 1000L;
+    private final Map<UUID, UUID> ownerCache = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> ownerMisses = new ConcurrentHashMap<>();
+
+    public UUID ownerOf(UUID rider) {
+        if (!available()) return null;
+        UUID cached = ownerCache.get(rider);
+        if (cached != null && mountedOn(cached, rider)) return cached;
+        ownerCache.remove(rider);
+        Long missed = ownerMisses.get(rider);
+        long now = System.currentTimeMillis();
+        if (missed != null && now - missed < OWNER_MISS_MILLIS) return null;
+        try {
+            Class<?> registryType = Class.forName(REGISTRY);
+            List<?> registries = (List<?>) Reflection.method(registryType, "registries").invoke(null);
+            for (Object registry : registries) {
+                if (!ridersOf(registry).contains(rider)) continue;
+                UUID owner = (UUID) Reflection.method(registryType, "uuid").invoke(registry);
+                ownerCache.put(rider, owner);
+                ownerMisses.remove(rider);
+                return owner;
+            }
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "owner", "error", rootMessage(exception));
+        }
+        if (ownerMisses.size() > MAX_OWNER_MISSES) ownerMisses.clear();
+        ownerMisses.put(rider, now);
+        return null;
+    }
+
+    private boolean mountedOn(UUID owner, UUID rider) {
+        try {
+            Object registry = Reflection.method(Class.forName(REGISTRY), "registry", UUID.class).invoke(null, owner);
+            return registry != null && ridersOf(registry).contains(rider);
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            return false;
+        }
+    }
+
+    private java.util.Set<UUID> ridersOf(Object registry) throws ReflectiveOperationException {
+        Map<?, ?> mounted = (Map<?, ?>) Reflection.method(registry.getClass(), "mountedHitBox").invoke(registry);
+        java.util.Set<UUID> ids = new java.util.HashSet<>();
+        for (Object entry : mounted.values()) {
+            Object entity = Reflection.method(entry.getClass(), "entity").invoke(entry);
+            Object id = Reflection.method(Class.forName(PLATFORM_ENTITY), "uuid").invoke(entity);
+            if (id instanceof UUID uuid) ids.add(uuid);
+        }
+        return ids;
+    }
+
+    public List<ModelRider> riders(Object tracker) {
+        if (tracker == null) return List.of();
+        try {
+            Object registry = Reflection.method(tracker.getClass(), "registry").invoke(tracker);
+            if (registry == null) return List.of();
+            Map<?, ?> mounted = (Map<?, ?>) Reflection.method(registry.getClass(), "mountedHitBox").invoke(registry);
+            Class<?> hitBoxType = Class.forName(HIT_BOX);
+            List<ModelRider> riders = new ArrayList<>();
+            for (Object entry : mounted.values()) {
+                Object entity = Reflection.method(entry.getClass(), "entity").invoke(entry);
+                Object hitBox = Reflection.method(entry.getClass(), "hitBox").invoke(entry);
+                Object id = Reflection.method(Class.forName(PLATFORM_ENTITY), "uuid").invoke(entity);
+                Object group = Reflection.method(hitBoxType, "groupName").invoke(hitBox);
+                String seat = group == null ? null : String.valueOf(Reflection.method(group.getClass(), "name").invoke(group));
+                if (id instanceof UUID uuid) riders.add(new ModelRider(uuid, seat));
+            }
+            return riders;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "riders", "error", rootMessage(exception));
+            return List.of();
+        }
+    }
+
+    public boolean dismount(Object tracker, Entity rider) {
+        if (tracker == null) return false;
+        try {
+            Object registry = Reflection.method(tracker.getClass(), "registry").invoke(tracker);
+            if (registry == null) return false;
+            Map<?, ?> mounted = (Map<?, ?>) Reflection.method(registry.getClass(), "mountedHitBox").invoke(registry);
+            Object entry = mounted.get(rider.getUniqueId());
+            if (entry == null) return false;
+            Reflection.method(entry.getClass(), "dismount").invoke(entry);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "dismount", "error", rootMessage(exception));
+            return false;
         }
     }
 
@@ -286,6 +388,123 @@ public final class BetterModelHook {
             if (method.getName().equals(name) && method.getParameterCount() == paramCount) return method;
         }
         return null;
+    }
+
+    private static final String UPDATE_ACTION = "kr.toxicity.model.api.tracker.TrackerUpdateAction";
+    private static final String ITEM = "kr.toxicity.model.api.util.TransformedItemStack";
+    private static final String ROTATOR = "kr.toxicity.model.api.tracker.ModelRotator";
+
+    private Object action(String name, Class<?>[] types, Object... args) throws ReflectiveOperationException {
+        return Reflection.method(Class.forName(UPDATE_ACTION), name, types).invoke(null, args);
+    }
+
+    private boolean update(Object tracker, String action, Object update, String part, boolean exact) {
+        if (tracker == null || update == null) return false;
+        try {
+            Predicate<Object> bones = bone -> ModelParts.matches(boneName(bone), part, exact);
+            Reflection.method(tracker.getClass(), "update", Class.forName(UPDATE_ACTION), Predicate.class).invoke(tracker, update, bones);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", action, "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    private String boneName(Object bone) {
+        try {
+            Object name = Reflection.method(bone.getClass(), "name").invoke(bone);
+            return name == null ? null : String.valueOf(Reflection.method(name.getClass(), "name").invoke(name));
+        } catch (ReflectiveOperationException | RuntimeException exception) {
+            return null;
+        }
+    }
+
+    public boolean tint(Object tracker, String part, boolean exact, int rgb) {
+        try {
+            return update(tracker, "tint", action("tint", new Class<?>[]{int.class}, rgb), part, exact);
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "tint", "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    public boolean glow(Object tracker, String part, boolean exact, boolean glowing, int rgb) {
+        try {
+            Object glow = action("glow", new Class<?>[]{boolean.class}, glowing);
+            Object color = action("glowColor", new Class<?>[]{int.class}, rgb);
+            Class<?> type = Class.forName(UPDATE_ACTION);
+            Object both = Array.newInstance(type, 2);
+            Array.set(both, 0, glow);
+            Array.set(both, 1, color);
+            return update(tracker, "glow", action("composite", new Class<?>[]{both.getClass()}, both), part, exact);
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "glow", "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    public boolean partVisible(Object tracker, String part, boolean exact, boolean visible) {
+        try {
+            return update(tracker, "partvis", action("togglePart", new Class<?>[]{boolean.class}, visible), part, exact);
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "partvis", "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    public boolean setItem(Object tracker, String part, boolean exact, ItemStack item) {
+        try {
+            Class<?> type = Class.forName(ITEM);
+            Object stack = item == null ? Reflection.method(type, "empty").invoke(null)
+                    : Reflection.method(type, "of", ItemStack.class).invoke(null, item);
+            return update(tracker, "setitemmodel", action("itemStack", new Class<?>[]{type}, stack), part, exact);
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "setitemmodel", "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    public boolean lockRotation(Object tracker, boolean locked) {
+        if (tracker == null) return false;
+        try {
+            Class<?> type = Class.forName(ROTATOR);
+            Object rotator = Reflection.field(type, locked ? "EMPTY" : "DEFAULT").get(null);
+            Reflection.method(tracker.getClass(), "rotator", type).invoke(tracker, rotator);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "lockmodel", "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    public boolean modifyAnimation(Object tracker, String animation, Float speed, String loop) {
+        if (tracker == null) return false;
+        try {
+            Class<?> modifier = modifierClass();
+            Class<?> typeClass = Class.forName(ITERATOR_TYPE);
+            Object builder = modifier.getMethod("builder").invoke(null);
+            Object type = loopType(typeClass, loop);
+            if (type != null) builder.getClass().getMethod("type", typeClass).invoke(builder, type);
+            if (speed != null) builder.getClass().getMethod("speed", float.class).invoke(builder, speed);
+            Object built = builder.getClass().getMethod("build").invoke(builder);
+            Object result = Reflection.method(tracker.getClass(), "replace", String.class, String.class, modifier).invoke(tracker, animation, animation, built);
+            return result instanceof Boolean bool && bool;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            plugin.messages().warn("betterModel.callFailed", "action", "modifystate " + animation, "error", rootMessage(exception));
+            return false;
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Object loopType(Class<?> typeClass, String loop) {
+        if (loop == null) return null;
+        String name = switch (loop.trim().toUpperCase(Locale.ROOT)) {
+            case "LOOP" -> "LOOP";
+            case "HOLD", "HOLD_ON_LAST" -> "HOLD_ON_LAST";
+            case "ONCE", "PLAY_ONCE" -> "PLAY_ONCE";
+            default -> null;
+        };
+        return name == null ? null : Enum.valueOf((Class<? extends Enum>) typeClass, name);
     }
 
     public void close(Object tracker) {

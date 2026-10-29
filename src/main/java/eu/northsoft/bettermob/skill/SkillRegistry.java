@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.skill;
 
+import eu.northsoft.bettermob.util.Duplicates;
 import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.pack.PackScanner;
@@ -36,6 +37,7 @@ public final class SkillRegistry {
 
         Map<String, SkillDefinition> loaded = new LinkedHashMap<>();
         Map<String, String> prints = new LinkedHashMap<>();
+        Duplicates duplicates = new Duplicates();
         for (File sourceFolder : packScanner.foldersFor("skills")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
@@ -43,7 +45,7 @@ public final class SkillRegistry {
                     ConfigurationSection section = config.getConfigurationSection(id);
                     if (section == null) continue;
                     if (loaded.containsKey(id.toLowerCase(Locale.ROOT))) {
-                        plugin.messages().warn("skill.duplicate", "skill", id, "folder", sourceFolder.getPath());
+                        duplicates.add(id, sourceFolder.getPath());
                         continue;
                     }
                     loaded.put(id.toLowerCase(Locale.ROOT), parse(id, section));
@@ -51,6 +53,7 @@ public final class SkillRegistry {
                 }
             }
         }
+        duplicates.report((dup, folder, count) -> plugin.messages().warn("skill.duplicate", "skill", dup, "folder", folder, "count", count));
         skills = loaded;
         fingerprints = prints;
         plugin.messages().info("skill.loaded", "count", loaded.size());

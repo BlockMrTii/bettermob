@@ -33,10 +33,24 @@ public final class Params {
     }
 
     public static float parseFloat(String value, float fallback) {
+        if (value == null) return fallback;
         try {
-            return value == null ? fallback : Float.parseFloat(value);
+            float parsed = Float.parseFloat(value);
+            return Float.isFinite(parsed) ? parsed : fallback;
         } catch (NumberFormatException exception) {
             return fallback;
+        }
+    }
+
+    public static double parseNumber(String value, double fallback) {
+        if (value == null) return fallback;
+        String text = stripQuotes(value);
+        try {
+            double parsed = Double.parseDouble(text);
+            return Double.isFinite(parsed) ? parsed : fallback;
+        } catch (NumberFormatException exception) {
+            Double result = Calculator.evaluate(text);
+            return result == null || !Double.isFinite(result) ? fallback : result;
         }
     }
 

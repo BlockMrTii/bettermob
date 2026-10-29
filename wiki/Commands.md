@@ -20,8 +20,8 @@ Without a node the subcommand is refused and left out of the help and out of tab
 | Command | Description |
 |---|---|
 | `/bettermob spawn <id> [amount]` | Spawn a registered mob at your location |
-| `/bettermob give <item> [player] [amount]` | Give a registered item. Without a player it goes to you |
-| `/bettermob egg <mob> [player] [amount]` | Give a spawn egg item that spawns exactly that mob when used on a block, see [Spawn eggs](Mobs#spawn-eggs) |
+| `/bettermob give <item> [player] [amount]` | Give a registered item (at most 64 at once). Without a player it goes to you |
+| `/bettermob egg <mob> [player] [amount]` | Give a spawn egg item (at most 64 at once) that spawns exactly that mob when used on a block, see [Spawn eggs](Mobs#spawn-eggs) |
 | `/bettermob skill <id> [player]` | Run a skill by hand, with you (or the player) as caster |
 | `/bettermob list` | List all registered mob IDs |
 | `/bettermob packs` | List packs in `packs/` and whether they are enabled |
@@ -31,7 +31,7 @@ Without a node the subcommand is refused and left out of the help and out of tab
 | `/bettermob aggro` | Toggle particle lines from nearby BetterMob mobs (within 48 blocks, at most 30) to their current targets. Only you see them; nothing runs while nobody has it on. Permission `bettermob.debug` |
 | `/bettermob threat` | Show the top 5 threat entries of the BetterMob mob you look at (up to 30 blocks). Needs `Modules: ThreatTable: true` on that mob. Permission `bettermob.debug` |
 | `/bettermob test <mob>\|stop` | Spawn the mob at you and send its debug output (triggers, skills, conditions, cooldowns, at verbose detail) only to you. It ends when that mob is removed, after 5 minutes or with `/bettermob test stop`; global debug settings are not changed. Permission `bettermob.debug` |
-| `/bettermob stats [on\|off\|reset]` | Show living mobs per type, running timers, loaded skills and packs; `on`/`off` switch the skill timing, `reset` clears it. Permission `bettermob.debug` |
+| `/bettermob stats [on\|off\|reset\|top [n]]` | Show living mobs per type, running timers, loaded skills and packs; `on`/`off` switch the skill timing, `reset` clears it, `top [n]` lists the n (default 10, at most 50) slowest skills and mechanics. Permission `bettermob.debug` |
 | `/bettermob killall [mob\|*] [world]` | Remove all living BetterMob mobs, or only one type and/or one world, and report how many |
 | `/bettermob spawner create <id> <mob> [radius] [interval] [max]` | Create a spawner at your position; `remove <id>` and `list` manage them, see [Spawners](Spawners) |
 | `/bettermob validate [pack]` | Check packs for unsupported lines without spawning anything, see [Packs](Packs#checking-a-pack) |
@@ -58,6 +58,8 @@ reproducing the trigger that normally fires it.
 ## Stats
 
 `/bettermob stats` shows the living BetterMob mobs per type, the running mob timers and the loaded skills and packs. With `Stats: on` in `config.yml` (or `/bettermob stats on`) it also measures every skill run and lists the 10 skills with the most total time (calls, average, maximum), plus the delayed steps that are still waiting.
+
+`/bettermob stats top [n]` shows the slowest skills and, separately, the slowest mechanics by total time (calls, average, maximum). A mechanic's time includes everything it starts synchronously, so a `skill{}` line also counts the skill it runs; delayed steps count when they run. Nothing is measured while profiling is off.
 
 - A run is measured up to its first `delay` and includes the skills it starts in the same tick.
 - `StatsWarnMillis` (default 50, `0` turns it off) logs a console warning when a single run takes longer.

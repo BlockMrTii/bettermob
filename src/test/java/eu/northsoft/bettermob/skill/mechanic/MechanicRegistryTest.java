@@ -1,6 +1,6 @@
 package eu.northsoft.bettermob.skill.mechanic;
 
-import eu.northsoft.bettermob.api.CustomMechanic;
+import eu.northsoft.bettermob.api.custom.CustomMechanic;
 import org.bukkit.plugin.Plugin;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,7 +18,7 @@ class MechanicRegistryTest {
     private static final List<String> FORMER_BUILTIN_NAMES = List.of(
             "cancelskill", "cancelevent", "message", "msg", "skill", "look", "sound", "state", "potion", "breakblock",
             "gcd", "model", "modelengine", "randomskill", "remove", "command", "summon", "mountmodel", "delay",
-            "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "loot", "killcount", "sudoskill", "damage",
+            "effect:particles", "e:p", "particles", "effect:particlering", "spin", "takeitem", "loot", "killcount", "signal", "setlivingpet", "setpet", "givepet", "petname", "petfollow", "petbuff", "petdamage", "petdespawn", "petexperience", "evolvepet", "droppetitem", "droppetinventory", "setvar", "variablemath", "variablesubtract", "subtractvariable", "variableunset", "unsetvar", "unsetvariable", "setrotation", "setpitch", "setgravity", "scale", "brightness", "setdisplayentityitem", "dismountallmodel", "dismountall", "mounttarget", "effect:particle", "setname", "giveitem", "fakeexplosion", "recoil", "sudoskill", "damage",
             "throw", "lunge", "setblock", "equip", "aura", "ondamaged", "onattack", "ontick", "ondeath", "onshoot",
             "bodyrotation", "addtag", "removetag", "ignite", "totem", "velocity", "freeze", "shoot", "projectile", "stun",
             "setnodamageticks");
@@ -27,7 +27,12 @@ class MechanicRegistryTest {
             "setvariable", "variableset", "addvariable", "variableadd",
             "actionbar", "actionmessage", "title", "sendtitle", "bossbar",
             "particleline", "effect:particleline", "particlebeam", "effect:particlebeam", "particlesphere", "effect:particlesphere",
-            "particlehelix", "effect:particlehelix", "glow");
+            "particlehelix", "effect:particlehelix", "glow",
+            "animation", "fakelightning", "dismount", "potionclear", "removepotion",
+            "tint", "glowbone", "partvis", "partvisibility", "meg:setitemmodel", "setitemmodel", "lockmodel", "modifystate", "defaultstate",
+            "teleportto", "tpt", "teleporty", "tpy", "pull", "propel",
+            "setitemnbt", "setlore", "consumeslot", "consumehelditem", "onchat", "jsonmessage", "jsonmsg", "speak", "blackscreen", "settargetscore",
+            "effect:firework", "firework", "effect:blockmask", "blockmask", "setchunkforceloaded", "displaytransformation", "raytraceto");
 
     private static final Set<String> HANDLED_BY_ENGINE = Set.of("cancelskill", "delay");
 

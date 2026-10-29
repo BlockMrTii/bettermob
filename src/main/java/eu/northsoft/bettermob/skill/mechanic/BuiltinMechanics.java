@@ -3,6 +3,9 @@ package eu.northsoft.bettermob.skill.mechanic;
 import eu.northsoft.bettermob.skill.SkillEngine;
 
 public final class BuiltinMechanics {
+    private static final java.util.List<String> PET_MECHANICS = java.util.List.of("setlivingpet", "setpet", "givepet", "petname", "petfollow",
+            "petbuff", "petdamage", "petdespawn", "petexperience", "evolvepet", "droppetitem", "droppetinventory");
+
     private BuiltinMechanics() {}
 
     public static void registerAll(MechanicRegistry registry, SkillEngine engine) {
@@ -14,7 +17,7 @@ public final class BuiltinMechanics {
         registry.register(new ActionBarMechanic(engine), "actionbar", "actionmessage");
         registry.register(new TitleMechanic(), "title", "sendtitle");
         registry.register(new BossBarMechanic(engine), "bossbar");
-        registry.register(new StateMechanic(engine), "state");
+        registry.register(new StateMechanic(engine), "state", "animation");
         registry.register(new PotionMechanic(engine), "potion");
         registry.register(new BreakBlockMechanic(), "breakblock");
         registry.register(new GcdMechanic(engine), "gcd");
@@ -25,7 +28,10 @@ public final class BuiltinMechanics {
         registry.register(new CommandMechanic(engine), "command");
         registry.register(new SummonMechanic(engine), "summon");
         registry.register(new MountModelMechanic(engine), "mountmodel");
-        registry.register(new ParticlesMechanic(engine), "effect:particles", "e:p", "particles");
+        registry.register(new DismountMechanic(engine, true), "dismountallmodel");
+        registry.register(new DismountMechanic(engine, false), "dismountall");
+        registry.register(new MountTargetMechanic(engine), "mounttarget");
+        registry.register(new ParticlesMechanic(engine), "effect:particles", "effect:particle", "e:p", "particles");
         registry.register(new ParticleRingMechanic(engine), "effect:particlering");
         registry.register(new ParticleLineMechanic(engine, false), "effect:particleline", "particleline");
         registry.register(new ParticleLineMechanic(engine, true), "effect:particlebeam", "particlebeam");
@@ -36,6 +42,8 @@ public final class BuiltinMechanics {
         registry.register(new TakeItemMechanic(engine), "takeitem");
         registry.register(new LootMechanic(engine), "loot");
         registry.register(new KillCountMechanic(engine), "killcount");
+        registry.register(new SignalMechanic(engine), "signal");
+        for (String pet : PET_MECHANICS) registry.register(new PetMechanic(engine, pet), pet);
         registry.register(new SudoSkillMechanic(engine), "sudoskill");
         registry.register(new DamageMechanic(engine), "damage");
         registry.register(new ThrowMechanic(), "throw");
@@ -54,13 +62,52 @@ public final class BuiltinMechanics {
         registry.register(new FreezeMechanic(), "freeze");
         registry.register(new SetNoDamageTicksMechanic(), "setnodamageticks");
         registry.register(new TotemMechanic(engine), "totem");
-        registry.register(new VariableMechanic(engine, false), "setvariable", "variableset");
-        registry.register(new VariableMechanic(engine, true), "addvariable", "variableadd");
+        registry.register(new VariableMechanic(engine, VariableMechanic.Mode.SET), "setvariable", "variableset", "setvar");
+        registry.register(new VariableMechanic(engine, VariableMechanic.Mode.ADD), "addvariable", "variableadd");
+        registry.register(new VariableMechanic(engine, VariableMechanic.Mode.SUBTRACT), "subtractvariable", "variablesubtract");
+        registry.register(new VariableMechanic(engine, VariableMechanic.Mode.MATH), "variablemath");
+        registry.register(new VariableMechanic(engine, VariableMechanic.Mode.UNSET), "variableunset", "unsetvar", "unsetvariable");
         registry.register(new HealMechanic(), "heal");
         registry.register(new TeleportMechanic(), "teleport");
         registry.register(new ExplosionMechanic(), "explosion");
-        registry.register(new LightningMechanic(), "lightning");
+        registry.register(new LightningMechanic(), "lightning", "fakelightning");
         registry.register(new SetSpeedMechanic(), "setspeed");
         registry.register(new SetAiMechanic(), "setai");
+        registry.register(new RotationMechanic(false), "setrotation");
+        registry.register(new RotationMechanic(true), "setpitch");
+        registry.register(new SetGravityMechanic(), "setgravity");
+        registry.register(new ScaleMechanic(), "scale");
+        registry.register(new BrightnessMechanic(), "brightness");
+        registry.register(new DisplayItemMechanic(engine), "setdisplayentityitem");
+        registry.register(new SetNameMechanic(), "setname");
+        registry.register(new GiveItemMechanic(engine), "giveitem");
+        registry.register(new FakeExplosionMechanic(), "fakeexplosion");
+        registry.register(new RecoilMechanic(), "recoil");
+        registry.register(new LeaveVehicleMechanic(), "dismount");
+        registry.register(new PotionClearMechanic(), "potionclear", "removepotion");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.TINT), "tint");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.GLOW), "glowbone");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.PART), "partvis", "partvisibility");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.ITEM), "meg:setitemmodel", "setitemmodel");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.LOCK), "lockmodel");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.MODIFY), "modifystate");
+        registry.register(new ModelEffectMechanic(engine, ModelEffectMechanic.Kind.DEFAULT), "defaultstate");
+        registry.register(new TeleportToMechanic(engine), "teleportto", "tpt");
+        registry.register(new TeleportYMechanic(), "teleporty", "tpy");
+        registry.register(new PullMechanic(engine, false), "pull");
+        registry.register(new PullMechanic(engine, true), "propel");
+        registry.register(new HeldItemMechanic(HeldItemMechanic.Kind.NBT), "setitemnbt");
+        registry.register(new HeldItemMechanic(HeldItemMechanic.Kind.LORE), "setlore");
+        registry.register(new HeldItemMechanic(HeldItemMechanic.Kind.CONSUME), "consumeslot", "consumehelditem");
+        registry.register(new OnChatMechanic(engine), "onchat");
+        registry.register(new JsonMessageMechanic(), "jsonmessage", "jsonmsg");
+        registry.register(new SpeakMechanic(engine), "speak");
+        registry.register(new BlackScreenMechanic(), "blackscreen");
+        registry.register(new SetScoreMechanic(), "settargetscore");
+        registry.register(new FireworkMechanic(engine), "effect:firework", "firework");
+        registry.register(new BlockMaskMechanic(engine), "effect:blockmask", "blockmask");
+        registry.register(new ChunkForceLoadMechanic(), "setchunkforceloaded");
+        registry.register(new DisplayTransformMechanic(), "displaytransformation");
+        registry.register(new RayTraceToMechanic(engine), "raytraceto");
     }
 }
