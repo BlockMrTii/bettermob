@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.skill.mechanic;
 
+import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillState;
@@ -23,6 +24,8 @@ class VariableMechanicTest {
     @Test
     void concurrentAddDoesNotLoseUpdates() throws InterruptedException {
         SkillEngine engine = mock(SkillEngine.class);
+        BetterMobPlugin plugin = mock(BetterMobPlugin.class);
+        when(engine.plugin()).thenReturn(plugin);
         SkillState state = new SkillState();
         when(engine.state()).thenReturn(state);
 
@@ -55,9 +58,12 @@ class VariableMechanicTest {
             });
         }
 
-        startLatch.countDown();
-        assertTrue(finishLatch.await(10, TimeUnit.SECONDS));
-        executor.shutdown();
+        try {
+            startLatch.countDown();
+            assertTrue(finishLatch.await(10, TimeUnit.SECONDS));
+        } finally {
+            executor.shutdownNow();
+        }
 
         Map<String, String> scope = state.existingVariablesOf(casterId);
         assertEquals(String.valueOf(threadCount * incrementsPerThread), scope.get("counter"));
