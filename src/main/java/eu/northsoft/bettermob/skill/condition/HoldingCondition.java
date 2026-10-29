@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.skill.condition;
 
+import eu.northsoft.bettermob.item.ItemNbt;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.Target;
@@ -16,8 +17,7 @@ public final class HoldingCondition implements SkillCondition {
 
     @Override
     public boolean test(SkillContext context, String paramsRaw, Target targetOverride) {
-        if (context.caster().getEquipment() == null) return false;
-        ItemStack held = context.caster().getEquipment().getItemInMainHand();
+        ItemStack held = ItemNbt.heldItem(context.caster(), context.event());
         String wanted = conditionParam(paramsRaw, "m", "material", "i", "item", "type");
         if (wanted.isEmpty() || held == null) return false;
         for (String name : wanted.split(",")) {

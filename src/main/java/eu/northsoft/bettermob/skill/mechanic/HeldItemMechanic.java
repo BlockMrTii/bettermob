@@ -49,9 +49,8 @@ public final class HeldItemMechanic implements Mechanic {
     @Override
     public void execute(MechanicCall call) {
         if (!(call.target().entity() instanceof LivingEntity living)) return;
-        EntityEquipment equipment = living.getEquipment();
-        ItemStack stack = ItemNbt.heldItem(living);
-        if (equipment == null || stack == null) return;
+        ItemStack stack = ItemNbt.heldItem(living, call.context().event());
+        if (stack == null) return;
         switch (kind) {
             case NBT -> {
                 String key = firstParam(call.params(), "key", "k");
@@ -74,6 +73,6 @@ public final class HeldItemMechanic implements Mechanic {
                 stack.setAmount(Math.max(0, stack.getAmount() - amount));
             }
         }
-        equipment.setItemInMainHand(stack.getAmount() <= 0 ? null : stack);
+        ItemNbt.updateHeldItem(living, call.context().event(), stack);
     }
 }

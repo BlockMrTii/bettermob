@@ -537,7 +537,7 @@ public final class SkillEngine implements Listener {
         for (Map.Entry<String, String> entry : p.entrySet()) {
             String value = at == null ? entry.getValue() : Substitutions.withLocationValues(entry.getValue(), at.getX(), at.getY(), at.getZ(), at.getYaw(), at.getPitch());
             if (value.indexOf("<caster.mythic_type>") >= 0) value = value.replace("<caster.mythic_type>", mobType(context.caster()));
-            if (value.indexOf("<caster.itemnbt.") >= 0) value = Substitutions.withItemNbt(value, ItemNbt.heldItem(context.caster()));
+            if (value.indexOf("<caster.itemnbt.") >= 0) value = Substitutions.withItemNbt(value, ItemNbt.heldItem(context.caster(), context.event()));
             result.put(entry.getKey(), Substitutions.withCasterValues(value, damage, name, escapesItself));
         }
         return result;

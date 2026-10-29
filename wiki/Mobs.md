@@ -27,7 +27,7 @@ automatically, so a MythicMobs-style `my_mob:` block pasted into its own file wo
 
 | Field | Default | Description |
 |---|---|---|
-| `Type` | `ZOMBIE` | Vanilla entity type (any `EntityType`, case-insensitive) |
+| `Type` | `ZOMBIE` | Vanilla entity type (any living, spawnable `EntityType`, case-insensitive) |
 | `Display` | `&f<id>` | Name, `&` color codes |
 | `Model` | mob ID | BetterModel model attached automatically, see below |
 | `Health` | 20 | Max health |

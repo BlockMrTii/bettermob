@@ -4,7 +4,6 @@ import eu.northsoft.bettermob.api.event.item.BetterMobItemUseEvent;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
-import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -63,14 +62,7 @@ public final class ItemListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onEquip(PlayerItemHeldEvent event) {
-        Player player = event.getPlayer();
-        int slot = event.getNewSlot();
-        if (items.definitionOf(player.getInventory().getItem(slot)) == null) return;
-        Tasks.runLater(skillEngine.plugin(), player, 1L, () -> {
-            if (player.getInventory().getHeldItemSlot() == slot) {
-                fire(player, player.getInventory().getItemInMainHand(), Trigger.EQUIP, null);
-            }
-        });
+        fire(event.getPlayer(), event.getPlayer().getInventory().getItem(event.getNewSlot()), Trigger.EQUIP, event);
     }
 
     private void fire(Player player, ItemStack stack, Trigger type, Cancellable event) {

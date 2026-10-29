@@ -54,7 +54,7 @@ public final class CandidateFilters {
                     yield true;
                 }
                 SkillContext asCandidate = new SkillContext(candidate, context.caster(), null, context.origin(), false, context.variables(), context.arguments());
-                yield engine.conditionRegistry().evaluate(condition, asCandidate, null);
+                yield engine.conditionRegistry().evaluate(condition, asCandidate, Target.ofEntity(candidate));
             }
         };
         return actual == (condition.expected() == null || condition.expected());

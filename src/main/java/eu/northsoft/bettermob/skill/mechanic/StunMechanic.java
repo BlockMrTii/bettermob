@@ -13,7 +13,7 @@ import static eu.northsoft.bettermob.skill.Params.firstParam;
 import static eu.northsoft.bettermob.skill.Params.parseInt;
 
 public final class StunMechanic implements Mechanic {
-    private record State(boolean aware, boolean gravity, int count) {}
+    private record State(boolean aware, boolean gravity, int aiCount, int gravityCount) {}
 
     private final Map<UUID, State> active = new ConcurrentHashMap<>();
     private final SkillEngine engine;
@@ -35,10 +35,14 @@ public final class StunMechanic implements Mechanic {
         if (animation != null) engine.betterModel().play(engine.mobManager().trackerFor(mob.getUniqueId()), animation);
 
         UUID id = mob.getUniqueId();
-        State current = active.get(id);
-        active.put(id, current == null
-                ? new State(mob.isAware(), mob.hasGravity(), 1)
-                : new State(current.aware(), current.gravity(), current.count() + 1));
+        if (ai || gravity) {
+            State current = active.get(id);
+            boolean baseAware = current == null || current.aiCount() == 0 ? mob.isAware() : current.aware();
+            boolean baseGravity = current == null || current.gravityCount() == 0 ? mob.hasGravity() : current.gravity();
+            int aiCount = (current == null ? 0 : current.aiCount()) + (ai ? 1 : 0);
+            int gravityCount = (current == null ? 0 : current.gravityCount()) + (gravity ? 1 : 0);
+            active.put(id, new State(baseAware, baseGravity, aiCount, gravityCount));
+        }
         if (ai) mob.setAware(false);
         if (gravity) mob.setGravity(false);
         Runnable[] cancelFreeze = {() -> { }};
@@ -52,13 +56,12 @@ public final class StunMechanic implements Mechanic {
             cancelFreeze[0].run();
             State latest = active.get(id);
             if (latest == null) return;
-            if (latest.count() <= 1) {
-                active.remove(id);
-                mob.setAware(latest.aware());
-                mob.setGravity(latest.gravity());
-            } else {
-                active.put(id, new State(latest.aware(), latest.gravity(), latest.count() - 1));
-            }
+            int aiCount = ai ? Math.max(0, latest.aiCount() - 1) : latest.aiCount();
+            int gravityCount = gravity ? Math.max(0, latest.gravityCount() - 1) : latest.gravityCount();
+            if (ai && aiCount == 0) mob.setAware(latest.aware());
+            if (gravity && gravityCount == 0) mob.setGravity(latest.gravity());
+            if (aiCount == 0 && gravityCount == 0) active.remove(id);
+            else active.put(id, new State(latest.aware(), latest.gravity(), aiCount, gravityCount));
         }, () -> {
             cancelFreeze[0].run();
             active.remove(id);
