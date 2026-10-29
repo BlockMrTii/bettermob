@@ -73,7 +73,7 @@ public final class VariableMechanic implements Mechanic {
                 synchronized (scope) {
                     if (result.equals(scope.get(name))) scope.remove(name);
                 }
-            });
+            }, () -> expiries.remove(slot, token));
         } else {
             expiries.remove(slot);
         }

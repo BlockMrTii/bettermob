@@ -125,13 +125,6 @@ public final class DebugManager {
             return;
         }
         info(message, mobId);
-        if (watchers.contains(playerId)) return;
-        Player player = Bukkit.getPlayer(playerId);
-        if (player != null) Tasks.runOn(plugin, player, () -> {
-            if (player.isOnline() && player.hasPermission(WATCH_PERMISSION)) {
-                player.sendMessage("§8[§7debug§8] §7" + message);
-            }
-        });
     }
 
     private void emitToSessions(String message) {

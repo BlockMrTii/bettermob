@@ -33,6 +33,7 @@ public final class PackScanner {
 
         File[] packDirs = packsFolder.listFiles(File::isDirectory);
         if (packDirs == null) return folders;
+        Arrays.sort(packDirs);
         for (File packDir : packDirs) {
             if (disabled.contains(packDir.getName().toLowerCase(Locale.ROOT))) continue;
             File subfolder = findCaseInsensitive(packDir, name);
@@ -69,6 +70,7 @@ public final class PackScanner {
         List<String> result = new ArrayList<>();
         File[] packDirs = packsFolder.listFiles(File::isDirectory);
         if (packDirs == null) return result;
+        Arrays.sort(packDirs);
         List<String> disabled = plugin.getConfig().getStringList("DisabledPacks").stream()
                 .map(value -> value.toLowerCase(Locale.ROOT)).toList();
         for (File packDir : packDirs) {

@@ -64,13 +64,15 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
 
     @Override
     public Optional<LivingEntity> spawn(String id, Location location) {
+        if (location == null || location.getWorld() == null) return Optional.empty();
         MobDefinition definition = id == null ? null : manager.registry().get(id);
-        if (definition == null) return Optional.empty();
+        if (definition == null || !definition.type.isAlive() || !definition.type.isSpawnable()) return Optional.empty();
         return Optional.of(manager.spawn(definition, location));
     }
 
     @Override
     public CompletableFuture<Optional<LivingEntity>> spawnAsync(String id, Location location) {
+        if (location == null || location.getWorld() == null) return CompletableFuture.completedFuture(Optional.empty());
         CompletableFuture<Optional<LivingEntity>> result = new CompletableFuture<>();
         Tasks.runOwnedAt(plugin, location, () -> {
             try {
@@ -78,7 +80,7 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
             } catch (RuntimeException exception) {
                 result.completeExceptionally(exception);
             }
-        });
+        }, () -> result.complete(Optional.empty()));
         return result;
     }
 
@@ -94,11 +96,8 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
 
     @Override
     public boolean runSkill(String skillId, LivingEntity caster, LivingEntity trigger) {
-        if (skillId == null || skillRegistry.get(skillId) == null) return false;
-        Tasks.runOwned(plugin, caster, () -> {
-            if (trigger != null && !Bukkit.isOwnedByCurrentRegion(trigger)) return;
-            skillEngine.runById(skillId, new SkillContext(caster, trigger, null));
-        });
+        if (skillId == null || caster == null || skillRegistry.get(skillId) == null) return false;
+        Tasks.runOwned(plugin, caster, () -> skillEngine.runById(skillId, new SkillContext(caster, trigger, null).ownedHere()));
         return true;
     }
 

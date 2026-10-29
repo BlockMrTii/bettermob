@@ -86,6 +86,8 @@ class SchemasTest {
         String ok = "Type: PIG\nSkills:\n  - sound{s=x} @self ~on";
         assertTrue(schema("mob").validate(YAML.readTree(ok + "Signal:HIT\n")).isEmpty());
         assertTrue(schema("mob").validate(YAML.readTree(ok + "Timer:40\n")).isEmpty());
+        assertTrue(schema("mob").validate(YAML.readTree(ok + "Damaged ?~sneaking\n")).isEmpty());
+        assertTrue(schema("mob").validate(YAML.readTree(ok + "Damaged ?!~hastag{t=x}\n")).isEmpty());
         assertFalse(schema("mob").validate(YAML.readTree(ok + "Signal\n")).isEmpty());
         assertFalse(schema("mob").validate(YAML.readTree(ok + "Timer:HIT\n")).isEmpty());
         assertFalse(schema("mob").validate(YAML.readTree(ok + "Damaged:HIT\n")).isEmpty());

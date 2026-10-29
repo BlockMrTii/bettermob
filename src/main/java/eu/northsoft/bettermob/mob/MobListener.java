@@ -55,7 +55,7 @@ public final class MobListener implements Listener {
         this.kills = kills;
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onNaturalSpawn(CreatureSpawnEvent event) {
         if (event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.NATURAL) return;
         LivingEntity entity = event.getEntity();
@@ -77,9 +77,13 @@ public final class MobListener implements Listener {
 
     @EventHandler
     public void onDeath(EntityDeathEvent event) {
+        LivingEntity killerEntity = resolveKiller(event.getEntity());
         fireKill(event.getEntity());
         MobDefinition definition = manager.definitionOf(event.getEntity().getUniqueId());
-        if (definition == null) return;
+        if (definition == null) {
+            manager.fireEntityAura(event.getEntity(), "ondeath", killerEntity, event);
+            return;
+        }
 
         Player killer = event.getEntity().getKiller();
         if (killer != null) kills.record(killer.getUniqueId(), killer.getName(), definition.id);
@@ -99,8 +103,19 @@ public final class MobListener implements Listener {
             Bukkit.getPluginManager().callEvent(dropEvent);
             event.setDroppedExp(Math.max(0, dropEvent.getExp()));
         }
-        Bukkit.getPluginManager().callEvent(new BetterMobDeathEvent(event.getEntity(), definition.toInfo()));
-        manager.fireTrigger(event.getEntity(), definition, MobDefinition.SkillTrigger.Trigger.DEATH, null, null);
+        if (BetterMobDeathEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            Bukkit.getPluginManager().callEvent(new BetterMobDeathEvent(event.getEntity(), definition.toInfo()));
+        }
+        manager.fireTrigger(event.getEntity(), definition, MobDefinition.SkillTrigger.Trigger.DEATH, killerEntity, event);
+    }
+
+    private static LivingEntity resolveKiller(LivingEntity victim) {
+        if (victim.getLastDamageCause() instanceof EntityDamageByEntityEvent byEntity) {
+            Entity damager = byEntity.getDamager();
+            if (damager instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter) damager = shooter;
+            if (damager instanceof LivingEntity living && !living.equals(victim)) return living;
+        }
+        return victim.getKiller();
     }
 
     @EventHandler
@@ -239,29 +254,32 @@ public final class MobListener implements Listener {
 
         if (event.getEntity() instanceof LivingEntity victimMob) {
             MobDefinition definition = manager.definitionOf(victimMob.getUniqueId());
+            LivingEntity attacker = source instanceof LivingEntity living ? living : null;
             if (definition != null) {
-                if (definition.threatTable && source instanceof LivingEntity attacker) {
+                if (definition.threatTable && attacker != null) {
                     manager.registerThreat(victimMob.getUniqueId(), attacker, event.getFinalDamage());
                 }
-                if (source instanceof LivingEntity attacker) manager.alertGroup(victimMob, definition, attacker);
-                manager.fireTrigger(victimMob, definition, MobDefinition.SkillTrigger.Trigger.DAMAGED,
-                        source instanceof LivingEntity living ? living : null, event);
+                if (attacker != null) manager.alertGroup(victimMob, definition, attacker);
+                manager.fireTrigger(victimMob, definition, MobDefinition.SkillTrigger.Trigger.DAMAGED, attacker, event);
+            } else {
+                manager.fireEntityAura(victimMob, "ondamaged", attacker, event);
             }
         }
 
         if (source instanceof LivingEntity attackerMob && !manager.inSkillDamage() && !(event.getDamager() instanceof Projectile)) {
             MobDefinition definition = manager.definitionOf(attackerMob.getUniqueId());
-            if (definition != null) manager.fireTrigger(attackerMob, definition, MobDefinition.SkillTrigger.Trigger.ATTACK,
-                    event.getEntity() instanceof LivingEntity living ? living : null, event);
+            LivingEntity victim = event.getEntity() instanceof LivingEntity living ? living : null;
+            if (definition != null) manager.fireTrigger(attackerMob, definition, MobDefinition.SkillTrigger.Trigger.ATTACK, victim, event);
+            else manager.fireEntityAura(attackerMob, "onattack", victim, event);
         }
     }
 
     @EventHandler
     public void onShoot(EntityShootBowEvent event) {
         MobDefinition definition = manager.definitionOf(event.getEntity().getUniqueId());
-        if (definition == null) return;
         LivingEntity target = event.getEntity() instanceof Mob mob ? mob.getTarget() : null;
-        manager.fireTrigger(event.getEntity(), definition, MobDefinition.SkillTrigger.Trigger.SHOOT, target, event);
+        if (definition != null) manager.fireTrigger(event.getEntity(), definition, MobDefinition.SkillTrigger.Trigger.SHOOT, target, event);
+        else manager.fireEntityAura(event.getEntity(), "onshoot", target, event);
     }
 
     @EventHandler

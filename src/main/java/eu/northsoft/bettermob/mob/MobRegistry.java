@@ -135,6 +135,10 @@ public final class MobRegistry {
             plugin.messages().warn("mob.unknownType", "mob", id, "type", section.getString("Type"));
             return null;
         }
+        if (!type.isAlive() || !type.isSpawnable()) {
+            plugin.messages().warn("mob.unknownType", "mob", id, "type", section.getString("Type"));
+            return null;
+        }
         MobDefinition.Options options = MobDefinition.Options.parse(section.getConfigurationSection("Options"), MobDefinition.Options.DEFAULT);
         ConfigurationSection modulesSection = section.getConfigurationSection("Modules");
         boolean threatTable = modulesSection != null && modulesSection.getBoolean("ThreatTable", false);
@@ -160,7 +164,11 @@ public final class MobRegistry {
                 parseSpawnRule(id, section.getConfigurationSection("Spawn")),
                 parseEgg(id, section.getConfigurationSection("Egg")),
                 Behaviour.parse(section, option -> plugin.messages().warn("mob.behaviourInvalid", "mob", id, "option", option)),
-                MobPhase.parse(section, option -> plugin.messages().warn("mob.phaseInvalid", "mob", id, "option", option))
+                MobPhase.parse(section, option -> {
+                    int skills = option.indexOf(": Skills ");
+                    if (skills >= 0) ExtraTriggers.warnUnparsed(option.substring(skills + 9), () -> plugin.messages().warn("mob.phaseInvalid", "mob", id, "option", option));
+                    else plugin.messages().warn("mob.phaseInvalid", "mob", id, "option", option);
+                })
         );
     }
 

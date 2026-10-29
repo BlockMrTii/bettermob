@@ -8,6 +8,7 @@ import eu.northsoft.bettermob.mob.MobPhase;
 import org.bukkit.Material;
 import eu.northsoft.bettermob.skill.Condition;
 import eu.northsoft.bettermob.skill.InlineSkills;
+import eu.northsoft.bettermob.skill.Params;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillStep;
 import eu.northsoft.bettermob.skill.target.CandidateFilters;
@@ -242,7 +243,15 @@ public final class PackValidator {
     private void checkCondition(Condition condition, Predicate<String> knows, Reason reason, String line, String file, Report report) {
         if (condition == null) {
             report.issues.add(new Issue(file, line, Reason.UNPARSEABLE, ""));
-        } else if (condition.composite()) {
+            return;
+        }
+        if ("castinstead".equals(condition.action()) && condition.actionValue() != null) {
+            String target = Params.stripQuotes(condition.actionValue());
+            if (!target.isBlank() && !hasPlaceholder(target) && !known.skill().test(target)) {
+                report.issues.add(new Issue(file, line, Reason.SKILL, target));
+            }
+        }
+        if (condition.composite()) {
             for (List<String> all : Condition.alternatives(condition.params())) {
                 for (String atom : all) checkCondition(Condition.parse(atom), knows, reason, line, file, report);
             }
@@ -272,32 +281,45 @@ public final class PackValidator {
             }
         }
 
+        boolean skillRef = mechanic.name().equals("skill") || mechanic.name().equals("randomskill")
+                || mechanic.name().equals("sudoskill") || mechanic.name().equals("onchat") || mechanic.name().equals("raytraceto");
         for (String key : List.of("s", "skill", "skills")) {
-            String value = mechanic.params().get(key);
-            if (value == null) continue;
-            if (value.trim().startsWith("[")) {
-                for (String inner : InlineSkills.splitInline(value)) {
-                    report.lines++;
-                    SkillStep innerStep = SkillStep.parse(inner);
-                    if (innerStep == null) report.issues.add(new Issue(file, inner, Reason.UNPARSEABLE, ""));
-                    else checkStep(innerStep, inner, file, report);
-                }
-            } else if (mechanic.name().equals("skill") || mechanic.name().equals("randomskill") || mechanic.name().equals("sudoskill")) {
-                for (String id : value.split(",")) {
-                    if (!id.isBlank() && !known.skill().test(id.trim())) report.issues.add(new Issue(file, line, Reason.SKILL, id.trim()));
-                }
+            checkSkillParam(mechanic.params().get(key), skillRef, line, file, report);
+        }
+        if (mechanic.name().equals("onchat")) {
+            checkSkillParam(mechanic.params().get("onchat"), true, line, file, report);
+        }
+        if (mechanic.name().equals("raytraceto")) {
+            for (String key : List.of("es", "hs", "hitskill")) {
+                checkSkillParam(mechanic.params().get(key), true, line, file, report);
             }
         }
         for (String key : List.of("os", "oe", "ot", "oh", "onstart", "onend", "ontick", "onhit")) {
-            String value = mechanic.params().get(key);
-            if (value == null || !value.trim().startsWith("[")) continue;
+            checkSkillParam(mechanic.params().get(key), mechanic.name().equals("raytraceto") && (key.equals("oh") || key.equals("onhit")), line, file, report);
+        }
+    }
+
+    private void checkSkillParam(String value, boolean checkId, String line, String file, Report report) {
+        if (value == null) return;
+        if (value.trim().startsWith("[")) {
             for (String inner : InlineSkills.splitInline(value)) {
                 report.lines++;
                 SkillStep innerStep = SkillStep.parse(inner);
                 if (innerStep == null) report.issues.add(new Issue(file, inner, Reason.UNPARSEABLE, ""));
                 else checkStep(innerStep, inner, file, report);
             }
+        } else if (checkId) {
+            for (String raw : value.split(",")) {
+                String id = Params.stripQuotes(raw);
+                if (!id.isBlank() && !hasPlaceholder(id) && !known.skill().test(id)) {
+                    report.issues.add(new Issue(file, line, Reason.SKILL, id));
+                }
+            }
         }
+    }
+
+    private static boolean hasPlaceholder(String value) {
+        return value.indexOf('<') >= 0 || value.indexOf('%') >= 0;
     }
 
     private static String firstOf(Map<String, String> params, String... keys) {

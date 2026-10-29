@@ -31,6 +31,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
@@ -172,6 +173,11 @@ public final class SkillEngine implements Listener {
         Tasks.runLater(plugin, player, 1L, () -> player.setVelocity(new Vector()));
     }
 
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        forget(event.getPlayer().getUniqueId());
+    }
+
     public boolean registerMechanic(Plugin owner, String name, CustomMechanic mechanic) {
         return mechanics.registerCustom(owner, name, mechanic);
     }
@@ -266,7 +272,7 @@ public final class SkillEngine implements Listener {
             SkillStep.Cursor cursor = new SkillStep.Cursor(text.substring(1));
             String name = cursor.readWord().toLowerCase(Locale.ROOT);
             Map<String, String> params = cursor.peek() == '{' ? SkillStep.parseParams(cursor.readBraced()) : Map.of();
-            List<Target> found = targeters.resolveAll(name, params, context);
+            List<Target> found = targeters.resolveAll(name, substituteTargeter(params, context), context);
             return found.isEmpty() || found.get(0).location() == null ? null : found.get(0).location().clone();
         }
         String[] parts = text.split(",");
@@ -382,7 +388,7 @@ public final class SkillEngine implements Listener {
 
         if (mechanic.name().equals("cancelskill")) return true;
 
-        List<Target> targets = targeters.resolveAll(mechanic.targeter(), mechanic.targeterParams(), context);
+        List<Target> targets = targeters.resolveAll(mechanic.targeter(), substituteTargeter(mechanic.targeterParams(), context), context);
 
         if (targets.isEmpty()) {
             if (debug.verbose()) debug.verbose("mechanic '" + mechanic.name() + "' skipped: no target for @" + mechanic.targeter(), subject(context.caster()));
@@ -531,15 +537,25 @@ public final class SkillEngine implements Listener {
         for (Map.Entry<String, String> entry : p.entrySet()) {
             String value = at == null ? entry.getValue() : Substitutions.withLocationValues(entry.getValue(), at.getX(), at.getY(), at.getZ(), at.getYaw(), at.getPitch());
             if (value.indexOf("<caster.mythic_type>") >= 0) value = value.replace("<caster.mythic_type>", mobType(context.caster()));
-            if (value.indexOf("<caster.itemnbt.") >= 0) value = Substitutions.withItemNbt(value, ItemNbt.heldItem(context.caster()));
+            if (value.indexOf("<caster.itemnbt.") >= 0) value = Substitutions.withItemNbt(value, ItemNbt.heldItem(context.caster(), context.event()));
             result.put(entry.getKey(), Substitutions.withCasterValues(value, damage, name, escapesItself));
         }
         return result;
     }
 
+    private Map<String, String> substituteTargeter(Map<String, String> params, SkillContext context) {
+        if (params.isEmpty()) return params;
+        String conditions = params.get("conditions");
+        Map<String, String> resolved = substitute("", conditions == null ? params : without(params, "conditions"), context);
+        if (conditions == null || resolved == params) return resolved;
+        Map<String, String> result = new LinkedHashMap<>(resolved);
+        result.put("conditions", conditions);
+        return result;
+    }
+
     private final Set<String> missingArguments = ConcurrentHashMap.newKeySet();
 
-    private String argumentValue(String value, SkillContext context) {
+    public String argumentValue(String value, SkillContext context) {
         if (value == null || value.indexOf("<arg.") < 0) return value;
         return Arguments.resolve(value, context.arguments(), name -> {
             if (missingArguments.add(name)) plugin.messages().warn("skill.argumentMissing", "argument", name);

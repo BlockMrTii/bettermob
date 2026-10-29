@@ -175,4 +175,25 @@ class PackValidatorTest {
         assertEquals(1, report.lines());
         assertTrue(report.issues().isEmpty());
     }
+
+    @Test
+    void castinsteadAndRaytraceToSkillReferencesAreChecked(@TempDir Path root) throws IOException {
+        PackValidator checking = new PackValidator(new PackValidator.Knowledge(
+                name -> MECHANICS.contains(name) || name.equals("raytraceto") || name.equals("onchat"),
+                CONDITIONS::contains, TARGETERS::contains, SKILLS::contains, name -> true));
+        write(root, "skills/s.yml", """
+                s:
+                  Conditions:
+                    - chance{chance=0.5} castinstead missing_redirect
+                    - (chance{chance=0.5} || chance{chance=0.2}) castinstead missing_composite
+                  Skills:
+                    - skill{s=known_skill;hs=0.5} @target
+                    - raytraceto{es=missing_end;hs=[ - invalid_mech{} ];oh=<arg.hit>} @target
+                    - onchat{onchat="known_skill"} @target
+                    - onchat{onchat=missing_chat} @target
+                """);
+        PackValidator.Report report = checking.validatePack("refs", root.toFile());
+        assertEquals(List.of("missing_redirect", "missing_composite", "missing_end", "invalid_mech", "missing_chat"),
+                report.issues().stream().map(PackValidator.Issue::name).toList());
+    }
 }

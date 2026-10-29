@@ -70,8 +70,8 @@ public record MobPhase(HealthSpec health, String display, String model, List<Ski
             Map<MobDefinition.SkillTrigger.Trigger, List<MobDefinition.SkillTrigger>> byType = new EnumMap<>(MobDefinition.SkillTrigger.Trigger.class);
             for (String line : lines(entry.get("Skills"))) {
                 MobDefinition.SkillTrigger trigger = MobDefinition.SkillTrigger.parse(line);
-                if (trigger == null) invalid.accept(path + "Skills " + line);
-                else byType.computeIfAbsent(trigger.trigger(), key -> new ArrayList<>()).add(trigger);
+                if (trigger != null) byType.computeIfAbsent(trigger.trigger(), key -> new ArrayList<>()).add(trigger);
+                else if (!ExtraTriggers.accepts(line)) invalid.accept(path + "Skills " + line);
             }
             byType.replaceAll((key, list) -> List.copyOf(list));
             YamlConfiguration config = new YamlConfiguration();

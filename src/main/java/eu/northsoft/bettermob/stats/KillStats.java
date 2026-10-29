@@ -126,7 +126,8 @@ public final class KillStats {
             ConfigurationSection own = section.getConfigurationSection("kills");
             if (own == null) continue;
             Map<String, Integer> map = new ConcurrentHashMap<>();
-            for (String mob : own.getKeys(false)) {
+            for (String mob : own.getKeys(true)) {
+                if (!own.isInt(mob)) continue;
                 int amount = own.getInt(mob);
                 if (amount > 0) map.put(mob.toLowerCase(Locale.ROOT), amount);
             }

@@ -753,6 +753,11 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("stats")) return List.of("on", "off", "reset", "top");
         if (args.length == 2 && (args[0].equalsIgnoreCase("spawn") || args[0].equalsIgnoreCase("info") || args[0].equalsIgnoreCase("egg") || args[0].equalsIgnoreCase("top"))) return new ArrayList<>(manager.registry().all().keySet());
+        if (args.length == 2 && args[0].equalsIgnoreCase("test")) {
+            List<String> ids = new ArrayList<>(manager.registry().all().keySet());
+            ids.add("stop");
+            return ids;
+        }
         if (args.length == 2 && args[0].equalsIgnoreCase("skill")) return new ArrayList<>(skillRegistry.ids());
         if (args.length == 2 && args[0].equalsIgnoreCase("give")) return new ArrayList<>(itemRegistry.ids());
         if (args[0].equalsIgnoreCase("spawner")) {

@@ -100,7 +100,7 @@ public final class ConditionRegistry {
             CustomEntry custom = customs.get(condition.name());
             if (custom != null) return testCustom(custom, condition, context, targetOverride);
 
-            engine.plugin().messages().warn("skill.conditionUnsupported", "condition", condition.name());
+            engine.plugin().messages().warnOnce("skill.conditionUnsupported", "condition", condition.name());
             return true;
         }
         return found.test(context, ConditionParams.resolve(engine, condition.params(), context, targetOverride), targetOverride);
@@ -111,7 +111,7 @@ public final class ConditionRegistry {
             return custom.condition().test(new ConditionContext(
                     context.caster(), context.trigger(),
                     targetOverride == null ? null : targetOverride.entity(), targetOverride == null ? null : targetOverride.location(),
-                    Params.parsedParams(condition.params())));
+                    Params.parsedParams(ConditionParams.resolve(engine, condition.params(), context, targetOverride))));
         } catch (RuntimeException exception) {
             engine.plugin().messages().warn("skill.customConditionFailed", "condition", condition.name(),
                     "plugin", custom.owner() == null ? "?" : custom.owner().getName(), "error", exception);
