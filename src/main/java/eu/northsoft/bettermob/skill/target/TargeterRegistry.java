@@ -6,6 +6,7 @@ import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.Target;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
@@ -30,8 +31,7 @@ public final class TargeterRegistry {
         register(new EntitiesInRadiusTargeter(filters, true, Integer.MAX_VALUE, false), "playersinradius");
         register(new EntitiesInRadiusTargeter(filters, true, 1, false), "pir");
         register(new EntitiesInRadiusTargeter(filters, false, Integer.MAX_VALUE, false, true), "livingincone", "lic");
-        register((SingleTargeter) (params, context) -> context.trigger() != null
-                ? Target.ofEntity(context.trigger()) : Target.ofEntity(context.caster()), "trigger", "target");
+        register((SingleTargeter) (params, context) -> Target.ofEntity(triggerOrCaster(context)), "trigger", "target");
         register(new ObstructingBlockTargeter(), "obstructingblock");
         register(new ForwardTargeter(), "forward");
         register(new SelfLocationTargeter(), "selflocation");
@@ -39,8 +39,8 @@ public final class TargeterRegistry {
         register((SingleTargeter) (params, context) -> Target.ofEntity(context.caster()), "self", "caster", "mob");
         register((SingleTargeter) (params, context) -> Target.ofLocation(
                 context.origin() != null ? context.origin() : context.caster().getLocation()), "origin");
-        register((SingleTargeter) (params, context) -> Target.ofLocation(LocationOffsets.apply(
-                (context.trigger() != null ? context.trigger() : context.caster()).getLocation(), params)), "targetlocation", "tl", "triggerlocation");
+        register((SingleTargeter) (params, context) -> context.remoteTrigger() != null ? null : Target.ofLocation(LocationOffsets.apply(
+                triggerOrCaster(context).getLocation(), params)), "targetlocation", "tl", "triggerlocation");
         register(new FixedLocationTargeter(), "location");
         register(new OwnerTargeter(), "owner", "parent");
         register(new ModelPassengersTargeter(engine, filters), "modelpassengers");
@@ -96,8 +96,13 @@ public final class TargeterRegistry {
         CustomEntry custom = customs.get(targeter.toLowerCase(Locale.ROOT));
         if (custom != null) return resolveCustom(targeter, custom, params, context);
         if (!targeter.isEmpty()) warnUnknown(targeter);
-        return List.of(context.targetIsTrigger() && context.trigger() != null
-                ? Target.ofEntity(context.trigger()) : Target.ofEntity(context.caster()));
+        return List.of(Target.ofEntity(context.targetIsTrigger() ? triggerOrCaster(context) : context.caster()));
+    }
+
+    private static LivingEntity triggerOrCaster(SkillContext context) {
+        if (context.trigger() != null) return context.trigger();
+        if (context.remoteTrigger() != null) return context.remoteTrigger();
+        return context.caster();
     }
 
     private void warnUnknown(String name) {
