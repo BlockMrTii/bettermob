@@ -53,12 +53,19 @@ public final class VariableMechanic implements Mechanic {
             return;
         }
 
-        String result = compute(call, scope.get(name));
+        String result;
+        boolean limited = false;
+        synchronized (scope) {
+            result = compute(call, scope.get(name));
+            if (result != null && !Variables.put(scope, name, result)) {
+                limited = true;
+            }
+        }
         if (result == null) {
             engine.plugin().messages().warn("skill.variableValue", "variable", variable, "value", firstParam(call.params(), "value", "val", "v", "amount", "a", "equation", "expr"));
             return;
         }
-        if (!Variables.put(scope, name, result)) {
+        if (limited) {
             engine.plugin().messages().warn("skill.variableLimit", "variable", variable, "limit", Variables.MAX_PER_SCOPE);
             return;
         }
