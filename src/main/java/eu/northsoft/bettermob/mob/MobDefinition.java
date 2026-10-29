@@ -5,8 +5,11 @@ import eu.northsoft.bettermob.drop.DropTable;
 import eu.northsoft.bettermob.skill.Params;
 import eu.northsoft.bettermob.skill.SkillStep;
 import org.bukkit.entity.EntityType;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -34,6 +37,7 @@ public final class MobDefinition {
     public final BossBarSettings bossBar;
     public final EggSettings egg;
     public final Behaviour behaviour;
+    public final List<MobPhase> phases;
     public final List<String> equipment;
     public final SpawnRule spawnRule;
 
@@ -43,6 +47,17 @@ public final class MobDefinition {
                   Options options, boolean threatTable, Map<DamageCause, Double> damageModifiers,
                   List<SkillTrigger> skillTriggers, DropTable drops, String faction,
                   BossBarSettings bossBar, List<String> equipment, SpawnRule spawnRule, EggSettings egg, Behaviour behaviour) {
+        this(id, type, displayName, modelId, health, damage, removeAi, aiGoalSelectors, aiTargetSelectors, options, threatTable,
+                damageModifiers, skillTriggers, drops, faction, bossBar, equipment, spawnRule, egg, behaviour, List.of());
+    }
+
+    public MobDefinition(String id, EntityType type, String displayName, String modelId,
+                  double health, double damage, boolean removeAi,
+                  List<String> aiGoalSelectors, List<String> aiTargetSelectors,
+                  Options options, boolean threatTable, Map<DamageCause, Double> damageModifiers,
+                  List<SkillTrigger> skillTriggers, DropTable drops, String faction,
+                  BossBarSettings bossBar, List<String> equipment, SpawnRule spawnRule, EggSettings egg, Behaviour behaviour,
+                  List<MobPhase> phases) {
         this.id = id;
         this.type = type;
         this.displayName = displayName;
@@ -56,8 +71,8 @@ public final class MobDefinition {
         this.threatTable = threatTable;
         this.damageModifiers = damageModifiers;
         this.skillTriggers = skillTriggers;
-        Map<SkillTrigger.Trigger, List<SkillTrigger>> byType = new java.util.EnumMap<>(SkillTrigger.Trigger.class);
-        for (SkillTrigger trigger : skillTriggers) byType.computeIfAbsent(trigger.trigger(), key -> new java.util.ArrayList<>()).add(trigger);
+        Map<SkillTrigger.Trigger, List<SkillTrigger>> byType = new EnumMap<>(SkillTrigger.Trigger.class);
+        for (SkillTrigger trigger : skillTriggers) byType.computeIfAbsent(trigger.trigger(), key -> new ArrayList<>()).add(trigger);
         byType.replaceAll((key, list) -> List.copyOf(list));
         this.triggersByType = byType;
         this.drops = drops;
@@ -65,8 +80,13 @@ public final class MobDefinition {
         this.bossBar = bossBar;
         this.egg = egg;
         this.behaviour = behaviour;
+        this.phases = phases;
         this.equipment = equipment;
         this.spawnRule = spawnRule;
+    }
+
+    public boolean hasPhases() {
+        return !phases.isEmpty();
     }
 
     public List<SkillTrigger> triggersOf(SkillTrigger.Trigger type) {
@@ -86,14 +106,50 @@ public final class MobDefinition {
                    double scale) {
         static final Options DEFAULT = new Options(true, -1, false, false, false, false, false, true, false,
                 false, true, true, false, null, -1, -1, false, -1);
-    }
 
-    public record SkillTrigger(SkillStep step, Trigger trigger, int timerTicks, HealthSpec health) {
-        public SkillTrigger(SkillStep step, Trigger trigger, int timerTicks) {
-            this(step, trigger, timerTicks, null);
+        public static Options parse(ConfigurationSection optionsSection, Options fallback) {
+            return optionsSection == null ? fallback : new Options(
+                    flag(optionsSection, "Collidable", fallback.collidable()),
+                    optionsSection.getDouble("MovementSpeed", fallback.movementSpeed()),
+                    flag(optionsSection, "PreventOtherDrops", fallback.preventOtherDrops()),
+                    flag(optionsSection, "Silent", fallback.silent()),
+                    flag(optionsSection, "PreventRenaming", fallback.preventRenaming()),
+                    flag(optionsSection, "PreventLeashing", fallback.preventLeashing()),
+                    flag(optionsSection, "AlwaysShowName", fallback.alwaysShowName()),
+                    flag(optionsSection, "PreventSunburn", fallback.preventSunburn()),
+                    flag(optionsSection, "Invincible", fallback.invincible()),
+                    flag(optionsSection, "Invisible", fallback.invisible()),
+                    flag(optionsSection, "CanMove", fallback.canMove()),
+                    flag(optionsSection, "Interactable", fallback.interactable()),
+                    flag(optionsSection, "Marker", fallback.marker()),
+                    optionsSection.getString("ItemHead", fallback.itemHead()),
+                    optionsSection.getDouble("KnockbackResistance", fallback.knockbackResistance()),
+                    optionsSection.getDouble("FollowRange", fallback.followRange()),
+                    flag(optionsSection, "PreventItemPickup", fallback.preventItemPickup()),
+                    optionsSection.getDouble("Scale", fallback.scale())
+            );
         }
 
-        private static final Pattern PATTERN = Pattern.compile("^(.*\\S)\\s+~on(\\w+?)(?::(\\d+))?(?:(<=|>=|<|>)(\\d+(?:\\.\\d+)?)(%)?)?(?:\\s+(\\?!?\\w+(?:\\{.*})?))?\\s*$", Pattern.CASE_INSENSITIVE);
+        private static boolean flag(ConfigurationSection section, String key, boolean fallback) {
+            Object value = section.get(key);
+            if (value instanceof Boolean flag) return flag;
+            if (value instanceof String text && (text.equalsIgnoreCase("true") || text.equalsIgnoreCase("false"))) {
+                return Boolean.parseBoolean(text);
+            }
+            return fallback;
+        }
+    }
+
+    public record SkillTrigger(SkillStep step, Trigger trigger, int timerTicks, HealthSpec health, String signal) {
+        public SkillTrigger(SkillStep step, Trigger trigger, int timerTicks, HealthSpec health) {
+            this(step, trigger, timerTicks, health, null);
+        }
+
+        public SkillTrigger(SkillStep step, Trigger trigger, int timerTicks) {
+            this(step, trigger, timerTicks, null, null);
+        }
+
+        private static final Pattern PATTERN = Pattern.compile("^(.*\\S)\\s+~on(\\w+?)(?::([A-Za-z0-9_-]+))?(?:(<=|>=|<|>)(\\d+(?:\\.\\d+)?)(%)?)?(?:\\s+(\\?!?~?\\w+(?:\\{.*})?))?\\s*$", Pattern.CASE_INSENSITIVE);
 
         public static SkillTrigger parse(String line) {
             Matcher matcher = PATTERN.matcher(line.trim());
@@ -105,15 +161,24 @@ public final class MobDefinition {
             if (trigger != Trigger.HEALTH && matcher.group(4) != null) return null;
             SkillStep step = SkillStep.parse(matcher.group(7) == null ? matcher.group(1) : matcher.group(1) + " " + matcher.group(7));
             if (step == null) return null;
-            int ticks = Params.parseInt(matcher.group(3), 20);
-            return new SkillTrigger(step, trigger, ticks, health);
+            String suffix = matcher.group(3);
+            String signal = null;
+            if (trigger == Trigger.SIGNAL) {
+                if (suffix == null) return null;
+                signal = suffix.toLowerCase(Locale.ROOT);
+            } else if (suffix != null && !suffix.chars().allMatch(Character::isDigit)) {
+                return null;
+            }
+            int ticks = Params.parseInt(trigger == Trigger.SIGNAL ? null : suffix, trigger == Trigger.MOVE ? 5 : 20);
+            return new SkillTrigger(step, trigger, ticks, health, signal);
         }
 
         public enum Trigger {
-            SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT, HEALTH, TARGET, LOSETARGET, ENTERCOMBAT, EXITCOMBAT, KILL;
+            PHASE, SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT, HEALTH, TARGET, LOSETARGET, ENTERCOMBAT, EXITCOMBAT, KILL, SIGNAL, DESPAWN, MOVE, SWING, PRESSF, PICKUP, DROP, EQUIP;
 
             static Trigger parse(String value) {
                 return switch (value.toLowerCase(Locale.ROOT)) {
+                    case "phase" -> PHASE;
                     case "spawn" -> SPAWN;
                     case "load" -> LOAD;
                     case "interact", "rightclick" -> INTERACT;
@@ -129,6 +194,14 @@ public final class MobDefinition {
                     case "entercombat" -> ENTERCOMBAT;
                     case "exitcombat" -> EXITCOMBAT;
                     case "kill" -> KILL;
+                    case "signal" -> SIGNAL;
+                    case "despawn" -> DESPAWN;
+                    case "move" -> MOVE;
+                    case "swing", "leftclick" -> SWING;
+                    case "pressf", "swaphands" -> PRESSF;
+                    case "pickup", "itempickup" -> PICKUP;
+                    case "drop", "itemdrop" -> DROP;
+                    case "equip" -> EQUIP;
                     default -> null;
                 };
             }

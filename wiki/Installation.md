@@ -18,7 +18,7 @@
 
 ```
 plugins/BetterMob/
-├── config.yml        # DisabledPacks, Language, Debug, Stats, factions
+├── config.yml        # DisabledPacks, Language, Debug, Stats, BStats, UpdateCheck, factions
 ├── lang/             # message files (en.yml, de.yml, your own)
 ├── mobs/             # mob files
 ├── skills/           # skill files
@@ -36,6 +36,15 @@ plugins/BetterMob/
 - Folder names inside a pack are matched case-insensitively (`Mobs`, `mobs`).
 - If two mobs, skills or items share an ID, the one loaded first wins and the console
   logs a warning for the other.
+
+## Update notice
+
+On start and then every 6 hours BetterMob asks GitHub for the latest release of the plugin (`api.github.com/repos/HyperGaming99/bettermob/releases/latest`; only the version number and the release link are read, the request carries no data about your server). If that version is newer than the installed one, the console shows a message once per new version and players with `bettermob.admin` see it a few seconds after joining. Pre-releases like the rolling `dev-build` are ignored. Set `UpdateCheck: false` in `config.yml` to turn it off; it applies after the next server start. A failing request is ignored silently (visible with `/bettermob debug info`).
+
+
+## bStats
+
+BetterMob sends anonymous usage numbers (server count, Java and server version) to [bStats](https://bstats.org/plugin/bukkit/BetterMob/34490). Set `BStats: false` in `config.yml` to switch it off for BetterMob; it applies after the next server start. The global switch in `plugins/bStats/config.yml` turns it off for every plugin.
 
 ## Languages
 
@@ -82,6 +91,16 @@ Skills:
 ```
 
 `my_model_id` must exist in BetterModel. Test it first with `/bettermodel spawn my_model_id`.
+
+## WorldGuard (optional)
+
+With [WorldGuard](https://enginehub.org/worldguard) installed BetterMob adds:
+
+- the condition `region{r=spawn,arena}` for skills (true when the caster, or the target of the line, stands in one of these regions),
+- `Regions` and `NotRegions` in a mob's `Spawn` block ([Mobs](Mobs#natural-spawns)),
+- the region flag `bettermob-spawn`: `/region flag <region> bettermob-spawn deny` stops BetterMob natural spawn replacements and [spawners](Spawners) from spawning inside that region. Mobs spawned by command, egg, skill or the API are not affected.
+
+Region ids are compared case-insensitively. Without WorldGuard the `region` condition is never true (one warning in the console) and nothing else changes. BetterMob loads after WorldGuard (`softdepend`) and registers the flag while it loads.
 
 ## PlaceholderAPI (optional)
 

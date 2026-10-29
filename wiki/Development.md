@@ -16,6 +16,12 @@ mvn test
 
 JUnit 5 tests cover the line parsers (skill steps, conditions, mob triggers, drop lines, inline skills), that every former built-in mechanic name stays registered, that the language files match and every message key exists, that the permission nodes in the code match `plugin.yml`, the boss bar title placeholders and the skill statistics. `PackFilesTest` also parses every line of the YAML files shipped in `src/main/resources` and of any pack placed under `src/test/resources/packs/` (use the usual `Mobs/`, `Items/`, `Skills/` and `DropTables/` folder names). The workflow runs `mvn test` on every push and pull request, and a failing test stops the build and the release.
 
+## Folia smoke test
+
+The workflow `folia-smoke.yml` starts a real Folia server with the built jar and a small helper plugin (`examples/folia-smoke`) that spawns a BetterMob mob, runs a skill, damages and removes it. It fails when the log contains thread errors such as "off owning region", an exception or `SMOKE-FAIL`, or when the helper plugin never reports `SMOKE-DONE`. Pull requests into `dev`, `main` and `fixes/**` run it, the server log is kept as an artifact.
+
+To run it by hand: build with `mvn install -DskipTests`, build the helper with `mvn -f examples/folia-smoke/pom.xml -Plocal -Dbettermob.version=<version> package`, put both jars into `plugins/` of a Folia server with `eula=true` and copy `examples/folia-smoke/content/` into `plugins/BetterMob/`.
+
 ## Branches and releases
 
 - Work happens on `dev`. Every push builds the jar and replaces the rolling pre-release `dev-build`.

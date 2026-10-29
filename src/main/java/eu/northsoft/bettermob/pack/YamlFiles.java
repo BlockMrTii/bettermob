@@ -2,6 +2,7 @@ package eu.northsoft.bettermob.pack;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -17,6 +18,7 @@ public final class YamlFiles {
     private static void walk(File folder, List<File> result) {
         File[] children = folder.listFiles();
         if (children == null) return;
+        Arrays.sort(children);
         for (File child : children) {
             if (child.isDirectory()) walk(child, result);
             else if (child.getName().toLowerCase(Locale.ROOT).endsWith(".yml")) result.add(child);

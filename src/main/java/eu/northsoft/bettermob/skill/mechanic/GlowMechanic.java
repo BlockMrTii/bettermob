@@ -36,6 +36,6 @@ public final class GlowMechanic implements Mechanic {
             if (current == null || current.token() != token) return;
             active.remove(id);
             entity.setGlowing(before);
-        });
+        }, () -> active.remove(id));
     }
 }

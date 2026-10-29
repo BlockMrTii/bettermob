@@ -27,7 +27,7 @@ automatically, so a MythicMobs-style `my_mob:` block pasted into its own file wo
 
 | Field | Default | Description |
 |---|---|---|
-| `Type` | `ZOMBIE` | Vanilla entity type (any `EntityType`, case-insensitive) |
+| `Type` | `ZOMBIE` | Vanilla entity type (any living, spawnable `EntityType`, case-insensitive) |
 | `Display` | `&f<id>` | Name, `&` color codes |
 | `Model` | mob ID | BetterModel model attached automatically, see below |
 | `Health` | 20 | Max health |
@@ -86,7 +86,7 @@ The bar is shown to every player within `Range` blocks of the mob (same world) a
 
 | Option | Default | Description |
 |---|---|---|
-| `Title` | `<mob.name>` | Text of the bar. `&` colour codes, `<mob.name>` (the `Display`), `<mob.id>`, `<mob.hp>` and `<mob.maxhp>` (rounded up) and PlaceholderAPI placeholders without a player |
+| `Title` | `<mob.name>` | Text of the bar. `&` colour codes, `<mob.name>` (the `Display` of the active phase, else the mob's), `<mob.id>`, `<mob.hp>` and `<mob.maxhp>` (rounded up) and PlaceholderAPI placeholders without a player |
 | `Range` | 64 | Blocks around the mob in which players see the bar |
 | `Color` | `RED` | `PINK`, `BLUE`, `RED`, `GREEN`, `YELLOW`, `PURPLE` or `WHITE` |
 | `Style` | `SOLID` | `SOLID`, `SEGMENTED_6`, `SEGMENTED_10`, `SEGMENTED_12` or `SEGMENTED_20` |
@@ -183,6 +183,36 @@ Leader:
 - `OnLeaderDeath` decides what happens when the leader is gone: `FIND` (default) looks for another leader, `STAY` stops following, `HOME` walks back to the spawn point.
 - Only `Leader` is a Paper goal; it looks for its leader once per second. The group alert runs when a member is damaged. Neither scans every tick, and invalid options are skipped with a warning.
 
+## Phases
+
+```yaml
+Phases:
+  - Health: '<70%'
+    Display: '&cAngry Boss'
+    Options:
+      MovementSpeed: 0.3
+      Silent: true
+    Equipment:
+      - IRON_SWORD:HAND
+    Skills:
+      - sound{s=entity.ender_dragon.growl} @self ~onPhase
+      - skill{s=claw} @target ~onDamaged
+      - skill{s=stomp} @self ~onTimer:40
+  - Health: '<=30%'
+    Model: boss_enraged
+    Skills:
+      - skill{s=rage} @self ~onPhase
+      - skill{s=charge} @target ~onMove:5
+```
+
+- `Health` is a threshold like `<70%`, `<=30%` or an absolute number (`<40`). The **last** matching phase wins, so list phases from high to low health. If none matches, the base mob is active.
+- Entering a later phase on damage runs its `~onPhase` skills once. Staying in that phase does not repeat them. Healing selects the highest matching phase again without running start skills. Crossing down again can start that phase again. `OnStart` remains supported as a list of skill steps without trigger suffixes, with the same entry rules.
+- A phase's `Skills` replace the entire active trigger set, including events, signals, health, timers and movement. An omitted or empty `Skills` list disables all base triggers while that phase is active. `Replace` is a deprecated compatibility field and has no effect.
+- Timer and move tasks are cancelled and restarted with the active phase's intervals on every transition. Returning to the base mob restores its triggers and intervals.
+- `Display`, `Model` and individual `Options` inherit omitted values from the base mob. Phase options support the same fields as base options. `Equipment`, when supplied, replaces all equipment; `[]` clears it. Omitting it restores the base equipment. Healing reverses phase overrides.
+- Phase state is stored on the entity and restored on load without repeating start skills. `/bettermob reload` reapplies the phase selected by current health using the new definitions, including when phases are removed or reordered.
+- `/bettermob info` shows each phase definition. `/bettermob validate` checks phase thresholds, fields, options, equipment slots and items, skill references, and models when the relevant model plugin is installed. Invalid entries are reported with their phase index; malformed thresholds and skill lines are skipped when loading.
+
 ## Models
 
 BetterMob attaches a model in three ways:
@@ -232,22 +262,28 @@ An unknown `Material` is logged with the mob id and the default egg is used. Per
 
 ## Natural spawns
 
-A `Spawn` block makes the mob replace vanilla spawns:
+A `Spawn` block makes the mob replace vanilla spawns or add independent spawns around players:
 
 ```yaml
 Type: SKELETON
 Spawn:
+  Action: REPLACE           # REPLACE (default) | ADD
   Worlds: [world]           # optional, empty = every world
   Biomes: [desert, plains]  # optional, empty = every biome
   Time: night               # day | night | any (default)
-  Chance: 0.3               # 0-1, rolled per natural spawn, default 1
+  Chance: 0.3               # 0-1, rolled per spawn check, default 1
+  Regions: [wilderness]     # optional, WorldGuard: only inside one of these regions
+  NotRegions: [spawn]       # optional, WorldGuard: never inside these regions
+  Cooldown: 60              # ADD only: minimum seconds per player and mob (default 60)
+  MaxNearby: 3              # ADD only: max mobs of this id within 48 blocks (default 3)
 ```
 
-Whenever the server spawns a vanilla mob of the same `Type` **naturally** (not from spawners, eggs or commands) and the world, biome, time of day and `Chance` all fit, that spawn is replaced by this mob. `Worlds` and `Biomes` take lists (biome ids with or without `minecraft:`).
+With `Action: REPLACE` (the default), whenever the server spawns a vanilla mob of the same `Type` **naturally** (not from spawners, eggs or commands) and the world, biome, time of day and `Chance` all fit, that spawn is replaced by this mob. With `Action: ADD`, BetterMob periodically rolls an independent land spawn 24–48 blocks around survival and adventure players, respecting `Cooldown` and `MaxNearby`. `Worlds` and `Biomes` take lists (biome ids with or without `minecraft:`).
 
+- `Regions` and `NotRegions` take WorldGuard region ids and need [WorldGuard](Installation#worldguard-optional). Without WorldGuard a rule with `Regions` never matches and a rule with only `NotRegions` is not limited. The flag `bettermob-spawn: deny` of a region also stops BetterMob from replacing natural spawns there.
 - Without a `Spawn` block nothing is replaced.
 - If several mobs match, the first one that passes its chance wins.
-- A `Worlds` or `Biomes` that is not a list, a `Chance` that is not a number or an unknown `Time` logs a warning and the whole `Spawn` block is ignored, so a typo never widens the spawn.
+- A `Worlds`, `Biomes`, `Regions` or `NotRegions` that is not a list, a `Chance` that is not a number or an unknown `Time` logs a warning and the whole `Spawn` block is ignored, so a typo never widens the spawn.
 
 For spawns you place yourself see [Spawners](Spawners).
 

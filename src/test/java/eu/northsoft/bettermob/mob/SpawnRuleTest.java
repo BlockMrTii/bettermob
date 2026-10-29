@@ -85,4 +85,50 @@ class SpawnRuleTest {
         assertTrue(new SpawnRule(List.of(), List.of(), SpawnRule.Time.ANY, 5).matches("world", "plains", NOON, 0.99));
         assertFalse(new SpawnRule(List.of(), List.of(), SpawnRule.Time.ANY, -1).matches("world", "plains", NOON, 0));
     }
+
+    @Test
+    void regionListsLimitWhereTheRuleApplies() {
+        SpawnRule inside = new SpawnRule(List.of(), List.of(), SpawnRule.Time.ANY, 1, List.of("Arena", "camp"), List.of());
+        assertTrue(inside.usesRegions());
+        assertTrue(inside.matches("world", "plains", NOON, 0, java.util.Set.of("arena")));
+        assertFalse(inside.matches("world", "plains", NOON, 0, java.util.Set.of("spawn")));
+        assertFalse(inside.matches("world", "plains", NOON, 0));
+        SpawnRule outside = new SpawnRule(List.of(), List.of(), SpawnRule.Time.ANY, 1, List.of(), List.of("Spawn"));
+        assertTrue(outside.matches("world", "plains", NOON, 0));
+        assertTrue(outside.matches("world", "plains", NOON, 0, java.util.Set.of("arena")));
+        assertFalse(outside.matches("world", "plains", NOON, 0, java.util.Set.of("spawn", "arena")));
+        assertFalse(new SpawnRule(List.of(), List.of(), SpawnRule.Time.ANY, 1).usesRegions());
+    }
+
+    @Test
+    void regionListsAreParsedAndMustBeLists() {
+        List<String> invalid = new ArrayList<>();
+        SpawnRule rule = parse("Regions:\n  - arena\nNotRegions:\n  - spawn\n", invalid);
+        assertEquals(List.of("arena"), rule.regions());
+        assertEquals(List.of("spawn"), rule.notRegions());
+        assertNull(parse("Regions: arena", invalid));
+        assertEquals(List.of("Regions"), invalid);
+    }
+
+    @Test
+    void addRuleParsesAndKeepsItsLimits() {
+        List<String> invalid = new ArrayList<>();
+        SpawnRule rule = parse("Action: ADD\nWorlds: [world]\nBiomes: [TAIGA]\nChance: 0.05\nCooldown: 120\nMaxNearby: 2", invalid);
+        assertEquals(SpawnRule.Action.ADD, rule.action());
+        assertEquals(120, rule.cooldown());
+        assertEquals(2, rule.maxNearby());
+        assertTrue(rule.matches("world", "minecraft:taiga", NOON, 0.04));
+        assertFalse(rule.matches("world", "plains", NOON, 0));
+        assertTrue(rule.matchesLocation("world", "minecraft:taiga", NOON));
+        assertTrue(invalid.isEmpty());
+    }
+
+    @Test
+    void invalidActionAndLimitsRejectRule() {
+        List<String> invalid = new ArrayList<>();
+        assertNull(parse("Action: RANDOM", invalid));
+        assertNull(parse("Cooldown: later", invalid));
+        assertNull(parse("MaxNearby: many", invalid));
+        assertEquals(List.of("Action", "Cooldown", "MaxNearby"), invalid);
+    }
 }

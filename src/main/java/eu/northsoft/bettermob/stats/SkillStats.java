@@ -23,6 +23,7 @@ public final class SkillStats {
     private static final double DEFAULT_WARN_MILLIS = 50;
 
     private final Map<String, Entry> entries = new ConcurrentHashMap<>();
+    private final Map<String, Entry> mechanics = new ConcurrentHashMap<>();
     private final AtomicInteger pending = new AtomicInteger();
     private volatile boolean enabled;
     private volatile double warnMillis = DEFAULT_WARN_MILLIS;
@@ -52,8 +53,23 @@ public final class SkillStats {
         entry.maxNanos.accumulateAndGet(nanos, Math::max);
     }
 
+    public void recordMechanic(String mechanic, long nanos) {
+        Entry entry = mechanics.computeIfAbsent(mechanic, key -> new Entry());
+        entry.calls.increment();
+        entry.totalNanos.add(nanos);
+        entry.maxNanos.accumulateAndGet(nanos, Math::max);
+    }
+
     public List<Row> top(int limit) {
-        return entries.entrySet().stream()
+        return rank(entries, limit);
+    }
+
+    public List<Row> topMechanics(int limit) {
+        return rank(mechanics, limit);
+    }
+
+    private static List<Row> rank(Map<String, Entry> source, int limit) {
+        return source.entrySet().stream()
                 .map(entry -> row(entry.getKey(), entry.getValue()))
                 .sorted(Comparator.comparingDouble(Row::totalMillis).reversed())
                 .limit(limit)
@@ -75,6 +91,7 @@ public final class SkillStats {
 
     public void reset() {
         entries.clear();
+        mechanics.clear();
         pending.set(0);
     }
 

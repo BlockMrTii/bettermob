@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.drop;
 
+import eu.northsoft.bettermob.util.Duplicates;
 import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.item.ItemDefinition;
@@ -45,6 +46,7 @@ public final class DropRegistry {
         folder.mkdirs();
         Map<String, DropTable> loaded = new LinkedHashMap<>();
         Map<String, String> prints = new LinkedHashMap<>();
+        Duplicates duplicates = new Duplicates();
         warned.clear();
         for (File sourceFolder : packScanner.foldersFor("droptables")) {
             for (File file : YamlFiles.collect(sourceFolder)) {
@@ -53,7 +55,7 @@ public final class DropRegistry {
                     ConfigurationSection section = config.getConfigurationSection(id);
                     if (section == null || !section.isList("Drops")) continue;
                     if (loaded.containsKey(id.toLowerCase(Locale.ROOT))) {
-                        plugin.messages().warn("drop.duplicate", "table", id, "folder", sourceFolder.getPath());
+                        duplicates.add(id, sourceFolder.getPath());
                         continue;
                     }
                     loaded.put(id.toLowerCase(Locale.ROOT), new DropTable(id,
@@ -64,6 +66,7 @@ public final class DropRegistry {
                 }
             }
         }
+        duplicates.report((dup, folder, count) -> plugin.messages().warn("drop.duplicate", "table", dup, "folder", folder, "count", count));
         tables = loaded;
         fingerprints = prints;
         plugin.messages().info("drop.loaded", "count", loaded.size());

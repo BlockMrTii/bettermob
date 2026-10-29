@@ -11,8 +11,8 @@
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <bettermob.groupId>com.github.HyperGaming99</bettermob.groupId>
-        <bettermob.version>v1.1.7.1</bettermob.version>
-        <example.excludes>**/ModernEvents.java</example.excludes>
+        <bettermob.version>v1.2.0</bettermob.version>
+        <example.excludes>**/None.java</example.excludes>
     </properties>
 
     <repositories>

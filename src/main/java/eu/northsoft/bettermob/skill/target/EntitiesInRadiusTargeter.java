@@ -1,7 +1,7 @@
 package eu.northsoft.bettermob.skill.target;
 
+import eu.northsoft.bettermob.skill.InlineSkills;
 import eu.northsoft.bettermob.skill.SkillContext;
-import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.Target;
 import eu.northsoft.bettermob.util.RegionEntities;
 import org.bukkit.Location;
@@ -27,12 +27,25 @@ public final class EntitiesInRadiusTargeter implements Targeter {
     private final boolean playersOnly;
     private final int defaultLimit;
     private final boolean nearOrigin;
+    private final boolean cone;
 
     public EntitiesInRadiusTargeter(CandidateFilters filters, boolean playersOnly, int defaultLimit, boolean nearOrigin) {
+        this(filters, playersOnly, defaultLimit, nearOrigin, false);
+    }
+
+    public EntitiesInRadiusTargeter(CandidateFilters filters, boolean playersOnly, int defaultLimit, boolean nearOrigin, boolean cone) {
         this.filters = filters;
         this.playersOnly = playersOnly;
         this.defaultLimit = defaultLimit;
         this.nearOrigin = nearOrigin;
+        this.cone = cone;
+    }
+
+    static boolean inCone(double yaw, double halfAngle, double dx, double dz) {
+        if (dx * dx + dz * dz < 1.0e-9) return true;
+        double toTarget = Math.toDegrees(Math.atan2(-dx, dz));
+        double diff = Math.abs(((toTarget - yaw) % 360 + 540) % 360 - 180);
+        return diff <= halfAngle;
     }
 
     private final Map<String, List<String>> conditionLines = new ConcurrentHashMap<>();
@@ -41,7 +54,7 @@ public final class EntitiesInRadiusTargeter implements Targeter {
         List<String> cached = conditionLines.get(raw);
         if (cached != null) return cached;
         if (conditionLines.size() >= 1024) conditionLines.clear();
-        List<String> parsed = SkillEngine.splitInline(raw);
+        List<String> parsed = InlineSkills.splitInline(raw);
         conditionLines.put(raw, parsed);
         return parsed;
     }
@@ -51,13 +64,18 @@ public final class EntitiesInRadiusTargeter implements Targeter {
     @Override
     public List<Target> resolve(Map<String, String> params, SkillContext context) {
         Location center = nearOrigin && context.origin() != null ? context.origin() : context.caster().getLocation();
-        double radius = parseFloat(firstParam(params, "r", "radius"), playersOnly ? 10f : 5f);
+        double radius = parseFloat(firstParam(params, "r", "radius", "range"), cone ? 16f : playersOnly ? 10f : 5f);
+        double halfAngle = parseFloat(firstParam(params, "a", "angle"), 90f) / 2.0;
+        double yaw = center.getYaw() + parseFloat(firstParam(params, "rot", "rotation"), 0f);
+        boolean targetPlayers = !"false".equalsIgnoreCase(firstParam(params, "targetplayers", "tp"));
         List<String> conditions = params.containsKey("conditions") ? conditionLinesOf(params.get("conditions")) : List.of();
         double radiusSquared = radius * radius;
         List<Hit> hits = new ArrayList<>();
         for (Entity entity : RegionEntities.near(center, radius)) {
             if (!(entity instanceof LivingEntity living) || entity instanceof ArmorStand || living.isDead()) continue;
             if (playersOnly && !(entity instanceof Player)) continue;
+            if (cone && (living == context.caster() || (!targetPlayers && entity instanceof Player)
+                    || !inCone(yaw, halfAngle, living.getLocation().getX() - center.getX(), living.getLocation().getZ() - center.getZ()))) continue;
             double distance = living.getLocation().distanceSquared(center);
             if (distance > radiusSquared) continue;
             if (filters.matches(living, conditions, context)) hits.add(new Hit(living, distance));

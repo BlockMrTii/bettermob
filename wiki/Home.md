@@ -18,7 +18,8 @@ unsupported is logged as a warning and skipped, it never breaks the rest of a sk
 | [Items](Items) | Custom items, `~onUse` skills, `/bettermob give` |
 | [Pack compatibility](Pack-Compatibility) | Which MythicMobs packs were tried and how far they run |
 | [Packs](Packs) | Content packs, importing MythicMobs packs |
-| [Developer API](Developer-API) | Events, custom mechanics, Maven dependency |
+| [Developer API](Developer-API) | Maven dependency, custom mechanics, conditions, targeters, placeholders, package layout |
+| [API events](API-Events) | Every event with its getters and when it fires |
 | [Development](Development) | Building, tests, code layout, how to add a mechanic |
 | [Troubleshooting](Troubleshooting) | "I only see a pig", warnings in the console, and more |
 

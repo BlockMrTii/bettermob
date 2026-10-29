@@ -3,6 +3,7 @@ package eu.northsoft.bettermob.item;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
@@ -35,7 +36,7 @@ public final class EggItems {
         String name = definition.egg != null && definition.egg.name() != null ? definition.egg.name() : definition.displayName;
         meta.displayName(LegacyComponentSerializer.legacyAmpersand().deserialize(name).decoration(TextDecoration.ITALIC, false));
         meta.lore(List.of(Component.text("BetterMob: " + definition.id).decoration(TextDecoration.ITALIC, false)
-                .color(net.kyori.adventure.text.format.NamedTextColor.GRAY)));
+                .color(NamedTextColor.GRAY)));
         meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, definition.id);
         stack.setItemMeta(meta);
         return stack;

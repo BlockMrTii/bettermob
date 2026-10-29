@@ -54,6 +54,7 @@ class KillStatsTest {
         KillStats stats = new KillStats();
         stats.record(alice, "Alice", "goblin");
         stats.record(alice, "Alice", "goblin");
+        stats.record(alice, "Alice", "boss.v1");
         stats.record(bob, "Bob", "orc");
         assertTrue(stats.dirty());
         File file = new File(folder, "kills.yml");
@@ -63,6 +64,7 @@ class KillStatsTest {
         KillStats loaded = new KillStats();
         loaded.load(YamlConfiguration.loadConfiguration(file));
         assertEquals(2, loaded.count(alice, "goblin"));
+        assertEquals(1, loaded.count(alice, "boss.v1"));
         assertEquals(1, loaded.total(bob));
         assertEquals("Alice", loaded.top(null, 1).get(0).name());
         assertFalse(loaded.dirty());

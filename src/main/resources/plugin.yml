@@ -1,11 +1,11 @@
 name: BetterMob
-version: '1.1.8'
+version: '1.1.9'
 main: eu.northsoft.bettermob.BetterMobPlugin
 api-version: '1.21'
 folia-supported: true
 authors: [northsoft, HyperGaming99]
 description: Registriert eigene Mobs in einer Datei und rendert sie ueber BetterModel oder ModelEngine.
-softdepend: [BetterModel, ModelEngine, PlaceholderAPI]
+softdepend: [BetterModel, ModelEngine, PlaceholderAPI, WorldGuard]
 commands:
   bettermob:
     description: Verwaltet BetterMob

@@ -17,7 +17,7 @@ Everything public is in `eu.northsoft.bettermob.api`.
 <dependency>
     <groupId>com.github.HyperGaming99</groupId>
     <artifactId>bettermob</artifactId>
-    <version>v1.1.8</version> <!-- a release tag -->
+    <version>v1.1.9</version> <!-- a release tag -->
     <scope>provided</scope>
 </dependency>
 ```
@@ -33,10 +33,27 @@ Everything public is in `eu.northsoft.bettermob.api`.
 <dependency>
     <groupId>eu.northsoft</groupId>
     <artifactId>bettermob</artifactId>
-    <version>1.1.8</version>
+    <version>1.1.9</version>
     <scope>provided</scope>
 </dependency>
 ```
+
+### Dev version
+
+The newest state of the `dev` branch has a Maven artifact too, so you can build against API changes before they are released:
+
+```xml
+<dependency>
+    <groupId>com.github.HyperGaming99</groupId>
+    <artifactId>bettermob</artifactId>
+    <version>dev-SNAPSHOT</version>
+    <scope>provided</scope>
+</dependency>
+```
+
+- `dev-SNAPSHOT` is the head of `dev`. JitPack builds it on the first request, which can take a few minutes. Maven checks snapshots about once a day; `mvn -U` forces a fresh download. For a build that never changes, use the hash of a `dev` commit as the version instead.
+- The matching plugin jar for the test server is the rolling pre-release [`dev-build`](https://github.com/HyperGaming99/bettermob/releases/tag/dev-build): every push to `dev` replaces it. Run your plugin against that jar when you compile against `dev-SNAPSHOT`.
+- The dev API can change between commits. Do not release a plugin that needs `dev-SNAPSHOT`; wait for the tagged release and depend on that.
 
 ## Using the API
 
@@ -58,17 +75,7 @@ api.reload();                                    // same as /bettermob reload, l
 
 ## Events
 
-`BetterMobSpawnEvent` and `BetterMobDeathEvent` (package `eu.northsoft.bettermob.api.event`).
-Both expose the entity and its `MobInfo`.
-
-Two more events are **cancellable** (BetterMob 1.1.8 or newer):
-
-| Event | Fired when | Getters |
-|---|---|---|
-| `BetterMobDamageEvent` | A BetterMob mob is hit by an entity or a projectile (`isMobVictim()` is true) or hits something (false); one event per mob involved. Skill damage counts too | `getEntity()`, `getMob()`, `getOther()`, `isMobVictim()`, `getCause()`, `getDamage()`; `setDamage(double)` changes the damage, `setCancelled(true)` cancels the hit |
-| `BetterMobSkillEvent` | A named skill is about to run: after its `Conditions` and `TargetConditions` passed, before its `Cooldown` starts. Inline skills and single mechanic lines are not skills and fire nothing | `getSkillId()`, `getCaster()`, `getTrigger()` (may be null), `getMob()` (null when the caster is not a BetterMob mob); `setCancelled(true)` stops the skill without using its cooldown |
-
-`getDamage()` of the damage event is the damage after the mob's `DamageModifiers` were applied, so what you read is what the mob takes unless you change it. When no plugin listens to an event nothing is created for it.
+Every event lives in a package that says what it is about: `eu.northsoft.bettermob.api.event.mob`, `.skill`, `.item`, `.spawner` and `.system`. All of them, with their getters and the moment they fire, are on the [API events](API-Events) page. No event object is created while nobody listens to it.
 
 ```java
 @EventHandler
@@ -76,6 +83,20 @@ public void onDamage(BetterMobDamageEvent event) {
     if (event.isMobVictim() && event.getOther() instanceof Player) event.setDamage(event.getDamage() * 0.5);
 }
 ```
+
+## Package layout
+
+| Package | Contents |
+|---|---|
+| `eu.northsoft.bettermob.api` | `BetterMobAPI` (the service) and `MobInfo` |
+| `eu.northsoft.bettermob.api.custom` | `CustomMechanic`, `CustomCondition`, `CustomTargeter`, `CustomPlaceholder` and their context records `MechanicContext`, `ConditionContext`, `TargeterContext`, `PlaceholderContext` |
+| `eu.northsoft.bettermob.api.event.mob` | Events about a mob: spawn, load, despawn, death, damage, target, kill, combat, health, phase, signal, group alert, drop |
+| `eu.northsoft.bettermob.api.event.skill` | Skill, trigger and mechanic events |
+| `eu.northsoft.bettermob.api.event.item` | Item events |
+| `eu.northsoft.bettermob.api.event.spawner` | Spawner events |
+| `eu.northsoft.bettermob.api.event.system` | The reload event |
+
+**Moved in this version:** before 1.2.0 the custom types and the contexts sat directly in `eu.northsoft.bettermob.api` and the four old events in `eu.northsoft.bettermob.api.event`. Change your imports (`api.CustomMechanic` -> `api.custom.CustomMechanic`, `api.event.BetterMobDamageEvent` -> `api.event.mob.BetterMobDamageEvent`, `api.event.BetterMobSkillEvent` -> `api.event.skill.BetterMobSkillEvent`, and so on) and rebuild; a plugin compiled against the old packages does not load the new classes.
 
 ## Custom mechanics
 
@@ -126,15 +147,27 @@ Skills:
 - An exception thrown by your code is caught and logged. A failing condition counts as not met, a failing targeter as no target, a failing placeholder keeps its text and is logged with the namespace and your plugin.
 - `/bettermob validate` knows registered names once your plugin is enabled.
 
+## Custom triggers
+
+An addon that runs `~onWave`-style lines itself can tell BetterMob about the trigger so it stops warning "could not be parsed" for those lines. This needs **BetterMob 1.1.9 or newer**.
+
+```java
+api.registerTrigger(this, "onWave");
+```
+
+- `registerTrigger(owner, name)` takes the name with or without `on` and returns `false` for a built-in trigger or a name that is already taken. `unregisterTrigger(name)` removes one; an addon's triggers are removed when it is disabled.
+- BetterMob only accepts the lines when loading mobs and items and in `/bettermob validate`; it never runs them. Running them is up to the addon.
+- Warnings for unparsed trigger lines are held until the first server tick, so an addon that registers in its own `onEnable` is already known by then.
+
 ## Example plugin
 
-[`examples/api-example`](https://github.com/HyperGaming99/bettermob/tree/main/examples/api-example) is a small plugin built on this API: it registers a `heal{amount=4}` mechanic, a `?daytime` condition, a `@NearestPlayer` targeter and an `<example.world>` placeholder, listens to `BetterMobSpawnEvent` and `BetterMobDeathEvent` and has a `/apiexample <mob>` command that spawns a mob. `ModernEvents` listens to `BetterMobDamageEvent` and `BetterMobSkillEvent`; it needs BetterMob 1.1.8 or newer, so the default build (against the published jar) leaves it out and the plugin logs that at start. Build with the `local` profile below to include it.
+[`examples/api-example`](https://github.com/HyperGaming99/bettermob/tree/main/examples/api-example) is a small plugin built on this API: it registers a `heal{amount=4}` mechanic, a `?daytime` condition, a `@NearestPlayer` targeter and an `<example.world>` placeholder, listens to `BetterMobSpawnEvent` and `BetterMobDeathEvent` and has a `/apiexample <mob>` command that spawns a mob. `ModernEvents` listens to `BetterMobDamageEvent` and `BetterMobSkillEvent`.
 
 ```bash
 mvn -f examples/api-example/pom.xml package
 ```
 
-This resolves `com.github.HyperGaming99:bettermob:v1.1.8` from JitPack. To compile it against your own checkout instead:
+This resolves `com.github.HyperGaming99:bettermob:v1.2.0` from JitPack, so it needs the released 1.2.0 (the API packages changed in that version). Before that release exists, or to compile it against your own checkout, use the local profile:
 
 ```bash
 mvn install -DskipTests

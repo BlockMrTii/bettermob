@@ -25,22 +25,32 @@ public final class Tasks {
     }
 
     public static void runLater(Plugin plugin, Entity entity, long ticks, Runnable task) {
+        runLater(plugin, entity, ticks, task, null);
+    }
+
+    public static void runLater(Plugin plugin, Entity entity, long ticks, Runnable task, Runnable retired) {
         if (FOLIA) {
             long delay = Math.max(1, ticks);
             long startedAt = System.nanoTime();
-            entity.getScheduler().runDelayed(plugin, scheduled -> task.run(), () -> runAfterDeath(plugin, entity, delay, startedAt, task), delay);
+            var scheduled = entity.getScheduler().runDelayed(plugin, t -> task.run(), () -> runAfterDeath(plugin, entity, delay, startedAt, task, retired), delay);
+            if (scheduled == null && retired != null) retired.run();
             return;
         }
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (Bukkit.getEntity(entity.getUniqueId()) != null || isDeadLiving(entity)) task.run();
+            else if (retired != null) retired.run();
         }, ticks);
     }
 
-    private static void runAfterDeath(Plugin plugin, Entity entity, long delay, long startedAt, Runnable task) {
-        if (!(entity instanceof LivingEntity living) || !Bukkit.isOwnedByCurrentRegion(living) || living.getHealth() > 0) return;
+    private static void runAfterDeath(Plugin plugin, Entity entity, long delay, long startedAt, Runnable task, Runnable retired) {
+        if (!(entity instanceof LivingEntity living) || !Bukkit.isOwnedByCurrentRegion(living) || living.getHealth() > 0) {
+            if (retired != null) retired.run();
+            return;
+        }
         long elapsed = (System.nanoTime() - startedAt) / NANOS_PER_TICK;
-        Bukkit.getRegionScheduler().runDelayed(plugin, living.getLocation(), scheduled -> task.run(), Math.max(1, delay - elapsed));
+        var scheduled = Bukkit.getRegionScheduler().runDelayed(plugin, living.getLocation(), t -> task.run(), Math.max(1, delay - elapsed));
+        if (scheduled == null && retired != null) retired.run();
     }
 
     private static boolean isDeadLiving(Entity entity) {
@@ -90,11 +100,16 @@ public final class Tasks {
     }
 
     public static boolean runOwnedAt(Plugin plugin, Location location, Runnable task) {
+        return runOwnedAt(plugin, location, task, null);
+    }
+
+    public static boolean runOwnedAt(Plugin plugin, Location location, Runnable task, Runnable rejected) {
         if (!FOLIA || Bukkit.isOwnedByCurrentRegion(location)) {
             task.run();
             return true;
         }
-        Bukkit.getRegionScheduler().run(plugin, location, scheduled -> task.run());
+        var scheduled = Bukkit.getRegionScheduler().run(plugin, location, t -> task.run());
+        if (scheduled == null && rejected != null) rejected.run();
         return false;
     }
 

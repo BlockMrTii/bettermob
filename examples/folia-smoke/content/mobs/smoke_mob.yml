@@ -1,0 +1,29 @@
+smoke_mob:
+  Type: zombie
+  Display: '&cSmoke Mob'
+  Health: 20
+  Damage: 2
+  Faction: Smoke
+  Group: smoke
+  Options:
+    Silent: true
+    PreventSunburn: true
+  Modules:
+    ThreatTable: true
+    BossBar:
+      Title: '<mob.name> <mob.hp>/<mob.maxhp>'
+      Range: 32
+  Skills:
+    - sound{s=entity.zombie.ambient} @self ~onSpawn
+    - skill{s=smoke_skill} @self ~onDamaged
+    - setvariable{var=caster.hits;value=1} @self ~onDamaged
+    - sound{s=entity.zombie.hurt} @self ~onHealth<50%
+    - sound{s=entity.zombie.death} @self ~onDeath
+    - sound{s=entity.zombie.step} @self ~onMove:5
+    - sound{s=entity.zombie.ambient} @self ~onDespawn
+    - sound{s=entity.zombie.ambient} @self ~onTimer:20
+  Phases:
+    - Health: '<70%'
+      Display: '&cSmoke Angry'
+      OnStart:
+        - sound{s=entity.zombie.ambient} @self
