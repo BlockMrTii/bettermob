@@ -6,11 +6,16 @@ import org.bukkit.entity.Mob;
 import org.bukkit.util.Vector;
 
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static eu.northsoft.bettermob.skill.Params.firstParam;
 import static eu.northsoft.bettermob.skill.Params.parseInt;
 
 public final class StunMechanic implements Mechanic {
+    private record State(boolean aware, boolean gravity, int count) {}
+
+    private final Map<UUID, State> active = new ConcurrentHashMap<>();
     private final SkillEngine engine;
 
     public StunMechanic(SkillEngine engine) {
@@ -29,7 +34,11 @@ public final class StunMechanic implements Mechanic {
         String animation = firstParam(p, "state", "animation", "s");
         if (animation != null) engine.betterModel().play(engine.mobManager().trackerFor(mob.getUniqueId()), animation);
 
-        boolean hadGravity = mob.hasGravity();
+        UUID id = mob.getUniqueId();
+        State current = active.get(id);
+        active.put(id, current == null
+                ? new State(mob.isAware(), mob.hasGravity(), 1)
+                : new State(current.aware(), current.gravity(), current.count() + 1));
         if (ai) mob.setAware(false);
         if (gravity) mob.setGravity(false);
         Runnable[] cancelFreeze = {() -> { }};
@@ -41,8 +50,18 @@ public final class StunMechanic implements Mechanic {
         }
         Tasks.runLater(engine.plugin(), mob, ticks, () -> {
             cancelFreeze[0].run();
-            if (ai) mob.setAware(true);
-            if (gravity) mob.setGravity(hadGravity);
+            State latest = active.get(id);
+            if (latest == null) return;
+            if (latest.count() <= 1) {
+                active.remove(id);
+                mob.setAware(latest.aware());
+                mob.setGravity(latest.gravity());
+            } else {
+                active.put(id, new State(latest.aware(), latest.gravity(), latest.count() - 1));
+            }
+        }, () -> {
+            cancelFreeze[0].run();
+            active.remove(id);
         });
     }
 }

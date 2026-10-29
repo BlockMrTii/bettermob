@@ -1,6 +1,7 @@
 package eu.northsoft.bettermob.skill.condition;
 
 import eu.northsoft.bettermob.integration.PlaceholderHook;
+import eu.northsoft.bettermob.skill.Arguments;
 import eu.northsoft.bettermob.skill.Params;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
@@ -13,20 +14,20 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-final class ConditionParams {
+public final class ConditionParams {
     private static final Pattern PLACEHOLDER = Pattern.compile("<placeholder\\.([^<>\\s{}\\[\\];=\"']{1,64})>");
 
     private ConditionParams() {}
 
-    static String resolve(SkillEngine engine, String params, SkillContext context, Target override) {
+    public static String resolve(SkillEngine engine, String params, SkillContext context, Target override) {
         if (params == null || params.indexOf('<') < 0) return params;
-        String text = params;
-        if (!engine.placeholders().isEmpty()) text = engine.placeholders().apply(text, context);
+        String text = engine == null ? Arguments.resolve(params, context.arguments(), name -> { }) : engine.argumentValue(params, context);
+        if (engine != null && !engine.placeholders().isEmpty()) text = engine.placeholders().apply(text, context);
         Entity target = override != null && override.entity() != null ? override.entity() : context.trigger();
-        Map<String, String> caster = engine.state().existingVariablesOf(context.caster().getUniqueId());
-        Map<String, String> targetScope = target == null ? null : engine.state().existingVariablesOf(target.getUniqueId());
+        Map<String, String> caster = engine == null || context.caster() == null ? null : engine.state().existingVariablesOf(context.caster().getUniqueId());
+        Map<String, String> targetScope = engine == null || target == null ? null : engine.state().existingVariablesOf(target.getUniqueId());
         text = SkillEngine.replaceVariables(text, context.variables(), caster, targetScope);
-        if (text.indexOf("<caster.name>") >= 0) text = text.replace("<caster.name>", Params.stripPlaceholderValue(context.caster().getName()));
+        if (context.caster() != null && text.indexOf("<caster.name>") >= 0) text = text.replace("<caster.name>", Params.stripPlaceholderValue(context.caster().getName()));
         if (target != null && text.indexOf("<target.name>") >= 0) text = text.replace("<target.name>", Params.stripPlaceholderValue(target.getName()));
         if (text.indexOf("<placeholder.") >= 0) text = papi(text, playerOf(context, target));
         return text;

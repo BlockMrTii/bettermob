@@ -61,6 +61,6 @@ public final class SpeakMechanic implements Mechanic {
         Tasks.runLater(engine.plugin(), bubble, ticks, () -> {
             bubbles.remove(caster.getUniqueId(), current);
             bubble.remove();
-        });
+        }, () -> bubbles.remove(caster.getUniqueId(), current));
     }
 }

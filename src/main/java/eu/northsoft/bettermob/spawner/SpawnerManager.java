@@ -157,12 +157,22 @@ public final class SpawnerManager {
         boolean foreignRegion = false;
         for (int x = centerX - chunkRadius; x <= centerX + chunkRadius; x++) {
             for (int z = centerZ - chunkRadius; z <= centerZ + chunkRadius; z++) {
-                if (!plugin.getServer().isOwnedByCurrentRegion(world, x, z)) {
-                    foreignRegion = true;
-                    continue;
-                }
                 if (!world.isChunkLoaded(x, z)) {
                     notLoaded = true;
+                    continue;
+                }
+                if (!plugin.getServer().isOwnedByCurrentRegion(world, x, z)) {
+                    foreignRegion = true;
+                    int chunkX = x;
+                    int chunkZ = z;
+                    Tasks.runAt(plugin, new Location(world, (chunkX << 4) + 8, center.getY(), (chunkZ << 4) + 8), () -> {
+                        if (!world.isChunkLoaded(chunkX, chunkZ)) return;
+                        Chunk foreign = world.getChunkAt(chunkX, chunkZ, false);
+                        if (foreign == null || !foreign.isEntitiesLoaded()) return;
+                        for (Entity entity : foreign.getEntities()) {
+                            if (entity.getScoreboardTags().contains(spawner.tag())) spawner.alive.add(entity.getUniqueId());
+                        }
+                    });
                     continue;
                 }
                 Chunk chunk = world.getChunkAt(x, z, false);

@@ -262,20 +262,23 @@ An unknown `Material` is logged with the mob id and the default egg is used. Per
 
 ## Natural spawns
 
-A `Spawn` block makes the mob replace vanilla spawns:
+A `Spawn` block makes the mob replace vanilla spawns or add independent spawns around players:
 
 ```yaml
 Type: SKELETON
 Spawn:
+  Action: REPLACE           # REPLACE (default) | ADD
   Worlds: [world]           # optional, empty = every world
   Biomes: [desert, plains]  # optional, empty = every biome
   Time: night               # day | night | any (default)
-  Chance: 0.3               # 0-1, rolled per natural spawn, default 1
+  Chance: 0.3               # 0-1, rolled per spawn check, default 1
   Regions: [wilderness]     # optional, WorldGuard: only inside one of these regions
   NotRegions: [spawn]       # optional, WorldGuard: never inside these regions
+  Cooldown: 60              # ADD only: minimum seconds per player and mob (default 60)
+  MaxNearby: 3              # ADD only: max mobs of this id within 48 blocks (default 3)
 ```
 
-Whenever the server spawns a vanilla mob of the same `Type` **naturally** (not from spawners, eggs or commands) and the world, biome, time of day and `Chance` all fit, that spawn is replaced by this mob. `Worlds` and `Biomes` take lists (biome ids with or without `minecraft:`).
+With `Action: REPLACE` (the default), whenever the server spawns a vanilla mob of the same `Type` **naturally** (not from spawners, eggs or commands) and the world, biome, time of day and `Chance` all fit, that spawn is replaced by this mob. With `Action: ADD`, BetterMob periodically rolls an independent land spawn 24–48 blocks around survival and adventure players, respecting `Cooldown` and `MaxNearby`. `Worlds` and `Biomes` take lists (biome ids with or without `minecraft:`).
 
 - `Regions` and `NotRegions` take WorldGuard region ids and need [WorldGuard](Installation#worldguard-optional). Without WorldGuard a rule with `Regions` never matches and a rule with only `NotRegions` is not limited. The flag `bettermob-spawn: deny` of a region also stops BetterMob from replacing natural spawns there.
 - Without a `Spawn` block nothing is replaced.

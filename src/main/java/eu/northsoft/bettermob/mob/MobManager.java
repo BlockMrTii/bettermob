@@ -117,7 +117,9 @@ public final class MobManager {
         fireTrigger(entity, definition, MobDefinition.SkillTrigger.Trigger.SPAWN, null, null);
         scheduleTimers(entity, definition);
         bossBars.attach(entity, definition);
-        Bukkit.getPluginManager().callEvent(new BetterMobSpawnEvent(entity, definition.toInfo()));
+        if (BetterMobSpawnEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            Bukkit.getPluginManager().callEvent(new BetterMobSpawnEvent(entity, definition.toInfo()));
+        }
         return entity;
     }
 
@@ -183,7 +185,9 @@ public final class MobManager {
             if (api.isCancelled()) return;
             members = api.getMembers();
         }
-        for (Mob member : members) member.setTarget(attacker);
+        for (Mob member : members) {
+            if (member != null && Bukkit.isOwnedByCurrentRegion(member) && member.isValid()) member.setTarget(attacker);
+        }
     }
 
     private void applyBehaviour(LivingEntity entity, MobDefinition definition) {
@@ -338,6 +342,16 @@ public final class MobManager {
     public void fireTrigger(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
                       LivingEntity trigger, Cancellable event) {
         fireTriggers(entity, definition, type, effectiveTriggers(entity, definition, type), trigger, event);
+    }
+
+    public void fireEntityAura(LivingEntity entity, String kind, LivingEntity trigger, Cancellable event) {
+        if (skillEngine == null) return;
+        if (!Bukkit.isOwnedByCurrentRegion(entity)) {
+            LivingEntity original = trigger;
+            Tasks.runOwned(plugin, entity, () -> fireEntityAura(entity, kind, original, null));
+            return;
+        }
+        skillEngine.fireAuras(entity, kind, trigger != null && Bukkit.isOwnedByCurrentRegion(trigger) ? trigger : null, event);
     }
 
     private List<MobDefinition.SkillTrigger> effectiveTriggers(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type) {

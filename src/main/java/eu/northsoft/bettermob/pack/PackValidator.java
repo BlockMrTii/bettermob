@@ -246,8 +246,11 @@ public final class PackValidator {
             for (List<String> all : Condition.alternatives(condition.params())) {
                 for (String atom : all) checkCondition(Condition.parse(atom), knows, reason, line, file, report);
             }
-        } else if (!knows.test(condition.name())) {
-            report.issues.add(new Issue(file, line, reason, condition.name()));
+        } else {
+            if (!knows.test(condition.name())) report.issues.add(new Issue(file, line, reason, condition.name()));
+            if ("castinstead".equals(condition.action()) && condition.actionValue() != null && !known.skill().test(condition.actionValue())) {
+                report.issues.add(new Issue(file, line, Reason.SKILL, condition.actionValue()));
+            }
         }
     }
 
@@ -272,7 +275,7 @@ public final class PackValidator {
             }
         }
 
-        for (String key : List.of("s", "skill", "skills")) {
+        for (String key : List.of("s", "skill", "skills", "onchat", "es", "hs", "hitskill")) {
             String value = mechanic.params().get(key);
             if (value == null) continue;
             if (value.trim().startsWith("[")) {
@@ -282,7 +285,8 @@ public final class PackValidator {
                     if (innerStep == null) report.issues.add(new Issue(file, inner, Reason.UNPARSEABLE, ""));
                     else checkStep(innerStep, inner, file, report);
                 }
-            } else if (mechanic.name().equals("skill") || mechanic.name().equals("randomskill") || mechanic.name().equals("sudoskill")) {
+            } else if (mechanic.name().equals("skill") || mechanic.name().equals("randomskill") || mechanic.name().equals("sudoskill")
+                    || mechanic.name().equals("onchat") || mechanic.name().equals("raytraceto")) {
                 for (String id : value.split(",")) {
                     if (!id.isBlank() && !known.skill().test(id.trim())) report.issues.add(new Issue(file, line, Reason.SKILL, id.trim()));
                 }
@@ -290,12 +294,16 @@ public final class PackValidator {
         }
         for (String key : List.of("os", "oe", "ot", "oh", "onstart", "onend", "ontick", "onhit")) {
             String value = mechanic.params().get(key);
-            if (value == null || !value.trim().startsWith("[")) continue;
-            for (String inner : InlineSkills.splitInline(value)) {
-                report.lines++;
-                SkillStep innerStep = SkillStep.parse(inner);
-                if (innerStep == null) report.issues.add(new Issue(file, inner, Reason.UNPARSEABLE, ""));
-                else checkStep(innerStep, inner, file, report);
+            if (value == null) continue;
+            if (value.trim().startsWith("[")) {
+                for (String inner : InlineSkills.splitInline(value)) {
+                    report.lines++;
+                    SkillStep innerStep = SkillStep.parse(inner);
+                    if (innerStep == null) report.issues.add(new Issue(file, inner, Reason.UNPARSEABLE, ""));
+                    else checkStep(innerStep, inner, file, report);
+                }
+            } else if (mechanic.name().equals("raytraceto") && !value.isBlank() && !known.skill().test(value.trim())) {
+                report.issues.add(new Issue(file, line, Reason.SKILL, value.trim()));
             }
         }
     }

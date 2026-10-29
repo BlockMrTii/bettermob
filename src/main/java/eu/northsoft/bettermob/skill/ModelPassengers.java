@@ -32,14 +32,13 @@ public final class ModelPassengers implements Listener {
         UUID owner = ownerOfRider.remove(rider);
         String seat = seatOfRider.remove(rider);
         if (owner == null || seat == null) return;
-        Map<String, Set<UUID>> seats = bySeat.get(owner);
-        if (seats == null) return;
-        Set<UUID> riders = seats.get(seat);
-        if (riders != null) {
-            riders.remove(rider);
-            if (riders.isEmpty()) seats.remove(seat);
-        }
-        if (seats.isEmpty()) bySeat.remove(owner);
+        bySeat.computeIfPresent(owner, (id, seats) -> {
+            seats.computeIfPresent(seat, (name, riders) -> {
+                riders.remove(rider);
+                return riders.isEmpty() ? null : riders;
+            });
+            return seats.isEmpty() ? null : seats;
+        });
     }
 
     public List<UUID> riders(UUID owner, String seat) {

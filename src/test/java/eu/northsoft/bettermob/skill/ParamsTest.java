@@ -17,5 +17,9 @@ class ParamsTest {
         org.junit.jupiter.api.Assertions.assertEquals(1.5, Params.parseNumber("\"1.5\"", 0));
         org.junit.jupiter.api.Assertions.assertEquals(-2.0, Params.parseNumber("nope", -2));
         org.junit.jupiter.api.Assertions.assertEquals(-2.0, Params.parseNumber(null, -2));
+        org.junit.jupiter.api.Assertions.assertEquals(-2.0, Params.parseNumber("NaN", -2));
+        org.junit.jupiter.api.Assertions.assertEquals(-2.0, Params.parseNumber("Infinity", -2));
+        org.junit.jupiter.api.Assertions.assertEquals(3f, Params.parseFloat("NaN", 3f));
+        org.junit.jupiter.api.Assertions.assertEquals(3f, Params.parseFloat("Infinity", 3f));
     }
 }

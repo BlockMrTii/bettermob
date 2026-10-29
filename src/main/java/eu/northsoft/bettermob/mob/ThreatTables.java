@@ -35,7 +35,11 @@ final class ThreatTables {
 
     void register(UUID mobId, LivingEntity attacker, double amount) {
         Map<UUID, Threat> table = tables.get(mobId);
-        if (table != null) table.computeIfAbsent(attacker.getUniqueId(), id -> new Threat(attacker)).amount += amount;
+        if (table != null) table.compute(attacker.getUniqueId(), (id, threat) -> {
+            Threat current = threat == null ? new Threat(attacker) : threat;
+            current.amount += amount;
+            return current;
+        });
     }
 
     List<Map.Entry<String, Double>> top(UUID mobId, int limit) {

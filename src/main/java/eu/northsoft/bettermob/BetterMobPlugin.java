@@ -158,8 +158,10 @@ public final class BetterMobPlugin extends JavaPlugin {
         EggItems eggItems = new EggItems(this);
         getServer().getPluginManager().registerEvents(new EggListener(this, manager, eggItems), this);
         if (!Tasks.FOLIA) {
-            Tasks.runGlobal(this, () -> getServer().getWorlds()
-                    .forEach(world -> manager.removeLeftoverHelpers(world.getEntitiesByClass(ArmorStand.class))));
+            Tasks.runGlobal(this, () -> getServer().getWorlds().forEach(world -> {
+                manager.removeLeftoverHelpers(world.getEntitiesByClass(ArmorStand.class));
+                world.getLivingEntities().forEach(manager::handleLoad);
+            }));
         }
 
         spawners = new SpawnerManager(this, manager);

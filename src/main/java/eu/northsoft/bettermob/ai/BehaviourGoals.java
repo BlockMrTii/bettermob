@@ -22,7 +22,8 @@ public final class BehaviourGoals {
     public static final int GUARD_PRIORITY = 1;
     public static final int LEADER_PRIORITY = 5;
     public static final int PATROL_PRIORITY = 6;
-    private static final double REACHED_SQUARED = 2.25;
+    private static final double REACHED_DISTANCE = 1.5;
+    private static final double REACHED_SQUARED = REACHED_DISTANCE * REACHED_DISTANCE;
     private static final int REPATH_TICKS = 20;
 
     private BehaviourGoals() {}
@@ -122,7 +123,7 @@ public final class BehaviourGoals {
 
             @Override
             public boolean shouldStayActive() {
-                return away(REACHED_SQUARED / 2);
+                return away(REACHED_DISTANCE / 2);
             }
 
             private boolean away(double limit) {

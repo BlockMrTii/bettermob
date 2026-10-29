@@ -4,6 +4,8 @@ import eu.northsoft.bettermob.skill.Condition;
 import eu.northsoft.bettermob.skill.Factions;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
+import eu.northsoft.bettermob.skill.Target;
+import eu.northsoft.bettermob.skill.condition.ConditionParams;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
@@ -44,14 +46,14 @@ public final class CandidateFilters {
             case "isplayer" -> candidate instanceof Player;
             case "iscaster" -> candidate.equals(context.caster());
             case "ismob" -> !(candidate instanceof Player);
-            case "hastag" -> candidate.getScoreboardTags().contains(TAG_PREFIX + conditionParam(condition.params(), "t", "tag", "n"));
-            case "faction" -> Factions.has(engine.mobManager(), candidate, conditionParam(condition.params(), "faction", "f", "name"));
+            case "hastag" -> candidate.getScoreboardTags().contains(TAG_PREFIX + conditionParam(ConditionParams.resolve(engine, condition.params(), context, Target.ofEntity(candidate)), "t", "tag", "n"));
+            case "faction" -> Factions.has(engine.mobManager(), candidate, conditionParam(ConditionParams.resolve(engine, condition.params(), context, Target.ofEntity(candidate)), "faction", "f", "name"));
             default -> {
                 if (!engine.conditionRegistry().has(condition.name())) {
-                    engine.plugin().messages().warn("skill.targeterConditionUnsupported", "condition", condition.name());
+                    engine.plugin().messages().warnOnce("skill.targeterConditionUnsupported", "condition", condition.name());
                     yield true;
                 }
-                SkillContext asCandidate = new SkillContext(candidate, context.caster(), null, context.origin(), false);
+                SkillContext asCandidate = new SkillContext(candidate, context.caster(), null, context.origin(), false, context.variables(), context.arguments());
                 yield engine.conditionRegistry().evaluate(condition, asCandidate, null);
             }
         };
