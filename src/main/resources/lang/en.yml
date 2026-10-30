@@ -5,6 +5,9 @@ plugin:
   betterModelMissing: "BetterModel is not installed or enabled - mobs spawn without a model."
   commandMissing: "Command /bettermob is missing from plugin.yml."
 
+api:
+  spawnWrongThread: "BetterMobAPI#spawn for '{mob}' was called on a thread that does not own the location, nothing was spawned. Use spawnAsync instead."
+
 spawner:
   invalid: "Spawner '{id}' in spawners.yml needs a mob and a world - skipped."
   saveFailed: "Could not save spawners.yml: {error}"

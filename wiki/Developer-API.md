@@ -63,6 +63,7 @@ BetterMobAPI api = BetterMobAPI.get();
 api.getMobs();                                   // all registered mobs (MobInfo)
 api.getMob("zombie_brute");                      // Optional<MobInfo>
 api.spawn("zombie_brute", player.getLocation()); // Optional<LivingEntity>
+api.spawnAsync("zombie_brute", location);        // CompletableFuture<Optional<LivingEntity>>
 api.isBetterMob(entity);                         // is this one of ours?
 api.getMobInfo(entity);                          // Optional<MobInfo>
 api.getSkillIds();                               // all skill IDs
@@ -70,6 +71,8 @@ api.runSkill("wumpus_wave", player);             // any LivingEntity as caster
 api.runSkill("wumpus_wave", caster, trigger);    // with a trigger (target of @trigger)
 api.reload();                                    // same as /bettermob reload, living mobs included
 ```
+
+`spawn` must run on the thread that owns the location (on Folia the region, on Paper the main thread); otherwise it logs a warning and returns an empty `Optional`. From other threads, use `spawnAsync` (returns a `CompletableFuture`).
 
 `MobInfo` is a record: `id`, `type`, `displayName`, `modelId`, `health`, `damage`.
 
