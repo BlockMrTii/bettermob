@@ -538,7 +538,8 @@ public final class MobManager {
                 .toList();
         if (matching.isEmpty()) return false;
         if (BetterMobSignalEvent.getHandlerList().getRegisteredListeners().length > 0) {
-            BetterMobSignalEvent api = new BetterMobSignalEvent(entity, definition.toInfo(), name, sender);
+            BetterMobSignalEvent api = new BetterMobSignalEvent(entity, definition.toInfo(), name,
+                    sender != null && Bukkit.isOwnedByCurrentRegion(sender) ? sender : null);
             Bukkit.getPluginManager().callEvent(api);
             if (api.isCancelled()) return false;
         }
