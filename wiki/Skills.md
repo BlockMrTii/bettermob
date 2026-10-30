@@ -262,7 +262,7 @@ Skills:
 | `moving` (`ismoving`) | The caster's velocity is above a small limit; players often report no velocity, so use it for mobs |
 | `playerwithin{d=10;count=2}` (`playersinradius`) | At least `count` players (default 1) are within `d` blocks; `count` also takes `<3` or `1-2` |
 | `fieldofview{a=90}` | The target (or trigger) is within a cone of `a` degrees in front of the caster |
-| `score{o=objective;v=3}` | The target's (or trigger's) score in that main-scoreboard objective matches `v` (also `>3`, `<=5`, `1-3`). Players are looked up by name, other entities by UUID. `o` and `v` take variable placeholders. Always false on Folia, which has no main scoreboard |
+| `score{o=objective;v=3}` | The target's (or trigger's) score in that main-scoreboard objective matches `v` (also `>3`, `<=5`, `1-3`). Players are looked up by name, other entities by UUID. `o` and `v` take variable placeholders. Always false on Folia, whose scoreboard API is not thread-safe |
 | `killedmob{mob=goblin;count=10}` | The player has killed at least 10 of that mob (the kill counters, see `/bettermob top`). `count` is a number (at least), a comparison (`<5`) or a range (`3-6`); default 1. The player is the checked target, otherwise the trigger, otherwise the caster |
 | `killedmobs{count=50}` | The same for the kills of all BetterMob mobs together |
 | `time{t=day}` | `day` or `night` of the caster's world; also a tick or range, e.g. `time{t=0-6000}` |
