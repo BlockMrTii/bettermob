@@ -19,7 +19,7 @@ public final class ActionBarMechanic implements Mechanic {
     public void execute(MechanicCall call) {
         String raw = firstParam(call.params(), "m", "message", "msg");
         if (raw == null || !(call.target().entity() instanceof Player receiver)) return;
-        var text = MessageText.render(raw, receiver, call.context().caster().getName());
+        var text = MessageText.render(raw, receiver, call.casterName());
         receiver.sendActionBar(text);
         int duration = MessageText.ticks(firstParam(call.params(), "d", "duration"), 0);
         for (int elapsed = REPEAT_TICKS; elapsed < duration; elapsed += REPEAT_TICKS) {

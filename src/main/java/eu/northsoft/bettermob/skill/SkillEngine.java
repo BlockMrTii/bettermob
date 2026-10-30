@@ -340,9 +340,13 @@ public final class SkillEngine implements Listener {
                     return;
                 }
                 int next = i + 1;
-                if (deferral.await(() -> Tasks.runOwned(plugin, context.caster(), () -> executeSteps(steps, next, context)))) return;
+                if (deferral.await(() -> resumeOnCaster(plugin, context.caster(), () -> executeSteps(steps, next, context)))) return;
             }
         }
+    }
+
+    static void resumeOnCaster(Plugin plugin, LivingEntity caster, Runnable rest) {
+        Tasks.runOwned(plugin, caster, rest, () -> Tasks.runAt(plugin, caster.getLocation(), rest));
     }
 
     private boolean runMechanic(SkillStep.Mechanic mechanic, SkillContext context, Deferral deferral) {
@@ -430,7 +434,7 @@ public final class SkillEngine implements Listener {
                 Bukkit.getPluginManager().callEvent(api);
                 if (api.isCancelled()) return;
             }
-            MechanicCall call = new MechanicCall(mechanic, context, target, p);
+            MechanicCall call = new MechanicCall(mechanic, context, target, p, context.caster().getName());
             if (!handler.runsOnTarget()) {
                 handler.execute(call);
                 return;
@@ -438,7 +442,7 @@ public final class SkillEngine implements Listener {
             deferral.add();
             Runnable run = () -> {
                 try {
-                    handler.execute(new MechanicCall(call.step(), call.context().ownedHere(), call.target(), call.params()));
+                    handler.execute(new MechanicCall(call.step(), call.context().ownedHere(), call.target(), call.params(), call.casterName()));
                 } finally {
                     deferral.complete();
                 }

@@ -249,17 +249,18 @@ public final class MobListener implements Listener {
         Entity source = event.getDamager();
         if (source instanceof Projectile projectile) {
             ProjectileSource shooter = projectile.getShooter();
-            source = shooter instanceof Entity shooterEntity && Bukkit.isOwnedByCurrentRegion(shooterEntity) ? shooterEntity : null;
+            source = shooter instanceof Entity shooterEntity ? shooterEntity : null;
         }
 
         if (event.getEntity() instanceof LivingEntity victimMob) {
             MobDefinition definition = manager.definitionOf(victimMob.getUniqueId());
             LivingEntity attacker = source instanceof LivingEntity living ? living : null;
+            LivingEntity ownedAttacker = attacker != null && Bukkit.isOwnedByCurrentRegion(attacker) ? attacker : null;
             if (definition != null) {
-                if (definition.threatTable && attacker != null) {
-                    manager.registerThreat(victimMob.getUniqueId(), attacker, event.getFinalDamage());
+                if (definition.threatTable && ownedAttacker != null) {
+                    manager.registerThreat(victimMob.getUniqueId(), ownedAttacker, event.getFinalDamage());
                 }
-                if (attacker != null) manager.alertGroup(victimMob, definition, attacker);
+                if (ownedAttacker != null) manager.alertGroup(victimMob, definition, ownedAttacker);
                 manager.fireTrigger(victimMob, definition, MobDefinition.SkillTrigger.Trigger.DAMAGED, attacker, event);
             } else {
                 manager.fireEntityAura(victimMob, "ondamaged", attacker, event);

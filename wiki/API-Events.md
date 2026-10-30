@@ -19,7 +19,7 @@ Most mob events have `getEntity()` (the `LivingEntity`) and `getMob()` (a `MobIn
 | `BetterMobCombatEvent` | A mob enters combat (first target) or leaves it (no target for 5 seconds) | `isEntering()`, `getTarget()` |
 | `BetterMobHealthEvent` | Damage or healing moved a mob across a health threshold of one of its `~onHealth` lines | `getBefore()`, `getAfter()`, `getThreshold()` (like `<50%`) |
 | `BetterMobPhaseEvent` | A mob changes its phase (see [Mobs](Mobs#phases)) | `getFrom()`, `getTo()` (-1 = no phase) |
-| `BetterMobSignalEvent` *(cancellable)* | A mob receives a signal that one of its `~onSignal` lines listens to | `getSignal()`, `getSender()` |
+| `BetterMobSignalEvent` *(cancellable)* | A mob receives a signal that one of its `~onSignal` lines listens to | `getSignal()`, `getSender()` (null when there is none or, on Folia, when it is in another region) |
 | `BetterMobGroupAlertEvent` *(cancellable)* | A damaged group member alerts its group | `getAttacker()`, `getMembers()` (a list you can change) |
 
 ## Skill events (`api.event.skill`)
