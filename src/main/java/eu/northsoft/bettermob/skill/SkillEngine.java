@@ -340,9 +340,13 @@ public final class SkillEngine implements Listener {
                     return;
                 }
                 int next = i + 1;
-                if (deferral.await(() -> Tasks.runOwned(plugin, context.caster(), () -> executeSteps(steps, next, context)))) return;
+                if (deferral.await(() -> resumeOnCaster(plugin, context.caster(), () -> executeSteps(steps, next, context)))) return;
             }
         }
+    }
+
+    static void resumeOnCaster(Plugin plugin, LivingEntity caster, Runnable rest) {
+        Tasks.runOwned(plugin, caster, rest, () -> Tasks.runAt(plugin, caster.getLocation(), rest));
     }
 
     private boolean runMechanic(SkillStep.Mechanic mechanic, SkillContext context, Deferral deferral) {
