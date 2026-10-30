@@ -17,7 +17,7 @@ Everything public is in `eu.northsoft.bettermob.api`.
 <dependency>
     <groupId>com.github.HyperGaming99</groupId>
     <artifactId>bettermob</artifactId>
-    <version>v1.1.9</version> <!-- a release tag -->
+    <version>v1.2.0</version> <!-- a release tag -->
     <scope>provided</scope>
 </dependency>
 ```
@@ -33,7 +33,7 @@ Everything public is in `eu.northsoft.bettermob.api`.
 <dependency>
     <groupId>eu.northsoft</groupId>
     <artifactId>bettermob</artifactId>
-    <version>1.1.9</version>
+    <version>1.2.0</version>
     <scope>provided</scope>
 </dependency>
 ```
