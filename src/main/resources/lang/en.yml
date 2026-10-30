@@ -5,6 +5,9 @@ plugin:
   betterModelMissing: "BetterModel is not installed or enabled - mobs spawn without a model."
   commandMissing: "Command /bettermob is missing from plugin.yml."
 
+api:
+  spawnWrongThread: "BetterMobAPI#spawn for '{mob}' was called on a thread that does not own the location, nothing was spawned. Use spawnAsync instead."
+
 spawner:
   invalid: "Spawner '{id}' in spawners.yml needs a mob and a world - skipped."
   saveFailed: "Could not save spawners.yml: {error}"
@@ -27,7 +30,7 @@ command:
     killall: "&7/bettermob killall [mob|*] [world] &8- &7Remove living BetterMob mobs"
     spawner: "&7/bettermob spawner <create|remove|list> &8- &7Manage mob spawners"
     info: "&7/bettermob info <mob> &8- &7Show a mob's details"
-    stats: "&7/bettermob stats [on|off|reset] &8- &7Show mob, timer and skill statistics"
+    stats: "&7/bettermob stats [on|off|reset|top] &8- &7Show mob, timer and skill statistics"
     validate: "&7/bettermob validate [pack] &8- &7Check packs for unsupported lines"
   info:
     usage: "&cUsage: /bettermob info <mob>"
@@ -38,9 +41,12 @@ command:
     model: "&7Model: &f{model}"
     equipment: "&7Equipment: &f{equipment}"
     drops: "&7Drop entries: &f{count}"
+    phase: "&7Phase {index}: &f{definition}"
+    phases: "&7Phases: &f{count}"
     skills: "&7On {trigger}: &f{skills}"
     delay: "delay"
     trigger:
+      phase: "Phase"
       spawn: "spawn"
       load: "load"
       interact: "interact"
@@ -59,6 +65,11 @@ command:
       signal: "Signal received"
       despawn: "Despawn"
       move: "Move"
+      swing: "Swing"
+      pressf: "Press F"
+      pickup: "Pickup"
+      drop: "Drop"
+      equip: "Equip"
   validate:
     unknownPack: "&cPack '{pack}' was not found in packs/."
     header: "&7Checked &f{lines} &7lines in &f{sources} &7place(s):"
@@ -97,6 +108,7 @@ command:
     filtersAll: "all"
     chatOn: "&aDebug output in chat enabled."
     chatOff: "&7Debug output in chat disabled."
+    addRules: "&7Active ADD spawn rules: &f{mobs}"
     usage: "&cUsage: /bettermob debug [off|info|verbose|filter <id>|filter clear|chat]"
   aggro:
     enabled: "&aAggro lines on: particle lines from nearby BetterMob mobs to their targets."
@@ -146,7 +158,7 @@ command:
     worldMissing: "&cWorld '{world}' does not exist."
     done: "&a{count} mobs removed."
   stats:
-    usage: "&cUsage: /bettermob stats [on|off|reset]"
+    usage: "&cUsage: /bettermob stats [on|off|reset|top [n]]"
     enabled: "&aSkill profiling enabled."
     disabled: "&7Skill profiling disabled."
     reset: "&aStatistics reset."
@@ -157,6 +169,8 @@ command:
     profilingOff: "&7Skill profiling is off, enable it with /bettermob stats on."
     timingNone: "&7No skill has run since profiling was enabled."
     timingHeader: "&7Skill timing (top {limit} by total time):"
+    mechanicHeader: "&7Mechanic timing (top {limit} by total time, includes nested skills):"
+    mechanicNone: "&7No mechanic has run since profiling was enabled."
     timingEntry: "&7- &f{skill}&7: &f{calls}&7 calls, avg &f{avg}&7 ms, max &f{max}&7 ms, total &f{total}&7 ms"
 
 pack:
@@ -167,6 +181,8 @@ ai:
   goalUnavailable: "AI goal '{goal}' is not available for mob type '{type}'."
 
 mob:
+  healthCapped: "Mob '{mob}': Health {health} is above the server limit, capped to {max}. Raise attribute.maxHealth.max in spigot.yml."
+  phaseInvalid: "Mob '{mob}': invalid phase option '{option}', it is skipped."
   behaviourInvalid: "Mob '{mob}': invalid movement option '{option}'."
   eggMaterialInvalid: "Mob '{mob}': Egg Material '{value}' is not a material, using the egg of the mob type."
   loaded: "{count} mobs loaded."
@@ -188,11 +204,13 @@ mob:
   migrationFailed: "Migration of '{mob}' failed: {error}"
 
 skill:
+  blockMaskUnknown: "effect:blockmask: '{material}' is not a block - skipped."
   loaded: "{count} skills loaded."
   duplicate: "Skill '{skill}' is defined more than once ({count} more, first repeated in {folder}). The first definition is kept, the others are ignored."
   lineInvalid: "Skill '{skill}': line '{line}' could not be parsed."
   notRegistered: "Skill '{skill}' is not registered."
   inlineLineInvalid: "Inline skill: line '{line}' could not be parsed."
+  petMechanicIgnored: "'{mechanic}' belongs to MCPets, which only runs together with MythicMobs. BetterMob skips these lines; the mob itself works as usual."
   mechanicUnsupported: "Skill mechanic '{mechanic}' is not supported."
   customMechanicFailed: "Custom mechanic '{mechanic}' from {plugin} failed: {error}"
   argumentMissing: "Argument '<arg.{argument}>' was not passed to this skill and has no default (Arguments:), the placeholder stays as it is."
@@ -232,6 +250,8 @@ drop:
   unresolvable: "Drop '{drop}' is neither EXP, a drop table, an item nor a material - skipped."
 
 betterModel:
+  callFailed: "BetterModel: {action} failed: {error}"
+  unsupported: "BetterModel has no '{action}' - the line is skipped."
   inactive: "BetterModel is not active while spawning '{model}' - no model attached."
   apiClassMissing: "BetterModel API class '{class}' not found - does the installed BetterModel version match?"
   modelMissing: "BetterModel model '{model}' does not exist."
@@ -269,3 +289,11 @@ egg:
 kills:
   saveFailed: "Could not save kills.yml: {error}"
   loadFailed: "Could not read kills.yml, kill counts are not saved until it is fixed: {error}"
+
+update:
+  available: "A new BetterMob version is available: {latest} (you run {current}). Download: {url}"
+
+worldguard:
+  enabled: "WorldGuard found: region conditions, spawn region rules and the bettermob-spawn flag are active."
+  failed: "WorldGuard could not be used: {error}"
+  missing: "The condition 'region' needs WorldGuard, it is never true without it."

@@ -1,9 +1,10 @@
 package eu.northsoft.bettermob.skill;
 
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.entity.EntityDismountEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -31,14 +32,13 @@ public final class ModelPassengers implements Listener {
         UUID owner = ownerOfRider.remove(rider);
         String seat = seatOfRider.remove(rider);
         if (owner == null || seat == null) return;
-        Map<String, Set<UUID>> seats = bySeat.get(owner);
-        if (seats == null) return;
-        Set<UUID> riders = seats.get(seat);
-        if (riders != null) {
-            riders.remove(rider);
-            if (riders.isEmpty()) seats.remove(seat);
-        }
-        if (seats.isEmpty()) bySeat.remove(owner);
+        bySeat.computeIfPresent(owner, (id, seats) -> {
+            seats.computeIfPresent(seat, (name, riders) -> {
+                riders.remove(rider);
+                return riders.isEmpty() ? null : riders;
+            });
+            return seats.isEmpty() ? null : seats;
+        });
     }
 
     public List<UUID> riders(UUID owner, String seat) {
@@ -63,7 +63,7 @@ public final class ModelPassengers implements Listener {
         return riders;
     }
 
-    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDismount(EntityDismountEvent event) {
         remove(event.getEntity().getUniqueId());
     }

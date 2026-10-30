@@ -84,7 +84,7 @@ class VariablesTest {
         params.put("value", "<skill.hits>");
         params.put("var", "caster.total");
         params.put("m", "phase <var.phase> of <skill.hits>");
-        Map<String, String> resolved = SkillEngine.resolveVariables(params, Map.of("hits", "3"), Map.of("phase", "2"));
+        Map<String, String> resolved = Substitutions.resolveVariables(params, Map.of("hits", "3"), Map.of("phase", "2"));
         assertEquals("3", resolved.get("value"));
         assertEquals("caster.total", resolved.get("var"));
         assertEquals("phase 2 of 3", resolved.get("m"));
@@ -93,7 +93,7 @@ class VariablesTest {
     @Test
     void parametersWithoutVariablePlaceholdersAreReturnedAsTheyAre() {
         Map<String, String> params = Map.of("a", "<caster.damage>");
-        assertTrue(params == SkillEngine.resolveVariables(params, Map.of(), Map.of()));
+        assertTrue(params == Substitutions.resolveVariables(params, Map.of(), Map.of()));
     }
 
     @Test
@@ -131,14 +131,14 @@ class VariablesTest {
 
     @Test
     void targetVariablesAreReplacedPerScopeWithAZeroFallback() {
-        assertEquals("3 0", SkillEngine.replaceTargetVariables("<target.var.c> <target.var.none>", Map.of("c", "3")));
-        assertEquals("0", SkillEngine.replaceTargetVariables("<target.var.c>", null));
-        assertEquals("<var.b>", SkillEngine.replaceTargetVariables("<var.b>", Map.of("b", "1")));
+        assertEquals("3 0", Substitutions.replaceTargetVariables("<target.var.c> <target.var.none>", Map.of("c", "3")));
+        assertEquals("0", Substitutions.replaceTargetVariables("<target.var.c>", null));
+        assertEquals("<var.b>", Substitutions.replaceTargetVariables("<var.b>", Map.of("b", "1")));
     }
 
     @Test
     void theEnginePathLeavesTargetPlaceholdersForTheDispatch() {
-        Map<String, String> resolved = SkillEngine.resolveVariables(Map.of("m", "<var.b> <target.var.c>"), Map.of(), Map.of("b", "2"));
+        Map<String, String> resolved = Substitutions.resolveVariables(Map.of("m", "<var.b> <target.var.c>"), Map.of(), Map.of("b", "2"));
         assertEquals("2 <target.var.c>", resolved.get("m"));
     }
 }

@@ -1,5 +1,10 @@
 package eu.northsoft.bettermob.api;
 
+import eu.northsoft.bettermob.api.custom.CustomMechanic;
+import eu.northsoft.bettermob.api.custom.CustomCondition;
+import eu.northsoft.bettermob.api.custom.CustomTargeter;
+import eu.northsoft.bettermob.api.custom.CustomPlaceholder;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -12,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
 
 public interface BetterMobAPI {
     static BetterMobAPI get() {
-        RegisteredServiceProvider<BetterMobAPI> provider = org.bukkit.Bukkit.getServicesManager().getRegistration(BetterMobAPI.class);
+        RegisteredServiceProvider<BetterMobAPI> provider = Bukkit.getServicesManager().getRegistration(BetterMobAPI.class);
         if (provider == null) throw new IllegalStateException("BetterMob ist nicht aktiv.");
         return provider.getProvider();
     }

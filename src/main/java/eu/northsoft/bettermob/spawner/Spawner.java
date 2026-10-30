@@ -25,9 +25,9 @@ public final class Spawner {
     public final int max;
     public final int playerRange;
     final Set<UUID> alive = ConcurrentHashMap.newKeySet();
+    final Set<Long> reconciledChunks = ConcurrentHashMap.newKeySet();
     volatile long nextSpawnAt;
     volatile boolean reconciled;
-    volatile int reconcileAttempts;
     volatile long playerNearAt;
 
     public Spawner(String id, String mob, String world, double x, double y, double z, int radius, int intervalSeconds, int max, int playerRange) {
@@ -75,9 +75,9 @@ public final class Spawner {
 
     void adopt(Spawner previous) {
         alive.addAll(previous.alive);
+        reconciledChunks.addAll(previous.reconciledChunks);
         nextSpawnAt = previous.nextSpawnAt;
         reconciled = previous.reconciled;
-        reconcileAttempts = previous.reconcileAttempts;
         playerNearAt = previous.playerNearAt;
     }
 

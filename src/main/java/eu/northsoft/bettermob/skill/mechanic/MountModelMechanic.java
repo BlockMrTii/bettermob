@@ -1,8 +1,11 @@
 package eu.northsoft.bettermob.skill.mechanic;
 
+import eu.northsoft.bettermob.skill.Params;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
+
+import java.util.UUID;
 
 public final class MountModelMechanic implements Mechanic {
     private final SkillEngine engine;
@@ -19,8 +22,8 @@ public final class MountModelMechanic implements Mechanic {
     @Override
     public void execute(MechanicCall call) {
         if (!(call.target().entity() instanceof LivingEntity rider) || !Bukkit.isOwnedByCurrentRegion(rider)) return;
-        java.util.UUID id = call.context().caster().getUniqueId();
-        String seat = eu.northsoft.bettermob.skill.Params.firstParam(call.params(), "seat", "p");
+        UUID id = call.context().caster().getUniqueId();
+        String seat = Params.firstParam(call.params(), "seat", "p");
         if (seat == null) seat = "mount";
         Object tracker = engine.mobManager().trackerFor(id);
         if (tracker != null) {

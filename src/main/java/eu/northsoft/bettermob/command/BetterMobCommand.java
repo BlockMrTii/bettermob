@@ -1,6 +1,7 @@
 package eu.northsoft.bettermob.command;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.debug.AggroView;
 import eu.northsoft.bettermob.debug.DebugManager;
 import eu.northsoft.bettermob.drop.DropRegistry;
 import eu.northsoft.bettermob.item.EggItems;
@@ -17,9 +18,9 @@ import eu.northsoft.bettermob.skill.SkillRegistry;
 import eu.northsoft.bettermob.skill.SkillStep;
 import eu.northsoft.bettermob.spawner.Spawner;
 import eu.northsoft.bettermob.spawner.SpawnerManager;
-import eu.northsoft.bettermob.util.Tasks;
 import eu.northsoft.bettermob.stats.KillStats;
 import eu.northsoft.bettermob.stats.SkillStats;
+import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -36,6 +37,7 @@ import java.util.Map;
 
 public final class BetterMobCommand implements CommandExecutor, TabCompleter {
     private static final int TIMING_ROWS = 10;
+    private static final int MAX_TIMING_ROWS = 50;
     private static final int MAX_SPAWN_AMOUNT = 100;
     private static final int MAX_GIVE_AMOUNT = 64;
 
@@ -74,9 +76,9 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
     private final SpawnerManager spawners;
     private final EggItems eggItems;
 
-    private final eu.northsoft.bettermob.debug.AggroView aggroView;
+    private final AggroView aggroView;
 
-    public BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry, DropRegistry dropRegistry, SpawnerManager spawners, EggItems eggItems, eu.northsoft.bettermob.debug.AggroView aggroView) {
+    public BetterMobCommand(BetterMobPlugin plugin, MobManager manager, SkillRegistry skillRegistry, PackScanner packScanner, SkillEngine skillEngine, ItemRegistry itemRegistry, DropRegistry dropRegistry, SpawnerManager spawners, EggItems eggItems, AggroView aggroView) {
         this.plugin = plugin;
         this.aggroView = aggroView;
         this.messages = plugin.messages();
@@ -170,6 +172,12 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         messages.send(sender, "command.info.faction", "faction", mob.faction == null || mob.faction.isEmpty() ? none : mob.faction);
         messages.send(sender, "command.info.model", "model", mob.modelId == null || mob.modelId.isEmpty() ? none : mob.modelId);
         messages.send(sender, "command.info.equipment", "equipment", mob.equipment == null || mob.equipment.isEmpty() ? none : String.join(", ", mob.equipment));
+        if (mob.hasPhases()) {
+            messages.send(sender, "command.info.phases", "count", mob.phases.size());
+            for (int i = 0; i < mob.phases.size(); i++) {
+                messages.send(sender, "command.info.phase", "index", i + 1, "definition", mob.phases.get(i).definition());
+            }
+        }
         messages.send(sender, "command.info.drops", "count", mob.drops == null ? 0 : mob.drops.entries().size());
         for (MobDefinition.SkillTrigger.Trigger trigger : MobDefinition.SkillTrigger.Trigger.values()) {
             List<String> names = mob.triggersOf(trigger).stream()
@@ -180,6 +188,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
 
     private static String triggerKey(MobDefinition.SkillTrigger.Trigger trigger) {
         return switch (trigger) {
+            case PHASE -> "command.info.trigger.phase";
             case SPAWN -> "command.info.trigger.spawn";
             case LOAD -> "command.info.trigger.load";
             case INTERACT -> "command.info.trigger.interact";
@@ -198,6 +207,11 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             case SIGNAL -> "command.info.trigger.signal";
             case DESPAWN -> "command.info.trigger.despawn";
             case MOVE -> "command.info.trigger.move";
+            case SWING -> "command.info.trigger.swing";
+            case PRESSF -> "command.info.trigger.pressf";
+            case PICKUP -> "command.info.trigger.pickup";
+            case DROP -> "command.info.trigger.drop";
+            case EQUIP -> "command.info.trigger.equip";
         };
     }
 
@@ -290,6 +304,42 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         };
     }
 
+    private void handleStatsTop(CommandSender sender, SkillStats stats, String[] args) {
+        if (!stats.enabled()) {
+            messages.send(sender, "command.stats.profilingOff");
+            return;
+        }
+        int limit = TIMING_ROWS;
+        if (args.length >= 3) {
+            try {
+                limit = Math.max(1, Math.min(MAX_TIMING_ROWS, Integer.parseInt(args[2])));
+            } catch (NumberFormatException exception) {
+                messages.send(sender, "command.stats.usage");
+                return;
+            }
+        }
+        List<SkillStats.Row> skills = stats.top(limit);
+        List<SkillStats.Row> mechanics = stats.topMechanics(limit);
+        if (skills.isEmpty() && mechanics.isEmpty()) {
+            messages.send(sender, "command.stats.timingNone");
+            return;
+        }
+        sendTiming(sender, "command.stats.timingHeader", "command.stats.timingNone", skills, limit);
+        sendTiming(sender, "command.stats.mechanicHeader", "command.stats.mechanicNone", mechanics, limit);
+    }
+
+    private void sendTiming(CommandSender sender, String header, String empty, List<SkillStats.Row> rows, int limit) {
+        if (rows.isEmpty()) {
+            messages.send(sender, empty);
+            return;
+        }
+        messages.send(sender, header, "limit", limit);
+        for (SkillStats.Row row : rows) {
+            messages.send(sender, "command.stats.timingEntry", "skill", row.skill(), "calls", row.calls(),
+                    "avg", millis(row.averageMillis()), "max", millis(row.maxMillis()), "total", millis(row.totalMillis()));
+        }
+    }
+
     private void handleStats(CommandSender sender, String[] args) {
         SkillStats stats = plugin.stats();
         if (args.length >= 2) {
@@ -306,6 +356,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
                     stats.reset();
                     messages.send(sender, "command.stats.reset");
                 }
+                case "top" -> handleStatsTop(sender, stats, args);
                 default -> messages.send(sender, "command.stats.usage");
             }
             return;
@@ -362,7 +413,16 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
                     messages.send(sender, "command.playersOnly");
                     return;
                 }
-                messages.send(sender, debug.toggleWatcher(player) ? "command.debug.chatOn" : "command.debug.chatOff");
+                boolean enabled = debug.toggleWatcher(player);
+                messages.send(sender, enabled ? "command.debug.chatOn" : "command.debug.chatOff");
+                if (enabled) {
+                    String addRules = manager.registry().all().values().stream()
+                            .filter(definition -> definition.spawnRule != null
+                                    && definition.spawnRule.action() == eu.northsoft.bettermob.mob.SpawnRule.Action.ADD)
+                            .map(definition -> definition.id)
+                            .collect(java.util.stream.Collectors.joining(", "));
+                    messages.send(sender, "command.debug.addRules", "mobs", addRules.isEmpty() ? "-" : addRules);
+                }
                 return;
             }
             default -> {
@@ -645,7 +705,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         int amount = 1;
         if (args.length >= 4) {
             try {
-                amount = Math.max(1, Integer.parseInt(args[3]));
+                amount = Math.max(1, Math.min(MAX_GIVE_AMOUNT, Integer.parseInt(args[3])));
             } catch (NumberFormatException ignored) {
             }
         }
@@ -659,6 +719,20 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        List<String> options = complete(sender, args);
+        return args.length == 0 ? options : startingWith(options, args[args.length - 1]);
+    }
+
+    static List<String> startingWith(List<String> options, String typed) {
+        String prefix = typed.toLowerCase(Locale.ROOT);
+        return options.stream()
+                .filter(option -> option.toLowerCase(Locale.ROOT).startsWith(prefix))
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+    }
+
+    private List<String> complete(CommandSender sender, String[] args) {
         if (args.length == 1) {
             return PERMISSIONS.entrySet().stream()
                     .filter(entry -> sender.hasPermission(entry.getValue()))
@@ -677,8 +751,13 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             ids.add("clear");
             return ids;
         }
-        if (args.length == 2 && args[0].equalsIgnoreCase("stats")) return List.of("on", "off", "reset");
+        if (args.length == 2 && args[0].equalsIgnoreCase("stats")) return List.of("on", "off", "reset", "top");
         if (args.length == 2 && (args[0].equalsIgnoreCase("spawn") || args[0].equalsIgnoreCase("info") || args[0].equalsIgnoreCase("egg") || args[0].equalsIgnoreCase("top"))) return new ArrayList<>(manager.registry().all().keySet());
+        if (args.length == 2 && args[0].equalsIgnoreCase("test")) {
+            List<String> ids = new ArrayList<>(manager.registry().all().keySet());
+            ids.add("stop");
+            return ids;
+        }
         if (args.length == 2 && args[0].equalsIgnoreCase("skill")) return new ArrayList<>(skillRegistry.ids());
         if (args.length == 2 && args[0].equalsIgnoreCase("give")) return new ArrayList<>(itemRegistry.ids());
         if (args[0].equalsIgnoreCase("spawner")) {

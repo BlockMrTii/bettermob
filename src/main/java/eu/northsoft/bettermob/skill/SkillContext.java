@@ -9,7 +9,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public record SkillContext(LivingEntity caster, LivingEntity trigger, Cancellable event, Location origin, boolean targetIsTrigger,
-                           Map<String, String> variables, Map<String, String> arguments) {
+                           Map<String, String> variables, Map<String, String> arguments, LivingEntity remoteTrigger) {
+    public SkillContext(LivingEntity caster, LivingEntity trigger, Cancellable event, Location origin, boolean targetIsTrigger,
+                        Map<String, String> variables, Map<String, String> arguments) {
+        this(caster, trigger, event, origin, targetIsTrigger, variables, arguments, null);
+    }
+
     public SkillContext(LivingEntity caster, LivingEntity trigger, Cancellable event, Location origin, boolean targetIsTrigger,
                         Map<String, String> variables) {
         this(caster, trigger, event, origin, targetIsTrigger, variables, Map.of());
@@ -32,15 +37,18 @@ public record SkillContext(LivingEntity caster, LivingEntity trigger, Cancellabl
     }
 
     public SkillContext ownedHere() {
-        if (trigger == null || Bukkit.isOwnedByCurrentRegion(trigger)) return this;
-        return new SkillContext(caster, null, event, origin, false, variables, arguments);
+        LivingEntity known = trigger != null ? trigger : remoteTrigger;
+        if (known == null) return this;
+        boolean owned = Bukkit.isOwnedByCurrentRegion(known);
+        if (owned == (trigger != null)) return this;
+        return new SkillContext(caster, owned ? known : null, event, origin, targetIsTrigger, variables, arguments, owned ? null : known);
     }
 
     public SkillContext withOrigin(Location newOrigin) {
-        return new SkillContext(caster, trigger, event, newOrigin, targetIsTrigger, variables, arguments);
+        return new SkillContext(caster, trigger, event, newOrigin, targetIsTrigger, variables, arguments, remoteTrigger);
     }
 
     public SkillContext withArguments(Map<String, String> newArguments) {
-        return new SkillContext(caster, trigger, event, origin, targetIsTrigger, variables, newArguments);
+        return new SkillContext(caster, trigger, event, origin, targetIsTrigger, variables, newArguments, remoteTrigger);
     }
 }

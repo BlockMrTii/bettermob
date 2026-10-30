@@ -1,6 +1,5 @@
 package eu.northsoft.bettermob.skill.mechanic;
 
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.entity.Entity;
 

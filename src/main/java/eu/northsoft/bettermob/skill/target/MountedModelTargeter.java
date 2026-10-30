@@ -18,7 +18,7 @@ public final class MountedModelTargeter implements SingleTargeter {
 
     @Override
     public Target target(Map<String, String> params, SkillContext context) {
-        UUID owner = engine.modelPassengers().ownerOf(context.caster().getUniqueId());
+        UUID owner = engine.modelOwnerOf(context.caster().getUniqueId());
         if (owner == null) return null;
         Entity entity = Bukkit.getEntity(owner);
         return entity == null ? null : Target.ofEntity(entity);

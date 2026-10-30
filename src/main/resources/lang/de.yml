@@ -5,6 +5,9 @@ plugin:
   betterModelMissing: "BetterModel ist nicht installiert oder aktiv - Mobs spawnen ohne Modell."
   commandMissing: "Der Befehl /bettermob fehlt in der plugin.yml."
 
+api:
+  spawnWrongThread: "BetterMobAPI#spawn für '{mob}' wurde auf einem Thread aufgerufen, der den Ort nicht besitzt; es wurde nichts gespawnt. Nutze stattdessen spawnAsync."
+
 spawner:
   invalid: "Spawner '{id}' in der spawners.yml braucht einen Mob und eine Welt - uebersprungen."
   saveFailed: "spawners.yml konnte nicht gespeichert werden: {error}"
@@ -27,7 +30,7 @@ command:
     killall: "&7/bettermob killall [mob|*] [Welt] &8- &7Lebende BetterMob-Mobs entfernen"
     spawner: "&7/bettermob spawner <create|remove|list> &8- &7Mob-Spawner verwalten"
     info: "&7/bettermob info <mob> &8- &7Details eines Mobs anzeigen"
-    stats: "&7/bettermob stats [on|off|reset] &8- &7Mob-, Timer- und Skill-Statistiken anzeigen"
+    stats: "&7/bettermob stats [on|off|reset|top] &8- &7Mob-, Timer- und Skill-Statistiken anzeigen"
     validate: "&7/bettermob validate [pack] &8- &7Packs auf nicht unterstuetzte Zeilen pruefen"
   info:
     usage: "&cVerwendung: /bettermob info <mob>"
@@ -38,9 +41,12 @@ command:
     model: "&7Modell: &f{model}"
     equipment: "&7Ausruestung: &f{equipment}"
     drops: "&7Drop-Eintraege: &f{count}"
+    phase: "&7Phase {index}: &f{definition}"
+    phases: "&7Phasen: &f{count}"
     skills: "&7Bei {trigger}: &f{skills}"
     delay: "Verzoegerung"
     trigger:
+      phase: "Phase"
       spawn: "Spawn"
       load: "Laden"
       interact: "Interaktion"
@@ -59,6 +65,11 @@ command:
       signal: "Signal empfangen"
       despawn: "Despawn"
       move: "Bewegung"
+      swing: "Schwingen"
+      pressf: "F-Taste"
+      pickup: "Aufheben"
+      drop: "Fallenlassen"
+      equip: "Ausrüsten"
   validate:
     unknownPack: "&cPack '{pack}' wurde in packs/ nicht gefunden."
     header: "&7{lines} Zeilen in &f{sources} &7Ordner(n) geprueft:"
@@ -97,6 +108,7 @@ command:
     filtersAll: "alle"
     chatOn: "&aDebug-Ausgabe im Chat an."
     chatOff: "&7Debug-Ausgabe im Chat aus."
+    addRules: "&7Aktive ADD-Spawnregeln: &f{mobs}"
     usage: "&cNutzung: /bettermob debug [off|info|verbose|filter <id>|filter clear|chat]"
   aggro:
     enabled: "&aAggro-Linien an: Partikellinien von BetterMob-Mobs in der Naehe zu ihren Zielen."
@@ -146,7 +158,7 @@ command:
     worldMissing: "&cWelt '{world}' existiert nicht."
     done: "&a{count} Mobs entfernt."
   stats:
-    usage: "&cNutzung: /bettermob stats [on|off|reset]"
+    usage: "&cVerwendung: /bettermob stats [on|off|reset|top [n]]"
     enabled: "&aSkill-Messung eingeschaltet."
     disabled: "&7Skill-Messung ausgeschaltet."
     reset: "&aStatistik zurückgesetzt."
@@ -157,6 +169,8 @@ command:
     profilingOff: "&7Skill-Messung ist aus, einschalten mit /bettermob stats on."
     timingNone: "&7Seit dem Einschalten der Messung wurde kein Skill ausgeführt."
     timingHeader: "&7Skill-Zeiten (Top {limit} nach Gesamtzeit):"
+    mechanicHeader: "&7Mechanik-Zeiten (Top {limit} nach Gesamtzeit, inklusive verschachtelter Skills):"
+    mechanicNone: "&7Seit dem Einschalten der Messung wurde keine Mechanik ausgeführt."
     timingEntry: "&7- &f{skill}&7: &f{calls}&7 Aufrufe, Ø &f{avg}&7 ms, max &f{max}&7 ms, gesamt &f{total}&7 ms"
 
 pack:
@@ -167,6 +181,8 @@ ai:
   goalUnavailable: "AI-Goal '{goal}' ist für Mob-Typ '{type}' nicht verfügbar."
 
 mob:
+  healthCapped: "Mob '{mob}': Health {health} liegt über dem Server-Limit, begrenzt auf {max}. Erhöhe attribute.maxHealth.max in spigot.yml."
+  phaseInvalid: "Mob '{mob}': ungueltige Phasen-Option '{option}', sie wird uebersprungen."
   behaviourInvalid: "Mob '{mob}': ungueltige Bewegungsoption '{option}'."
   eggMaterialInvalid: "Mob '{mob}': Egg-Material '{value}' ist kein Material, es wird das Ei des Mob-Typs verwendet."
   loaded: "{count} Mobs geladen."
@@ -188,11 +204,13 @@ mob:
   migrationFailed: "Migration von '{mob}' fehlgeschlagen: {error}"
 
 skill:
+  blockMaskUnknown: "effect:blockmask: '{material}' ist kein Block - übersprungen."
   loaded: "{count} Skills geladen."
   duplicate: "Skill '{skill}' ist mehrfach definiert ({count} weitere, zuerst wiederholt in {folder}). Die erste Definition bleibt, die anderen werden ignoriert."
   lineInvalid: "Skill '{skill}': Zeile '{line}' konnte nicht geparst werden."
   notRegistered: "Skill '{skill}' ist nicht registriert."
   inlineLineInvalid: "Inline-Skill: Zeile '{line}' konnte nicht geparst werden."
+  petMechanicIgnored: "'{mechanic}' gehoert zu MCPets, das nur zusammen mit MythicMobs laeuft. BetterMob ueberspringt diese Zeilen, der Mob selbst funktioniert wie gewohnt."
   mechanicUnsupported: "Skill-Mechanic '{mechanic}' wird nicht unterstützt."
   customMechanicFailed: "Eigene Mechanic '{mechanic}' von {plugin} ist fehlgeschlagen: {error}"
   argumentMissing: "Argument '<arg.{argument}>' wurde diesem Skill nicht uebergeben und hat keinen Standardwert (Arguments:), der Platzhalter bleibt stehen."
@@ -232,6 +250,8 @@ drop:
   unresolvable: "Drop '{drop}' ist weder EXP, Drop-Table, Item noch Material - wird übersprungen."
 
 betterModel:
+  callFailed: "BetterModel: {action} fehlgeschlagen: {error}"
+  unsupported: "BetterModel kennt kein '{action}' - die Zeile wird übersprungen."
   inactive: "BetterModel ist beim Spawn von '{model}' nicht aktiv - kein Modell angehängt."
   apiClassMissing: "BetterModel-API-Klasse '{class}' nicht gefunden - passt die installierte BetterModel-Version?"
   modelMissing: "BetterModel-Modell '{model}' existiert nicht."
@@ -269,3 +289,11 @@ egg:
 kills:
   saveFailed: "kills.yml konnte nicht gespeichert werden: {error}"
   loadFailed: "kills.yml konnte nicht gelesen werden, Kill-Zaehler werden erst wieder gespeichert, wenn sie repariert ist: {error}"
+
+update:
+  available: "Eine neue BetterMob-Version ist verfuegbar: {latest} (installiert: {current}). Download: {url}"
+
+worldguard:
+  enabled: "WorldGuard gefunden: Region-Conditions, Spawn-Regionen und das Flag bettermob-spawn sind aktiv."
+  failed: "WorldGuard konnte nicht genutzt werden: {error}"
+  missing: "Die Condition 'region' braucht WorldGuard, ohne es ist sie nie erfuellt."

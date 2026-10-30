@@ -41,6 +41,17 @@ class SchemasTest {
     }
 
     @Test
+    void phaseFieldsFollowTheMobSchema() throws IOException {
+        String prefix = "Type: ZOMBIE\nPhases:\n  - Health: ";
+        assertTrue(schema("mob").validate(YAML.readTree(prefix + "'<70%'\n    Options: {Silent: true, Scale: 2}\n    Equipment: [IRON_SWORD:HAND]\n    Skills: ['sound{s=x} @self ~onPhase']\n")).isEmpty());
+        assertTrue(schema("mob").validate(YAML.readTree(prefix + "' <= 30.5 % '\n")).isEmpty());
+        assertFalse(schema("mob").validate(YAML.readTree(prefix + "'half'\n")).isEmpty());
+        assertFalse(schema("mob").validate(YAML.readTree(prefix + "'<40'\n    Options: {Scale: small}\n")).isEmpty());
+        assertFalse(schema("mob").validate(YAML.readTree(prefix + "'<40'\n    Equipment: sword\n")).isEmpty());
+        assertFalse(schema("mob").validate(YAML.readTree(prefix + "'<40'\n    Skills: ['sound{s=x} @self']\n")).isEmpty());
+    }
+
+    @Test
     void everyShippedAndSampleFileMatchesItsSchema() throws IOException {
         List<String> failures = new ArrayList<>();
         int checked = 0;
@@ -75,6 +86,8 @@ class SchemasTest {
         String ok = "Type: PIG\nSkills:\n  - sound{s=x} @self ~on";
         assertTrue(schema("mob").validate(YAML.readTree(ok + "Signal:HIT\n")).isEmpty());
         assertTrue(schema("mob").validate(YAML.readTree(ok + "Timer:40\n")).isEmpty());
+        assertTrue(schema("mob").validate(YAML.readTree(ok + "Damaged ?~sneaking\n")).isEmpty());
+        assertTrue(schema("mob").validate(YAML.readTree(ok + "Damaged ?!~hastag{t=x}\n")).isEmpty());
         assertFalse(schema("mob").validate(YAML.readTree(ok + "Signal\n")).isEmpty());
         assertFalse(schema("mob").validate(YAML.readTree(ok + "Timer:HIT\n")).isEmpty());
         assertFalse(schema("mob").validate(YAML.readTree(ok + "Damaged:HIT\n")).isEmpty());
@@ -84,5 +97,11 @@ class SchemasTest {
     void theSchemasAcceptBothMobFileLayouts() throws IOException {
         assertTrue(schema("mob").validate(YAML.readTree("Type: zombie\nHealth: 30\nSpawn:\n  Time: night\n")).isEmpty());
         assertTrue(schema("mob").validate(YAML.readTree("a:\n  Type: PIG\nb:\n  Type: COW\n  Skills:\n    - sound{s=x} @self ~onSpawn\n")).isEmpty());
+    }
+
+    @Test
+    void mobSchemaAcceptsAddSpawnRule() throws IOException {
+        assertTrue(schema("mob").validate(YAML.readTree("Type: PIG\nSpawn:\n  Action: ADD\n  Chance: 0.05\n  Cooldown: 120\n  MaxNearby: 2\n")).isEmpty());
+        assertFalse(schema("mob").validate(YAML.readTree("Type: PIG\nSpawn:\n  Action: RANDOM\n")).isEmpty());
     }
 }

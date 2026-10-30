@@ -114,5 +114,7 @@ public final class SkillState {
         Map<String, Aura> removed = auras.remove(entityId);
         if (removed != null) removed.values().forEach(Aura::stop);
         gcdUntilMillis.remove(entityId);
+        cooldowns.keySet().removeIf(key -> (key instanceof SkillKey skillKey && skillKey.caster().equals(entityId))
+                || (key instanceof StepKey stepKey && stepKey.caster().equals(entityId)));
     }
 }

@@ -77,9 +77,9 @@ jobs:
         run: |
           files=$(sed 's/^/- `/; s/$/`/' "$RUNNER_TEMP/stripped.txt")
           if [ "$PUSHED" = success ]; then
-            body=$(printf 'Removed code comments (the project keeps its Java code comment-free) in:\n\n%s' "$files")
+            body=$(printf 'Removed code comments (JavaDoc is preserved) in:\n\n%s' "$files")
           else
-            body=$(printf 'This pull request adds code comments, which the project does not allow, and the branch could not be pushed to. Remove the comments in:\n\n%s' "$files")
+            body=$(printf 'This pull request adds ordinary code comments (JavaDoc is allowed), and the branch could not be pushed to. Remove the comments in:\n\n%s' "$files")
           fi
           gh pr comment "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --body "$body"
 

@@ -18,4 +18,9 @@ public final class RangeSpec {
             return false;
         }
     }
+
+    public static String atLeast(String spec) {
+        String text = spec.trim();
+        return !text.isEmpty() && Character.isDigit(text.charAt(0)) && text.indexOf('-', 1) < 0 ? ">=" + text : text;
+    }
 }

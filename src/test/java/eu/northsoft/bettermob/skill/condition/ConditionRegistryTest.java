@@ -27,6 +27,16 @@ class ConditionRegistryTest {
     }
 
     @Test
+    void theMythicMobsCompatibilityConditionsAreRegistered() {
+        for (String name : new String[] {"varequals", "variableequals", "variableisset", "variableinrange", "stringeq",
+                "modelhaspassengers", "ridingmodel", "mounted", "crouching", "day", "gamemode", "outside", "holding",
+                "moving", "ismoving", "playerwithin", "playersinradius", "fieldofview", "score",
+                "owner", "mythicmobtype", "boundingboxesoverlap"}) {
+            assertTrue(registry.has(name), name);
+        }
+    }
+
+    @Test
     void aCustomConditionReceivesTheTargetOverride() {
         AtomicReference<Double> x = new AtomicReference<>();
         registry.registerCustom(null, "atx", context -> {
@@ -49,5 +59,7 @@ class ConditionRegistryTest {
         assertTrue(registry.evaluate(Condition.parse("petlevel{level=3}"), new SkillContext(null, null, null), null));
         assertEquals("3", level.get());
         assertFalse(registry.evaluate(Condition.parse("petlevel{level=4}"), new SkillContext(null, null, null), null));
+        SkillContext withArgs = new SkillContext(null, null, null).withArguments(java.util.Map.of("lvl", "3"));
+        assertTrue(registry.evaluate(Condition.parse("petlevel{level=<arg.lvl>}"), withArgs, null));
     }
 }

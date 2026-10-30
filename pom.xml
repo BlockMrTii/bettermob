@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>eu.northsoft</groupId>
     <artifactId>bettermob</artifactId>
-    <version>1.1.9</version>
+    <version>1.2.0</version>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
@@ -26,12 +26,28 @@
             <url>https://repo.extendedclip.com/releases/</url>
         </repository>
         <repository>
+            <id>enginehub</id>
+            <url>https://maven.enginehub.org/repo/</url>
+        </repository>
+        <repository>
             <id>papermc</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
     </repositories>
 
     <dependencies>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.20.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.sk89q.worldguard</groupId>
+            <artifactId>worldguard-bukkit</artifactId>
+            <version>7.0.17</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>me.clip</groupId>
             <artifactId>placeholderapi</artifactId>

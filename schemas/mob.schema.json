@@ -378,7 +378,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "pattern": "~[oO][nN]([sS][iI][gG][nN][aA][lL]:[A-Za-z0-9_-]+|(?![sS][iI][gG][nN][aA][lL]([^A-Za-z]|$))[A-Za-z]+(:[0-9]+|(<=|>=|<|>)[0-9]+(\\.[0-9]+)?%?)?)(\\s+\\?!?[A-Za-z0-9_]+(\\{.*\\})?)?\\s*$",
+            "pattern": "~[oO][nN]([sS][iI][gG][nN][aA][lL]:[A-Za-z0-9_-]+|(?![sS][iI][gG][nN][aA][lL]([^A-Za-z]|$))[A-Za-z]+(:[0-9]+|(<=|>=|<|>)[0-9]+(\\.[0-9]+)?%?)?)(\\s+\\?!?~?[A-Za-z0-9_]+(\\{.*\\})?)?\\s*$",
             "description": "A skill line ending with a trigger, for example: sound{s=entity.pig.hurt} @self ~onDamaged"
           },
           "description": "Skill lines with a trigger."
@@ -399,8 +399,12 @@
         },
         "Spawn": {
           "type": "object",
-          "description": "Replaces natural spawns of the mob's Type.",
+          "description": "REPLACE converts natural spawns of the mob's Type; ADD generates land spawn attempts around survival/adventure players.",
           "properties": {
+            "Action": {
+              "type": "string",
+              "enum": ["REPLACE", "ADD", "replace", "add", "Replace", "Add"]
+            },
             "Worlds": {
               "type": "array",
               "items": {
@@ -430,6 +434,30 @@
               "type": "number",
               "minimum": 0,
               "maximum": 1
+            },
+            "Regions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "WorldGuard regions: the rule only applies inside one of them (needs WorldGuard)."
+            },
+            "NotRegions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "WorldGuard regions the rule never applies in."
+            },
+            "Cooldown": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Minimum seconds between successful ADD spawns for each player and mob. Default: 60."
+            },
+            "MaxNearby": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum mobs of this id within 48 blocks of an ADD spawn point. Default: 3."
             }
           }
         },
@@ -554,6 +582,54 @@
               ]
             }
           ]
+        },
+        "Phases": {
+          "type": "array",
+          "description": "Health thresholds that change the mob: the last phase whose Health matches is active.",
+          "items": {
+            "type": "object",
+            "required": [
+              "Health"
+            ],
+            "properties": {
+              "Health": {
+                "type": "string",
+                "pattern": "^\\s*(<=|>=|<|>)\\s*[0-9]+(\\.[0-9]+)?\\s*%?\\s*$",
+                "description": "Like <70% or <=30%, an absolute number without %."
+              },
+              "Display": {
+                "type": "string"
+              },
+              "Model": {
+                "type": "string"
+              },
+              "OnStart": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Skill lines that run once when the phase starts."
+              },
+              "Skills": {
+                "$ref": "#/definitions/mob/properties/Skills",
+                "description": "Replaces all active trigger lines; ~onPhase runs once on downward entry."
+              },
+              "Replace": {
+                "type": [
+                  "boolean",
+                  "string"
+                ],
+                "description": "Deprecated compatibility field. Phase skills always replace the entire active trigger set."
+              },
+              "Options": {
+                "$ref": "#/definitions/mob/properties/Options"
+              },
+              "Equipment": {
+                "$ref": "#/definitions/mob/properties/Equipment"
+              }
+            },
+            "additionalProperties": false
+          }
         }
       }
     }

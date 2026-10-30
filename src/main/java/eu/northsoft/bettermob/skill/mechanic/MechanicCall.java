@@ -6,5 +6,5 @@ import eu.northsoft.bettermob.skill.Target;
 
 import java.util.Map;
 
-public record MechanicCall(SkillStep.Mechanic step, SkillContext context, Target target, Map<String, String> params) {
+public record MechanicCall(SkillStep.Mechanic step, SkillContext context, Target target, Map<String, String> params, String casterName) {
 }

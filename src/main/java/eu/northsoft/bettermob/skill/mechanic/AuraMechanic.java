@@ -40,7 +40,7 @@ public final class AuraMechanic implements Mechanic {
         if (onTick != null) {
             long interval = Math.max(1, parseInt(firstParam(p, "i", "interval"), 20));
             aura.bindTicker(Tasks.runTimer(engine.plugin(), entity, interval, interval, () -> {
-                if (entity.isDead() || active.get(key) != aura) aura.cancelTicker.run();
+                if (!entity.isValid() || entity.isDead() || active.get(key) != aura) aura.cancelTicker.run();
                 else runLines(onTick, SkillContext.of(entity));
             }));
         }

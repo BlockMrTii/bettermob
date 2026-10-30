@@ -46,7 +46,12 @@ public sealed interface SkillStep {
                 negated = true;
                 cursor.advance();
             }
-            StringBuilder raw = new StringBuilder(cursor.readWord());
+            StringBuilder raw = new StringBuilder();
+            if (cursor.peek() == '~') {
+                raw.append('~');
+                cursor.advance();
+            }
+            raw.append(cursor.readWord());
             if (cursor.peek() == '{') raw.append('{').append(cursor.readBraced()).append('}');
             inlineCondition = raw.toString();
         }

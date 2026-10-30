@@ -10,7 +10,7 @@ public final class MessageMechanic implements Mechanic {
     public void execute(MechanicCall call) {
         String raw = firstParam(call.params(), "m", "message", "msg");
         if (raw == null || !(call.target().entity() instanceof Player receiver)) return;
-        receiver.sendMessage(MessageText.render(raw, receiver, call.context().caster().getName()));
+        receiver.sendMessage(MessageText.render(raw, receiver, call.casterName()));
     }
 
     static Component withName(Component template, String token, String name) {

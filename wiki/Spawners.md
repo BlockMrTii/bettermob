@@ -30,6 +30,10 @@ Spawners are saved in `plugins/BetterMob/spawners.yml` and reloaded with `/bette
 
 Spawned mobs carry the scoreboard tag `bettermob_spawner:<id>`. That is how a spawner counts its mobs again after a restart or when their chunk loads, without scanning the area around it. On Folia the counting works through events, not area scans.
 
+## WorldGuard
+
+With [WorldGuard](Installation#worldguard-optional) a region flag `bettermob-spawn deny` stops spawners from spawning inside that region; the spawner just waits for its next try.
+
 ## Natural spawns instead
 
 If you want a mob to replace vanilla spawns everywhere (by biome, world, time and chance) use the `Spawn` block of the mob file, see [Natural spawns](Mobs#natural-spawns).

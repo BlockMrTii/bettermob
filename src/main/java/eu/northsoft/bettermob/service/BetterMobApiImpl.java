@@ -1,10 +1,13 @@
 package eu.northsoft.bettermob.service;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
-import eu.northsoft.bettermob.mob.ExtraTriggers;
 import eu.northsoft.bettermob.api.BetterMobAPI;
-import eu.northsoft.bettermob.api.CustomMechanic;
+import eu.northsoft.bettermob.api.custom.CustomCondition;
+import eu.northsoft.bettermob.api.custom.CustomMechanic;
+import eu.northsoft.bettermob.api.custom.CustomPlaceholder;
+import eu.northsoft.bettermob.api.custom.CustomTargeter;
 import eu.northsoft.bettermob.api.MobInfo;
+import eu.northsoft.bettermob.mob.ExtraTriggers;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.mob.MobManager;
 import eu.northsoft.bettermob.skill.SkillContext;
@@ -21,6 +24,7 @@ import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -60,13 +64,19 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
 
     @Override
     public Optional<LivingEntity> spawn(String id, Location location) {
+        if (location == null || location.getWorld() == null) return Optional.empty();
+        if (!Bukkit.isOwnedByCurrentRegion(location)) {
+            plugin.messages().warnOnce("api.spawnWrongThread", "mob", id);
+            return Optional.empty();
+        }
         MobDefinition definition = id == null ? null : manager.registry().get(id);
-        if (definition == null) return Optional.empty();
+        if (definition == null || !definition.type.isAlive() || !definition.type.isSpawnable()) return Optional.empty();
         return Optional.of(manager.spawn(definition, location));
     }
 
     @Override
     public CompletableFuture<Optional<LivingEntity>> spawnAsync(String id, Location location) {
+        if (location == null || location.getWorld() == null) return CompletableFuture.completedFuture(Optional.empty());
         CompletableFuture<Optional<LivingEntity>> result = new CompletableFuture<>();
         Tasks.runOwnedAt(plugin, location, () -> {
             try {
@@ -74,13 +84,13 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
             } catch (RuntimeException exception) {
                 result.completeExceptionally(exception);
             }
-        });
+        }, () -> result.complete(Optional.empty()));
         return result;
     }
 
     @Override
     public Collection<String> getSkillIds() {
-        return java.util.List.copyOf(skillRegistry.ids());
+        return List.copyOf(skillRegistry.ids());
     }
 
     @Override
@@ -90,11 +100,8 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
 
     @Override
     public boolean runSkill(String skillId, LivingEntity caster, LivingEntity trigger) {
-        if (skillId == null || skillRegistry.get(skillId) == null) return false;
-        Tasks.runOwned(plugin, caster, () -> {
-            if (trigger != null && !Bukkit.isOwnedByCurrentRegion(trigger)) return;
-            skillEngine.runById(skillId, new SkillContext(caster, trigger, null));
-        });
+        if (skillId == null || caster == null || skillRegistry.get(skillId) == null) return false;
+        Tasks.runOwned(plugin, caster, () -> skillEngine.runById(skillId, new SkillContext(caster, trigger, null).ownedHere()));
         return true;
     }
 
@@ -109,7 +116,7 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
     }
 
     @Override
-    public boolean registerCondition(Plugin owner, String name, eu.northsoft.bettermob.api.CustomCondition condition) {
+    public boolean registerCondition(Plugin owner, String name, CustomCondition condition) {
         return skillEngine.conditionRegistry().registerCustom(owner, name, condition);
     }
 
@@ -119,7 +126,7 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
     }
 
     @Override
-    public boolean registerTargeter(Plugin owner, String name, eu.northsoft.bettermob.api.CustomTargeter targeter) {
+    public boolean registerTargeter(Plugin owner, String name, CustomTargeter targeter) {
         return skillEngine.targeters().registerCustom(owner, name, targeter);
     }
 
@@ -129,7 +136,7 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
     }
 
     @Override
-    public boolean registerPlaceholder(Plugin owner, String namespace, eu.northsoft.bettermob.api.CustomPlaceholder placeholder) {
+    public boolean registerPlaceholder(Plugin owner, String namespace, CustomPlaceholder placeholder) {
         return skillEngine.placeholders().register(owner, namespace, placeholder);
     }
 

@@ -1,8 +1,8 @@
 package eu.northsoft.bettermob.skill.mechanic;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
-import eu.northsoft.bettermob.api.CustomMechanic;
-import eu.northsoft.bettermob.api.MechanicContext;
+import eu.northsoft.bettermob.api.custom.CustomMechanic;
+import eu.northsoft.bettermob.api.custom.MechanicContext;
 import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
@@ -48,7 +48,8 @@ public final class MechanicRegistry {
                 custom.execute(new MechanicContext(call.context().caster(), call.context().trigger(), call.context().event(),
                         call.target().entity(), call.target().location(), call.params()));
             } catch (RuntimeException exception) {
-                plugin.messages().warn("skill.customMechanicFailed", "mechanic", call.step().name(), "plugin", owner.getName(), "error", exception);
+                plugin.messages().warn("skill.customMechanicFailed", "mechanic", call.step().name(),
+                        "plugin", owner == null ? "?" : owner.getName(), "error", exception);
             }
         };
         return entries.putIfAbsent(key, new Entry(owner, true, mechanic)) == null;

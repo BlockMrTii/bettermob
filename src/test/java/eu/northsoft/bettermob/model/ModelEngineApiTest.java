@@ -7,7 +7,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -36,6 +35,16 @@ class ModelEngineApiTest {
             new Call(ME + "model.bone.manager.MountManager", "mountDriver", "org.bukkit.entity.Entity", ME + "mount.controller.MountControllerSupplier"),
             new Call(ME + "model.bone.manager.MountManager", "mountPassenger", "java.lang.String", "org.bukkit.entity.Entity", ME + "mount.controller.MountControllerSupplier"),
             new Call(ME + "model.bone.type.Mount", "isDriver"),
+            new Call(ME + "model.bone.type.Mount", "getPassengers"),
+            new Call(ME + "model.bone.manager.MountManager", "getSeats"),
+            new Call(ME + "model.bone.manager.MountManager", "getDriver"),
+            new Call(ME + "ModelEngineAPI", "getMountPairManager"),
+            new Call(ME + "mount.MountPairManager", "getMountedPair", "java.util.UUID"),
+            new Call(ME + "entity.BaseEntity", "getUUID"),
+            new Call(ME + "model.bone.manager.MountManager", "getDriverBone"),
+            new Call(ME + "model.bone.behavior.BoneBehavior", "getBone"),
+            new Call(ME + "model.bone.ModelBone", "getBoneId"),
+            new Call(ME + "model.bone.manager.MountManager", "dismountRider", "org.bukkit.entity.Entity"),
             new Call(ME + "entity.BaseEntity", "getBodyRotationController"),
             new Call(ME + "nms.entity.wrapper.BodyRotationController", "setHeadClampUneven", "boolean"),
             new Call(ME + "nms.entity.wrapper.BodyRotationController", "setBodyClampUneven", "boolean"),

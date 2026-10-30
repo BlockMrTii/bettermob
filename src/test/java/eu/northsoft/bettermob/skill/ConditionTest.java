@@ -7,6 +7,29 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ConditionTest {
     @Test
+    void compositeConditionsCombineOrAndAndWithNesting() {
+        Condition condition = Condition.parse("( a{x=1} || b false && ( c || d ) ) false");
+        assertEquals(Condition.COMPOSITE, condition.name());
+        assertEquals(false, condition.expected());
+        java.util.Set<String> holding = java.util.Set.of("b", "d");
+        java.util.function.Predicate<Condition> met = c -> holding.contains(c.name()) == (c.expected() == null || c.expected());
+        org.junit.jupiter.api.Assertions.assertFalse(Condition.holds(condition.params(), met));
+        java.util.Set<String> withA = java.util.Set.of("a");
+        org.junit.jupiter.api.Assertions.assertTrue(Condition.holds(condition.params(),
+                c -> c.composite() ? Condition.holds(c.params(), x -> withA.contains(x.name())) : withA.contains(c.name()) == (c.expected() == null || c.expected())));
+        Condition both = Condition.parse("(a) && (b)");
+        assertEquals(Condition.COMPOSITE, both.name());
+        assertNull(both.action());
+        java.util.function.Predicate<Condition> onlyA = c -> c.composite() ? Condition.holds(c.params(), x -> x.name().equals("a")) : c.name().equals("a");
+        org.junit.jupiter.api.Assertions.assertFalse(Condition.holds(both.params(), onlyA));
+        org.junit.jupiter.api.Assertions.assertTrue(Condition.parse("( a || blockType{type=OAK_LOG} )").mentions("blocktype"));
+        org.junit.jupiter.api.Assertions.assertFalse(Condition.parse("( varequals{var=blocktype;val=1} )").mentions("blocktype"));
+        assertNull(Condition.parse("(a) &&"));
+        assertNull(Condition.parse("( a || )"));
+        assertNull(Condition.parse("( a || b"));
+    }
+
+    @Test
     void parsesBareName() {
         assertEquals(new Condition("offgcd", null, null, null, null), Condition.parse("offgcd"));
     }

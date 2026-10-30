@@ -4,7 +4,11 @@ import eu.northsoft.bettermob.drop.DropEntry;
 import eu.northsoft.bettermob.mob.Behaviour;
 import eu.northsoft.bettermob.mob.ExtraTriggers;
 import eu.northsoft.bettermob.mob.MobDefinition;
+import eu.northsoft.bettermob.mob.MobPhase;
+import org.bukkit.Material;
 import eu.northsoft.bettermob.skill.Condition;
+import eu.northsoft.bettermob.skill.InlineSkills;
+import eu.northsoft.bettermob.skill.Params;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillStep;
 import eu.northsoft.bettermob.skill.target.CandidateFilters;
@@ -15,13 +19,19 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Predicate;
 
 public final class PackValidator {
     public record Models(Predicate<String> betterModel, Predicate<String> modelEngine) {}
 
     public record Knowledge(Predicate<String> mechanic, Predicate<String> condition, Predicate<String> targeter, Predicate<String> skill,
-                            Predicate<String> targeterCondition, Models models, Predicate<String> dropTable) {
+                            Predicate<String> targeterCondition, Models models, Predicate<String> dropTable, Predicate<String> item) {
+        public Knowledge(Predicate<String> mechanic, Predicate<String> condition, Predicate<String> targeter, Predicate<String> skill,
+                         Predicate<String> targeterCondition, Models models, Predicate<String> dropTable) {
+            this(mechanic, condition, targeter, skill, targeterCondition, models, dropTable, null);
+        }
+
         public Knowledge(Predicate<String> mechanic, Predicate<String> condition, Predicate<String> targeter, Predicate<String> skill,
                          Predicate<String> targeterCondition, Models models) {
             this(mechanic, condition, targeter, skill, targeterCondition, models, null);
@@ -67,16 +77,17 @@ public final class PackValidator {
         this.known = known;
     }
 
-    public static Knowledge knowledgeOf(SkillEngine engine, java.util.function.Predicate<String> skill) {
+    public static Knowledge knowledgeOf(SkillEngine engine, Predicate<String> skill) {
         return new Knowledge(
-                name -> engine.mechanics().get(name) != null || name.equals("cancelskill") || name.equals("delay"),
+                name -> engine.mechanics().get(name) != null || name.equals("cancelskill") || name.equals("delay") || skill.test(name),
                 name -> engine.conditionRegistry().has(name),
                 name -> engine.targeters().has(name),
                 skill,
                 name -> CandidateFilters.knows(name, engine.conditionRegistry()::has),
                 new Models(engine.betterModel().available() ? engine.betterModel()::hasModel : null,
                         engine.modelEngine().available() ? engine.modelEngine()::hasModel : null),
-                name -> engine.drops() == null || engine.drops().get(name) != null);
+                name -> engine.drops() == null || engine.drops().get(name) != null,
+                name -> engine.items() != null && engine.items().get(name) != null);
     }
 
     public boolean checksModels() {
@@ -101,7 +112,9 @@ public final class PackValidator {
 
     void walkTriggerLists(ConfigurationSection section, String file, Report report) {
         for (String key : section.getKeys(false)) {
-            if (key.equalsIgnoreCase("Patrol")) {
+            if (key.equalsIgnoreCase("Phases")) {
+                validatePhases(section, file, report);
+            } else if (key.equalsIgnoreCase("Patrol")) {
                 List<String> points = section.isList(key) ? section.getStringList(key)
                         : section.isConfigurationSection(key) ? section.getConfigurationSection(key).getStringList("Points") : List.of();
                 Object shape = section.get(key);
@@ -123,6 +136,35 @@ public final class PackValidator {
                 for (String line : section.getStringList(key)) validateDropLine(line, file, report);
             } else if (section.isConfigurationSection(key)) {
                 walkTriggerLists(section.getConfigurationSection(key), file, report);
+            }
+        }
+    }
+
+    private void validatePhases(ConfigurationSection mob, String file, Report report) {
+        MobPhase.parse(mob, message -> {
+            if (message.contains(": Skills ") || message.contains(": OnStart ")) return;
+            report.lines++;
+            report.issues.add(new Issue(file, message, Reason.UNPARSEABLE, ""));
+        });
+        List<?> entries = mob.getList("Phases", List.of());
+        for (int i = 0; i < entries.size(); i++) {
+            if (!(entries.get(i) instanceof Map<?, ?> entry)) continue;
+            YamlConfiguration config = new YamlConfiguration();
+            ConfigurationSection phase = config.createSection("phase", entry);
+            String label = file + " Phases[" + i + "]";
+            walkTriggerLists(phase, label, report);
+            for (String line : phase.getStringList("OnStart")) validateStepLine(line, label, report);
+            for (String line : phase.getStringList("Equipment")) {
+                report.lines++;
+                String item = line.trim().split(":", 2)[0];
+                Material material = Material.matchMaterial(item);
+                if (known.item() != null && !known.item().test(item) && (material == null || !material.isItem())) {
+                    report.issues.add(new Issue(label, "Equipment: " + line, Reason.UNPARSEABLE, item));
+                }
+            }
+            String head = phase.getString("Options.ItemHead");
+            if (head != null && known.item() != null && !known.item().test(head)) {
+                report.issues.add(new Issue(label, "Options.ItemHead: " + head, Reason.UNPARSEABLE, head));
             }
         }
     }
@@ -195,9 +237,27 @@ public final class PackValidator {
     }
 
     private void checkCondition(String raw, String line, String file, Report report) {
-        Condition condition = Condition.parse(raw);
-        if (condition == null) report.issues.add(new Issue(file, line, Reason.UNPARSEABLE, ""));
-        else if (!known.condition().test(condition.name())) report.issues.add(new Issue(file, line, Reason.CONDITION, condition.name()));
+        checkCondition(Condition.parse(raw.startsWith("~") ? raw.substring(1) : raw), known.condition(), Reason.CONDITION, line, file, report);
+    }
+
+    private void checkCondition(Condition condition, Predicate<String> knows, Reason reason, String line, String file, Report report) {
+        if (condition == null) {
+            report.issues.add(new Issue(file, line, Reason.UNPARSEABLE, ""));
+            return;
+        }
+        if ("castinstead".equals(condition.action()) && condition.actionValue() != null) {
+            String target = Params.stripQuotes(condition.actionValue());
+            if (!target.isBlank() && !hasPlaceholder(target) && !known.skill().test(target)) {
+                report.issues.add(new Issue(file, line, Reason.SKILL, target));
+            }
+        }
+        if (condition.composite()) {
+            for (List<String> all : Condition.alternatives(condition.params())) {
+                for (String atom : all) checkCondition(Condition.parse(atom), knows, reason, line, file, report);
+            }
+        } else if (!knows.test(condition.name())) {
+            report.issues.add(new Issue(file, line, reason, condition.name()));
+        }
     }
 
     private void checkStep(SkillStep step, String line, String file, Report report) {
@@ -216,44 +276,53 @@ public final class PackValidator {
 
         String conditions = mechanic.targeterParams().get("conditions");
         if (conditions != null) {
-            for (String raw : SkillEngine.splitInline(conditions)) {
-                Condition condition = Condition.parse(raw);
-                if (condition == null) report.issues.add(new Issue(file, line, Reason.UNPARSEABLE, ""));
-                else if (!known.targeterCondition().test(condition.name())) {
-                    report.issues.add(new Issue(file, line, Reason.TARGETER_CONDITION, condition.name()));
-                }
+            for (String raw : InlineSkills.splitInline(conditions)) {
+                checkCondition(Condition.parse(raw), known.targeterCondition(), Reason.TARGETER_CONDITION, line, file, report);
             }
         }
 
+        boolean skillRef = mechanic.name().equals("skill") || mechanic.name().equals("randomskill")
+                || mechanic.name().equals("sudoskill") || mechanic.name().equals("onchat") || mechanic.name().equals("raytraceto");
         for (String key : List.of("s", "skill", "skills")) {
-            String value = mechanic.params().get(key);
-            if (value == null) continue;
-            if (value.trim().startsWith("[")) {
-                for (String inner : SkillEngine.splitInline(value)) {
-                    report.lines++;
-                    SkillStep innerStep = SkillStep.parse(inner);
-                    if (innerStep == null) report.issues.add(new Issue(file, inner, Reason.UNPARSEABLE, ""));
-                    else checkStep(innerStep, inner, file, report);
-                }
-            } else if (mechanic.name().equals("skill") || mechanic.name().equals("randomskill") || mechanic.name().equals("sudoskill")) {
-                for (String id : value.split(",")) {
-                    if (!id.isBlank() && !known.skill().test(id.trim())) report.issues.add(new Issue(file, line, Reason.SKILL, id.trim()));
-                }
+            checkSkillParam(mechanic.params().get(key), skillRef, line, file, report);
+        }
+        if (mechanic.name().equals("onchat")) {
+            checkSkillParam(mechanic.params().get("onchat"), true, line, file, report);
+        }
+        if (mechanic.name().equals("raytraceto")) {
+            for (String key : List.of("es", "hs", "hitskill")) {
+                checkSkillParam(mechanic.params().get(key), true, line, file, report);
             }
         }
         for (String key : List.of("os", "oe", "ot", "oh", "onstart", "onend", "ontick", "onhit")) {
-            String value = mechanic.params().get(key);
-            if (value == null || !value.trim().startsWith("[")) continue;
-            for (String inner : SkillEngine.splitInline(value)) {
+            checkSkillParam(mechanic.params().get(key), mechanic.name().equals("raytraceto") && (key.equals("oh") || key.equals("onhit")), line, file, report);
+        }
+    }
+
+    private void checkSkillParam(String value, boolean checkId, String line, String file, Report report) {
+        if (value == null) return;
+        if (value.trim().startsWith("[")) {
+            for (String inner : InlineSkills.splitInline(value)) {
                 report.lines++;
                 SkillStep innerStep = SkillStep.parse(inner);
                 if (innerStep == null) report.issues.add(new Issue(file, inner, Reason.UNPARSEABLE, ""));
                 else checkStep(innerStep, inner, file, report);
             }
+        } else if (checkId) {
+            for (String raw : value.split(",")) {
+                String id = Params.stripQuotes(raw);
+                if (!id.isBlank() && !hasPlaceholder(id) && !known.skill().test(id)) {
+                    report.issues.add(new Issue(file, line, Reason.SKILL, id));
+                }
+            }
         }
     }
 
-    private static String firstOf(java.util.Map<String, String> params, String... keys) {
+    private static boolean hasPlaceholder(String value) {
+        return value.indexOf('<') >= 0 || value.indexOf('%') >= 0;
+    }
+
+    private static String firstOf(Map<String, String> params, String... keys) {
         for (String key : keys) {
             if (params.containsKey(key)) return params.get(key);
         }

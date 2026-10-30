@@ -8,6 +8,7 @@ import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.entity.Entity;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static eu.northsoft.bettermob.skill.Params.firstParam;
 import static eu.northsoft.bettermob.skill.Params.parseInt;
@@ -20,7 +21,7 @@ public final class VariableMechanic implements Mechanic {
 
     private final SkillEngine engine;
     private final Mode mode;
-    private final java.util.concurrent.ConcurrentHashMap<String, Object> expiries = new java.util.concurrent.ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Object> expiries = new ConcurrentHashMap<>();
 
     public VariableMechanic(SkillEngine engine, boolean add) {
         this(engine, add ? Mode.ADD : Mode.SET);
@@ -52,12 +53,19 @@ public final class VariableMechanic implements Mechanic {
             return;
         }
 
-        String result = compute(call, scope.get(name));
+        String result;
+        boolean limited = false;
+        synchronized (scope) {
+            result = compute(call, scope.get(name));
+            if (result != null && !Variables.put(scope, name, result)) {
+                limited = true;
+            }
+        }
         if (result == null) {
             engine.plugin().messages().warn("skill.variableValue", "variable", variable, "value", firstParam(call.params(), "value", "val", "v", "amount", "a", "equation", "expr"));
             return;
         }
-        if (!Variables.put(scope, name, result)) {
+        if (limited) {
             engine.plugin().messages().warn("skill.variableLimit", "variable", variable, "limit", Variables.MAX_PER_SCOPE);
             return;
         }
@@ -72,7 +80,7 @@ public final class VariableMechanic implements Mechanic {
                 synchronized (scope) {
                     if (result.equals(scope.get(name))) scope.remove(name);
                 }
-            });
+            }, () -> expiries.remove(slot, token));
         } else {
             expiries.remove(slot);
         }

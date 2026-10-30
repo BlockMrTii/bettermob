@@ -14,7 +14,7 @@ public final class TitleMechanic implements Mechanic {
         String title = firstParam(call.params(), "t", "title");
         String subtitle = firstParam(call.params(), "st", "subtitle");
         if ((title == null && subtitle == null) || !(call.target().entity() instanceof Player receiver)) return;
-        String caster = call.context().caster().getName();
+        String caster = call.casterName();
         Component main = title == null ? Component.empty() : MessageText.render(title, receiver, caster);
         Component sub = subtitle == null ? Component.empty() : MessageText.render(subtitle, receiver, caster);
         Title.Times times = Title.Times.times(

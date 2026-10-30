@@ -1,12 +1,13 @@
 package eu.northsoft.bettermob.mob;
 
-import eu.northsoft.bettermob.util.Duplicates;
-import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.drop.DropEntry;
 import eu.northsoft.bettermob.drop.DropTable;
 import eu.northsoft.bettermob.pack.PackScanner;
 import eu.northsoft.bettermob.pack.YamlFiles;
+import eu.northsoft.bettermob.util.Duplicates;
+import eu.northsoft.bettermob.util.ReloadDiff;
+import org.bukkit.Material;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.configuration.ConfigurationSection;
@@ -134,27 +135,11 @@ public final class MobRegistry {
             plugin.messages().warn("mob.unknownType", "mob", id, "type", section.getString("Type"));
             return null;
         }
-        ConfigurationSection optionsSection = section.getConfigurationSection("Options");
-        MobDefinition.Options options = optionsSection == null ? MobDefinition.Options.DEFAULT : new MobDefinition.Options(
-                optionsSection.getBoolean("Collidable", true),
-                optionsSection.contains("MovementSpeed") ? optionsSection.getDouble("MovementSpeed") : -1,
-                optionsSection.getBoolean("PreventOtherDrops", false),
-                optionsSection.getBoolean("Silent", false),
-                optionsSection.getBoolean("PreventRenaming", false),
-                optionsSection.getBoolean("PreventLeashing", false),
-                optionsSection.getBoolean("AlwaysShowName", false),
-                optionsSection.getBoolean("PreventSunburn", true),
-                optionsSection.getBoolean("Invincible", false),
-                optionsSection.getBoolean("Invisible", false),
-                optionsSection.getBoolean("CanMove", true),
-                optionsSection.getBoolean("Interactable", true),
-                optionsSection.getBoolean("Marker", false),
-                optionsSection.getString("ItemHead"),
-                optionsSection.contains("KnockbackResistance") ? optionsSection.getDouble("KnockbackResistance") : -1,
-                optionsSection.contains("FollowRange") ? optionsSection.getDouble("FollowRange") : -1,
-                optionsSection.getBoolean("PreventItemPickup", false),
-                optionsSection.contains("Scale") ? optionsSection.getDouble("Scale") : -1
-        );
+        if (!type.isAlive() || !type.isSpawnable()) {
+            plugin.messages().warn("mob.unknownType", "mob", id, "type", section.getString("Type"));
+            return null;
+        }
+        MobDefinition.Options options = MobDefinition.Options.parse(section.getConfigurationSection("Options"), MobDefinition.Options.DEFAULT);
         ConfigurationSection modulesSection = section.getConfigurationSection("Modules");
         boolean threatTable = modulesSection != null && modulesSection.getBoolean("ThreatTable", false);
 
@@ -178,18 +163,23 @@ public final class MobRegistry {
                 List.copyOf(section.getStringList("Equipment")),
                 parseSpawnRule(id, section.getConfigurationSection("Spawn")),
                 parseEgg(id, section.getConfigurationSection("Egg")),
-                Behaviour.parse(section, option -> plugin.messages().warn("mob.behaviourInvalid", "mob", id, "option", option))
+                Behaviour.parse(section, option -> plugin.messages().warn("mob.behaviourInvalid", "mob", id, "option", option)),
+                MobPhase.parse(section, option -> {
+                    int skills = option.indexOf(": Skills ");
+                    if (skills >= 0) ExtraTriggers.warnUnparsed(option.substring(skills + 9), () -> plugin.messages().warn("mob.phaseInvalid", "mob", id, "option", option));
+                    else plugin.messages().warn("mob.phaseInvalid", "mob", id, "option", option);
+                })
         );
     }
 
     private MobDefinition.EggSettings parseEgg(String id, ConfigurationSection egg) {
         if (egg == null) return null;
         String material = egg.getString("Material");
-        if (material != null && org.bukkit.Material.getMaterial(material.trim().toUpperCase(java.util.Locale.ROOT)) == null) {
+        if (material != null && Material.getMaterial(material.trim().toUpperCase(Locale.ROOT)) == null) {
             plugin.messages().warn("mob.eggMaterialInvalid", "mob", id, "value", material);
             material = null;
         }
-        return new MobDefinition.EggSettings(material == null ? null : material.trim().toUpperCase(java.util.Locale.ROOT), egg.getString("Name"));
+        return new MobDefinition.EggSettings(material == null ? null : material.trim().toUpperCase(Locale.ROOT), egg.getString("Name"));
     }
 
     private SpawnRule parseSpawnRule(String id, ConfigurationSection spawn) {
