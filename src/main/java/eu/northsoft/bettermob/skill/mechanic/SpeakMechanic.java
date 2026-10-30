@@ -41,9 +41,11 @@ public final class SpeakMechanic implements Mechanic {
         String raw = firstParam(call.params(), "m", "message", "msg");
         if (raw == null) return;
         LivingEntity caster = call.context().caster();
-        String text = stripQuotes(raw).replace("<caster.name>", caster.getName());
+        String casterName = caster.getName();
+        String text = stripQuotes(raw).replace("<caster.name>", casterName);
         if (!"false".equalsIgnoreCase(firstParam(call.params(), "chat", "c")) && call.target().entity() instanceof Player receiver) {
-            receiver.sendMessage(MessageText.render("&f" + caster.getName() + ": " + text, receiver, caster.getName()));
+            String chatRaw = "&f" + casterName + ": " + text;
+            Tasks.runOwned(engine.plugin(), receiver, () -> receiver.sendMessage(MessageText.render(chatRaw, receiver, casterName)));
         }
         Bubble old = bubbles.get(caster.getUniqueId());
         if (old != null && old.tick() == caster.getTicksLived()) return;
