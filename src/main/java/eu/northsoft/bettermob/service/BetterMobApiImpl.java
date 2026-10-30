@@ -65,6 +65,10 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
     @Override
     public Optional<LivingEntity> spawn(String id, Location location) {
         if (location == null || location.getWorld() == null) return Optional.empty();
+        if (!Bukkit.isOwnedByCurrentRegion(location)) {
+            plugin.messages().warnOnce("api.spawnWrongThread", "mob", id);
+            return Optional.empty();
+        }
         MobDefinition definition = id == null ? null : manager.registry().get(id);
         if (definition == null || !definition.type.isAlive() || !definition.type.isSpawnable()) return Optional.empty();
         return Optional.of(manager.spawn(definition, location));
