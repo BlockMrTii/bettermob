@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.skill.mechanic;
 
+import eu.northsoft.bettermob.util.Tasks;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -11,8 +12,19 @@ import static eu.northsoft.bettermob.skill.Params.parseNumber;
 import static eu.northsoft.bettermob.skill.Params.stripQuotes;
 
 public final class SetScoreMechanic implements Mechanic {
+    private final boolean enabled;
+
+    public SetScoreMechanic() {
+        this(!Tasks.FOLIA);
+    }
+
+    SetScoreMechanic(boolean enabled) {
+        this.enabled = enabled;
+    }
+
     @Override
     public void execute(MechanicCall call) {
+        if (!enabled) return;
         Entity entity = call.target().entity();
         String objectiveName = firstParam(call.params(), "objective", "obj", "o");
         double value = parseNumber(firstParam(call.params(), "value", "v"), Double.NaN);
