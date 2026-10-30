@@ -356,7 +356,7 @@ public final class MobManager {
             Tasks.runOwned(plugin, entity, () -> fireEntityAura(entity, kind, original, null));
             return;
         }
-        skillEngine.fireAuras(entity, kind, trigger != null && Bukkit.isOwnedByCurrentRegion(trigger) ? trigger : null, event);
+        skillEngine.fireAuras(entity, kind, trigger, event);
     }
 
     private List<MobDefinition.SkillTrigger> effectiveTriggers(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type) {
@@ -487,7 +487,6 @@ public final class MobManager {
             Tasks.runOwned(plugin, entity, () -> fireTriggers(entity, definition, type, triggers, original, null));
             return;
         }
-        if (trigger != null && !Bukkit.isOwnedByCurrentRegion(trigger)) trigger = null;
         String firing = entity.getUniqueId() + ":" + type + (type == MobDefinition.SkillTrigger.Trigger.SIGNAL && !triggers.isEmpty() ? ":" + triggers.get(0).signal() : "");
         if (!FIRING.get().add(firing)) {
             if (plugin.debug().info()) plugin.debug().info("trigger " + type + " on " + definition.id + " skipped: it is already running", definition.id);
@@ -495,7 +494,8 @@ public final class MobManager {
         }
         try {
             if (BetterMobTriggerEvent.getHandlerList().getRegisteredListeners().length > 0) {
-                BetterMobTriggerEvent api = new BetterMobTriggerEvent(entity, definition.toInfo(), type.name(), trigger);
+                LivingEntity owned = trigger != null && Bukkit.isOwnedByCurrentRegion(trigger) ? trigger : null;
+                BetterMobTriggerEvent api = new BetterMobTriggerEvent(entity, definition.toInfo(), type.name(), owned);
                 Bukkit.getPluginManager().callEvent(api);
                 if (api.isCancelled()) return;
             }
@@ -507,7 +507,8 @@ public final class MobManager {
 
     private void runTriggers(LivingEntity entity, MobDefinition definition, MobDefinition.SkillTrigger.Trigger type,
                              List<MobDefinition.SkillTrigger> triggers, LivingEntity trigger, Cancellable event) {
-        if (plugin.debug().info()) plugin.debug().info("trigger " + type + " on " + definition.id + (trigger != null ? " (by " + trigger.getName() + ")" : ""), definition.id);
+        SkillContext context = new SkillContext(entity, trigger, event).ownedHere();
+        if (plugin.debug().info()) plugin.debug().info("trigger " + type + " on " + definition.id + (context.trigger() != null ? " (by " + context.trigger().getName() + ")" : ""), definition.id);
         String auraKind = switch (type) {
             case DAMAGED -> "ondamaged";
             case ATTACK -> "onattack";
@@ -516,7 +517,6 @@ public final class MobManager {
             default -> null;
         };
         if (auraKind != null) skillEngine.fireAuras(entity, auraKind, trigger, event);
-        SkillContext context = new SkillContext(entity, trigger, event);
         for (MobDefinition.SkillTrigger skillTrigger : triggers) {
             skillEngine.runStep(skillTrigger.step(), context);
         }
