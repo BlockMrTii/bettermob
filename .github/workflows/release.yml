@@ -100,9 +100,11 @@ jobs:
         run: |
           version=$(./gradlew -q printVersion)
           sha=$(git rev-parse --short HEAD)
-          asset="bettermob-${version}-dev-${sha}.jar"
-          cp "bettermob-paper/build/libs/bettermob-${version}.jar" "$asset"
+          paper_asset="bettermob-paper-${version}-dev-${sha}.jar"
+          fabric_asset="bettermob-fabric-${version}-dev-${sha}.jar"
+          cp "bettermob-paper/build/libs/bettermob-${version}.jar" "$paper_asset"
+          cp "bettermob-fabric/build/libs/bettermob-fabric-${version}.jar" "$fabric_asset"
           gh release delete dev-build --cleanup-tag --yes || true
-          gh release create dev-build "$asset" --prerelease --target "$GITHUB_SHA" \
+          gh release create dev-build "$paper_asset" "$fabric_asset" --prerelease --target "$GITHUB_SHA" \
             --title "Dev build" \
-            --notes "$(printf 'Automatic build of the `dev` branch at commit %s. Unstable, may contain unfinished features. This release is replaced on every push to dev.\n\n' "$sha"; cat "$RUNNER_TEMP/commits.md")"
+            --notes "$(printf 'Automatic build of the `dev` branch at commit %s. Unstable, may contain unfinished features. This release is replaced on every push to dev.\n\n- **Paper / Folia**: `%s`\n- **Fabric (Client & Server)**: `%s`\n\n' "$sha" "$paper_asset" "$fabric_asset"; cat "$RUNNER_TEMP/commits.md")"
