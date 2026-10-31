@@ -70,6 +70,7 @@ command:
       pickup: "Aufheben"
       drop: "Fallenlassen"
       equip: "Ausrüsten"
+      heal: "Heilen"
   validate:
     unknownPack: "&cPack '{pack}' wurde in packs/ nicht gefunden."
     header: "&7{lines} Zeilen in &f{sources} &7Ordner(n) geprueft:"

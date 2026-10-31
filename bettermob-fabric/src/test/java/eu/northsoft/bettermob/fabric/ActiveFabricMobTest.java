@@ -102,4 +102,36 @@ class ActiveFabricMobTest {
         manager.unregister(entity.uuid());
         assertNull(manager.get(entity.uuid()));
     }
+
+    @Test
+    void executesHealTrigger() {
+        String yaml = """
+                Type: ZOMBIE
+                Display: 'Heal Mob'
+                Health: 100
+                Skills:
+                  - test_heal @self ~onHeal
+                """;
+        MobDefinition def = MobDefinitionParser.parse("heal_mob", YamlConfig.load(yaml), err -> {});
+        assertNotNull(def);
+        assertEquals(1, def.triggersOf(MobDefinition.SkillTrigger.Trigger.HEAL).size());
+
+        List<String> executed = new ArrayList<>();
+        CoreSkillEngine engine = new CoreSkillEngine();
+        engine.registerMechanic("test_heal", (ctx, target, params) -> executed.add("healed"));
+
+        FabricMobManager manager = new FabricMobManager(null, engine);
+        MockLivingEntity entity = new MockLivingEntity();
+        manager.register(entity.uuid(), def, entity);
+
+        ActiveFabricMob mob = manager.get(entity.uuid());
+        assertNotNull(mob);
+
+        var ctx = new eu.northsoft.bettermob.skill.core.CoreSkillContext(mob.entity(), null);
+        for (var trigger : mob.definition().triggersOf(MobDefinition.SkillTrigger.Trigger.HEAL)) {
+            engine.executeStep(trigger.step(), ctx);
+        }
+
+        assertEquals(List.of("healed"), executed);
+    }
 }

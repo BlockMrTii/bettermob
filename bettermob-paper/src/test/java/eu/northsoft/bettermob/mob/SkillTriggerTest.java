@@ -45,7 +45,7 @@ class SkillTriggerTest {
 
     @Test
     void everyTriggerParses() {
-        for (String name : new String[]{"spawn", "load", "interact", "damaged", "attack", "death", "timer", "use", "shoot"}) {
+        for (String name : new String[]{"spawn", "load", "interact", "damaged", "attack", "death", "timer", "use", "shoot", "heal"}) {
             assertEquals(Trigger.valueOf(name.toUpperCase()), SkillTrigger.parse("remove @self ~on" + name).trigger(), name);
         }
     }

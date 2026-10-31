@@ -170,7 +170,7 @@ public final class MobDefinition {
         }
 
         public enum Trigger {
-            PHASE, SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT, HEALTH, TARGET, LOSETARGET, ENTERCOMBAT, EXITCOMBAT, KILL, SIGNAL, DESPAWN, MOVE, SWING, PRESSF, PICKUP, DROP, EQUIP;
+            PHASE, SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT, HEALTH, TARGET, LOSETARGET, ENTERCOMBAT, EXITCOMBAT, KILL, SIGNAL, DESPAWN, MOVE, SWING, PRESSF, PICKUP, DROP, EQUIP, HEAL;
 
             public static Trigger parse(String value) {
                 return switch (value.toLowerCase(Locale.ROOT)) {
@@ -198,6 +198,7 @@ public final class MobDefinition {
                     case "pickup", "itempickup" -> PICKUP;
                     case "drop", "itemdrop" -> DROP;
                     case "equip" -> EQUIP;
+                    case "heal" -> HEAL;
                     default -> null;
                 };
             }

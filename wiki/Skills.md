@@ -44,6 +44,7 @@ Written as `~onTrigger` at the end of a mob or item line.
 | `~onInteract` | A player right-clicks the mob. `@trigger` is the player |
 | `~onDamaged` | The mob is hit. `@trigger` is the attacker |
 | `~onAttack` | The mob hits something in melee (projectiles don't count). `@trigger` is the victim |
+| `~onHeal` | The mob regains health (natural regeneration, potions, item repair like iron ingots, or skills) |
 | `~onShoot` | The mob shoots with a bow or crossbow. `@trigger` is its target. `CancelEvent` stops the vanilla arrow |
 | `~onHealth<50%` | The mob's health crosses the threshold. Operators `<`, `<=`, `>`, `>=`, a number is absolute health, with `%` a share of max health. Fires once when it crosses and is armed again after the health has moved back across (healing). A missing threshold makes the line invalid |
 | `~onTarget` | The mob acquires a target. `@trigger` is the target |

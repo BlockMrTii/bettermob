@@ -212,6 +212,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
             case PICKUP -> "command.info.trigger.pickup";
             case DROP -> "command.info.trigger.drop";
             case EQUIP -> "command.info.trigger.equip";
+            case HEAL -> "command.info.trigger.heal";
         };
     }
 

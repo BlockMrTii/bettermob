@@ -51,6 +51,21 @@ public final class FabricMobManager {
         return activeMobs;
     }
 
+    public void onHeal(LivingEntity entity, float amount) {
+        ActiveFabricMob mob = activeMobs.get(entity.getUuid());
+        if (mob == null) return;
+        CoreSkillContext ctx = new CoreSkillContext(mob.entity(), null);
+        for (var trigger : mob.definition().triggersOf(MobDefinition.SkillTrigger.Trigger.HEAL)) {
+            skillEngine.executeStep(trigger.step(), ctx);
+        }
+        mob.checkPhases(skillEngine, mod);
+        for (var trigger : mob.definition().triggersOf(MobDefinition.SkillTrigger.Trigger.HEALTH)) {
+            if (trigger.health() != null && trigger.health().matches(entity.getHealth(), entity.getMaxHealth())) {
+                skillEngine.executeStep(trigger.step(), ctx);
+            }
+        }
+    }
+
     public void registerEvents() {
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((victim, source, amount) -> {
             ActiveFabricMob mob = activeMobs.get(victim.getUuid());

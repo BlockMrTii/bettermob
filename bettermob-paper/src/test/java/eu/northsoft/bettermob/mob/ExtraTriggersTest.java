@@ -44,6 +44,7 @@ class ExtraTriggersTest {
     @Test
     void builtInNamesAndMissingOwnersAreRefusedAndUnregisterRemoves() {
         assertFalse(ExtraTriggers.register(OWNER, "onDamaged"));
+        assertFalse(ExtraTriggers.register(OWNER, "onHeal"));
         assertFalse(ExtraTriggers.register(OWNER, ""));
         assertFalse(ExtraTriggers.register(null, "wave"));
         ExtraTriggers.register(OWNER, "wave");

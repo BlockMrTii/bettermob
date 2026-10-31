@@ -62,6 +62,9 @@ public final class BetterMobFabricMod implements ModInitializer {
             if (target.entity() instanceof eu.northsoft.bettermob.platform.PlatformLivingEntity living) {
                 double amount = eu.northsoft.bettermob.skill.Params.parseNumber(params.getOrDefault("amount", params.get("a")), 1.0);
                 living.health(Math.min(living.maxHealth(), living.health() + amount));
+                if (living.handle() instanceof net.minecraft.entity.LivingEntity nmsLiving) {
+                    mobManager.onHeal(nmsLiving, (float) amount);
+                }
             }
         });
     }
