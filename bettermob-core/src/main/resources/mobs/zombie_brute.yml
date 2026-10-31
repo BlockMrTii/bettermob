@@ -1,0 +1,24 @@
+Type: ZOMBIE
+Display: '&2Zombie Brute'
+Model: zombie_brute
+Health: 40
+Damage: 6
+RemoveAi: false
+AIGoalSelectors:
+  - clear
+  - randomstroll
+AITargetSelectors:
+  - clear
+Options:
+  Collidable: true
+  MovementSpeed: 0.23
+  PreventOtherDrops: true
+  Silent: true
+  PreventRenaming: false
+  PreventLeashing: false
+  AlwaysShowName: false
+  PreventSunburn: true
+Modules:
+  ThreatTable: true
+DamageModifiers:
+  - FIRE 1.2

@@ -1,0 +1,30 @@
+# Dateiname (ohne .yml) = Mob-ID.
+# Type:   Vanilla-EntityType, auf die das BetterModel-Modell aufgesetzt wird
+# Model:  Name des BetterModel-Modells (muss dort registriert sein)
+Type: SKELETON
+Display: '&c&lSkeleton Knight'
+Model: skeleton_knight
+Health: 60
+Damage: 8
+RemoveAi: false
+# "clear" leert die Kategorie, danach koennen nur Vanilla-Goals wieder angemeldet
+# werden, die dieser Mob-Typ tatsaechlich besitzt (z.B. randomstroll, meleeattack).
+AIGoalSelectors:
+  - clear
+  - randomstroll
+AITargetSelectors:
+  - clear
+Options:
+  Collidable: true
+  MovementSpeed: 0.25
+  PreventOtherDrops: true
+  Silent: true
+  PreventRenaming: false
+  PreventLeashing: false
+  AlwaysShowName: false
+  PreventSunburn: true
+Modules:
+  ThreatTable: true
+# Schaden dieser Ursache wird mit dem Faktor multipliziert.
+DamageModifiers:
+  - FIRE 1.2

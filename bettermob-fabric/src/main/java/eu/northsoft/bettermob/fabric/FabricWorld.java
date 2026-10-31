@@ -34,7 +34,10 @@ public final class FabricWorld implements PlatformWorld {
 
     @Override
     public Optional<PlatformEntity> spawn(String typeKey, Position position) {
-        Identifier id = Identifier.tryParse(typeKey);
+        if (typeKey == null) return Optional.empty();
+        String normalized = typeKey.toLowerCase(java.util.Locale.ROOT);
+        if (!normalized.contains(":")) normalized = "minecraft:" + normalized;
+        Identifier id = Identifier.tryParse(normalized);
         if (id == null) return Optional.empty();
         EntityType<?> type = Registries.ENTITY_TYPE.get(id);
         if (type == null) return Optional.empty();

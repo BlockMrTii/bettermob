@@ -6,4 +6,4 @@ examples/**/target/
 CLAUDE.md
 build/
 .gradle/
-build/
+**/logs/

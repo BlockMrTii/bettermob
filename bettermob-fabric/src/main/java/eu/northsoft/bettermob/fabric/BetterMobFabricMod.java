@@ -22,12 +22,13 @@ public final class BetterMobFabricMod implements ModInitializer {
 
     private static BetterMobFabricMod instance;
     private FabricPlatform platform;
-    private final Map<String, MobDefinition> registry = new ConcurrentHashMap<>();
+    private final FabricMobRegistry mobRegistry = new FabricMobRegistry();
 
     @Override
     public void onInitialize() {
         instance = this;
         this.platform = new FabricPlatform();
+        this.mobRegistry.load();
         registerCommands();
         LOGGER.info("BetterMob (Fabric) initialized for Minecraft {}", platform.minecraftVersion());
     }
@@ -36,30 +37,47 @@ public final class BetterMobFabricMod implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(CommandManager.literal("bettermob")
                 .requires(CommandManager.requirePermissionLevel(CommandManager.GAMEMASTERS_CHECK))
+                .then(CommandManager.literal("reload")
+                    .executes(context -> {
+                        mobRegistry.load();
+                        int count = mobRegistry.all().size();
+                        context.getSource().sendFeedback(() -> Text.literal("BetterMob configurations reloaded (" + count + " mobs)."), true);
+                        return 1;
+                    }))
                 .then(CommandManager.literal("spawn")
                     .then(CommandManager.argument("mob", StringArgumentType.word())
+                        .suggests((context, builder) -> net.minecraft.command.CommandSource.suggestMatching(mobRegistry.all().keySet(), builder))
                         .executes(context -> {
                             ServerCommandSource source = context.getSource();
                             String mobId = StringArgumentType.getString(context, "mob");
-                            MobDefinition def = registry.get(mobId.toLowerCase());
+                            MobDefinition def = mobRegistry.get(mobId);
                             if (def == null) {
-                                def = new MobDefinition(mobId, "minecraft:zombie", mobId, mobId, 20.0, 2.0, false,
-                                        List.of(), List.of(), MobDefinition.Options.DEFAULT,
-                                        false, Map.of(), List.of(), null, null, null,
-                                        List.of(), null, null, null);
+                                source.sendError(Text.literal("Unknown BetterMob: " + mobId));
+                                return 0;
                             }
                             Vec3d pos = source.getPosition();
                             Position p = new Position(source.getWorld().getRegistryKey().getValue().toString(),
                                     pos.x, pos.y, pos.z, source.getEntity() != null ? source.getEntity().getYaw() : 0, 0);
                             var spawned = new FabricWorld(source.getWorld()).spawn(def.type, p);
                             if (spawned.isPresent()) {
-                                if (platform.model("bettermodel").isPresent() && def.modelId != null) {
-                                    platform.model("bettermodel").get().attach(spawned.get(), def.modelId);
+                                var entity = spawned.get();
+                                if (def.displayName != null && !def.displayName.isBlank()) {
+                                    entity.customName(def.displayName.replace('&', '§'));
+                                    entity.customNameVisible(true);
                                 }
-                                source.sendFeedback(() -> Text.literal("Spawned BetterMob: " + mobId), true);
+                                if (entity instanceof eu.northsoft.bettermob.platform.PlatformLivingEntity living) {
+                                    if (def.health > 0) {
+                                        living.maxHealth(def.health);
+                                        living.health(def.health);
+                                    }
+                                }
+                                if (platform.model("bettermodel").isPresent() && def.modelId != null) {
+                                    platform.model("bettermodel").get().attach(entity, def.modelId);
+                                }
+                                source.sendFeedback(() -> Text.literal("Spawned BetterMob: " + def.id + " (model: " + def.modelId + ")"), true);
                                 return 1;
                             }
-                            source.sendError(Text.literal("Failed to spawn BetterMob: " + mobId));
+                            source.sendError(Text.literal("Failed to spawn BetterMob: " + mobId + " (unknown entity type: " + def.type + ")"));
                             return 0;
                         }))));
         });
@@ -73,7 +91,11 @@ public final class BetterMobFabricMod implements ModInitializer {
         return platform;
     }
 
+    public FabricMobRegistry mobRegistry() {
+        return mobRegistry;
+    }
+
     public Map<String, MobDefinition> registry() {
-        return registry;
+        return mobRegistry.all();
     }
 }

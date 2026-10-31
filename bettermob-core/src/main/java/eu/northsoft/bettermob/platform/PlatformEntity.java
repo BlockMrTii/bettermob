@@ -24,6 +24,18 @@ public interface PlatformEntity {
 
     void remove();
 
+    default String customName() {
+        return null;
+    }
+
+    default void customName(String name) {}
+
+    default boolean isCustomNameVisible() {
+        return false;
+    }
+
+    default void customNameVisible(boolean visible) {}
+
     /** The underlying platform object (Bukkit {@code Entity}, Minecraft {@code Entity}, ...). */
     Object handle();
 }
