@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "bettermob",
+  "version": "${version}",
+  "name": "BetterMob",
+  "description": "Custom mobs in YAML, with 3D models, skills and boss fights.",
+  "authors": [
+    "northsoft",
+    "HyperGaming99"
+  ],
+  "contact": {
+    "homepage": "https://github.com/HyperGaming99/bettermob",
+    "sources": "https://github.com/HyperGaming99/bettermob"
+  },
+  "license": "GPL-3.0-or-later",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "eu.northsoft.bettermob.fabric.BetterMobFabricMod"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": ">=1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "bettermodel": "*"
+  }
+}
