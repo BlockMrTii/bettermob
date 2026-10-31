@@ -1,5 +1,6 @@
 plugins {
     id("com.gradleup.shadow") version "9.2.2" apply false
+    id("fabric-loom") version "1.19.3" apply false
 }
 
 allprojects {
@@ -15,6 +16,10 @@ subprojects {
         maven("https://repo.extendedclip.com/releases/")
         maven("https://maven.enginehub.org/repo/")
         maven("https://repo.papermc.io/repository/maven-public/")
+        maven("https://maven.fabricmc.net/")
+        maven("https://api.modrinth.com/maven")
+        maven("https://maven.nucleoid.xyz/")
+        maven("https://maven.blamejared.com/")
     }
 
     extensions.configure<JavaPluginExtension> {
