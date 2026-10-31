@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="eu.northsoft.bettermob.mob.RemoteTriggerTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:10.321Z" hostname="MyPC" time="0.268">
+  <properties/>
+  <testcase name="aurasOfEntitiesWithoutDefinitionGetATriggerOfAnotherRegion()" classname="eu.northsoft.bettermob.mob.RemoteTriggerTest" time="0.005"/>
+  <testcase name="aTriggerOfAnotherRegionReachesTheSkillAsRemoteTrigger()" classname="eu.northsoft.bettermob.mob.RemoteTriggerTest" time="0.005"/>
+  <testcase name="aShooterOfAnotherRegionTriggersOnDamagedButAddsNoThreatAndAlertsNoGroup()" classname="eu.northsoft.bettermob.mob.RemoteTriggerTest" time="0.244"/>
+  <testcase name="anOwnedTriggerReachesTheSkillAsTrigger()" classname="eu.northsoft.bettermob.mob.RemoteTriggerTest" time="0.004"/>
+  <testcase name="anOwnedShooterTriggersOnDamagedAddsThreatAndAlertsTheGroup()" classname="eu.northsoft.bettermob.mob.RemoteTriggerTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

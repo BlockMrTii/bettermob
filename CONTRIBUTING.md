@@ -25,7 +25,7 @@ cd bettermob
 ./gradlew build
 ```
 
-The jar ends up in `build/libs/bettermob-<version>.jar`. `./gradlew test` runs the unit tests. Two optional tests check the reflection calls against the real model plugins; give them the jars to run them:
+The jar ends up in `bettermob-paper/build/libs/bettermob-<version>.jar`. `./gradlew test` runs the unit tests. Two optional tests check the reflection calls against the real model plugins; give them the jars to run them:
 
 ```bash
 ./gradlew test -Dmodelengine.jar=<ModelEngine jar> -Dbettermodel.jars=<bettermodel-api jar>:<bettermodel-bukkit-api jar>

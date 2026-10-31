@@ -6,7 +6,7 @@
 ./gradlew build
 ```
 
-produces `build/libs/bettermob-<version>.jar`. Java 21 is required; Gradle comes with the wrapper.
+produces `bettermob-paper/build/libs/bettermob-<version>.jar`. Java 21 is required; Gradle comes with the wrapper.
 
 ## Tests
 

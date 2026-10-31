@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="eu.northsoft.bettermob.model.ModelEngineApiTest" tests="2" skipped="1" failures="0" errors="0" timestamp="2026-10-31T04:31:10.771Z" hostname="MyPC" time="0.002">
+  <properties/>
+  <testcase name="controllerNamesMapToTheModelEngineFields()" classname="eu.northsoft.bettermob.model.ModelEngineApiTest" time="0.001"/>
+  <testcase name="everyModelEngineCallTheHookMakesExistsInTheInstalledJar()" classname="eu.northsoft.bettermob.model.ModelEngineApiTest" time="0.001">
+    <skipped message="Assumption failed: set -Dmodelengine.jar=&lt;ModelEngine jar&gt; to run this check" type="org.opentest4j.TestAbortedException">org.opentest4j.TestAbortedException: Assumption failed: set -Dmodelengine.jar=&lt;ModelEngine jar&gt; to run this check
+	at org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:340)
+	at org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:127)
+	at eu.northsoft.bettermob.model.ModelEngineApiTest.everyModelEngineCallTheHookMakesExistsInTheInstalledJar(ModelEngineApiTest.java:63)
+</skipped>
+  </testcase>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

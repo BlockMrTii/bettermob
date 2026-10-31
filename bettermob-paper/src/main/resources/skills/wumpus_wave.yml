@@ -1,0 +1,15 @@
+nm_wumpus_wave_parse:
+  Conditions:
+    - onground{} true cancel
+  Skills:
+    - CancelEvent
+    - skill{s=nm_wumpus_wave_activate}
+
+nm_wumpus_wave_activate:
+  Conditions:
+    - offgcd
+  Skills:
+    - gcd{ticks=60}
+    - state{state=wave;li=1;lo=5;n=false;speed=1} @self
+    - potion{type=SLOW;duration=40;level=19} @self
+    - sound{s=entity.pig.ambient;p=1.5;v=1} @self

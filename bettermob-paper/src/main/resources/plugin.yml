@@ -1,0 +1,54 @@
+name: BetterMob
+version: '1.2.0'
+main: eu.northsoft.bettermob.BetterMobPlugin
+api-version: '1.21'
+folia-supported: true
+authors: [northsoft, HyperGaming99]
+description: Registriert eigene Mobs in einer Datei und rendert sie ueber BetterModel oder ModelEngine.
+softdepend: [BetterModel, ModelEngine, PlaceholderAPI, WorldGuard]
+commands:
+  bettermob:
+    description: Verwaltet BetterMob
+    usage: /bettermob help
+    aliases: [bmob]
+permissions:
+  bettermob.admin:
+    description: Grants every BetterMob command
+    default: op
+    children:
+      bettermob.spawn: true
+      bettermob.list: true
+      bettermob.reload: true
+      bettermob.skill: true
+      bettermob.give: true
+      bettermob.killall: true
+      bettermob.spawner: true
+      bettermob.debug: true
+      bettermob.top: true
+  bettermob.spawn:
+    description: Allows /bettermob spawn
+    default: op
+  bettermob.list:
+    description: Allows /bettermob list, /bettermob packs and /bettermob info
+    default: op
+  bettermob.reload:
+    description: Allows /bettermob reload
+    default: op
+  bettermob.skill:
+    description: Allows /bettermob skill
+    default: op
+  bettermob.give:
+    description: Allows /bettermob give
+    default: op
+  bettermob.killall:
+    description: Allows /bettermob killall
+    default: op
+  bettermob.spawner:
+    description: Allows /bettermob spawner
+    default: op
+  bettermob.debug:
+    description: Allows /bettermob debug
+    default: op
+  bettermob.top:
+    description: Allows /bettermob top
+    default: op

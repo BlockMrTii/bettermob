@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="eu.northsoft.bettermob.skill.CustomPlaceholdersTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:12.093Z" hostname="MyPC" time="0.011">
+  <properties/>
+  <testcase name="registeredNamespacesAreResolvedAndOthersLeftAlone()" classname="eu.northsoft.bettermob.skill.CustomPlaceholdersTest" time="0.002"/>
+  <testcase name="valuesCannotInjectSkillSyntaxOrPercentExpansion()" classname="eu.northsoft.bettermob.skill.CustomPlaceholdersTest" time="0.001"/>
+  <testcase name="aFailingPlaceholderLeavesTheTextAsItIsAndIsReported()" classname="eu.northsoft.bettermob.skill.CustomPlaceholdersTest" time="0.002"/>
+  <testcase name="casterAndTargetNamespacesAreReservedAndPluginsCanBeRemoved()" classname="eu.northsoft.bettermob.skill.CustomPlaceholdersTest" time="0.001"/>
+  <testcase name="namespacesMatchWithoutCaseSensitivity()" classname="eu.northsoft.bettermob.skill.CustomPlaceholdersTest" time="0.0"/>
+  <testcase name="negativeNumbersKeepTheirSign()" classname="eu.northsoft.bettermob.skill.CustomPlaceholdersTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
