@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.skill.mechanic.MechanicRegistryTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:12.436Z" hostname="MyPC" time="0.008">
+<testsuite name="eu.northsoft.bettermob.skill.mechanic.MechanicRegistryTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:56.522Z" hostname="MyPC" time="0.01">
   <properties/>
-  <testcase name="aliasesShareOneMechanic()" classname="eu.northsoft.bettermob.skill.mechanic.MechanicRegistryTest" time="0.001"/>
+  <testcase name="aliasesShareOneMechanic()" classname="eu.northsoft.bettermob.skill.mechanic.MechanicRegistryTest" time="0.002"/>
   <testcase name="addedMechanicsAreRegistered()" classname="eu.northsoft.bettermob.skill.mechanic.MechanicRegistryTest" time="0.001"/>
   <testcase name="builtinMechanicsCannotBeUnregistered()" classname="eu.northsoft.bettermob.skill.mechanic.MechanicRegistryTest" time="0.001"/>
-  <testcase name="customMechanicsCanBeAddedOnceAndRemoved()" classname="eu.northsoft.bettermob.skill.mechanic.MechanicRegistryTest" time="0.002"/>
+  <testcase name="customMechanicsCanBeAddedOnceAndRemoved()" classname="eu.northsoft.bettermob.skill.mechanic.MechanicRegistryTest" time="0.001"/>
   <testcase name="everyFormerBuiltinNameExceptEngineHandledOnesHasAMechanic()" classname="eu.northsoft.bettermob.skill.mechanic.MechanicRegistryTest" time="0.001"/>
-  <testcase name="namesAreMatchedCaseInsensitivelyWhenRegistering()" classname="eu.northsoft.bettermob.skill.mechanic.MechanicRegistryTest" time="0.001"/>
+  <testcase name="namesAreMatchedCaseInsensitivelyWhenRegistering()" classname="eu.northsoft.bettermob.skill.mechanic.MechanicRegistryTest" time="0.0"/>
   <testcase name="everyFormerBuiltinNameStaysTaken()" classname="eu.northsoft.bettermob.skill.mechanic.MechanicRegistryTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>

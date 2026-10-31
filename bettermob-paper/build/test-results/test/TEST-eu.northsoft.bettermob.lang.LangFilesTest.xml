@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.lang.LangFilesTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:05.950Z" hostname="MyPC" time="0.372">
+<testsuite name="eu.northsoft.bettermob.lang.LangFilesTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:49.764Z" hostname="MyPC" time="0.29">
   <properties/>
-  <testcase name="everyKeyInEnglishIsUsedInTheCode()" classname="eu.northsoft.bettermob.lang.LangFilesTest" time="0.229"/>
-  <testcase name="translationsUseTheSamePlaceholders()" classname="eu.northsoft.bettermob.lang.LangFilesTest" time="0.054"/>
-  <testcase name="germanHasExactlyTheKeysOfEnglish()" classname="eu.northsoft.bettermob.lang.LangFilesTest" time="0.02"/>
-  <testcase name="everyKeyUsedInTheCodeExists()" classname="eu.northsoft.bettermob.lang.LangFilesTest" time="0.067"/>
+  <testcase name="everyKeyInEnglishIsUsedInTheCode()" classname="eu.northsoft.bettermob.lang.LangFilesTest" time="0.168"/>
+  <testcase name="translationsUseTheSamePlaceholders()" classname="eu.northsoft.bettermob.lang.LangFilesTest" time="0.037"/>
+  <testcase name="germanHasExactlyTheKeysOfEnglish()" classname="eu.northsoft.bettermob.lang.LangFilesTest" time="0.023"/>
+  <testcase name="everyKeyUsedInTheCodeExists()" classname="eu.northsoft.bettermob.lang.LangFilesTest" time="0.06"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

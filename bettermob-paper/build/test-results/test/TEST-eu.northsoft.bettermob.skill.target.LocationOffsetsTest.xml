@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.skill.target.LocationOffsetsTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:12.761Z" hostname="MyPC" time="0.001">
+<testsuite name="eu.northsoft.bettermob.skill.target.LocationOffsetsTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:56.833Z" hostname="MyPC" time="0.001">
   <properties/>
   <testcase name="offsetsFollowTheYaw()" classname="eu.northsoft.bettermob.skill.target.LocationOffsetsTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>

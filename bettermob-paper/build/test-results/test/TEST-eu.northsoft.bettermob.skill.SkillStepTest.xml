@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.skill.SkillStepTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:12.171Z" hostname="MyPC" time="0.012">
+<testsuite name="eu.northsoft.bettermob.skill.SkillStepTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:56.236Z" hostname="MyPC" time="0.015">
   <properties/>
   <testcase name="inlineSplittingDropsLeadingSeparatorAndKeepsHyphenatedWords()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.001"/>
   <testcase name="mechanicAndTargeterNamesAreLowercased()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.001"/>
   <testcase name="parseParamsIgnoresPairsWithoutEquals()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.0"/>
   <testcase name="rejectsBadDelayAndEmptyLines()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.001"/>
-  <testcase name="parsesTargeterParams()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.0"/>
-  <testcase name="keepsNamespacedMechanicNames()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.0"/>
-  <testcase name="parsesDelay()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.004"/>
-  <testcase name="semicolonsInsideNestedBracesDoNotSplitParams()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.0"/>
-  <testcase name="parsesNegatedInlineCondition()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.0"/>
-  <testcase name="parsesMechanicWithParamsAndTargeter()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.0"/>
+  <testcase name="parsesTargeterParams()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.001"/>
+  <testcase name="keepsNamespacedMechanicNames()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.001"/>
+  <testcase name="parsesDelay()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.006"/>
+  <testcase name="semicolonsInsideNestedBracesDoNotSplitParams()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.001"/>
+  <testcase name="parsesNegatedInlineCondition()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.001"/>
+  <testcase name="parsesMechanicWithParamsAndTargeter()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.001"/>
   <testcase name="parsesInlineCondition()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.0"/>
-  <testcase name="inlineSplittingKeepsNestedSeparatorsTogether()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.001"/>
+  <testcase name="inlineSplittingKeepsNestedSeparatorsTogether()" classname="eu.northsoft.bettermob.skill.SkillStepTest" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

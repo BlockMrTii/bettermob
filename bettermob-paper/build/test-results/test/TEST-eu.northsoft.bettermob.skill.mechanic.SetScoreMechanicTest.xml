@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.skill.mechanic.SetScoreMechanicTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:12.477Z" hostname="MyPC" time="0.052">
+<testsuite name="eu.northsoft.bettermob.skill.mechanic.SetScoreMechanicTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:56.564Z" hostname="MyPC" time="0.007">
   <properties/>
-  <testcase name="enabledMechanicSetsScoreForNonPlayerEntityByUuid()" classname="eu.northsoft.bettermob.skill.mechanic.SetScoreMechanicTest" time="0.046"/>
+  <testcase name="enabledMechanicSetsScoreForNonPlayerEntityByUuid()" classname="eu.northsoft.bettermob.skill.mechanic.SetScoreMechanicTest" time="0.001"/>
   <testcase name="unsupportedOperationExceptionIsIgnored()" classname="eu.northsoft.bettermob.skill.mechanic.SetScoreMechanicTest" time="0.002"/>
-  <testcase name="enabledMechanicSetsScoreForPlayer()" classname="eu.northsoft.bettermob.skill.mechanic.SetScoreMechanicTest" time="0.002"/>
+  <testcase name="enabledMechanicSetsScoreForPlayer()" classname="eu.northsoft.bettermob.skill.mechanic.SetScoreMechanicTest" time="0.001"/>
   <testcase name="disabledMechanicDoesNotAccessScoreboard()" classname="eu.northsoft.bettermob.skill.mechanic.SetScoreMechanicTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>

@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.mob.SpawnRuleTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:10.709Z" hostname="MyPC" time="0.03">
+<testsuite name="eu.northsoft.bettermob.mob.SpawnRuleTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:54.529Z" hostname="MyPC" time="0.032">
   <properties/>
   <testcase name="timeSeparatesDayFromNight()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.003"/>
   <testcase name="chanceIsClampedToTheValidRange()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.001"/>
-  <testcase name="emptyBlockMeansNoRestrictions()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.006"/>
+  <testcase name="emptyBlockMeansNoRestrictions()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.008"/>
   <testcase name="worldAndBiomeAreMatchedIgnoringCaseAndNamespace()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.001"/>
-  <testcase name="emptyRuleMatchesEverywhereWithAFullChance()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.001"/>
+  <testcase name="emptyRuleMatchesEverywhereWithAFullChance()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.0"/>
   <testcase name="regionListsLimitWhereTheRuleApplies()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.001"/>
   <testcase name="invalidActionAndLimitsRejectRule()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.002"/>
-  <testcase name="mistypedOptionsRejectTheWholeRule()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.003"/>
-  <testcase name="chanceIsRolledBelowTheThreshold()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.0"/>
-  <testcase name="regionListsAreParsedAndMustBeLists()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.001"/>
-  <testcase name="addRuleParsesAndKeepsItsLimits()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.001"/>
+  <testcase name="mistypedOptionsRejectTheWholeRule()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.002"/>
+  <testcase name="chanceIsRolledBelowTheThreshold()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.001"/>
+  <testcase name="regionListsAreParsedAndMustBeLists()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.003"/>
+  <testcase name="addRuleParsesAndKeepsItsLimits()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.002"/>
   <testcase name="parsesAFullBlock()" classname="eu.northsoft.bettermob.mob.SpawnRuleTest" time="0.002"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>

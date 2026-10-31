@@ -31,6 +31,10 @@ import eu.northsoft.bettermob.stats.SkillStats;
 import eu.northsoft.bettermob.update.UpdateChecker;
 import eu.northsoft.bettermob.util.ReloadDiff;
 import eu.northsoft.bettermob.util.Tasks;
+import eu.northsoft.bettermob.paper.BetterModelService;
+import eu.northsoft.bettermob.paper.ModelEngineService;
+import eu.northsoft.bettermob.paper.PaperPlatform;
+import eu.northsoft.bettermob.platform.Platform;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -64,6 +68,12 @@ public final class BetterMobPlugin extends JavaPlugin {
     private DropRegistry dropRegistry;
     private SpawnerManager spawners;
     private RandomSpawnManager randomSpawns;
+    private PaperPlatform platform;
+
+    /** Platform-neutral view of this server, used by the shared core. */
+    public Platform platform() {
+        return platform;
+    }
 
     public DebugManager debug() {
         return debug;
@@ -138,6 +148,7 @@ public final class BetterMobPlugin extends JavaPlugin {
         BetterModelHook betterModel = new BetterModelHook(this);
         if (!betterModel.available()) messages.warn("plugin.betterModelMissing");
         ModelEngineHook modelEngine = new ModelEngineHook(this);
+        platform = new PaperPlatform(this, List.of(new BetterModelService(betterModel), new ModelEngineService(modelEngine)));
 
         skillRegistry = new SkillRegistry(this, packScanner);
         skillRegistry.load();
