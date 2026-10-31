@@ -61,6 +61,26 @@ public class PaperEntity implements PlatformEntity {
     }
 
     @Override
+    public String customName() {
+        return entity.getCustomName();
+    }
+
+    @Override
+    public void customName(String name) {
+        entity.setCustomName(name);
+    }
+
+    @Override
+    public boolean isCustomNameVisible() {
+        return entity.isCustomNameVisible();
+    }
+
+    @Override
+    public void customNameVisible(boolean visible) {
+        entity.setCustomNameVisible(visible);
+    }
+
+    @Override
     public Entity handle() {
         return entity;
     }

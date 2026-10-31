@@ -66,6 +66,31 @@ public class FabricEntity implements PlatformEntity {
     }
 
     @Override
+    public String customName() {
+        net.minecraft.text.Text text = entity.getCustomName();
+        return text != null ? text.getString() : null;
+    }
+
+    @Override
+    public void customName(String name) {
+        if (name == null) {
+            entity.setCustomName(null);
+        } else {
+            entity.setCustomName(net.minecraft.text.Text.literal(name));
+        }
+    }
+
+    @Override
+    public boolean isCustomNameVisible() {
+        return entity.isCustomNameVisible();
+    }
+
+    @Override
+    public void customNameVisible(boolean visible) {
+        entity.setCustomNameVisible(visible);
+    }
+
+    @Override
     public Entity handle() {
         return entity;
     }
