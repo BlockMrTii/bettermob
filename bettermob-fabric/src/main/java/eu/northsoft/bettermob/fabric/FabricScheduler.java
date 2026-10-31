@@ -8,7 +8,6 @@ import eu.northsoft.bettermob.platform.Position;
 public final class FabricScheduler implements PlatformScheduler {
     @Override
     public void runLater(PlatformEntity entity, long ticks, Runnable task, Runnable retired) {
-        // Will be wired to ServerTickEvents queue
     }
 
     @Override
