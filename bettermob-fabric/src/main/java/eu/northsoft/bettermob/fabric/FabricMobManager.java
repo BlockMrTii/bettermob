@@ -109,6 +109,15 @@ public final class FabricMobManager {
             for (var trigger : mob.definition().triggersOf(MobDefinition.SkillTrigger.Trigger.DEATH)) {
                 skillEngine.executeStep(trigger.step(), ctx);
             }
+            if (mob.definition().drops != null && mob.entity() != null && mob.entity().world() != null) {
+                var dropResult = eu.northsoft.bettermob.drop.DropRoller.roll(mob.definition().drops);
+                for (var drop : dropResult.items()) {
+                    mob.entity().world().dropItem(mob.entity().position(), drop.itemKey(), drop.amount());
+                }
+                if (dropResult.exp() > 0) {
+                    mob.entity().world().dropExperience(mob.entity().position(), dropResult.exp());
+                }
+            }
         });
 
         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
@@ -129,6 +138,9 @@ public final class FabricMobManager {
         });
 
         ServerTickEvents.END_SERVER_TICK.register(server -> {
+            if (mod.spawnerManager() != null) {
+                mod.spawnerManager().tick();
+            }
             if (activeMobs.isEmpty()) return;
             var iterator = activeMobs.values().iterator();
             while (iterator.hasNext()) {

@@ -102,6 +102,27 @@ public final class FabricWorld implements PlatformWorld {
     }
 
     @Override
+    public void dropItem(Position position, String itemType, int count) {
+        if (itemType == null || count <= 0) return;
+        String normalized = itemType.toLowerCase(java.util.Locale.ROOT);
+        if (!normalized.contains(":")) normalized = "minecraft:" + normalized;
+        net.minecraft.util.Identifier id = net.minecraft.util.Identifier.tryParse(normalized);
+        if (id == null) return;
+        net.minecraft.item.Item item = net.minecraft.registry.Registries.ITEM.get(id);
+        if (item != null && item != net.minecraft.item.Items.AIR) {
+            net.minecraft.entity.ItemEntity itemEntity = new net.minecraft.entity.ItemEntity(
+                    world, position.x(), position.y(), position.z(), new net.minecraft.item.ItemStack(item, count));
+            world.spawnEntity(itemEntity);
+        }
+    }
+
+    @Override
+    public void dropExperience(Position position, int amount) {
+        if (amount <= 0) return;
+        net.minecraft.entity.ExperienceOrbEntity.spawn(world, new net.minecraft.util.math.Vec3d(position.x(), position.y(), position.z()), amount);
+    }
+
+    @Override
     public ServerWorld handle() {
         return world;
     }

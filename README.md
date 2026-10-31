@@ -2,7 +2,7 @@
 
 <p align="center">
   <b>Custom mobs in YAML, with 3D models, skills and boss fights.</b><br>
-  A lightweight mob plugin for Paper and Folia that runs MythicMobs-style content.
+  A lightweight, multi-platform mob engine for <b>Paper</b>, <b>Folia</b>, and <b>Fabric</b> (singleplayer & dedicated server) with BetterModel support.
 </p>
 
 <p align="center">
@@ -56,7 +56,21 @@
 | 🧰 **Tools** | `/bettermob test`, aggro lines, a live reload report, skill profiling, JSON schemas for editors. |
 | 🔌 **Developer API** | Custom mechanics, conditions, targeters, placeholders and a long list of events. |
 
-BetterMob runs on **Folia** as well as Paper.
+BetterMob runs on **Folia** and **Paper** as a plugin, and on **Fabric 1.21+** as a mod (supporting both client singleplayer and dedicated server environments).
+
+### 🌐 Platform Feature Matrix
+
+| Feature | Paper / Folia | Fabric |
+|---|---|---|
+| **YAML Mob Definitions** | ✅ `plugins/BetterMob/mobs/*.yml` | ✅ `config/bettermob/mobs/*.yml` |
+| **3D Models** | ✅ [BetterModel](https://modrinth.com/plugin/bettermodel) & [ModelEngine](https://www.spigotmc.org/resources/model-engine-4.108821/) | ✅ [BetterModel-Fabric](https://modrinth.com/mod/bettermodel) |
+| **Skill Engine** (Triggers, Conditions, Targeters) | ✅ Full | ✅ Core (`@self`, `@caster`, `@target`, `@trigger`, `@eir`, `@pir`, `@p`) |
+| **Core Mechanics** (`model`, `damage`, `heal`, `msg`, `sound`, `velocity`, `potion`, `ignite`, `lightning`) | ✅ Full | ✅ Full |
+| **Boss Fights & Health Phases** | ✅ Full | ✅ Full |
+| **Custom Drops & Experience** | ✅ Full | ✅ Full |
+| **Spawners** | ✅ `plugins/BetterMob/spawners.yml` | ✅ `config/bettermob/spawners.yml` |
+| **Commands** (`/bettermob spawn`, `/bettermob reload`) | ✅ Full | ✅ Full |
+| **WorldGuard / PlaceholderAPI** | ✅ Supported | ❌ Bukkit-only |
 
 ## 🚀 Quick start
 

@@ -30,5 +30,9 @@ public interface PlatformWorld {
         return Optional.empty();
     }
 
+    default void dropItem(Position position, String itemType, int count) {}
+
+    default void dropExperience(Position position, int amount) {}
+
     Object handle();
 }

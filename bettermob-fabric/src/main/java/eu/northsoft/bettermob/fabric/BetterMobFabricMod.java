@@ -26,11 +26,13 @@ public final class BetterMobFabricMod implements ModInitializer {
     private final FabricMobRegistry mobRegistry = new FabricMobRegistry();
     private final CoreSkillEngine skillEngine = new CoreSkillEngine();
     private final FabricMobManager mobManager = new FabricMobManager(this, skillEngine);
+    private final FabricSpawnerManager spawnerManager = new FabricSpawnerManager(this, platform.dataFolder().resolve("spawners.yml"));
 
     @Override
     public void onInitialize() {
         instance = this;
         this.mobRegistry.load();
+        this.spawnerManager.load();
         registerMechanics();
         registerCommands();
         this.mobManager.registerEvents();
@@ -71,8 +73,9 @@ public final class BetterMobFabricMod implements ModInitializer {
                 .then(CommandManager.literal("reload")
                     .executes(context -> {
                         mobRegistry.load();
+                        spawnerManager.load();
                         int count = mobRegistry.all().size();
-                        context.getSource().sendFeedback(() -> Text.literal("BetterMob configurations reloaded (" + count + " mobs)."), true);
+                        context.getSource().sendFeedback(() -> Text.literal("BetterMob configurations reloaded (" + count + " mobs, " + spawnerManager.spawners().size() + " spawners)."), true);
                         return 1;
                     }))
                 .then(CommandManager.literal("spawn")
@@ -129,6 +132,10 @@ public final class BetterMobFabricMod implements ModInitializer {
 
     public FabricMobManager mobManager() {
         return mobManager;
+    }
+
+    public FabricSpawnerManager spawnerManager() {
+        return spawnerManager;
     }
 
     public CoreSkillEngine skillEngine() {

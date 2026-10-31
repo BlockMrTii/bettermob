@@ -83,6 +83,21 @@ public final class PaperWorld implements PlatformWorld {
     }
 
     @Override
+    public void dropItem(Position position, String itemType, int count) {
+        if (itemType == null || count <= 0) return;
+        org.bukkit.Material mat = org.bukkit.Material.matchMaterial(itemType);
+        if (mat != null && mat.isItem()) {
+            world.dropItemNaturally(PaperAdapters.location(world, position), new org.bukkit.inventory.ItemStack(mat, count));
+        }
+    }
+
+    @Override
+    public void dropExperience(Position position, int amount) {
+        if (amount <= 0) return;
+        world.spawn(PaperAdapters.location(world, position), org.bukkit.entity.ExperienceOrb.class).setExperience(amount);
+    }
+
+    @Override
     public World handle() {
         return world;
     }
