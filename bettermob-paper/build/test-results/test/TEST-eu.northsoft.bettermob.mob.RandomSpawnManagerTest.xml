@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="eu.northsoft.bettermob.mob.RandomSpawnManagerTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:09.653Z" hostname="MyPC" time="0.665">
+  <properties/>
+  <testcase name="findsAFloorFarBelowThePlayer()" classname="eu.northsoft.bettermob.mob.RandomSpawnManagerTest" time="0.49"/>
+  <testcase name="standsOnSolidGroundWithTwoFreeBlocks()" classname="eu.northsoft.bettermob.mob.RandomSpawnManagerTest" time="0.003"/>
+  <testcase name="neverPicksTheRoof()" classname="eu.northsoft.bettermob.mob.RandomSpawnManagerTest" time="0.014"/>
+  <testcase name="findsTheFloorBelowTheBedrockRoof()" classname="eu.northsoft.bettermob.mob.RandomSpawnManagerTest" time="0.024"/>
+  <testcase name="ignoresFloorsHighAboveThePlayer()" classname="eu.northsoft.bettermob.mob.RandomSpawnManagerTest" time="0.058"/>
+  <testcase name="skipsLava()" classname="eu.northsoft.bettermob.mob.RandomSpawnManagerTest" time="0.072"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

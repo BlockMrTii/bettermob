@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="eu.northsoft.bettermob.mob.MobPhaseTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:09.627Z" hostname="MyPC" time="0.024">
+  <properties/>
+  <testcase name="optionOverridesAndEquipmentAreStored()" classname="eu.northsoft.bettermob.mob.MobPhaseTest" time="0.003"/>
+  <testcase name="invalidPhasesAndLinesAreReportedAndSkipped()" classname="eu.northsoft.bettermob.mob.MobPhaseTest" time="0.008"/>
+  <testcase name="malformedFieldsAreReported()" classname="eu.northsoft.bettermob.mob.MobPhaseTest" time="0.003"/>
+  <testcase name="theLastMatchingPhaseWinsAndNoneMatchesAtFullHealth()" classname="eu.northsoft.bettermob.mob.MobPhaseTest" time="0.003"/>
+  <testcase name="phasesAreParsedWithTheirOptions()" classname="eu.northsoft.bettermob.mob.MobPhaseTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

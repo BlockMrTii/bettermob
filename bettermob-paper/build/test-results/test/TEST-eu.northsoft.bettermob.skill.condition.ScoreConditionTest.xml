@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="eu.northsoft.bettermob.skill.condition.ScoreConditionTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:12.219Z" hostname="MyPC" time="0.21">
+  <properties/>
+  <testcase name="unsupportedOperationExceptionReturnsFalse()" classname="eu.northsoft.bettermob.skill.condition.ScoreConditionTest" time="0.005"/>
+  <testcase name="enabledConditionReturnsFalseWhenScoreNotSet()" classname="eu.northsoft.bettermob.skill.condition.ScoreConditionTest" time="0.2"/>
+  <testcase name="enabledConditionMatchesScore()" classname="eu.northsoft.bettermob.skill.condition.ScoreConditionTest" time="0.003"/>
+  <testcase name="disabledConditionReturnsFalseWithoutAccessingScoreboard()" classname="eu.northsoft.bettermob.skill.condition.ScoreConditionTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
