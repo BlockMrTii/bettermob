@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="eu.northsoft.bettermob.skill.mechanic.SpeakMechanicTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:12.530Z" hostname="MyPC" time="0.159">
+  <properties/>
+  <testcase name="chatFalseDoesNotScheduleChatMessage()" classname="eu.northsoft.bettermob.skill.mechanic.SpeakMechanicTest" time="0.151"/>
+  <testcase name="runsOnTargetReturnsFalse()" classname="eu.northsoft.bettermob.skill.mechanic.SpeakMechanicTest" time="0.0"/>
+  <testcase name="chatLineIsScheduledViaRunOwnedAndSentOnlyOnExecution()" classname="eu.northsoft.bettermob.skill.mechanic.SpeakMechanicTest" time="0.004"/>
+  <testcase name="nonPlayerTargetDoesNotScheduleChatMessage()" classname="eu.northsoft.bettermob.skill.mechanic.SpeakMechanicTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

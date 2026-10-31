@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="eu.northsoft.bettermob.mob.SkillTriggerTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:10.683Z" hostname="MyPC" time="0.025">
+  <properties/>
+  <testcase name="despawnAndMoveParseAndMoveHasAFiveTickDefault()" classname="eu.northsoft.bettermob.mob.SkillTriggerTest" time="0.002"/>
+  <testcase name="parsesTheHealthTriggerWithItsThreshold()" classname="eu.northsoft.bettermob.mob.SkillTriggerTest" time="0.006"/>
+  <testcase name="parsesTheTargetAndCombatTriggers()" classname="eu.northsoft.bettermob.mob.SkillTriggerTest" time="0.001"/>
+  <testcase name="theDefinitionIndexesDespawnAndMoveTriggers()" classname="eu.northsoft.bettermob.mob.SkillTriggerTest" time="0.001"/>
+  <testcase name="healthSpecsCompareAbsoluteValuesAndPercentages()" classname="eu.northsoft.bettermob.mob.SkillTriggerTest" time="0.0"/>
+  <testcase name="rejectsUnknownTriggersAndLinesWithoutOne()" classname="eu.northsoft.bettermob.mob.SkillTriggerTest" time="0.001"/>
+  <testcase name="itemTriggersAndTriggerConditionsParse()" classname="eu.northsoft.bettermob.mob.SkillTriggerTest" time="0.001"/>
+  <testcase name="parsesTimerInterval()" classname="eu.northsoft.bettermob.mob.SkillTriggerTest" time="0.0"/>
+  <testcase name="parsesPlainTrigger()" classname="eu.northsoft.bettermob.mob.SkillTriggerTest" time="0.001"/>
+  <testcase name="everyTriggerParses()" classname="eu.northsoft.bettermob.mob.SkillTriggerTest" time="0.001"/>
+  <testcase name="signalTriggersNeedANameAndAreCaseInsensitive()" classname="eu.northsoft.bettermob.mob.SkillTriggerTest" time="0.001"/>
+  <testcase name="parsesConditionAfterTheTrigger()" classname="eu.northsoft.bettermob.mob.SkillTriggerTest" time="0.0"/>
+  <testcase name="triggerNamesAreCaseInsensitiveAndHaveAliases()" classname="eu.northsoft.bettermob.mob.SkillTriggerTest" time="0.0"/>
+  <testcase name="theHealthTriggerNeedsAThresholdAndOthersMustNotHaveOne()" classname="eu.northsoft.bettermob.mob.SkillTriggerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

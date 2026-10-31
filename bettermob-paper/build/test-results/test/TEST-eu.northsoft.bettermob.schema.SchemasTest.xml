@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="eu.northsoft.bettermob.schema.SchemasTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:11.138Z" hostname="MyPC" time="0.315">
+  <properties/>
+  <testcase name="theSchemasRejectWrongTypesAndMissingFields()" classname="eu.northsoft.bettermob.schema.SchemasTest" time="0.188"/>
+  <testcase name="theSchemasAcceptBothMobFileLayouts()" classname="eu.northsoft.bettermob.schema.SchemasTest" time="0.015"/>
+  <testcase name="theSchemasFollowTheTriggerGrammarForSignalsAndTimers()" classname="eu.northsoft.bettermob.schema.SchemasTest" time="0.037"/>
+  <testcase name="phaseFieldsFollowTheMobSchema()" classname="eu.northsoft.bettermob.schema.SchemasTest" time="0.023"/>
+  <testcase name="mobSchemaAcceptsAddSpawnRule()" classname="eu.northsoft.bettermob.schema.SchemasTest" time="0.013"/>
+  <testcase name="everyShippedAndSampleFileMatchesItsSchema()" classname="eu.northsoft.bettermob.schema.SchemasTest" time="0.037"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+]]></system-err>
+</testsuite>
