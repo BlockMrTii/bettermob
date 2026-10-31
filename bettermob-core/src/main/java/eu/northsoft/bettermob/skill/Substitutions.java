@@ -1,22 +1,20 @@
 package eu.northsoft.bettermob.skill;
 
-import eu.northsoft.bettermob.item.ItemNbt;
-import org.bukkit.inventory.ItemStack;
-
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class Substitutions {
     private Substitutions() {}
 
-    static Map<String, String> resolveVariables(Map<String, String> params, Map<String, String> skillScope, Map<String, String> casterScope) {
+    public static Map<String, String> resolveVariables(Map<String, String> params, Map<String, String> skillScope, Map<String, String> casterScope) {
         return resolveVariables(params, skillScope, casterScope, null);
     }
 
-    static Map<String, String> resolveVariables(Map<String, String> params, Map<String, String> skillScope, Map<String, String> casterScope, Map<String, String> targetScope) {
+    public static Map<String, String> resolveVariables(Map<String, String> params, Map<String, String> skillScope, Map<String, String> casterScope, Map<String, String> targetScope) {
         boolean needed = false;
         for (String value : params.values()) {
             if (value.indexOf("<skill.") >= 0 || value.indexOf("<var.") >= 0 || value.indexOf("<caster.var.") >= 0) {
@@ -59,7 +57,7 @@ public final class Substitutions {
 
     private static final Pattern TARGET_VARIABLE = Pattern.compile("<target\\.var\\.([A-Za-z0-9_]{1,32})>");
 
-    static String replaceTargetVariables(String value, Map<String, String> scope) {
+    public static String replaceTargetVariables(String value, Map<String, String> scope) {
         Matcher matcher = TARGET_VARIABLE.matcher(value);
         StringBuilder result = new StringBuilder();
         while (matcher.find()) {
@@ -72,18 +70,18 @@ public final class Substitutions {
 
     private static final Pattern VARIABLE_PLACEHOLDER = Pattern.compile("<(skill\\.var|skill|caster\\.var|target\\.var|var)\\.([A-Za-z0-9_]{1,32})>");
 
-    private static boolean isInlineSkill(String value) {
+    public static boolean isInlineSkill(String value) {
         String trimmed = value.stripLeading();
         return trimmed.startsWith("[") && trimmed.indexOf('{') > 0;
     }
 
     private static final Pattern ITEM_NBT = Pattern.compile("<caster\\.itemnbt\\.([A-Za-z0-9_.-]{1,64})>");
 
-    static String withItemNbt(String value, ItemStack held) {
+    public static String withItemNbt(String value, Function<String, String> nbtLookup) {
         Matcher matcher = ITEM_NBT.matcher(value);
         StringBuilder result = new StringBuilder();
         while (matcher.find()) {
-            String found = ItemNbt.get(held, matcher.group(1));
+            String found = nbtLookup != null ? nbtLookup.apply(matcher.group(1)) : null;
             matcher.appendReplacement(result, Matcher.quoteReplacement(found == null ? "" : Params.stripPlaceholderValue(found)));
         }
         matcher.appendTail(result);
@@ -101,7 +99,7 @@ public final class Substitutions {
                 .replace("<caster.l.pitch>", plainNumber(pitch));
     }
 
-    static String withCasterValues(String value, String damage, String name, boolean escapesItself) {
+    public static String withCasterValues(String value, String damage, String name, boolean escapesItself) {
         String replaced = value.replace("<caster.damage>", damage);
         if (escapesItself || isInlineSkill(value)) return replaced;
         return replaced.replace("<caster.name>", name);

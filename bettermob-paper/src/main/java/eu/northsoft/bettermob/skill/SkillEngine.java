@@ -56,7 +56,7 @@ public final class SkillEngine implements Listener {
     private final ModelEngineHook modelEngine;
     private final ItemRegistry items;
     private final DebugManager debug;
-    private final SkillState state = new SkillState();
+    private final PaperSkillState state = new PaperSkillState();
     private final ModelPassengers modelPassengers = new ModelPassengers();
     private final InlineSkills inlineSkills;
     private final TargeterRegistry targeters;
@@ -141,7 +141,7 @@ public final class SkillEngine implements Listener {
         return debug;
     }
 
-    public SkillState state() {
+    public PaperSkillState state() {
         return state;
     }
 
@@ -542,7 +542,10 @@ public final class SkillEngine implements Listener {
         for (Map.Entry<String, String> entry : p.entrySet()) {
             String value = at == null ? entry.getValue() : Substitutions.withLocationValues(entry.getValue(), at.getX(), at.getY(), at.getZ(), at.getYaw(), at.getPitch());
             if (value.indexOf("<caster.mythic_type>") >= 0) value = value.replace("<caster.mythic_type>", mobType(context.caster()));
-            if (value.indexOf("<caster.itemnbt.") >= 0) value = Substitutions.withItemNbt(value, ItemNbt.heldItem(context.caster(), context.event()));
+            if (value.indexOf("<caster.itemnbt.") >= 0) {
+                org.bukkit.inventory.ItemStack held = ItemNbt.heldItem(context.caster(), context.event());
+                value = Substitutions.withItemNbt(value, key -> ItemNbt.get(held, key));
+            }
             result.put(entry.getKey(), Substitutions.withCasterValues(value, damage, name, escapesItself));
         }
         return result;

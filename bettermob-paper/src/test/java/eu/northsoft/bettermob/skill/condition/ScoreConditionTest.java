@@ -1,5 +1,6 @@
 package eu.northsoft.bettermob.skill.condition;
 
+import eu.northsoft.bettermob.skill.PaperSkillState;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillState;
@@ -38,7 +39,7 @@ class ScoreConditionTest {
     @Test
     void enabledConditionMatchesScore() {
         SkillEngine engine = mock(SkillEngine.class);
-        when(engine.state()).thenReturn(new SkillState());
+        when(engine.state()).thenReturn(new PaperSkillState());
         ScoreCondition condition = new ScoreCondition(engine, true);
         LivingEntity caster = mock(LivingEntity.class);
         when(caster.getUniqueId()).thenReturn(UUID.randomUUID());
@@ -67,7 +68,7 @@ class ScoreConditionTest {
     @Test
     void enabledConditionReturnsFalseWhenScoreNotSet() {
         SkillEngine engine = mock(SkillEngine.class);
-        when(engine.state()).thenReturn(new SkillState());
+        when(engine.state()).thenReturn(new PaperSkillState());
         ScoreCondition condition = new ScoreCondition(engine, true);
         LivingEntity caster = mock(LivingEntity.class);
         when(caster.getUniqueId()).thenReturn(UUID.randomUUID());
@@ -94,7 +95,7 @@ class ScoreConditionTest {
     @Test
     void unsupportedOperationExceptionReturnsFalse() {
         SkillEngine engine = mock(SkillEngine.class);
-        when(engine.state()).thenReturn(new SkillState());
+        when(engine.state()).thenReturn(new PaperSkillState());
         ScoreCondition condition = new ScoreCondition(engine, true);
         LivingEntity caster = mock(LivingEntity.class);
         when(caster.getUniqueId()).thenReturn(UUID.randomUUID());

@@ -3,6 +3,7 @@ package eu.northsoft.bettermob.fabric;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import eu.northsoft.bettermob.mob.MobDefinition;
 import eu.northsoft.bettermob.platform.Position;
+import eu.northsoft.bettermob.skill.core.CoreSkillEngine;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.server.command.CommandManager;
@@ -23,14 +24,41 @@ public final class BetterMobFabricMod implements ModInitializer {
     private static BetterMobFabricMod instance;
     private FabricPlatform platform;
     private final FabricMobRegistry mobRegistry = new FabricMobRegistry();
+    private final CoreSkillEngine skillEngine = new CoreSkillEngine();
 
     @Override
     public void onInitialize() {
         instance = this;
         this.platform = new FabricPlatform();
         this.mobRegistry.load();
+        registerMechanics();
         registerCommands();
         LOGGER.info("BetterMob (Fabric) initialized for Minecraft {}", platform.minecraftVersion());
+    }
+
+    private void registerMechanics() {
+        skillEngine.setWarningHandler(LOGGER::warn);
+
+        skillEngine.registerMechanic("model", (ctx, target, params) -> {
+            String modelId = params.getOrDefault("mid", params.get("m"));
+            if (modelId != null && target.entity() != null && platform.model("bettermodel").isPresent()) {
+                platform.model("bettermodel").get().attach(target.entity(), modelId);
+            }
+        });
+
+        skillEngine.registerMechanic("damage", (ctx, target, params) -> {
+            if (target.entity() instanceof eu.northsoft.bettermob.platform.PlatformLivingEntity living) {
+                double amount = eu.northsoft.bettermob.skill.Params.parseNumber(params.getOrDefault("amount", params.get("a")), 1.0);
+                living.damage(amount, ctx.caster());
+            }
+        });
+
+        skillEngine.registerMechanic("heal", (ctx, target, params) -> {
+            if (target.entity() instanceof eu.northsoft.bettermob.platform.PlatformLivingEntity living) {
+                double amount = eu.northsoft.bettermob.skill.Params.parseNumber(params.getOrDefault("amount", params.get("a")), 1.0);
+                living.health(Math.min(living.maxHealth(), living.health() + amount));
+            }
+        });
     }
 
     private void registerCommands() {
@@ -69,6 +97,11 @@ public final class BetterMobFabricMod implements ModInitializer {
                                     if (def.health > 0) {
                                         living.maxHealth(def.health);
                                         living.health(def.health);
+                                    }
+
+                                    var ctx = new eu.northsoft.bettermob.skill.core.CoreSkillContext(living);
+                                    for (var trigger : def.triggersOf(eu.northsoft.bettermob.mob.MobDefinition.SkillTrigger.Trigger.SPAWN)) {
+                                        skillEngine.executeStep(trigger.step(), ctx);
                                     }
                                 }
                                 if (platform.model("bettermodel").isPresent() && def.modelId != null) {

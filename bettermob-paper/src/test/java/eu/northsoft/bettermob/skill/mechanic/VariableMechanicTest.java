@@ -1,6 +1,7 @@
 package eu.northsoft.bettermob.skill.mechanic;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.skill.PaperSkillState;
 import eu.northsoft.bettermob.skill.SkillContext;
 import eu.northsoft.bettermob.skill.SkillEngine;
 import eu.northsoft.bettermob.skill.SkillState;
@@ -26,7 +27,7 @@ class VariableMechanicTest {
         SkillEngine engine = mock(SkillEngine.class);
         BetterMobPlugin plugin = mock(BetterMobPlugin.class);
         when(engine.plugin()).thenReturn(plugin);
-        SkillState state = new SkillState();
+        PaperSkillState state = new PaperSkillState();
         when(engine.state()).thenReturn(state);
 
         LivingEntity caster = mock(LivingEntity.class);

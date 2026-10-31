@@ -1,17 +1,19 @@
 package eu.northsoft.bettermob.skill;
 
-import org.bukkit.Bukkit;
-import org.bukkit.entity.LivingEntity;
+import eu.northsoft.bettermob.platform.PlatformLivingEntity;
 
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class SkillState {
+/**
+ * Platform-neutral state tracking for active cooldowns, GCD, entity variables, and auras.
+ */
+public class SkillState {
     private final Map<UUID, Long> gcdUntilMillis = new ConcurrentHashMap<>();
-    private record SkillKey(UUID caster, String skill) {}
 
+    private record SkillKey(UUID caster, String skill) {}
     private record StepKey(UUID caster, int step) {}
 
     private final Map<Object, Long> cooldowns = new ConcurrentHashMap<>();
@@ -31,20 +33,20 @@ public final class SkillState {
         return until != null && until > System.currentTimeMillis();
     }
 
-    boolean acquireSkillCooldown(LivingEntity caster, SkillDefinition skill) {
-        return acquire(skillCooldownKey(caster, skill.id), (long) (skill.cooldown * 1000));
+    public boolean acquireSkillCooldown(UUID casterId, SkillDefinition skill) {
+        return acquire(skillCooldownKey(casterId, skill.id), (long) (skill.cooldown * 1000));
     }
 
-    boolean acquireStepCooldown(LivingEntity caster, Object step, float seconds) {
-        return acquire(new StepKey(caster.getUniqueId(), System.identityHashCode(step)), (long) (seconds * 1000));
+    public boolean acquireStepCooldown(UUID casterId, Object step, float seconds) {
+        return acquire(new StepKey(casterId, System.identityHashCode(step)), (long) (seconds * 1000));
     }
 
-    public boolean skillOnCooldown(LivingEntity caster, String skillId) {
-        Long until = cooldowns.get(skillCooldownKey(caster, skillId));
+    public boolean skillOnCooldown(UUID casterId, String skillId) {
+        Long until = cooldowns.get(skillCooldownKey(casterId, skillId));
         return until != null && until > System.currentTimeMillis();
     }
 
-    boolean acquire(Object key, long millis) {
+    public boolean acquire(Object key, long millis) {
         long now = System.currentTimeMillis();
         if (cooldowns.size() > purgeSize) {
             cooldowns.values().removeIf(time -> time <= now);
@@ -59,11 +61,11 @@ public final class SkillState {
         return acquired[0];
     }
 
-    private static SkillKey skillCooldownKey(LivingEntity caster, String skillId) {
-        return new SkillKey(caster.getUniqueId(), skillId.toLowerCase(Locale.ROOT));
+    private static SkillKey skillCooldownKey(UUID casterId, String skillId) {
+        return new SkillKey(casterId, skillId.toLowerCase(Locale.ROOT));
     }
 
-    int cooldownCount() {
+    public int cooldownCount() {
         return cooldowns.size();
     }
 
@@ -75,8 +77,8 @@ public final class SkillState {
         return auras.get(entityId);
     }
 
-    public boolean hasAura(LivingEntity entity, String name) {
-        Map<String, Aura> active = auras.get(entity.getUniqueId());
+    public boolean hasAura(UUID entityId, String name) {
+        Map<String, Aura> active = auras.get(entityId);
         if (active == null) return false;
         Aura aura = active.get(name.toLowerCase(Locale.ROOT));
         if (aura == null) return false;
@@ -87,14 +89,19 @@ public final class SkillState {
         return true;
     }
 
-    public void applyDamage(LivingEntity victim, double amount, LivingEntity source) {
+    public void runWithApplyingDamage(Runnable action) {
         boolean previous = applyingDamage.get();
         applyingDamage.set(true);
         try {
-            victim.damage(amount, source != null && Bukkit.isOwnedByCurrentRegion(source) ? source : null);
+            action.run();
         } finally {
             applyingDamage.set(previous);
         }
+    }
+
+    public void applyDamage(PlatformLivingEntity victim, double amount, PlatformLivingEntity source) {
+        if (victim == null) return;
+        runWithApplyingDamage(() -> victim.damage(amount, source));
     }
 
     public boolean isApplyingDamage() {
