@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.skill.mechanic.MessageMechanicTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:56.532Z" hostname="MyPC" time="0.008">
-  <properties/>
-  <testcase name="theNameIsInsertedAsPlainTextWithoutColorCodesOrPlaceholders()" classname="eu.northsoft.bettermob.skill.mechanic.MessageMechanicTest" time="0.008"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

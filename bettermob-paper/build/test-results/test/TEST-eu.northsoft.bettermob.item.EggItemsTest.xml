@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.item.EggItemsTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:49.449Z" hostname="MyPC" time="0.307">
-  <properties/>
-  <testcase name="theEggMaterialFollowsTheEntityType()" classname="eu.northsoft.bettermob.item.EggItemsTest" time="0.305"/>
-  <testcase name="typesWithoutAnEggFallBackToTheZombieEgg()" classname="eu.northsoft.bettermob.item.EggItemsTest" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

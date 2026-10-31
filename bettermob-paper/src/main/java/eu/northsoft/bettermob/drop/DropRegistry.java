@@ -62,7 +62,7 @@ public final class DropRegistry {
                             Math.max(0, section.getInt("MinItems", 0)),
                             section.getInt("MaxItems", Integer.MAX_VALUE),
                             parseLines(id, section.getStringList("Drops"))));
-                    prints.put(id.toLowerCase(Locale.ROOT), ReloadDiff.fingerprint(section));
+                    prints.put(id.toLowerCase(Locale.ROOT), ReloadDiff.fingerprint(section.getValues(true)));
                 }
             }
         }

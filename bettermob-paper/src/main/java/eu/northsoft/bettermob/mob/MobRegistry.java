@@ -61,7 +61,7 @@ public final class MobRegistry {
                     MobDefinition definition = parse(id, entry.getValue());
                     if (definition != null) {
                         loaded.put(id.toLowerCase(Locale.ROOT), definition);
-                        prints.put(id.toLowerCase(Locale.ROOT), ReloadDiff.fingerprint(entry.getValue()));
+                        prints.put(id.toLowerCase(Locale.ROOT), ReloadDiff.fingerprint(entry.getValue().getValues(true)));
                     }
                 }
             }
@@ -163,7 +163,7 @@ public final class MobRegistry {
                 List.copyOf(section.getStringList("Equipment")),
                 parseSpawnRule(id, section.getConfigurationSection("Spawn")),
                 parseEgg(id, section.getConfigurationSection("Egg")),
-                Behaviour.parse(section, option -> plugin.messages().warn("mob.behaviourInvalid", "mob", id, "option", option)),
+                Behaviour.parse(eu.northsoft.bettermob.paper.PaperConfigSection.of(section), option -> plugin.messages().warn("mob.behaviourInvalid", "mob", id, "option", option)),
                 MobPhase.parse(section, option -> {
                     int skills = option.indexOf(": Skills ");
                     if (skills >= 0) ExtraTriggers.warnUnparsed(option.substring(skills + 9), () -> plugin.messages().warn("mob.phaseInvalid", "mob", id, "option", option));
@@ -184,7 +184,7 @@ public final class MobRegistry {
 
     private SpawnRule parseSpawnRule(String id, ConfigurationSection spawn) {
         if (spawn == null) return null;
-        return SpawnRule.parse(spawn, option -> plugin.messages().warn("mob.spawnRuleInvalid", "mob", id, "option", option));
+        return SpawnRule.parse(eu.northsoft.bettermob.paper.PaperConfigSection.of(spawn), option -> plugin.messages().warn("mob.spawnRuleInvalid", "mob", id, "option", option));
     }
 
     private BossBarSettings parseBossBar(String id, ConfigurationSection modules) {
@@ -192,16 +192,16 @@ public final class MobRegistry {
         ConfigurationSection bar = modules.getConfigurationSection("BossBar");
         if (bar == null) return modules.getBoolean("BossBar", false) ? BossBarSettings.defaults() : null;
         String colorName = bar.getString("Color", "RED");
-        BarColor color = enumOrNull(BarColor.class, colorName);
+        BossBarColor color = enumOrNull(BossBarColor.class, colorName);
         if (color == null) {
             plugin.messages().warn("mob.bossBarColorInvalid", "mob", id, "value", colorName);
-            color = BarColor.RED;
+            color = BossBarColor.RED;
         }
         String styleName = bar.getString("Style", "SOLID");
-        BarStyle style = enumOrNull(BarStyle.class, styleName);
+        BossBarStyle style = enumOrNull(BossBarStyle.class, styleName);
         if (style == null) {
             plugin.messages().warn("mob.bossBarStyleInvalid", "mob", id, "value", styleName);
-            style = BarStyle.SOLID;
+            style = BossBarStyle.SOLID;
         }
         return new BossBarSettings(
                 bar.getString("Title", BossBarSettings.DEFAULT_TITLE),

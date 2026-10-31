@@ -46,4 +46,15 @@ class SkillContextTest {
             assertSame(context, context.ownedHere());
         }
     }
+
+    @Test
+    void aContextKeepsItsVariablesWhenArgumentsAreSet() {
+        SkillContext context = new SkillContext(null, null, null);
+        context.variables().put("hits", "3");
+        SkillContext withArguments = context.withArguments(java.util.Map.of("amount", "4"));
+        assertTrue(context.variables() == withArguments.variables());
+        org.junit.jupiter.api.Assertions.assertEquals("4", withArguments.arguments().get("amount"));
+        assertTrue(context.withTrigger(null).arguments().isEmpty());
+        org.junit.jupiter.api.Assertions.assertEquals("4", withArguments.withOrigin(null).arguments().get("amount"));
+    }
 }

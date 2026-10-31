@@ -71,7 +71,7 @@ public final class SkillEngine implements Listener {
         this.modelEngine = modelEngine;
         this.items = items;
         this.debug = plugin.debug();
-        this.inlineSkills = new InlineSkills(plugin);
+        this.inlineSkills = new InlineSkills(line -> plugin.messages().warn("skill.inlineLineInvalid", "line", line));
         this.placeholders = new CustomPlaceholders((namespace, owner, exception) -> plugin.messages().warn("skill.customPlaceholderFailed",
                 "namespace", namespace, "plugin", owner == null ? "?" : owner.getName(), "error", exception));
         this.targeters = new TargeterRegistry(this);

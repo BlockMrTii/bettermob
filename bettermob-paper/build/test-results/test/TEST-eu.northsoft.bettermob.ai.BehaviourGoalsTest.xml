@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.ai.BehaviourGoalsTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:48.755Z" hostname="MyPC" time="0.032">
-  <properties/>
-  <testcase name="aOneWayPatrolEndsBehindTheLastPoint()" classname="eu.northsoft.bettermob.ai.BehaviourGoalsTest" time="0.025"/>
-  <testcase name="aLoopingPatrolWrapsAroundAfterTheLastPoint()" classname="eu.northsoft.bettermob.ai.BehaviourGoalsTest" time="0.006"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

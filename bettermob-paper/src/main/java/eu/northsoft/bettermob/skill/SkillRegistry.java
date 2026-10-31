@@ -49,7 +49,7 @@ public final class SkillRegistry {
                         continue;
                     }
                     loaded.put(id.toLowerCase(Locale.ROOT), parse(id, section));
-                    prints.put(id.toLowerCase(Locale.ROOT), ReloadDiff.fingerprint(section));
+                    prints.put(id.toLowerCase(Locale.ROOT), ReloadDiff.fingerprint(section.getValues(true)));
                 }
             }
         }

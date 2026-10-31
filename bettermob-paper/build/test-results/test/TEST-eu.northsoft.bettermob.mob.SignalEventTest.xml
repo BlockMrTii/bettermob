@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.mob.SignalEventTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:54.433Z" hostname="MyPC" time="0.069">
-  <properties/>
-  <testcase name="theSignalEventHandsOverAnOwnedSender()" classname="eu.northsoft.bettermob.mob.SignalEventTest" time="0.063"/>
-  <testcase name="theSignalEventLeavesOutASenderOfAnotherRegion()" classname="eu.northsoft.bettermob.mob.SignalEventTest" time="0.005"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

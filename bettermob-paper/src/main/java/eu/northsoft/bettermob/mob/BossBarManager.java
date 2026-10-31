@@ -52,7 +52,9 @@ final class BossBarManager {
         detach(entity.getUniqueId());
         BossBarSettings settings = definition.bossBar;
         if (settings == null) return;
-        BossBar bar = Bukkit.createBossBar(title(entity, definition, entity.getHealth(), maxHealth(entity)), settings.color(), settings.style(), flags(settings));
+        BossBar bar = Bukkit.createBossBar(title(entity, definition, entity.getHealth(), maxHealth(entity)),
+                org.bukkit.boss.BarColor.valueOf(settings.color().name()),
+                org.bukkit.boss.BarStyle.valueOf(settings.style().name()), flags(settings));
         Shown shown = new Shown();
         Runnable cancel = Tasks.runTimer(plugin, entity, 1L, UPDATE_TICKS, () -> update(entity, definition, bar, shown));
         active.put(entity.getUniqueId(), new Active(bar, cancel, shown));

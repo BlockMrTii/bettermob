@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.skill.mechanic.HeldItemMechanicTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:56.516Z" hostname="MyPC" time="0.003">
-  <properties/>
-  <testcase name="nbtKeysAreNamespacedAndCleaned()" classname="eu.northsoft.bettermob.skill.mechanic.HeldItemMechanicTest" time="0.001"/>
-  <testcase name="jsonInsertsAreEscaped()" classname="eu.northsoft.bettermob.skill.mechanic.HeldItemMechanicTest" time="0.001"/>
-  <testcase name="loreIsAQuotedListOrSplitAtBars()" classname="eu.northsoft.bettermob.skill.mechanic.HeldItemMechanicTest" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

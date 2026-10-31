@@ -4,5 +4,6 @@
 *.iml
 examples/**/target/
 CLAUDE.md
-/build/
+build/
 .gradle/
+build/

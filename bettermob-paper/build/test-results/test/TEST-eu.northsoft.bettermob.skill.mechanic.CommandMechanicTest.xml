@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.skill.mechanic.CommandMechanicTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:56.514Z" hostname="MyPC" time="0.001">
-  <properties/>
-  <testcase name="asArgumentKeepsTheNameASingleHarmlessToken()" classname="eu.northsoft.bettermob.skill.mechanic.CommandMechanicTest" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
