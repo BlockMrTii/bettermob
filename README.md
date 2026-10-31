@@ -21,6 +21,10 @@
   <a href="https://github.com/HyperGaming99/bettermob/wiki">Wiki</a>
 </p>
 
+> [!WARNING]
+> **Fabric Beta / Early Access Notice**  
+> Fabric support is currently in active development. We recommend using the Fabric mod primarily in **Singleplayer** or on **testing/development servers** before deploying it to a live production environment.
+
 ---
 
 ## 🎯 Goals & Milestones
