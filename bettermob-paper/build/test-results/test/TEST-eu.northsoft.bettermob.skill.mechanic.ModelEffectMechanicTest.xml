@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.skill.mechanic.ModelEffectMechanicTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:12.457Z" hostname="MyPC" time="0.002">
+<testsuite name="eu.northsoft.bettermob.skill.mechanic.ModelEffectMechanicTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:56.544Z" hostname="MyPC" time="0.002">
   <properties/>
   <testcase name="colorsAreHexOrRgbAndFallBackWhenInvalid()" classname="eu.northsoft.bettermob.skill.mechanic.ModelEffectMechanicTest" time="0.001"/>
-  <testcase name="partsMatchExactlyOrByContainedName()" classname="eu.northsoft.bettermob.skill.mechanic.ModelEffectMechanicTest" time="0.0"/>
+  <testcase name="partsMatchExactlyOrByContainedName()" classname="eu.northsoft.bettermob.skill.mechanic.ModelEffectMechanicTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

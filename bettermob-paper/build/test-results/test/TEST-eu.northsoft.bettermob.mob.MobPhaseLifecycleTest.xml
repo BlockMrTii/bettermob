@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.mob.MobPhaseLifecycleTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:07.524Z" hostname="MyPC" time="2.1">
+<testsuite name="eu.northsoft.bettermob.mob.MobPhaseLifecycleTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:51.294Z" hostname="MyPC" time="1.942">
   <properties/>
-  <testcase name="persistenceAndReloadDoNotRepeatStartSkills()" classname="eu.northsoft.bettermob.mob.MobPhaseLifecycleTest" time="1.691"/>
-  <testcase name="entryAndHealingReplaceTriggersAndReverseValues()" classname="eu.northsoft.bettermob.mob.MobPhaseLifecycleTest" time="0.087"/>
-  <testcase name="equipmentIsAppliedAndRestored()" classname="eu.northsoft.bettermob.mob.MobPhaseLifecycleTest" time="0.227"/>
-  <testcase name="phaseTimersAndMovementAreScheduledAndCancelled()" classname="eu.northsoft.bettermob.mob.MobPhaseLifecycleTest" time="0.072"/>
-  <testcase name="displayFollowsTheActivePhase()" classname="eu.northsoft.bettermob.mob.MobPhaseLifecycleTest" time="0.014"/>
+  <testcase name="persistenceAndReloadDoNotRepeatStartSkills()" classname="eu.northsoft.bettermob.mob.MobPhaseLifecycleTest" time="1.636"/>
+  <testcase name="entryAndHealingReplaceTriggersAndReverseValues()" classname="eu.northsoft.bettermob.mob.MobPhaseLifecycleTest" time="0.023"/>
+  <testcase name="equipmentIsAppliedAndRestored()" classname="eu.northsoft.bettermob.mob.MobPhaseLifecycleTest" time="0.178"/>
+  <testcase name="phaseTimersAndMovementAreScheduledAndCancelled()" classname="eu.northsoft.bettermob.mob.MobPhaseLifecycleTest" time="0.083"/>
+  <testcase name="displayFollowsTheActivePhase()" classname="eu.northsoft.bettermob.mob.MobPhaseLifecycleTest" time="0.017"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
 WARNING: A Java agent has been loaded dynamically (/home/leon/.gradle/caches/modules-2/files-2.1/net.bytebuddy/byte-buddy-agent/1.17.7/fbf3d6d649ed37fc9e9c59480a05be0a26e3c2da/byte-buddy-agent-1.17.7.jar)

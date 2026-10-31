@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.skill.mechanic.MechanicOwnerTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:12.433Z" hostname="MyPC" time="0.002">
+<testsuite name="eu.northsoft.bettermob.skill.mechanic.MechanicOwnerTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:56.519Z" hostname="MyPC" time="0.002">
   <properties/>
   <testcase name="mechanicsThatChangeTheTargetRunOnTheTargetRegion()" classname="eu.northsoft.bettermob.skill.mechanic.MechanicOwnerTest" time="0.001"/>
   <testcase name="mechanicsThatChangeTheCasterOrTheEventStayOnTheCallingRegion()" classname="eu.northsoft.bettermob.skill.mechanic.MechanicOwnerTest" time="0.001"/>

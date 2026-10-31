@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.skill.VariablesTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:12.183Z" hostname="MyPC" time="0.013">
+<testsuite name="eu.northsoft.bettermob.skill.VariablesTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:56.252Z" hostname="MyPC" time="0.012">
   <properties/>
-  <testcase name="theEnginePathLeavesTargetPlaceholdersForTheDispatch()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.001"/>
+  <testcase name="theEnginePathLeavesTargetPlaceholdersForTheDispatch()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.0"/>
   <testcase name="nonFiniteNumbersAreRejected()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.002"/>
-  <testcase name="subtractAndRangeHelpersWork()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.001"/>
-  <testcase name="namesAndScopes()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.0"/>
+  <testcase name="subtractAndRangeHelpersWork()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.002"/>
+  <testcase name="namesAndScopes()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.001"/>
   <testcase name="sanitizeRemovesSkillSyntaxButKeepsNegativeNumbers()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.0"/>
-  <testcase name="aScopeHoldsAtMostSixtyFourVariables()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.001"/>
-  <testcase name="matchingUsesNumbersWhereItCanAndTextOtherwise()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.0"/>
-  <testcase name="targetScopeNamesAndMythicPlaceholdersResolve()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.001"/>
-  <testcase name="mechanicParametersGetTheirVariablesResolved()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.001"/>
-  <testcase name="parametersWithoutVariablePlaceholdersAreReturnedAsTheyAre()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.0"/>
+  <testcase name="aScopeHoldsAtMostSixtyFourVariables()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.0"/>
+  <testcase name="matchingUsesNumbersWhereItCanAndTextOtherwise()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.001"/>
+  <testcase name="targetScopeNamesAndMythicPlaceholdersResolve()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.0"/>
+  <testcase name="mechanicParametersGetTheirVariablesResolved()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.0"/>
+  <testcase name="parametersWithoutVariablePlaceholdersAreReturnedAsTheyAre()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.001"/>
   <testcase name="targetVariablesAreReplacedPerScopeWithAZeroFallback()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.0"/>
   <testcase name="placeholdersReadTheRightScopeAndDefaultToZero()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.001"/>
   <testcase name="addTreatsAMissingValueAsZero()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.001"/>
-  <testcase name="valuesAreNormalisedByType()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.001"/>
+  <testcase name="valuesAreNormalisedByType()" classname="eu.northsoft.bettermob.skill.VariablesTest" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

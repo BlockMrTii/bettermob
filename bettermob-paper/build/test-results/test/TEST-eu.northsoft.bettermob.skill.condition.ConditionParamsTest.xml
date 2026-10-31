@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.skill.condition.ConditionParamsTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:12.200Z" hostname="MyPC" time="0.003">
+<testsuite name="eu.northsoft.bettermob.skill.condition.ConditionParamsTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:56.268Z" hostname="MyPC" time="0.004">
   <properties/>
-  <testcase name="textWithoutAPlaceholderIsLeftAlone()" classname="eu.northsoft.bettermob.skill.condition.ConditionParamsTest" time="0.001"/>
-  <testcase name="valuesAreInsertedWithoutSkillSyntaxAndUnknownOnesBecomeEmpty()" classname="eu.northsoft.bettermob.skill.condition.ConditionParamsTest" time="0.001"/>
+  <testcase name="textWithoutAPlaceholderIsLeftAlone()" classname="eu.northsoft.bettermob.skill.condition.ConditionParamsTest" time="0.002"/>
+  <testcase name="valuesAreInsertedWithoutSkillSyntaxAndUnknownOnesBecomeEmpty()" classname="eu.northsoft.bettermob.skill.condition.ConditionParamsTest" time="0.002"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.mob.ExtraTriggersTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:06.381Z" hostname="MyPC" time="0.012">
+<testsuite name="eu.northsoft.bettermob.mob.ExtraTriggersTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:50.108Z" hostname="MyPC" time="0.012">
   <properties/>
   <testcase name="builtInNamesAndMissingOwnersAreRefusedAndUnregisterRemoves()" classname="eu.northsoft.bettermob.mob.ExtraTriggersTest" time="0.005"/>
-  <testcase name="unparsedLinesAreHeldUntilReadyAndResetStartsOver()" classname="eu.northsoft.bettermob.mob.ExtraTriggersTest" time="0.004"/>
+  <testcase name="unparsedLinesAreHeldUntilReadyAndResetStartsOver()" classname="eu.northsoft.bettermob.mob.ExtraTriggersTest" time="0.003"/>
   <testcase name="aLineWithoutASkillStepIsNotAccepted()" classname="eu.northsoft.bettermob.mob.ExtraTriggersTest" time="0.001"/>
   <testcase name="registeredNamesAreAcceptedWithOrWithoutTheOnPrefix()" classname="eu.northsoft.bettermob.mob.ExtraTriggersTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>

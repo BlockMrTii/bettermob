@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.mob.BehaviourTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:06.324Z" hostname="MyPC" time="0.033">
+<testsuite name="eu.northsoft.bettermob.mob.BehaviourTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:50.055Z" hostname="MyPC" time="0.032">
   <properties/>
-  <testcase name="aPatrolSectionTakesLoopAndWaitInSeconds()" classname="eu.northsoft.bettermob.mob.BehaviourTest" time="0.005"/>
-  <testcase name="aQuotedFalseStopsTheLoopAndAWrongShapeIsReported()" classname="eu.northsoft.bettermob.mob.BehaviourTest" time="0.002"/>
-  <testcase name="waypointsAcceptThreeOrFourNumbers()" classname="eu.northsoft.bettermob.mob.BehaviourTest" time="0.007"/>
+  <testcase name="aPatrolSectionTakesLoopAndWaitInSeconds()" classname="eu.northsoft.bettermob.mob.BehaviourTest" time="0.007"/>
+  <testcase name="aQuotedFalseStopsTheLoopAndAWrongShapeIsReported()" classname="eu.northsoft.bettermob.mob.BehaviourTest" time="0.003"/>
+  <testcase name="waypointsAcceptThreeOrFourNumbers()" classname="eu.northsoft.bettermob.mob.BehaviourTest" time="0.005"/>
   <testcase name="guardAndHomeDistanceNeedAHomePoint()" classname="eu.northsoft.bettermob.mob.BehaviourTest" time="0.002"/>
   <testcase name="groupAndLeaderAreParsedWithDefaultsAndLimits()" classname="eu.northsoft.bettermob.mob.BehaviourTest" time="0.005"/>
   <testcase name="aPatrolListUsesLoopingWithoutWaiting()" classname="eu.northsoft.bettermob.mob.BehaviourTest" time="0.002"/>

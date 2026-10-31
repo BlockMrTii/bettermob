@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.service.BetterMobApiImplTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:11.454Z" hostname="MyPC" time="0.092">
+<testsuite name="eu.northsoft.bettermob.service.BetterMobApiImplTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:55.412Z" hostname="MyPC" time="0.094">
   <properties/>
-  <testcase name="spawnReturnsEmptyAndWarnsWhenLocationIsNotOwnedByCurrentRegion()" classname="eu.northsoft.bettermob.service.BetterMobApiImplTest" time="0.088"/>
+  <testcase name="spawnReturnsEmptyAndWarnsWhenLocationIsNotOwnedByCurrentRegion()" classname="eu.northsoft.bettermob.service.BetterMobApiImplTest" time="0.09"/>
   <testcase name="spawnReturnsEmptyWhenLocationOrWorldIsNull()" classname="eu.northsoft.bettermob.service.BetterMobApiImplTest" time="0.001"/>
   <testcase name="spawnSpawnsMobWhenLocationIsOwnedByCurrentRegion()" classname="eu.northsoft.bettermob.service.BetterMobApiImplTest" time="0.002"/>
   <system-out><![CDATA[]]></system-out>

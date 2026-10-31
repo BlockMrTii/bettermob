@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.pack.PackValidatorTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:10.780Z" hostname="MyPC" time="0.086">
+<testsuite name="eu.northsoft.bettermob.pack.PackValidatorTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:54.610Z" hostname="MyPC" time="0.092">
   <properties/>
-  <testcase name="modelIdsAreCheckedAgainstTheInstalledModelPlugins(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.025"/>
-  <testcase name="unsupportedPartsAreReportedWithTheirReason(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.004"/>
-  <testcase name="aFieldModelNeedsToExistInOnlyOneOfTheEngines(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.003"/>
+  <testcase name="modelIdsAreCheckedAgainstTheInstalledModelPlugins(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.023"/>
+  <testcase name="unsupportedPartsAreReportedWithTheirReason(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.005"/>
+  <testcase name="aFieldModelNeedsToExistInOnlyOneOfTheEngines(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.004"/>
   <testcase name="targeterConditionsAcceptSkillConditionsAndTheEntityOnes(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.004"/>
-  <testcase name="castinsteadAndRaytraceToSkillReferencesAreChecked(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.005"/>
-  <testcase name="inlineSkillsAndTotemLinesAreChecked(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.008"/>
-  <testcase name="withoutAModelPluginNothingIsChecked(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.002"/>
+  <testcase name="castinsteadAndRaytraceToSkillReferencesAreChecked(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.004"/>
+  <testcase name="inlineSkillsAndTotemLinesAreChecked(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.01"/>
+  <testcase name="withoutAModelPluginNothingIsChecked(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.003"/>
   <testcase name="patrolPointsAreChecked(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.004"/>
-  <testcase name="foldersAreMatchedCaseInsensitivelyAndMissingOnesAreSkipped(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.003"/>
-  <testcase name="dropTablesAndMobDropListsAreChecked(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.004"/>
+  <testcase name="foldersAreMatchedCaseInsensitivelyAndMissingOnesAreSkipped(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.004"/>
+  <testcase name="dropTablesAndMobDropListsAreChecked(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.005"/>
   <testcase name="lootChecksTheDropTableId(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.004"/>
-  <testcase name="aCleanPackHasNoIssues(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.005"/>
-  <testcase name="phasesAreValidatedWithTheirIndex(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.008"/>
+  <testcase name="aCleanPackHasNoIssues(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.004"/>
+  <testcase name="phasesAreValidatedWithTheirIndex(Path)" classname="eu.northsoft.bettermob.pack.PackValidatorTest" time="0.01"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

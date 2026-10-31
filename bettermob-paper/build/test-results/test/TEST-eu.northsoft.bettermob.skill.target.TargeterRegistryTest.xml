@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.skill.target.TargeterRegistryTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:31:12.763Z" hostname="MyPC" time="0.01">
+<testsuite name="eu.northsoft.bettermob.skill.target.TargeterRegistryTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:56.835Z" hostname="MyPC" time="0.01">
   <properties/>
-  <testcase name="customTargetersAreRegisteredOnceAndNeverTakeABuiltinName()" classname="eu.northsoft.bettermob.skill.target.TargeterRegistryTest" time="0.002"/>
-  <testcase name="withoutATriggerTheCasterIsTheTarget()" classname="eu.northsoft.bettermob.skill.target.TargeterRegistryTest" time="0.001"/>
-  <testcase name="theInheritedTargetKeepsATriggerOfAnotherRegion()" classname="eu.northsoft.bettermob.skill.target.TargeterRegistryTest" time="0.002"/>
+  <testcase name="customTargetersAreRegisteredOnceAndNeverTakeABuiltinName()" classname="eu.northsoft.bettermob.skill.target.TargeterRegistryTest" time="0.001"/>
+  <testcase name="withoutATriggerTheCasterIsTheTarget()" classname="eu.northsoft.bettermob.skill.target.TargeterRegistryTest" time="0.0"/>
+  <testcase name="theInheritedTargetKeepsATriggerOfAnotherRegion()" classname="eu.northsoft.bettermob.skill.target.TargeterRegistryTest" time="0.001"/>
   <testcase name="triggerAndTargetKeepATriggerOfAnotherRegion()" classname="eu.northsoft.bettermob.skill.target.TargeterRegistryTest" time="0.001"/>
   <testcase name="theInheritedTargetStaysTheCasterWhenTheTriggerIsNotTheTarget()" classname="eu.northsoft.bettermob.skill.target.TargeterRegistryTest" time="0.001"/>
   <testcase name="livingInConeIsRegisteredAndChecksTheHorizontalAngle()" classname="eu.northsoft.bettermob.skill.target.TargeterRegistryTest" time="0.001"/>
