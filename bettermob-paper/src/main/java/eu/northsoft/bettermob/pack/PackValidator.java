@@ -141,7 +141,7 @@ public final class PackValidator {
     }
 
     private void validatePhases(ConfigurationSection mob, String file, Report report) {
-        MobPhase.parse(mob, message -> {
+        MobPhase.parse(eu.northsoft.bettermob.paper.PaperConfigSection.of(mob), message -> {
             if (message.contains(": Skills ") || message.contains(": OnStart ")) return;
             report.lines++;
             report.issues.add(new Issue(file, message, Reason.UNPARSEABLE, ""));

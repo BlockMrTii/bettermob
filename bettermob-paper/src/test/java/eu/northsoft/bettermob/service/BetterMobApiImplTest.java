@@ -63,7 +63,7 @@ class BetterMobApiImplTest {
         MobRegistry registry = mock(MobRegistry.class);
         when(manager.registry()).thenReturn(registry);
 
-        MobDefinition definition = new MobDefinition("zombie_brute", EntityType.ZOMBIE, "Zombie Brute", null,
+        MobDefinition definition = new MobDefinition("zombie_brute", "ZOMBIE", "Zombie Brute", null,
                 20.0, 2.0, false, List.of(), List.of(), null, false, Map.of(),
                 List.of(), null, null, null, List.of(), null, null, null);
         when(registry.get("zombie_brute")).thenReturn(definition);

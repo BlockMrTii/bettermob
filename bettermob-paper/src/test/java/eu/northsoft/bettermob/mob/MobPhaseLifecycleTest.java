@@ -119,11 +119,11 @@ class MobPhaseLifecycleTest {
         YamlConfiguration config = new YamlConfiguration();
         config.loadFromString(yaml);
         return new MobDefinition("boss", null, "Boss", null, 100, 1, false, List.of(), List.of(),
-                MobDefinition.Options.parse(config.getConfigurationSection("Options"), MobDefinition.Options.DEFAULT), false, Map.of(),
+                MobDefinition.Options.parse(eu.northsoft.bettermob.paper.PaperConfigSection.of(config.getConfigurationSection("Options")), MobDefinition.Options.DEFAULT), false, Map.of(),
                 List.of(MobDefinition.SkillTrigger.parse("sound{s=base} @self ~onDamaged"),
                         MobDefinition.SkillTrigger.parse("sound{s=base_timer} @self ~onTimer:20"),
                         MobDefinition.SkillTrigger.parse("sound{s=base_move} @self ~onMove:5")), null, null, null,
-                config.getStringList("Equipment"), null, null, null, MobPhase.parse(config, message -> fail(message)));
+                config.getStringList("Equipment"), null, null, null, MobPhase.parse(new eu.northsoft.bettermob.paper.PaperConfigSection(config), message -> fail(message)));
     }
 
     @Test

@@ -8,6 +8,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import java.util.Locale;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -25,7 +26,12 @@ public final class EggItems {
     }
 
     public static Material materialFor(EntityType type) {
-        Material material = Material.getMaterial(type.name() + "_SPAWN_EGG");
+        return type == null ? FALLBACK : materialFor(type.name());
+    }
+
+    public static Material materialFor(String typeName) {
+        if (typeName == null) return FALLBACK;
+        Material material = Material.getMaterial(typeName.toUpperCase(Locale.ROOT) + "_SPAWN_EGG");
         return material == null ? FALLBACK : material;
     }
 

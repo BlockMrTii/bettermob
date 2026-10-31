@@ -1,7 +1,9 @@
 package eu.northsoft.bettermob.mob;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.api.MobInfo;
 import eu.northsoft.bettermob.ai.AiGoalApplier;
+import org.bukkit.entity.EntityType;
 import eu.northsoft.bettermob.ai.BehaviourGoals;
 import eu.northsoft.bettermob.api.event.mob.BetterMobCombatEvent;
 import eu.northsoft.bettermob.api.event.mob.BetterMobGroupAlertEvent;
@@ -72,7 +74,7 @@ public final class MobManager {
     private final Map<UUID, Object> modelEngineTrackers = new ConcurrentHashMap<>();
     private final ThreatTables threats = new ThreatTables();
     private final MobHome home;
-    private final Map<UUID, Map<DamageCause, Double>> damageModifiers = new ConcurrentHashMap<>();
+    private final Map<UUID, Map<String, Double>> damageModifiers = new ConcurrentHashMap<>();
     private final Map<UUID, MobDefinition> definitions = new ConcurrentHashMap<>();
     private final Set<String> healthCapWarned = ConcurrentHashMap.newKeySet();
     private final Map<UUID, List<Runnable>> timers = new ConcurrentHashMap<>();
@@ -100,7 +102,13 @@ public final class MobManager {
     }
 
     public LivingEntity spawn(MobDefinition definition, Location location, Consumer<LivingEntity> created) {
-        LivingEntity entity = (LivingEntity) location.getWorld().spawnEntity(location, definition.type);
+        EntityType entityType;
+        try {
+            entityType = EntityType.valueOf(definition.type.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            entityType = EntityType.ZOMBIE;
+        }
+        LivingEntity entity = (LivingEntity) location.getWorld().spawnEntity(location, entityType);
         if (created != null) created.accept(entity);
         applyDefinition(entity, definition, true);
 
@@ -118,7 +126,7 @@ public final class MobManager {
         scheduleTimers(entity, definition);
         bossBars.attach(entity, definition);
         if (BetterMobSpawnEvent.getHandlerList().getRegisteredListeners().length > 0) {
-            Bukkit.getPluginManager().callEvent(new BetterMobSpawnEvent(entity, definition.toInfo()));
+            Bukkit.getPluginManager().callEvent(new BetterMobSpawnEvent(entity, MobInfo.from(definition)));
         }
         return entity;
     }
@@ -180,7 +188,7 @@ public final class MobManager {
         }
         if (members.isEmpty()) return;
         if (BetterMobGroupAlertEvent.getHandlerList().getRegisteredListeners().length > 0) {
-            BetterMobGroupAlertEvent api = new BetterMobGroupAlertEvent(victim, definition.toInfo(), attacker, members);
+            BetterMobGroupAlertEvent api = new BetterMobGroupAlertEvent(victim, MobInfo.from(definition), attacker, members);
             Bukkit.getPluginManager().callEvent(api);
             if (api.isCancelled()) return;
             members = api.getMembers();
@@ -391,7 +399,7 @@ public final class MobManager {
         int current = phaseOf.getOrDefault(entity.getUniqueId(), -1);
         if (target == current) return;
         if (BetterMobPhaseEvent.getHandlerList().getRegisteredListeners().length > 0) {
-            Bukkit.getPluginManager().callEvent(new BetterMobPhaseEvent(entity, definition.toInfo(), current, target));
+            Bukkit.getPluginManager().callEvent(new BetterMobPhaseEvent(entity, MobInfo.from(definition), current, target));
         }
         enterPhase(entity, definition, target, target > current);
     }
@@ -495,7 +503,7 @@ public final class MobManager {
         try {
             if (BetterMobTriggerEvent.getHandlerList().getRegisteredListeners().length > 0) {
                 LivingEntity owned = trigger != null && Bukkit.isOwnedByCurrentRegion(trigger) ? trigger : null;
-                BetterMobTriggerEvent api = new BetterMobTriggerEvent(entity, definition.toInfo(), type.name(), owned);
+                BetterMobTriggerEvent api = new BetterMobTriggerEvent(entity, MobInfo.from(definition), type.name(), owned);
                 Bukkit.getPluginManager().callEvent(api);
                 if (api.isCancelled()) return;
             }
@@ -538,7 +546,7 @@ public final class MobManager {
                 .toList();
         if (matching.isEmpty()) return false;
         if (BetterMobSignalEvent.getHandlerList().getRegisteredListeners().length > 0) {
-            BetterMobSignalEvent api = new BetterMobSignalEvent(entity, definition.toInfo(), name,
+            BetterMobSignalEvent api = new BetterMobSignalEvent(entity, MobInfo.from(definition), name,
                     sender != null && Bukkit.isOwnedByCurrentRegion(sender) ? sender : null);
             Bukkit.getPluginManager().callEvent(api);
             if (api.isCancelled()) return false;
@@ -562,7 +570,7 @@ public final class MobManager {
             if (trigger.health().matches(health, max) && !trigger.health().matches(before, max)) {
                 if (BetterMobHealthEvent.getHandlerList().getRegisteredListeners().length > 0) {
                     HealthSpec spec = trigger.health();
-                    Bukkit.getPluginManager().callEvent(new BetterMobHealthEvent(mob, definition.toInfo(), before, health,
+                    Bukkit.getPluginManager().callEvent(new BetterMobHealthEvent(mob, MobInfo.from(definition), before, health,
                             spec.operator() + spec.value() + (spec.percent() ? "%" : "")));
                 }
                 fireTriggers(mob, definition, MobDefinition.SkillTrigger.Trigger.HEALTH, List.of(trigger), null, null);
@@ -595,7 +603,7 @@ public final class MobManager {
 
     private void combatEvent(LivingEntity mob, MobDefinition definition, boolean entering, LivingEntity target) {
         if (BetterMobCombatEvent.getHandlerList().getRegisteredListeners().length > 0) {
-            Bukkit.getPluginManager().callEvent(new BetterMobCombatEvent(mob, definition.toInfo(), entering, target));
+            Bukkit.getPluginManager().callEvent(new BetterMobCombatEvent(mob, MobInfo.from(definition), entering, target));
         }
     }
 
@@ -881,7 +889,7 @@ public final class MobManager {
         bossBars.attach(entity, definition);
         fireTrigger(entity, definition, MobDefinition.SkillTrigger.Trigger.LOAD, null, null);
         if (BetterMobLoadEvent.getHandlerList().getRegisteredListeners().length > 0) {
-            Bukkit.getPluginManager().callEvent(new BetterMobLoadEvent(entity, definition.toInfo()));
+            Bukkit.getPluginManager().callEvent(new BetterMobLoadEvent(entity, MobInfo.from(definition)));
         }
     }
 
@@ -895,8 +903,8 @@ public final class MobManager {
     }
 
     public double modifierFor(UUID entityId, DamageCause cause) {
-        Map<DamageCause, Double> modifiers = damageModifiers.get(entityId);
-        return modifiers == null ? 1.0 : modifiers.getOrDefault(cause, 1.0);
+        Map<String, Double> modifiers = damageModifiers.get(entityId);
+        return modifiers == null || cause == null ? 1.0 : modifiers.getOrDefault(cause.name(), 1.0);
     }
 
     public List<Map.Entry<String, Double>> threatOf(UUID mobId, int limit) {

@@ -84,7 +84,7 @@ class SkillTriggerTest {
     void theDefinitionIndexesDespawnAndMoveTriggers() {
         java.util.List<SkillTrigger> parsed = java.util.List.of(
                 SkillTrigger.parse("remove @self ~onDespawn"), SkillTrigger.parse("remove @self ~onMove:10"), SkillTrigger.parse("remove @self ~onSpawn"));
-        MobDefinition definition = new MobDefinition("m", org.bukkit.entity.EntityType.PIG, "m", null, 10, 1, false,
+        MobDefinition definition = new MobDefinition("m", "PIG", "m", null, 10, 1, false,
                 java.util.List.of(), java.util.List.of(), MobDefinition.Options.DEFAULT, false, java.util.Map.of(),
                 parsed, null, null, null, java.util.List.of(), null, null, null);
         assertEquals(1, definition.triggersOf(Trigger.DESPAWN).size());

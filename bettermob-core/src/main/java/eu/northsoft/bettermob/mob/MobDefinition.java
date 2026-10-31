@@ -1,12 +1,9 @@
 package eu.northsoft.bettermob.mob;
 
-import eu.northsoft.bettermob.api.MobInfo;
 import eu.northsoft.bettermob.drop.DropTable;
+import eu.northsoft.bettermob.platform.ConfigSection;
 import eu.northsoft.bettermob.skill.Params;
 import eu.northsoft.bettermob.skill.SkillStep;
-import org.bukkit.entity.EntityType;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -18,7 +15,7 @@ import java.util.regex.Pattern;
 
 public final class MobDefinition {
     public final String id;
-    public final EntityType type;
+    public final String type;
     public final String displayName;
     public final String modelId;
     public final double health;
@@ -28,7 +25,7 @@ public final class MobDefinition {
     public final List<String> aiTargetSelectors;
     public final Options options;
     public final boolean threatTable;
-    public final Map<DamageCause, Double> damageModifiers;
+    public final Map<String, Double> damageModifiers;
     public final List<SkillTrigger> skillTriggers;
     private final Map<SkillTrigger.Trigger, List<SkillTrigger>> triggersByType;
 
@@ -41,25 +38,25 @@ public final class MobDefinition {
     public final List<String> equipment;
     public final SpawnRule spawnRule;
 
-    public MobDefinition(String id, EntityType type, String displayName, String modelId,
+    public MobDefinition(String id, String type, String displayName, String modelId,
                   double health, double damage, boolean removeAi,
                   List<String> aiGoalSelectors, List<String> aiTargetSelectors,
-                  Options options, boolean threatTable, Map<DamageCause, Double> damageModifiers,
+                  Options options, boolean threatTable, Map<String, Double> damageModifiers,
                   List<SkillTrigger> skillTriggers, DropTable drops, String faction,
                   BossBarSettings bossBar, List<String> equipment, SpawnRule spawnRule, EggSettings egg, Behaviour behaviour) {
         this(id, type, displayName, modelId, health, damage, removeAi, aiGoalSelectors, aiTargetSelectors, options, threatTable,
                 damageModifiers, skillTriggers, drops, faction, bossBar, equipment, spawnRule, egg, behaviour, List.of());
     }
 
-    public MobDefinition(String id, EntityType type, String displayName, String modelId,
+    public MobDefinition(String id, String type, String displayName, String modelId,
                   double health, double damage, boolean removeAi,
                   List<String> aiGoalSelectors, List<String> aiTargetSelectors,
-                  Options options, boolean threatTable, Map<DamageCause, Double> damageModifiers,
+                  Options options, boolean threatTable, Map<String, Double> damageModifiers,
                   List<SkillTrigger> skillTriggers, DropTable drops, String faction,
                   BossBarSettings bossBar, List<String> equipment, SpawnRule spawnRule, EggSettings egg, Behaviour behaviour,
                   List<MobPhase> phases) {
         this.id = id;
-        this.type = type;
+        this.type = type != null ? type : "ZOMBIE";
         this.displayName = displayName;
         this.modelId = modelId;
         this.health = health;
@@ -95,20 +92,19 @@ public final class MobDefinition {
 
     public record EggSettings(String material, String name) {}
 
-    public MobInfo toInfo() {
-        return new MobInfo(id, type, displayName, modelId, health, damage);
-    }
-
     public record Options(boolean collidable, double movementSpeed, boolean preventOtherDrops, boolean silent,
                    boolean preventRenaming, boolean preventLeashing, boolean alwaysShowName, boolean preventSunburn,
                    boolean invincible, boolean invisible, boolean canMove, boolean interactable, boolean marker,
                    String itemHead, double knockbackResistance, double followRange, boolean preventItemPickup,
                    double scale) {
-        static final Options DEFAULT = new Options(true, -1, false, false, false, false, false, true, false,
-                false, true, true, false, null, -1, -1, false, -1);
+        public static final Options DEFAULT = new Options(
+                true, 0.25, false, false, true, false, false, false,
+                false, false, true, true, false, null, 0.0, 32.0, false, 1.0
+        );
 
-        public static Options parse(ConfigurationSection optionsSection, Options fallback) {
-            return optionsSection == null ? fallback : new Options(
+        public static Options parse(ConfigSection optionsSection, Options fallback) {
+            if (optionsSection == null) return fallback;
+            return new Options(
                     flag(optionsSection, "Collidable", fallback.collidable()),
                     optionsSection.getDouble("MovementSpeed", fallback.movementSpeed()),
                     flag(optionsSection, "PreventOtherDrops", fallback.preventOtherDrops()),
@@ -130,7 +126,7 @@ public final class MobDefinition {
             );
         }
 
-        private static boolean flag(ConfigurationSection section, String key, boolean fallback) {
+        private static boolean flag(ConfigSection section, String key, boolean fallback) {
             Object value = section.get(key);
             if (value instanceof Boolean flag) return flag;
             if (value instanceof String text && (text.equalsIgnoreCase("true") || text.equalsIgnoreCase("false"))) {
@@ -176,7 +172,7 @@ public final class MobDefinition {
         public enum Trigger {
             PHASE, SPAWN, LOAD, INTERACT, DAMAGED, ATTACK, DEATH, TIMER, USE, SHOOT, HEALTH, TARGET, LOSETARGET, ENTERCOMBAT, EXITCOMBAT, KILL, SIGNAL, DESPAWN, MOVE, SWING, PRESSF, PICKUP, DROP, EQUIP;
 
-            static Trigger parse(String value) {
+            public static Trigger parse(String value) {
                 return switch (value.toLowerCase(Locale.ROOT)) {
                     case "phase" -> PHASE;
                     case "spawn" -> SPAWN;

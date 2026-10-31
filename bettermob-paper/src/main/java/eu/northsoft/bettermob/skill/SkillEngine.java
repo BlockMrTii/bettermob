@@ -1,6 +1,7 @@
 package eu.northsoft.bettermob.skill;
 
 import eu.northsoft.bettermob.BetterMobPlugin;
+import eu.northsoft.bettermob.api.MobInfo;
 import eu.northsoft.bettermob.api.custom.CustomMechanic;
 import eu.northsoft.bettermob.api.event.skill.BetterMobMechanicEvent;
 import eu.northsoft.bettermob.api.event.skill.BetterMobSkillEvent;
@@ -227,7 +228,7 @@ public final class SkillEngine implements Listener {
         }
         if (BetterMobSkillEvent.getHandlerList().getRegisteredListeners().length > 0) {
             MobDefinition definition = mobManager.definitionOf(context.caster().getUniqueId());
-            BetterMobSkillEvent api = new BetterMobSkillEvent(skill.id, context.caster(), context.trigger(), definition == null ? null : definition.toInfo());
+            BetterMobSkillEvent api = new BetterMobSkillEvent(skill.id, context.caster(), context.trigger(), definition == null ? null : MobInfo.from(definition));
             Bukkit.getPluginManager().callEvent(api);
             if (api.isCancelled()) {
                 if (debug.info()) debug.info("skill '" + skill.id + "' stopped: cancelled by a plugin", skill.id, caster);
@@ -430,7 +431,7 @@ public final class SkillEngine implements Listener {
             if (BetterMobMechanicEvent.getHandlerList().getRegisteredListeners().length > 0) {
                 MobDefinition definition = mobManager.definitionOf(context.caster().getUniqueId());
                 BetterMobMechanicEvent api = new BetterMobMechanicEvent(context.caster(), mechanic.name(), java.util.Collections.unmodifiableMap(p), target.entity() != null && Bukkit.isOwnedByCurrentRegion(target.entity()) ? target.entity() : null,
-                        definition == null ? null : definition.toInfo());
+                        definition == null ? null : MobInfo.from(definition));
                 Bukkit.getPluginManager().callEvent(api);
                 if (api.isCancelled()) return;
             }
