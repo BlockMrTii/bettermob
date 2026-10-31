@@ -17,18 +17,18 @@ Search the open and closed issues before you write a new one. For a bug, include
 
 ## 🧰 Setting up
 
-You need Java 21 or newer and Maven.
+You need Java 21 or newer. Gradle comes with the wrapper (`./gradlew`).
 
 ```bash
 git clone https://github.com/HyperGaming99/bettermob.git
 cd bettermob
-mvn clean package
+./gradlew build
 ```
 
-The jar ends up in `target/bettermob-<version>.jar`. `mvn test` runs the unit tests. Two optional tests check the reflection calls against the real model plugins; give them the jars to run them:
+The jar ends up in `build/libs/bettermob-<version>.jar`. `./gradlew test` runs the unit tests. Two optional tests check the reflection calls against the real model plugins; give them the jars to run them:
 
 ```bash
-mvn test -Dmodelengine.jar=<ModelEngine jar> -Dbettermodel.jars=<bettermodel-api jar>:<bettermodel-bukkit-api jar>
+./gradlew test -Dmodelengine.jar=<ModelEngine jar> -Dbettermodel.jars=<bettermodel-api jar>:<bettermodel-bukkit-api jar>
 ```
 
 The Folia smoke test starts a real Folia server with your build. How to run it by hand is described on the [Development](wiki/Development.md) page; on GitHub it runs for every pull request.

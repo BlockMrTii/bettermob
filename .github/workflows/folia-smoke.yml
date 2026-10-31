@@ -27,12 +27,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-          cache: maven
+          cache: gradle
 
       - name: Build the plugin and the smoke plugin
         run: |
-          mvn -B install -DskipTests
-          version=$(mvn -B -q help:evaluate -Dexpression=project.version -DforceStdout)
+          ./gradlew publishToMavenLocal -x test
+          version=$(./gradlew -q printVersion)
           mvn -B -f examples/folia-smoke/pom.xml -Plocal -Dbettermob.version="$version" package
 
       - name: Download Folia
@@ -47,7 +47,7 @@ jobs:
           echo "eula=true" > eula.txt
           printf 'online-mode=false\nlevel-type=minecraft\\:flat\nview-distance=4\nsimulation-distance=4\nspawn-protection=0\nenable-rcon=false\nmax-tick-time=-1\n' > server.properties
           mkdir -p plugins/BetterMob/mobs plugins/BetterMob/skills
-          cp ../target/bettermob-*.jar plugins/
+          cp ../build/libs/bettermob-*.jar plugins/
           cp ../examples/folia-smoke/target/bettermob-folia-smoke-*.jar plugins/
           cp ../examples/folia-smoke/content/mobs/*.yml plugins/BetterMob/mobs/
           cp ../examples/folia-smoke/content/skills/*.yml plugins/BetterMob/skills/

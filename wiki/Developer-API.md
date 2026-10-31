@@ -173,8 +173,8 @@ mvn -f examples/api-example/pom.xml package
 This resolves `com.github.HyperGaming99:bettermob:v1.2.0` from JitPack, so it needs the released 1.2.0 (the API packages changed in that version). Before that release exists, or to compile it against your own checkout, use the local profile:
 
 ```bash
-mvn install -DskipTests
-mvn -f examples/api-example/pom.xml -Plocal -Dbettermob.version=<version in pom.xml> package
+./gradlew publishToMavenLocal -x test
+mvn -f examples/api-example/pom.xml -Plocal -Dbettermob.version=<version in build.gradle.kts> package
 ```
 
 The workflow builds it that way on every push and pull request, so it keeps compiling with the API.
