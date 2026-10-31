@@ -103,8 +103,8 @@ public final class FoliaSmokePlugin extends JavaPlugin implements Listener {
         Runnable retired = () -> getLogger().info("SMOKE-RETIRED the mob was removed before a task ran");
         mob.getScheduler().run(this, task -> getLogger().info("SMOKE-STATE valid=" + mob.isValid() + " health=" + mob.getHealth()), retired);
         mob.getScheduler().runDelayed(this, task -> getLogger().info("SMOKE-SKILL " + BetterMobAPI.get().runSkill(SKILL, mob)), retired, 20L);
-        mob.getScheduler().runDelayed(this, task -> mob.damage(4.0), retired, 40L);
-        mob.getScheduler().runDelayed(this, task -> mob.damage(4.0), retired, 60L);
+        mob.getScheduler().runDelayed(this, task -> mob.damage(8.0), retired, 40L);
+        mob.getScheduler().runDelayed(this, task -> mob.damage(4.0), retired, 70L);
         mob.getScheduler().runDelayed(this, task -> mob.remove(), retired, 100L);
         Bukkit.getGlobalRegionScheduler().runDelayed(this, task -> finish(), 160L);
     }
