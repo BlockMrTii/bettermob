@@ -1,7 +1,6 @@
 package eu.northsoft.bettermob.mob;
 
 import eu.northsoft.bettermob.skill.SkillStep;
-import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class ExtraTriggers {
-    private record Entry(Plugin owner) {}
+    private record Entry(Object owner) {}
 
     private record Pending(String line, Runnable warn) {}
 
@@ -30,7 +29,7 @@ public final class ExtraTriggers {
         return lower.startsWith("on") && lower.length() > 2 ? lower.substring(2) : lower;
     }
 
-    public static boolean register(Plugin owner, String name) {
+    public static boolean register(Object owner, String name) {
         if (owner == null || name == null || name.isBlank()) return false;
         String key = key(name);
         if (key.isEmpty() || MobDefinition.SkillTrigger.Trigger.parse(key) != null) return false;
@@ -41,7 +40,7 @@ public final class ExtraTriggers {
         if (name != null) TRIGGERS.remove(key(name));
     }
 
-    public static void unregister(Plugin owner) {
+    public static void unregister(Object owner) {
         TRIGGERS.values().removeIf(entry -> Objects.equals(entry.owner(), owner));
     }
 

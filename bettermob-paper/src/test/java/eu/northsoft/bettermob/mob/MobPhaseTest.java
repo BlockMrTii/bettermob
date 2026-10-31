@@ -15,7 +15,7 @@ class MobPhaseTest {
     private static List<MobPhase> parse(String yaml, List<String> invalid) throws Exception {
         YamlConfiguration config = new YamlConfiguration();
         config.loadFromString(yaml);
-        return MobPhase.parse(config, invalid::add);
+        return MobPhase.parse(new eu.northsoft.bettermob.paper.PaperConfigSection(config), invalid::add);
     }
 
     private static final String TWO_PHASES = """

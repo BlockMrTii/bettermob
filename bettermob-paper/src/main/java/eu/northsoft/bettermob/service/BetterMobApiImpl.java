@@ -44,12 +44,12 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
     @Override
     public Optional<MobInfo> getMob(String id) {
         MobDefinition definition = id == null ? null : manager.registry().get(id);
-        return Optional.ofNullable(definition).map(MobDefinition::toInfo);
+        return Optional.ofNullable(definition).map(MobInfo::from);
     }
 
     @Override
     public Collection<MobInfo> getMobs() {
-        return manager.registry().all().values().stream().map(MobDefinition::toInfo).toList();
+        return manager.registry().all().values().stream().map(MobInfo::from).toList();
     }
 
     @Override
@@ -59,7 +59,7 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
 
     @Override
     public Optional<MobInfo> getMobInfo(Entity entity) {
-        return Optional.ofNullable(manager.definitionOf(entity.getUniqueId())).map(MobDefinition::toInfo);
+        return Optional.ofNullable(manager.definitionOf(entity.getUniqueId())).map(MobInfo::from);
     }
 
     @Override
@@ -70,7 +70,7 @@ public final class BetterMobApiImpl implements BetterMobAPI, Listener {
             return Optional.empty();
         }
         MobDefinition definition = id == null ? null : manager.registry().get(id);
-        if (definition == null || !definition.type.isAlive() || !definition.type.isSpawnable()) return Optional.empty();
+        if (definition == null) return Optional.empty();
         return Optional.of(manager.spawn(definition, location));
     }
 

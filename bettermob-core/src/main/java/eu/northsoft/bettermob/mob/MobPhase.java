@@ -1,9 +1,8 @@
 package eu.northsoft.bettermob.mob;
 
-import eu.northsoft.bettermob.item.EquipmentSupport;
+import eu.northsoft.bettermob.platform.ConfigSection;
+import eu.northsoft.bettermob.platform.MapConfigSection;
 import eu.northsoft.bettermob.skill.SkillStep;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -40,7 +39,8 @@ public record MobPhase(HealthSpec health, String display, String model, List<Ski
         return -1;
     }
 
-    public static List<MobPhase> parse(ConfigurationSection mob, Consumer<String> invalid) {
+    public static List<MobPhase> parse(ConfigSection mob, Consumer<String> invalid) {
+        if (mob == null) return List.of();
         List<MobPhase> phases = new ArrayList<>();
         MobDefinition.Options base = MobDefinition.Options.parse(mob.getConfigurationSection("Options"), MobDefinition.Options.DEFAULT);
         Object raw = mob.get("Phases");
@@ -74,8 +74,9 @@ public record MobPhase(HealthSpec health, String display, String model, List<Ski
                 else if (!ExtraTriggers.accepts(line)) invalid.accept(path + "Skills " + line);
             }
             byType.replaceAll((key, list) -> List.copyOf(list));
-            YamlConfiguration config = new YamlConfiguration();
-            ConfigurationSection section = config.createSection("phase", entry);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> mapEntry = (Map<String, Object>) entry;
+            ConfigSection section = new MapConfigSection(mapEntry);
             phases.add(new MobPhase(health, text(entry.get("Display")), text(entry.get("Model")), List.copyOf(start), Map.copyOf(byType),
                     MobDefinition.Options.parse(section.getConfigurationSection("Options"), base),
                     entry.containsKey("Equipment") ? lines(entry.get("Equipment")) : null, java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(entry))));
@@ -107,7 +108,7 @@ public record MobPhase(HealthSpec health, String display, String model, List<Ski
         }
         for (String line : lines(entry.get("Equipment"))) {
             String[] parts = line.trim().split(":", 2);
-            if (parts[0].isBlank() || (parts.length > 1 && !EquipmentSupport.isKnownSlot(parts[1]))) invalid.accept("Equipment " + line);
+            if (parts[0].isBlank() || (parts.length > 1 && !EquipmentSlots.isKnownSlot(parts[1]))) invalid.accept("Equipment " + line);
         }
     }
 

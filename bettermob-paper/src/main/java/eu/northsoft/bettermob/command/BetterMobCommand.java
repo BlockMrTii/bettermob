@@ -168,7 +168,7 @@ public final class BetterMobCommand implements CommandExecutor, TabCompleter {
         }
         String none = messages.get("command.info.none");
         messages.send(sender, "command.info.header", "mob", mob.id, "alive", manager.aliveCounts().getOrDefault(mob.id, 0));
-        messages.send(sender, "command.info.stats", "type", mob.type.name().toLowerCase(Locale.ROOT), "health", mob.health, "damage", mob.damage);
+        messages.send(sender, "command.info.stats", "type", mob.type.toLowerCase(Locale.ROOT), "health", mob.health, "damage", mob.damage);
         messages.send(sender, "command.info.faction", "faction", mob.faction == null || mob.faction.isEmpty() ? none : mob.faction);
         messages.send(sender, "command.info.model", "model", mob.modelId == null || mob.modelId.isEmpty() ? none : mob.modelId);
         messages.send(sender, "command.info.equipment", "equipment", mob.equipment == null || mob.equipment.isEmpty() ? none : String.join(", ", mob.equipment));

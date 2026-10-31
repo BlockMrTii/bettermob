@@ -3,6 +3,7 @@ package eu.northsoft.bettermob.mob;
 import eu.northsoft.bettermob.BetterMobPlugin;
 import eu.northsoft.bettermob.drop.DropEntry;
 import eu.northsoft.bettermob.drop.DropTable;
+import eu.northsoft.bettermob.paper.PaperConfigSection;
 import eu.northsoft.bettermob.pack.PackScanner;
 import eu.northsoft.bettermob.pack.YamlFiles;
 import eu.northsoft.bettermob.util.Duplicates;
@@ -139,13 +140,13 @@ public final class MobRegistry {
             plugin.messages().warn("mob.unknownType", "mob", id, "type", section.getString("Type"));
             return null;
         }
-        MobDefinition.Options options = MobDefinition.Options.parse(section.getConfigurationSection("Options"), MobDefinition.Options.DEFAULT);
+        MobDefinition.Options options = MobDefinition.Options.parse(PaperConfigSection.of(section.getConfigurationSection("Options")), MobDefinition.Options.DEFAULT);
         ConfigurationSection modulesSection = section.getConfigurationSection("Modules");
         boolean threatTable = modulesSection != null && modulesSection.getBoolean("ThreatTable", false);
 
         return new MobDefinition(
                 id,
-                type,
+                type.name(),
                 section.getString("Display", "&f" + id),
                 section.getString("Model", id),
                 section.getDouble("Health", 20.0),
@@ -164,7 +165,7 @@ public final class MobRegistry {
                 parseSpawnRule(id, section.getConfigurationSection("Spawn")),
                 parseEgg(id, section.getConfigurationSection("Egg")),
                 Behaviour.parse(eu.northsoft.bettermob.paper.PaperConfigSection.of(section), option -> plugin.messages().warn("mob.behaviourInvalid", "mob", id, "option", option)),
-                MobPhase.parse(section, option -> {
+                MobPhase.parse(PaperConfigSection.of(section), option -> {
                     int skills = option.indexOf(": Skills ");
                     if (skills >= 0) ExtraTriggers.warnUnparsed(option.substring(skills + 9), () -> plugin.messages().warn("mob.phaseInvalid", "mob", id, "option", option));
                     else plugin.messages().warn("mob.phaseInvalid", "mob", id, "option", option);
@@ -241,8 +242,8 @@ public final class MobRegistry {
         return triggers;
     }
 
-    private Map<DamageCause, Double> parseDamageModifiers(String id, List<String> entries) {
-        Map<DamageCause, Double> modifiers = new EnumMap<>(DamageCause.class);
+    private Map<String, Double> parseDamageModifiers(String id, List<String> entries) {
+        Map<String, Double> modifiers = new java.util.LinkedHashMap<>();
         for (String entry : entries) {
             String[] parts = entry.trim().split("\\s+");
             if (parts.length != 2) {
@@ -257,7 +258,7 @@ public final class MobRegistry {
                 continue;
             }
             try {
-                modifiers.put(cause, Double.parseDouble(parts[1]));
+                modifiers.put(cause.name(), Double.parseDouble(parts[1]));
             } catch (NumberFormatException exception) {
                 plugin.messages().warn("mob.multiplierInvalid", "mob", id, "value", parts[1]);
             }
