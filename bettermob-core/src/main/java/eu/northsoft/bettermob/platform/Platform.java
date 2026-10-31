@@ -33,4 +33,6 @@ public interface Platform {
     default Optional<ModelService> model(String id) {
         return models().stream().filter(service -> service.id().equalsIgnoreCase(id)).findFirst();
     }
+
+    default void dispatchCommand(String command) {}
 }

@@ -36,6 +36,16 @@ public interface PlatformEntity {
 
     default void customNameVisible(boolean visible) {}
 
+    default boolean isPlayer() {
+        return false;
+    }
+
+    default void sendMessage(String message) {}
+
+    default void sendActionBar(String message) {}
+
+    default void setFireTicks(int ticks) {}
+
     /** The underlying platform object (Bukkit {@code Entity}, Minecraft {@code Entity}, ...). */
     Object handle();
 }

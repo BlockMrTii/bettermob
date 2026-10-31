@@ -49,6 +49,20 @@ public class FabricLivingEntity extends FabricEntity implements PlatformLivingEn
     }
 
     @Override
+    public void addPotionEffect(String type, int durationTicks, int amplifier) {
+        if (type == null) return;
+        String normalized = type.toLowerCase(java.util.Locale.ROOT);
+        if (!normalized.contains(":")) normalized = "minecraft:" + normalized;
+        net.minecraft.util.Identifier id = net.minecraft.util.Identifier.tryParse(normalized);
+        if (id == null) return;
+        net.minecraft.registry.entry.RegistryEntry<net.minecraft.entity.effect.StatusEffect> effect =
+                net.minecraft.registry.Registries.STATUS_EFFECT.getEntry(id).orElse(null);
+        if (effect != null) {
+            living().addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(effect, durationTicks, amplifier));
+        }
+    }
+
+    @Override
     public LivingEntity handle() {
         return living();
     }

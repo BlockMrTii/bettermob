@@ -56,6 +56,33 @@ public final class PaperWorld implements PlatformWorld {
     }
 
     @Override
+    public void playSound(Position position, String soundKey, float volume, float pitch) {
+        if (soundKey == null) return;
+        org.bukkit.Location loc = PaperAdapters.location(world, position);
+        world.playSound(loc, soundKey, org.bukkit.SoundCategory.HOSTILE, volume, pitch);
+    }
+
+    @Override
+    public void strikeLightning(Position position, boolean damage) {
+        org.bukkit.Location loc = PaperAdapters.location(world, position);
+        if (damage) {
+            world.strikeLightning(loc);
+        } else {
+            world.strikeLightningEffect(loc);
+        }
+    }
+
+    @Override
+    public Optional<PlatformEntity> nearestPlayer(Position center, double maxDistance) {
+        org.bukkit.Location loc = PaperAdapters.location(world, center);
+        double maxSq = maxDistance * maxDistance;
+        return world.getNearbyPlayers(loc, maxDistance).stream()
+                .filter(p -> p.getLocation().distanceSquared(loc) <= maxSq)
+                .min(java.util.Comparator.comparingDouble(p -> p.getLocation().distanceSquared(loc)))
+                .map(PaperAdapters::entity);
+    }
+
+    @Override
     public World handle() {
         return world;
     }

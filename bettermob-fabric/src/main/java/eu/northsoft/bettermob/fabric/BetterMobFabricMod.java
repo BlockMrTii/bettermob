@@ -22,17 +22,20 @@ public final class BetterMobFabricMod implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     private static BetterMobFabricMod instance;
-    private FabricPlatform platform;
+    private final FabricPlatform platform = new FabricPlatform();
     private final FabricMobRegistry mobRegistry = new FabricMobRegistry();
     private final CoreSkillEngine skillEngine = new CoreSkillEngine();
+    private final FabricMobManager mobManager = new FabricMobManager(this, skillEngine);
 
     @Override
     public void onInitialize() {
         instance = this;
-        this.platform = new FabricPlatform();
         this.mobRegistry.load();
         registerMechanics();
         registerCommands();
+        this.mobManager.registerEvents();
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STARTING.register(platform::setServer);
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> platform.setServer(null));
         LOGGER.info("BetterMob (Fabric) initialized for Minecraft {}", platform.minecraftVersion());
     }
 
@@ -98,14 +101,10 @@ public final class BetterMobFabricMod implements ModInitializer {
                                         living.maxHealth(def.health);
                                         living.health(def.health);
                                     }
-
-                                    var ctx = new eu.northsoft.bettermob.skill.core.CoreSkillContext(living);
-                                    for (var trigger : def.triggersOf(eu.northsoft.bettermob.mob.MobDefinition.SkillTrigger.Trigger.SPAWN)) {
-                                        skillEngine.executeStep(trigger.step(), ctx);
+                                    if (platform.model("bettermodel").isPresent() && def.modelId != null) {
+                                        platform.model("bettermodel").get().attach(entity, def.modelId);
                                     }
-                                }
-                                if (platform.model("bettermodel").isPresent() && def.modelId != null) {
-                                    platform.model("bettermodel").get().attach(entity, def.modelId);
+                                    mobManager.register(entity.uuid(), def, living);
                                 }
                                 source.sendFeedback(() -> Text.literal("Spawned BetterMob: " + def.id + " (model: " + def.modelId + ")"), true);
                                 return 1;
@@ -126,6 +125,14 @@ public final class BetterMobFabricMod implements ModInitializer {
 
     public FabricMobRegistry mobRegistry() {
         return mobRegistry;
+    }
+
+    public FabricMobManager mobManager() {
+        return mobManager;
+    }
+
+    public CoreSkillEngine skillEngine() {
+        return skillEngine;
     }
 
     public Map<String, MobDefinition> registry() {

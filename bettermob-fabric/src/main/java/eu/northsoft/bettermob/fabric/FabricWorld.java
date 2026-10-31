@@ -71,6 +71,37 @@ public final class FabricWorld implements PlatformWorld {
     }
 
     @Override
+    public void playSound(Position position, String soundKey, float volume, float pitch) {
+        if (soundKey == null) return;
+        String normalized = soundKey.toLowerCase(java.util.Locale.ROOT);
+        if (!normalized.contains(":")) normalized = "minecraft:" + normalized;
+        net.minecraft.util.Identifier id = net.minecraft.util.Identifier.tryParse(normalized);
+        if (id == null) return;
+        net.minecraft.sound.SoundEvent soundEvent = Registries.SOUND_EVENT.get(id);
+        if (soundEvent != null) {
+            world.playSound(null, position.x(), position.y(), position.z(), soundEvent, net.minecraft.sound.SoundCategory.HOSTILE, volume, pitch);
+        }
+    }
+
+    @Override
+    public void strikeLightning(Position position, boolean damage) {
+        net.minecraft.entity.LightningEntity lightning = net.minecraft.entity.EntityType.LIGHTNING_BOLT.create(world, SpawnReason.TRIGGERED);
+        if (lightning != null) {
+            lightning.refreshPositionAfterTeleport(position.x(), position.y(), position.z());
+            if (!damage) {
+                lightning.setCosmetic(true);
+            }
+            world.spawnEntity(lightning);
+        }
+    }
+
+    @Override
+    public Optional<PlatformEntity> nearestPlayer(Position center, double maxDistance) {
+        net.minecraft.entity.player.PlayerEntity player = world.getClosestPlayer(center.x(), center.y(), center.z(), maxDistance, false);
+        return Optional.ofNullable(player).map(FabricAdapters::entity);
+    }
+
+    @Override
     public ServerWorld handle() {
         return world;
     }

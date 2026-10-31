@@ -23,6 +23,10 @@ public final class FabricAdapters {
         return entity instanceof LivingEntity living ? new FabricLivingEntity(living) : new FabricEntity(entity);
     }
 
+    public static eu.northsoft.bettermob.platform.PlatformLivingEntity living(LivingEntity entity) {
+        return entity == null ? null : new FabricLivingEntity(entity);
+    }
+
     public static Entity minecraft(PlatformEntity entity) {
         if (entity == null) return null;
         if (entity.handle() instanceof Entity mc) return mc;

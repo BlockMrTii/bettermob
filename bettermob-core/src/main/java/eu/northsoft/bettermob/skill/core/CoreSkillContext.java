@@ -17,6 +17,10 @@ public record CoreSkillContext(
         this(caster, null, caster != null ? caster.position() : null, new ConcurrentHashMap<>(), Map.of());
     }
 
+    public CoreSkillContext(PlatformLivingEntity caster, PlatformLivingEntity trigger) {
+        this(caster, trigger, caster != null ? caster.position() : null, new ConcurrentHashMap<>(), Map.of());
+    }
+
     public CoreSkillContext withTrigger(PlatformLivingEntity newTrigger) {
         return new CoreSkillContext(caster, newTrigger, origin, variables, arguments);
     }

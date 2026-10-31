@@ -22,5 +22,13 @@ public interface PlatformWorld {
     /** Namespaced block key at the position, e.g. {@code minecraft:stone}. */
     String blockKey(int x, int y, int z);
 
+    default void playSound(Position position, String soundKey, float volume, float pitch) {}
+
+    default void strikeLightning(Position position, boolean damage) {}
+
+    default Optional<PlatformEntity> nearestPlayer(Position center, double maxDistance) {
+        return Optional.empty();
+    }
+
     Object handle();
 }

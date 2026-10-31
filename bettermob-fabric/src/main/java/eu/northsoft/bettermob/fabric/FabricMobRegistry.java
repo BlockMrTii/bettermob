@@ -29,7 +29,19 @@ public final class FabricMobRegistry {
     private final Map<String, MobDefinition> mobs = new ConcurrentHashMap<>();
 
     public FabricMobRegistry() {
-        this(FabricLoader.getInstance().getConfigDir().resolve("bettermob").resolve("mobs"));
+        this(resolveDefaultMobsDir());
+    }
+
+    private static Path resolveDefaultMobsDir() {
+        try {
+            if (FabricLoader.getInstance() != null) {
+                Path configDir = FabricLoader.getInstance().getConfigDir();
+                if (configDir != null) {
+                    return configDir.resolve("bettermob").resolve("mobs");
+                }
+            }
+        } catch (Throwable ignored) {}
+        return Path.of("config/bettermob/mobs");
     }
 
     public FabricMobRegistry(Path mobsDir) {

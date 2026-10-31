@@ -71,4 +71,11 @@ public final class PaperPlatform implements Platform {
     public List<ModelService> models() {
         return models;
     }
+
+    @Override
+    public void dispatchCommand(String command) {
+        if (command != null && !command.isBlank()) {
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+        }
+    }
 }

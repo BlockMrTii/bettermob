@@ -44,6 +44,18 @@ public class PaperLivingEntity extends PaperEntity implements PlatformLivingEnti
     }
 
     @Override
+    public void addPotionEffect(String type, int durationTicks, int amplifier) {
+        if (type == null) return;
+        org.bukkit.potion.PotionEffectType pet = org.bukkit.potion.PotionEffectType.getByName(type.toUpperCase(java.util.Locale.ROOT));
+        if (pet == null) {
+            pet = org.bukkit.Registry.POTION_EFFECT_TYPE.get(org.bukkit.NamespacedKey.fromString(type.toLowerCase(java.util.Locale.ROOT)));
+        }
+        if (pet != null) {
+            living().addPotionEffect(new org.bukkit.potion.PotionEffect(pet, durationTicks, amplifier));
+        }
+    }
+
+    @Override
     public LivingEntity handle() {
         return living();
     }

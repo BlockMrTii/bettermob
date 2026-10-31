@@ -81,6 +81,30 @@ public class PaperEntity implements PlatformEntity {
     }
 
     @Override
+    public boolean isPlayer() {
+        return entity instanceof org.bukkit.entity.Player;
+    }
+
+    @Override
+    public void sendMessage(String message) {
+        if (message != null) {
+            entity.sendMessage(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message.replace('&', '§')));
+        }
+    }
+
+    @Override
+    public void sendActionBar(String message) {
+        if (message != null && entity instanceof org.bukkit.entity.Player player) {
+            player.sendActionBar(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message.replace('&', '§')));
+        }
+    }
+
+    @Override
+    public void setFireTicks(int ticks) {
+        entity.setFireTicks(ticks);
+    }
+
+    @Override
     public Entity handle() {
         return entity;
     }

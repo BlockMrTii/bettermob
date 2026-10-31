@@ -56,6 +56,158 @@ public class CoreSkillEngine {
         registerTargeter("target", (params, ctx) -> ctx.trigger() != null ? List.of(CoreSkillTarget.ofEntity(ctx.trigger())) : List.of());
         registerTargeter("trigger", (params, ctx) -> ctx.trigger() != null ? List.of(CoreSkillTarget.ofEntity(ctx.trigger())) : List.of());
 
+        CoreSkillTargeter inRadius = (params, ctx) -> {
+            Position center = ctx.origin() != null ? ctx.origin() : (ctx.caster() != null ? ctx.caster().position() : null);
+            if (center == null) return List.of();
+            var world = ctx.caster() != null ? ctx.caster().world() : null;
+            if (world == null) return List.of();
+            double radius = Params.parseNumber(Params.firstParam(params, "r", "radius", "range"), 5.0);
+            double radSq = radius * radius;
+            boolean playersOnly = "true".equalsIgnoreCase(params.get("playersOnly"));
+            var candidates = new java.util.ArrayList<CoreSkillTarget>();
+            for (var entity : world.nearbyEntities(center, radius)) {
+                if (!entity.isValid()) continue;
+                if (playersOnly && !entity.isPlayer()) continue;
+                if (ctx.caster() != null && entity.uuid().equals(ctx.caster().uuid())) continue;
+                Position p = entity.position();
+                if (p != null && center.distanceSquared(p) <= radSq) {
+                    candidates.add(CoreSkillTarget.ofEntity(entity));
+                }
+            }
+            String sort = params.getOrDefault("sort", "nearest").toLowerCase(Locale.ROOT);
+            switch (sort) {
+                case "farthest" -> candidates.sort((a, b) -> Double.compare(center.distanceSquared(b.position()), center.distanceSquared(a.position())));
+                case "random" -> java.util.Collections.shuffle(candidates);
+                default -> candidates.sort((a, b) -> Double.compare(center.distanceSquared(a.position()), center.distanceSquared(b.position())));
+            }
+            int limit = Params.parseInt(params.get("limit"), Integer.MAX_VALUE);
+            if (candidates.size() > limit) {
+                return candidates.subList(0, limit);
+            }
+            return candidates;
+        };
+
+        registerTargeter("entitiesinradius", inRadius);
+        registerTargeter("eir", inRadius);
+
+        CoreSkillTargeter playersInRadius = (params, ctx) -> {
+            var p = new java.util.HashMap<>(params);
+            p.put("playersOnly", "true");
+            return inRadius.resolve(p, ctx);
+        };
+        registerTargeter("playersinradius", playersInRadius);
+        registerTargeter("pir", playersInRadius);
+
+        CoreSkillTargeter nearestPlayer = (params, ctx) -> {
+            Position center = ctx.origin() != null ? ctx.origin() : (ctx.caster() != null ? ctx.caster().position() : null);
+            if (center == null) return List.of();
+            var world = ctx.caster() != null ? ctx.caster().world() : null;
+            if (world == null) return List.of();
+            double radius = Params.parseNumber(Params.firstParam(params, "r", "radius", "range"), 32.0);
+            return world.nearestPlayer(center, radius)
+                    .map(CoreSkillTarget::ofEntity)
+                    .map(List::of)
+                    .orElse(List.of());
+        };
+        registerTargeter("nearestplayer", nearestPlayer);
+        registerTargeter("p", nearestPlayer);
+
+        registerMechanic("damage", (ctx, target, params) -> {
+            if (target.entity() instanceof eu.northsoft.bettermob.platform.PlatformLivingEntity living) {
+                double amount = Params.parseNumber(params.getOrDefault("amount", params.get("a")), 1.0);
+                living.damage(amount, ctx.caster());
+            }
+        });
+
+        registerMechanic("heal", (ctx, target, params) -> {
+            if (target.entity() instanceof eu.northsoft.bettermob.platform.PlatformLivingEntity living) {
+                double amount = Params.parseNumber(params.getOrDefault("amount", params.get("a")), 1.0);
+                living.health(Math.min(living.maxHealth(), living.health() + amount));
+            }
+        });
+
+        registerMechanic("message", (ctx, target, params) -> {
+            String raw = Params.firstParam(params, "m", "message", "msg");
+            if (raw == null || target.entity() == null) return;
+            String casterName = ctx.caster() != null && ctx.caster().customName() != null ? ctx.caster().customName() : "Unknown";
+            String targetName = target.entity().customName() != null ? target.entity().customName() : "Target";
+            String rendered = Params.stripQuotes(raw)
+                    .replace("<caster.name>", casterName)
+                    .replace("<target.name>", targetName);
+            target.entity().sendMessage(rendered);
+        });
+        registerMechanic("msg", (ctx, target, params) -> mechanics.get("message").execute(ctx, target, params));
+
+        registerMechanic("actionbar", (ctx, target, params) -> {
+            String raw = Params.firstParam(params, "m", "message", "msg");
+            if (raw == null || target.entity() == null) return;
+            String casterName = ctx.caster() != null && ctx.caster().customName() != null ? ctx.caster().customName() : "Unknown";
+            String targetName = target.entity().customName() != null ? target.entity().customName() : "Target";
+            String rendered = Params.stripQuotes(raw)
+                    .replace("<caster.name>", casterName)
+                    .replace("<target.name>", targetName);
+            target.entity().sendActionBar(rendered);
+        });
+
+        registerMechanic("sound", (ctx, target, params) -> {
+            String name = Params.firstParam(params, "s", "sound");
+            if (name == null) return;
+            float pitch = Params.parseFloat(params.get("p"), 1f);
+            float volume = Params.parseFloat(params.get("v"), 1f);
+            Position pos = target.position() != null ? target.position() : (ctx.caster() != null ? ctx.caster().position() : null);
+            var world = ctx.caster() != null ? ctx.caster().world() : (target.entity() != null ? target.entity().world() : null);
+            if (pos != null && world != null) {
+                world.playSound(pos, name, volume, pitch);
+            }
+        });
+
+        registerMechanic("velocity", (ctx, target, params) -> {
+            if (target.entity() == null) return;
+            String mode = params.getOrDefault("m", params.getOrDefault("mode", "SET")).trim().toUpperCase(Locale.ROOT);
+            eu.northsoft.bettermob.platform.Vec3 change = new eu.northsoft.bettermob.platform.Vec3(
+                    Params.parseFloat(params.get("x"), 0f),
+                    Params.parseFloat(params.get("y"), 0f),
+                    Params.parseFloat(params.get("z"), 0f));
+            eu.northsoft.bettermob.platform.Vec3 current = target.entity().velocity();
+            if (current == null) current = new eu.northsoft.bettermob.platform.Vec3(0, 0, 0);
+            eu.northsoft.bettermob.platform.Vec3 next = switch (mode) {
+                case "ADD" -> new eu.northsoft.bettermob.platform.Vec3(current.x() + change.x(), current.y() + change.y(), current.z() + change.z());
+                case "MULTIPLY" -> new eu.northsoft.bettermob.platform.Vec3(current.x() * change.x(), current.y() * change.y(), current.z() * change.z());
+                case "DIVIDE" -> new eu.northsoft.bettermob.platform.Vec3(
+                        change.x() == 0 ? current.x() : current.x() / change.x(),
+                        change.y() == 0 ? current.y() : current.y() / change.y(),
+                        change.z() == 0 ? current.z() : current.z() / change.z());
+                default -> change;
+            };
+            target.entity().velocity(next);
+        });
+
+        registerMechanic("potion", (ctx, target, params) -> {
+            if (target.entity() instanceof eu.northsoft.bettermob.platform.PlatformLivingEntity living) {
+                String type = Params.firstParam(params, "type", "t");
+                if (type == null) type = "speed";
+                int duration = Params.parseInt(Params.firstParam(params, "duration", "d"), 20);
+                int level = Params.parseInt(Params.firstParam(params, "level", "l"), 1);
+                living.addPotionEffect(type, duration, Math.max(0, level - 1));
+            }
+        });
+
+        registerMechanic("ignite", (ctx, target, params) -> {
+            if (target.entity() != null) {
+                int ticks = Params.parseInt(Params.firstParam(params, "t", "ticks", "duration", "d"), 100);
+                target.entity().setFireTicks(ticks);
+            }
+        });
+
+        registerMechanic("lightning", (ctx, target, params) -> {
+            Position pos = target.position() != null ? target.position() : (ctx.caster() != null ? ctx.caster().position() : null);
+            var world = ctx.caster() != null ? ctx.caster().world() : (target.entity() != null ? target.entity().world() : null);
+            if (pos != null && world != null) {
+                boolean damage = "true".equalsIgnoreCase(params.get("damage"));
+                world.strikeLightning(pos, damage);
+            }
+        });
+
         registerCondition("chance", (ctx, raw, target) -> {
             float chance = Params.parseFloat(Params.conditionParam(raw, "chance", "c"), 1f);
             return ThreadLocalRandom.current().nextDouble() < chance;

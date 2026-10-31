@@ -91,6 +91,30 @@ public class FabricEntity implements PlatformEntity {
     }
 
     @Override
+    public boolean isPlayer() {
+        return entity instanceof net.minecraft.entity.player.PlayerEntity;
+    }
+
+    @Override
+    public void sendMessage(String message) {
+        if (message != null && entity instanceof net.minecraft.entity.player.PlayerEntity pe) {
+            pe.sendMessage(net.minecraft.text.Text.literal(message.replace('&', '§')), false);
+        }
+    }
+
+    @Override
+    public void sendActionBar(String message) {
+        if (message != null && entity instanceof net.minecraft.entity.player.PlayerEntity pe) {
+            pe.sendMessage(net.minecraft.text.Text.literal(message.replace('&', '§')), true);
+        }
+    }
+
+    @Override
+    public void setFireTicks(int ticks) {
+        entity.setFireTicks(ticks);
+    }
+
+    @Override
     public Entity handle() {
         return entity;
     }

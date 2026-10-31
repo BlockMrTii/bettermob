@@ -13,6 +13,8 @@ public interface PlatformLivingEntity extends PlatformEntity {
     /** Deals damage, optionally attributed to a source entity. */
     void damage(double amount, PlatformEntity source);
 
+    default void addPotionEffect(String type, int durationTicks, int amplifier) {}
+
     default boolean isDead() {
         return health() <= 0;
     }
