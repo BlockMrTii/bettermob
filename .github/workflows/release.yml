@@ -27,8 +27,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-          cache: maven
-          server-id: github
+          cache: gradle
 
       - name: List commits since the last release
         if: github.event_name != 'pull_request'
@@ -43,28 +42,28 @@ jobs:
           } > "$RUNNER_TEMP/commits.md"
           
       - name: Test
-        run: mvn -B test
+        run: ./gradlew test
 
       - name: Build
-        run: mvn -B clean package -DskipTests
+        run: ./gradlew clean shadowJar
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
           name: bettermob-jar
-          path: target/bettermob-*.jar
+          path: build/libs/bettermob-*.jar
 
       - name: Build the API example
         run: |
-          mvn -B install -DskipTests
-          version=$(mvn -B -q help:evaluate -Dexpression=project.version -DforceStdout)
+          ./gradlew publishToMavenLocal -x test
+          version=$(./gradlew -q printVersion)
           mvn -B -f examples/api-example/pom.xml -Plocal -Dbettermob.version="$version" package
 
       - name: Check for new version
         id: version
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
-          version=$(mvn -B -q help:evaluate -Dexpression=project.version -DforceStdout)
+          version=$(./gradlew -q printVersion)
           echo "version=$version" >> "$GITHUB_OUTPUT"
           if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null 2>&1; then
             echo "release=false" >> "$GITHUB_OUTPUT"
@@ -78,13 +77,13 @@ jobs:
         with:
           tag_name: v${{ steps.version.outputs.version }}
           target_commitish: ${{ github.sha }}
-          files: target/bettermob-*.jar
+          files: build/libs/bettermob-*.jar
           body_path: ${{ runner.temp }}/commits.md
           generate_release_notes: true
 
       - name: Publish to GitHub Packages
         if: steps.version.outputs.release == 'true'
-        run: mvn -B deploy -DskipTests
+        run: ./gradlew publish -x test
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -93,10 +92,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version=$(mvn -B -q help:evaluate -Dexpression=project.version -DforceStdout)
+          version=$(./gradlew -q printVersion)
           sha=$(git rev-parse --short HEAD)
           asset="bettermob-${version}-dev-${sha}.jar"
-          cp "target/bettermob-${version}.jar" "$asset"
+          cp "build/libs/bettermob-${version}.jar" "$asset"
           gh release delete dev-build --cleanup-tag --yes || true
           gh release create dev-build "$asset" --prerelease --target "$GITHUB_SHA" \
             --title "Dev build" \
