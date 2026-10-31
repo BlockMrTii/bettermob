@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.skill.LocationPlaceholdersTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:56.158Z" hostname="MyPC" time="0.001">
-  <properties/>
-  <testcase name="casterLocationPlaceholdersBecomeNumbers()" classname="eu.northsoft.bettermob.skill.LocationPlaceholdersTest" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

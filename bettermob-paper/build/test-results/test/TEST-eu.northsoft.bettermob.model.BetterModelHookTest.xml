@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.model.BetterModelHookTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:54.576Z" hostname="MyPC" time="0.024">
-  <properties/>
-  <testcase name="dismountClearsOnlyTheRequestedRidersPluginRegistration()" classname="eu.northsoft.bettermob.model.BetterModelHookTest" time="0.023"/>
-  <testcase name="missingTrackersRegistriesAndRidersAreHarmless()" classname="eu.northsoft.bettermob.model.BetterModelHookTest" time="0.0"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

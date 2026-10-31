@@ -28,8 +28,8 @@ class ReloadDiffTest {
         same.loadFromString("Health: 20\nSkills:\n  - a\n");
         YamlConfiguration other = new YamlConfiguration();
         other.loadFromString("Health: 21\nSkills:\n  - a\n");
-        assertEquals(ReloadDiff.fingerprint(first), ReloadDiff.fingerprint(same));
-        assertNotEquals(ReloadDiff.fingerprint(first), ReloadDiff.fingerprint(other));
+        assertEquals(ReloadDiff.fingerprint(first.getValues(true)), ReloadDiff.fingerprint(same.getValues(true)));
+        assertNotEquals(ReloadDiff.fingerprint(first.getValues(true)), ReloadDiff.fingerprint(other.getValues(true)));
     }
 
     @Test
@@ -39,6 +39,6 @@ class ReloadDiffTest {
         first.loadFromString("Display: Aa\n");
         YamlConfiguration second = new YamlConfiguration();
         second.loadFromString("Display: BB\n");
-        assertNotEquals(ReloadDiff.fingerprint(first), ReloadDiff.fingerprint(second));
+        assertNotEquals(ReloadDiff.fingerprint(first.getValues(true)), ReloadDiff.fingerprint(second.getValues(true)));
     }
 }

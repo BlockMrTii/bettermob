@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.util.RegionEntitiesTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:56.891Z" hostname="MyPC" time="0.001">
-  <properties/>
-  <testcase name="chunkOfRoundsTowardsNegativeInfinity()" classname="eu.northsoft.bettermob.util.RegionEntitiesTest" time="0.001"/>
-  <testcase name="invalidRadiiFindNothing()" classname="eu.northsoft.bettermob.util.RegionEntitiesTest" time="0.0"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

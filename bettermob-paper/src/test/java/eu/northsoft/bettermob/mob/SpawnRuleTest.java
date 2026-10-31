@@ -54,7 +54,7 @@ class SpawnRuleTest {
         } catch (Exception exception) {
             throw new IllegalStateException(exception);
         }
-        return SpawnRule.parse(config, invalid::add);
+        return SpawnRule.parse(new eu.northsoft.bettermob.paper.PaperConfigSection(config), invalid::add);
     }
 
     @Test

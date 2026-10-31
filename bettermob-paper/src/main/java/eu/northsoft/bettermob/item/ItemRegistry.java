@@ -59,7 +59,7 @@ public final class ItemRegistry {
                     ItemDefinition definition = parse(id, section);
                     if (definition != null) {
                         loaded.put(id.toLowerCase(Locale.ROOT), definition);
-                        prints.put(id.toLowerCase(Locale.ROOT), ReloadDiff.fingerprint(section));
+                        prints.put(id.toLowerCase(Locale.ROOT), ReloadDiff.fingerprint(section.getValues(true)));
                     }
                 }
             }

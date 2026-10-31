@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="eu.northsoft.bettermob.util.ReloadDiffTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-31T04:35:56.893Z" hostname="MyPC" time="0.007">
-  <properties/>
-  <testcase name="theFingerprintFollowsTheContentOfASection()" classname="eu.northsoft.bettermob.util.ReloadDiffTest" time="0.003"/>
-  <testcase name="newRemovedAndChangedIdsAreSortedAndSeparated()" classname="eu.northsoft.bettermob.util.ReloadDiffTest" time="0.001"/>
-  <testcase name="valuesWithTheSameJavaHashCodeStillDiffer()" classname="eu.northsoft.bettermob.util.ReloadDiffTest" time="0.002"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

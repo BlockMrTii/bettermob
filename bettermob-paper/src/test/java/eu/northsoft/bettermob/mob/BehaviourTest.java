@@ -15,7 +15,7 @@ class BehaviourTest {
     private static Behaviour parse(String yaml, List<String> invalid) throws Exception {
         YamlConfiguration config = new YamlConfiguration();
         config.loadFromString(yaml);
-        return Behaviour.parse(config, invalid::add);
+        return Behaviour.parse(new eu.northsoft.bettermob.paper.PaperConfigSection(config), invalid::add);
     }
 
     @Test
