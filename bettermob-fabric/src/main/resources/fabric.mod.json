@@ -17,6 +17,9 @@
   "entrypoints": {
     "main": [
       "eu.northsoft.bettermob.fabric.BetterMobFabricMod"
+    ],
+    "client": [
+      "eu.northsoft.bettermob.fabric.BetterMobFabricClientMod"
     ]
   },
   "depends": {
