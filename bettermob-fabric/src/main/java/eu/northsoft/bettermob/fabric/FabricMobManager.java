@@ -52,6 +52,7 @@ public final class FabricMobManager {
     }
 
     public void onHeal(LivingEntity entity, float amount) {
+        if (entity == null || amount <= 0) return;
         ActiveFabricMob mob = activeMobs.get(entity.getUuid());
         if (mob == null) return;
         CoreSkillContext ctx = new CoreSkillContext(mob.entity(), null);

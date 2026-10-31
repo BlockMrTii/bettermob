@@ -127,6 +127,9 @@ class ActiveFabricMobTest {
         ActiveFabricMob mob = manager.get(entity.uuid());
         assertNotNull(mob);
 
+        manager.onHeal(null, 0.0f);
+        assertEquals(List.of(), executed);
+
         var ctx = new eu.northsoft.bettermob.skill.core.CoreSkillContext(mob.entity(), null);
         for (var trigger : mob.definition().triggersOf(MobDefinition.SkillTrigger.Trigger.HEAL)) {
             engine.executeStep(trigger.step(), ctx);

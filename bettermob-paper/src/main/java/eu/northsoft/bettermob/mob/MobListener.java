@@ -207,10 +207,14 @@ public final class MobListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onHealthGain(EntityRegainHealthEvent event) {
         if (!(event.getEntity() instanceof LivingEntity mob)) return;
+        var maxAttr = mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+        double maxHealth = maxAttr != null ? maxAttr.getValue() : mob.getMaxHealth();
+        if (mob.getHealth() >= maxHealth || event.getAmount() <= 0) return;
+
         MobDefinition definition = manager.definitionOf(mob.getUniqueId());
         if (definition != null) {
             if (manager.hasHealthTriggers(definition) || definition.hasPhases()) {
-                manager.checkHealth(mob, definition, mob.getHealth(), mob.getHealth() + event.getAmount());
+                manager.checkHealth(mob, definition, mob.getHealth(), Math.min(maxHealth, mob.getHealth() + event.getAmount()));
             }
             manager.fireTrigger(mob, definition, MobDefinition.SkillTrigger.Trigger.HEAL, null, event);
         }

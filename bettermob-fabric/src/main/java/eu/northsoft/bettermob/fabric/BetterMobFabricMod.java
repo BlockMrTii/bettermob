@@ -61,9 +61,14 @@ public final class BetterMobFabricMod implements ModInitializer {
         skillEngine.registerMechanic("heal", (ctx, target, params) -> {
             if (target.entity() instanceof eu.northsoft.bettermob.platform.PlatformLivingEntity living) {
                 double amount = eu.northsoft.bettermob.skill.Params.parseNumber(params.getOrDefault("amount", params.get("a")), 1.0);
-                living.health(Math.min(living.maxHealth(), living.health() + amount));
-                if (living.handle() instanceof net.minecraft.entity.LivingEntity nmsLiving) {
-                    mobManager.onHeal(nmsLiving, (float) amount);
+                double current = living.health();
+                double max = living.maxHealth();
+                if (current < max && amount > 0) {
+                    double newHealth = Math.min(max, current + amount);
+                    living.health(newHealth);
+                    if (living.handle() instanceof net.minecraft.entity.LivingEntity nmsLiving) {
+                        mobManager.onHeal(nmsLiving, (float) (newHealth - current));
+                    }
                 }
             }
         });

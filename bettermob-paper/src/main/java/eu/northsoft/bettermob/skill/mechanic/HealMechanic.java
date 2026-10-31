@@ -13,6 +13,7 @@ public final class HealMechanic implements Mechanic {
         double amount = parseFloat(firstParam(call.params(), "amount", "a"), 1f);
         var maxHealth = living.getAttribute(Attribute.MAX_HEALTH);
         double max = maxHealth == null ? living.getHealth() : maxHealth.getValue();
+        if (living.getHealth() >= max || amount <= 0) return;
         living.setHealth(Math.max(0, Math.min(max, living.getHealth() + amount)));
     }
 }
